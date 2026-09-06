@@ -45,31 +45,35 @@ use icelines_core::{
     FantasyCategoryMatchupView, FantasyCategoryPlayerInput, FantasyCategoryRateInput,
     FantasyCategoryRule, FantasyCategoryScope, FantasyCategorySnapshotInput,
     FantasyCategoryTeamInput, FantasyCompetitionMode, FantasyCompetitionRules,
-    FantasyDraftCalendarDateInput, FantasyDraftCalendarPlayerInput, FantasyDraftCandidateInput,
-    FantasyDraftCardInput, FantasyDraftIdentityInput, FantasyDraftSimulationCandidateInput,
-    FantasyDraftSimulationInput, FantasyDraftSimulationStrategy, FantasyDraftSimulationView,
-    FantasyGoalieGameInput, FantasyGoaliePlanInput, FantasyGoaliePlanPlayerInput,
-    FantasyGoalieStartObservation, FantasyGoalieStartState, FantasyInjuryPlanView,
-    FantasyLeagueInput, FantasyLeagueTeamInput, FantasyLeagueView, FantasyLineupPlayerInput,
-    FantasyMatchupPointsSnapshotInput, FantasyMatchupStrategy, FantasyMatchupStrategyInput,
-    FantasyMatchupStrategyPlayerInput, FantasyMatchupStrategyTeamInput, FantasyMatchupStrategyView,
-    FantasyMatchupSwingInput, FantasyMatchupTiePolicy, FantasyMorningCardInput,
-    FantasyObservationConfidence, FantasyPickupSequenceView, FantasyPlatformSnapshot,
-    FantasyPlatformSnapshotView, FantasyPlayerAvailabilityStatus, FantasyPlayoffPlayerInput,
-    FantasyPlayoffPortfolioInput, FantasyPlayoffPortfolioView, FantasyPlayoffRoundInput,
-    FantasyRosterCardInput, FantasyRosterGapInput, FantasyRosterGapView, FantasySeasonEventKind,
-    FantasySeasonSimConfig, FantasySeasonSimPlayerInput, FantasySeasonSimView,
-    FantasySimulationBuildInput, FantasySimulationConfidence, FantasySimulationHorizon,
-    FantasySimulationRosterTeamInput, FantasySimulationScenarioRosterInput, FantasySimulationView,
-    FantasySleeperBoardView, FantasySleeperInput, FantasyStatusObservation, FantasyTodayContext,
-    FantasyTodayEvidenceRow, FantasyTodayInput, FantasyTodayReadinessRow, FantasyTodayState,
-    FantasyTodayV2View, FantasyTodayView, FantasyTradeCardInput, FantasyTradeEvaluationView,
+    FantasyDecisionMatchupResult, FantasyDecisionOutcome, FantasyDecisionOutcomeCompleteness,
+    FantasyDecisionOutcomeLane, FantasyDecisionOutcomeSource, FantasyDraftCalendarDateInput,
+    FantasyDraftCalendarPlayerInput, FantasyDraftCandidateInput, FantasyDraftCardInput,
+    FantasyDraftIdentityInput, FantasyDraftSimulationCandidateInput, FantasyDraftSimulationInput,
+    FantasyDraftSimulationStrategy, FantasyDraftSimulationView, FantasyGoalieGameInput,
+    FantasyGoaliePlanInput, FantasyGoaliePlanPlayerInput, FantasyGoalieStartObservation,
+    FantasyGoalieStartState, FantasyInjuryPlanView, FantasyLeagueInput, FantasyLeagueTeamInput,
+    FantasyLeagueView, FantasyLineupPlayerInput, FantasyMatchupPointsSnapshotInput,
+    FantasyMatchupStrategy, FantasyMatchupStrategyInput, FantasyMatchupStrategyPlayerInput,
+    FantasyMatchupStrategyTeamInput, FantasyMatchupStrategyView, FantasyMatchupSwingInput,
+    FantasyMatchupTiePolicy, FantasyMorningCardInput, FantasyObservationConfidence,
+    FantasyPickupSequenceView, FantasyPlatformSnapshot, FantasyPlatformSnapshotView,
+    FantasyPlayerAvailabilityStatus, FantasyPlayoffPlayerInput, FantasyPlayoffPortfolioInput,
+    FantasyPlayoffPortfolioView, FantasyPlayoffRoundInput, FantasyRosterCardInput,
+    FantasyRosterGapInput, FantasyRosterGapView, FantasySeasonEventKind, FantasySeasonSimConfig,
+    FantasySeasonSimPlayerInput, FantasySeasonSimView, FantasySimulationBuildInput,
+    FantasySimulationConfidence, FantasySimulationHorizon, FantasySimulationRosterTeamInput,
+    FantasySimulationScenarioRosterInput, FantasySimulationView, FantasySleeperBoardView,
+    FantasySleeperInput, FantasyStatusObservation, FantasyTodayContext, FantasyTodayEvidenceRow,
+    FantasyTodayInput, FantasyTodayReadinessRow, FantasyTodayState, FantasyTodayV2View,
+    FantasyTodayView, FantasyTradeCardInput, FantasyTradeEvaluationView,
     FantasyTradePlayerEvaluation, FantasyTradeTeamEvaluation, FantasyWeeklyMoveInput, RosterShape,
     RosterShapeStatus, RosterShapeValidationView, ViewContext, ViewWindow, CURRENT_SEASON,
-    FANTASY_COMPETITION_RULES_SCHEMA, FANTASY_TRADE_EVALUATION_SCHEMA,
+    FANTASY_COMPETITION_RULES_SCHEMA, FANTASY_DECISION_OUTCOME_SCHEMA,
+    FANTASY_TRADE_EVALUATION_SCHEMA,
 };
 use icelines_fetch::datastore::DataStore;
 use icelines_fetch::fantasy_daily::build_fantasy_daily_delta_view;
+use icelines_fetch::fantasy_decision_review_service::assemble_fantasy_decision_review;
 use icelines_fetch::fantasy_import::{
     import_yahoo_roster_csv, import_yahoo_roster_rows, parse_yahoo_roster_csv_text,
     FantasyRosterImportOptions,
@@ -87,6 +91,10 @@ use icelines_fetch::stats_loader::LoadOutcome;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
+use crate::cli::{
+    FantasyMatchupResultArg, FantasyOutcomeCompletenessArg, FantasyOutcomeLaneArg,
+    FantasyOutcomeSourceArg,
+};
 use crate::fantasy_db::{resolve_roster_shape, FantasyDb, LeagueRow, TeamRow};
 
 const CREASE_STARTER_EVIDENCE_HEADER: &str = "THE CREASE — STARTER EVIDENCE";
@@ -6454,46 +6462,189 @@ pub async fn run_decision_record(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
+pub async fn run_decision_outcome_record(
+    decision: String,
+    lane: FantasyOutcomeLaneArg,
+    completeness: FantasyOutcomeCompletenessArg,
+    source: FantasyOutcomeSourceArg,
+    source_observed_at: Option<String>,
+    executed: Option<bool>,
+    active_points_delta: Option<f64>,
+    usable_starts_delta: Option<i32>,
+    matchup_result: Option<FantasyMatchupResultArg>,
+    user_final_points: Option<f64>,
+    opponent_final_points: Option<f64>,
+    reserve_needed: Option<bool>,
+    reserve_used: Option<bool>,
+    notes: Option<String>,
+    corrects: Option<String>,
+    json_output: bool,
+) -> anyhow::Result<()> {
+    let source_observed_at = source_observed_at
+        .as_deref()
+        .map(|value| {
+            DateTime::parse_from_rfc3339(value)
+                .map(|value| value.with_timezone(&Utc))
+                .with_context(|| format!("parse --source-observed-at '{value}'"))
+        })
+        .transpose()?;
+    let outcome = FantasyDecisionOutcome {
+        schema: FANTASY_DECISION_OUTCOME_SCHEMA.to_owned(),
+        decision_id: decision,
+        lane: match lane {
+            FantasyOutcomeLaneArg::Execution => FantasyDecisionOutcomeLane::Execution,
+            FantasyOutcomeLaneArg::ActiveValue => FantasyDecisionOutcomeLane::ActiveValue,
+            FantasyOutcomeLaneArg::Matchup => FantasyDecisionOutcomeLane::Matchup,
+            FantasyOutcomeLaneArg::Reserve => FantasyDecisionOutcomeLane::Reserve,
+        },
+        completeness: match completeness {
+            FantasyOutcomeCompletenessArg::Provisional => {
+                FantasyDecisionOutcomeCompleteness::Provisional
+            }
+            FantasyOutcomeCompletenessArg::Final => FantasyDecisionOutcomeCompleteness::Final,
+        },
+        source: match source {
+            FantasyOutcomeSourceArg::Manager => FantasyDecisionOutcomeSource::Manager,
+            FantasyOutcomeSourceArg::PlatformImport => FantasyDecisionOutcomeSource::PlatformImport,
+            FantasyOutcomeSourceArg::DerivedBoxscores => {
+                FantasyDecisionOutcomeSource::DerivedBoxscores
+            }
+        },
+        source_observed_at,
+        executed,
+        actual_active_points_delta: active_points_delta,
+        actual_usable_starts_delta: usable_starts_delta,
+        matchup_result: matchup_result.map(|result| match result {
+            FantasyMatchupResultArg::Win => FantasyDecisionMatchupResult::Win,
+            FantasyMatchupResultArg::Loss => FantasyDecisionMatchupResult::Loss,
+            FantasyMatchupResultArg::Tie => FantasyDecisionMatchupResult::Tie,
+        }),
+        user_final_points,
+        opponent_final_points,
+        reserve_needed,
+        reserve_used,
+    };
+    outcome.validate().map_err(anyhow::Error::msg)?;
+    let db = FantasyDb::open()?;
+    let (id, appended) =
+        db.record_typed_decision_outcome(&outcome, notes.as_deref(), corrects.as_deref())?;
+    if json_output {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&json!({
+                "id": id,
+                "appended": appended,
+                "decision_id": outcome.decision_id,
+                "lane": outcome.lane,
+                "material_fingerprint": outcome.material_fingerprint().map_err(anyhow::Error::msg)?,
+            }))?
+        );
+    } else if appended {
+        println!(
+            "Recorded {} outcome {id} for decision {}.",
+            outcome.lane.as_str(),
+            outcome.decision_id
+        );
+    } else {
+        println!("Outcome {id} was already recorded; no row was changed.");
+    }
+    Ok(())
+}
+
 pub async fn run_decision_review(
     league_override: Option<String>,
+    week: Option<String>,
+    season: Option<String>,
     limit: usize,
     include_private: bool,
     json_output: bool,
+    legacy_json: bool,
 ) -> anyhow::Result<()> {
     let db = FantasyDb::open_existing_read_only()?;
     let league = require_league(&db, &league_override)?;
-    let decisions = db.list_decisions(&league.id, limit, include_private)?;
-    let rows = decisions
-        .into_iter()
-        .map(|decision| {
-            let outcomes = db.list_decision_outcomes(&decision.id)?;
-            Ok(json!({
-                "decision": decision,
-                "outcomes": outcomes,
-            }))
-        })
-        .collect::<anyhow::Result<Vec<_>>>()?;
-    if json_output {
+    if legacy_json {
+        if !json_output {
+            bail!("--legacy-json requires --json");
+        }
+        if week.is_some() || season.is_some() {
+            bail!("--legacy-json cannot be combined with --week or --season");
+        }
+        let decisions = db.list_decisions(&league.id, limit, include_private)?;
+        let rows = decisions
+            .into_iter()
+            .map(|decision| {
+                let outcomes =
+                    db.list_decision_outcomes_with_privacy(&decision.id, include_private)?;
+                Ok(json!({ "decision": decision, "outcomes": outcomes }))
+            })
+            .collect::<anyhow::Result<Vec<_>>>()?;
         println!("{}", serde_json::to_string_pretty(&rows)?);
+        return Ok(());
+    }
+    let week = week
+        .as_deref()
+        .map(|value| {
+            let date = NaiveDate::parse_from_str(value, "%Y-%m-%d")
+                .with_context(|| format!("parse --week '{value}'"))?;
+            if date.weekday() != chrono::Weekday::Mon {
+                bail!("--week must be a Monday; '{value}' is {:?}", date.weekday());
+            }
+            Ok(date)
+        })
+        .transpose()?;
+    let view =
+        assemble_fantasy_decision_review(&db, &league, limit, week, season, include_private)?;
+    if json_output {
+        println!("{}", serde_json::to_string_pretty(&view)?);
     } else {
         println!("DECISION JOURNAL — {}", league.name);
-        if rows.is_empty() {
+        println!(
+            "{} decisions · {} observed · {} supported process · {} comparable",
+            view.summary.decisions,
+            view.summary.with_effective_outcomes,
+            view.summary.supported_process,
+            view.summary.comparable_projections
+        );
+        if view.items.is_empty() {
             println!("No decisions recorded.");
         }
-        for row in rows {
-            let decision = &row["decision"];
+        for row in &view.items {
             println!(
-                "{}  choice {}  {}  outcomes {}",
-                decision["recorded_at"].as_str().unwrap_or("unknown"),
-                decision["chosen_alternative"].as_u64().unwrap_or_default(),
-                decision["recommendation_id"].as_str().unwrap_or("unknown"),
-                row["outcomes"].as_array().map_or(0, Vec::len)
+                "{}  process {:?} · result {:?} · projection {:?}",
+                row.week_start
+                    .map(|date| date.to_string())
+                    .unwrap_or_else(|| "unknown week".to_owned()),
+                row.process,
+                row.result,
+                row.projection,
+            );
+            println!(
+                "  {} · choice {} · projected {:+.2} · error {} · {} outcome row(s)",
+                row.recommendation_id,
+                row.chosen_alternative,
+                row.projected_active_points_delta.unwrap_or_default(),
+                row.active_points_error
+                    .map(|value| format!("{value:+.2}"))
+                    .unwrap_or_else(|| "unknown".to_owned()),
+                row.outcome_rows,
             );
             if include_private {
-                if let Some(rationale) = decision["manager_rationale"].as_str() {
+                if let Some(rationale) = &row.manager_rationale {
                     println!("  rationale: {rationale}");
                 }
+                for note in &row.private_outcome_notes {
+                    println!("  outcome note: {note}");
+                }
             }
+            for warning in &row.warnings {
+                println!("  warning: {warning}");
+            }
+        }
+        if view.summary.decisions > 0 && view.summary.with_effective_outcomes == 0 {
+            println!(
+                "Next: record an observation with `icelines fantasy decision-outcome-record`."
+            );
         }
     }
     Ok(())

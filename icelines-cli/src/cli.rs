@@ -9164,6 +9164,44 @@ mod tui_surface_tests {
             }
         });
     }
+
+    #[test]
+    fn l0_fantasy_decision_outcome_and_review_commands_parse() {
+        with_large_stack(|| {
+            for args in [
+                vec![
+                    "icelines",
+                    "fantasy",
+                    "decision-outcome-record",
+                    "--decision",
+                    "decision-id",
+                    "--lane",
+                    "active-value",
+                    "--active-points-delta",
+                    "8.25",
+                    "--usable-starts-delta",
+                    "2",
+                ],
+                vec![
+                    "icelines",
+                    "fantasy",
+                    "decision-review",
+                    "--week",
+                    "2026-11-09",
+                    "--json",
+                ],
+                vec![
+                    "icelines",
+                    "fantasy",
+                    "decision-review",
+                    "--season",
+                    "20262027",
+                ],
+            ] {
+                Cli::try_parse_from(args).expect("fantasy decision command should parse");
+            }
+        });
+    }
 }
 
 // ── Fetch sub-commands ────────────────────────────────────────────────────────
@@ -10755,6 +10793,34 @@ NOTES
 
 // ── Fantasy sub-commands ──────────────────────────────────────────────────────
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum FantasyOutcomeLaneArg {
+    Execution,
+    ActiveValue,
+    Matchup,
+    Reserve,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum FantasyOutcomeCompletenessArg {
+    Provisional,
+    Final,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum FantasyOutcomeSourceArg {
+    Manager,
+    PlatformImport,
+    DerivedBoxscores,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum FantasyMatchupResultArg {
+    Win,
+    Loss,
+    Tie,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum FantasySubcommand {
     // League management
@@ -11449,11 +11515,57 @@ pub enum FantasySubcommand {
         json: bool,
     },
 
+    /// Append one sourced observation lane to a frozen fantasy decision.
+    #[command(name = "decision-outcome-record")]
+    DecisionOutcomeRecord {
+        #[arg(long)]
+        decision: String,
+        #[arg(long, value_enum)]
+        lane: FantasyOutcomeLaneArg,
+        #[arg(long, value_enum, default_value = "final")]
+        completeness: FantasyOutcomeCompletenessArg,
+        #[arg(long, value_enum, default_value = "manager")]
+        source: FantasyOutcomeSourceArg,
+        /// Optional RFC3339 source observation time; insertion time is recorded separately.
+        #[arg(long)]
+        source_observed_at: Option<String>,
+        #[arg(long)]
+        executed: Option<bool>,
+        #[arg(long)]
+        active_points_delta: Option<f64>,
+        #[arg(long)]
+        usable_starts_delta: Option<i32>,
+        #[arg(long, value_enum)]
+        matchup_result: Option<FantasyMatchupResultArg>,
+        #[arg(long)]
+        user_final_points: Option<f64>,
+        #[arg(long)]
+        opponent_final_points: Option<f64>,
+        #[arg(long)]
+        reserve_needed: Option<bool>,
+        #[arg(long)]
+        reserve_used: Option<bool>,
+        /// Private local note, excluded from default review and every Web response.
+        #[arg(long)]
+        notes: Option<String>,
+        /// Outcome row replaced by this append-only correction.
+        #[arg(long)]
+        corrects: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Review immutable fantasy decisions and their recorded outcomes.
     #[command(name = "decision-review")]
     DecisionReview {
         #[arg(long)]
         league: Option<String>,
+        /// ISO Monday selecting one frozen decision week.
+        #[arg(long)]
+        week: Option<String>,
+        /// Frozen NHL stats season, for example 20262027.
+        #[arg(long)]
+        season: Option<String>,
         #[arg(long, default_value_t = 20)]
         limit: usize,
         /// Include private manager rationale in output.
@@ -11461,6 +11573,9 @@ pub enum FantasySubcommand {
         include_private: bool,
         #[arg(long)]
         json: bool,
+        /// Preserve the pre-v0.26 unversioned JSON array; incompatible with filters.
+        #[arg(long)]
+        legacy_json: bool,
     },
 
     /// Find unrostered skaters with rising league-scored and category rates.

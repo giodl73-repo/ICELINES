@@ -31,6 +31,7 @@ pub mod draft_pick_history;
 pub mod error;
 pub mod fantasy_daily;
 pub mod fantasy_db;
+pub mod fantasy_decision_review_service;
 pub mod fantasy_import;
 pub mod fantasy_matchup;
 pub mod fantasy_today_service;

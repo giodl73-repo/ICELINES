@@ -8,9 +8,10 @@ use icelines_core::{
         FantasySimulationScenarioRosterInput, FantasySimulationView, FantasyTodayState,
         FantasyTodayView,
     },
-    FantasyTodayV2View, Scheme,
+    FantasyDecisionReviewView, FantasyTodayV2View, Scheme,
 };
 use icelines_fetch::{
+    fantasy_decision_review_service::assemble_fantasy_decision_review,
     fantasy_today_service::{assemble_fantasy_today, FantasyTodayAssemblyRequest},
     schedule_remaining::remaining_games_by_team_from_cache,
 };
@@ -68,7 +69,14 @@ pub fn render_today(f: &mut Frame, app: &App, area: Rect) {
     let inner = block.inner(area);
     f.render_widget(block, area);
     match (&app.fantasy_today.view, &app.fantasy_today.error) {
-        (Some(view), _) => f.render_widget(Paragraph::new(today_v2_lines(view)), inner),
+        (Some(view), _) => f.render_widget(
+            Paragraph::new(today_v2_lines(
+                view,
+                app.fantasy_today.decision_review.as_ref(),
+                inner.width,
+            )),
+            inner,
+        ),
         (None, Some(message)) => f.render_widget(
             Paragraph::new(format!(
                 "Fantasy cockpit unavailable\n\n{message}\n\nRun `icelines fantasy today` for recovery guidance."
@@ -91,6 +99,7 @@ pub struct FantasyTodayScreenState {
     pub view: Option<FantasyTodayV2View>,
     pub error: Option<String>,
     pub loaded_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub decision_review: Option<FantasyDecisionReviewView>,
 }
 
 pub fn load_today_contract(stats_season: &str) -> Result<FantasyTodayV2View, String> {
@@ -105,7 +114,20 @@ pub fn load_today_contract(stats_season: &str) -> Result<FantasyTodayV2View, Str
     assemble_fantasy_today(request).map_err(|error| error.to_string())
 }
 
-fn today_v2_lines(view: &FantasyTodayV2View) -> Vec<Line<'static>> {
+pub fn load_latest_decision_review() -> Result<FantasyDecisionReviewView, String> {
+    let db = crate::fantasy_db::FantasyDb::open_existing_read_only().map_err(|e| e.to_string())?;
+    let league = db
+        .get_active_league()
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| "no active fantasy league found".to_owned())?;
+    assemble_fantasy_decision_review(&db, &league, 1, None, None, false).map_err(|e| e.to_string())
+}
+
+fn today_v2_lines(
+    view: &FantasyTodayV2View,
+    review: Option<&FantasyDecisionReviewView>,
+    width: u16,
+) -> Vec<Line<'static>> {
     let summary = view.surface_decision();
     let mut projected = view.today.clone();
     if let Some(primary) = &view.decisions.primary_decision {
@@ -154,7 +176,63 @@ fn today_v2_lines(view: &FantasyTodayV2View) -> Vec<Line<'static>> {
             tui_meta_style(),
         ));
     }
+    append_review_lines(&mut lines, review, width);
     lines
+}
+
+fn append_review_lines(
+    lines: &mut Vec<Line<'static>>,
+    review: Option<&FantasyDecisionReviewView>,
+    width: u16,
+) {
+    lines.push(Line::raw(""));
+    lines.push(Line::styled("LAST REVIEW", tui_header_style()));
+    match review.and_then(|review| review.items.first()) {
+        Some(item) => {
+            lines.push(Line::raw(format!(
+                "Process {:?} | result {:?} | projection {:?}",
+                item.process, item.result, item.projection
+            )));
+            lines.push(Line::styled(
+                item.active_points_error
+                    .map(|error| format!("Projection error {error:+.2} points"))
+                    .unwrap_or_else(|| {
+                        "Outcome missing — run `fantasy decision-outcome-record`.".to_owned()
+                    }),
+                tui_meta_style(),
+            ));
+            if width >= 120 {
+                let source = [
+                    item.effective_outcome.execution.as_ref(),
+                    item.effective_outcome.active_value.as_ref(),
+                    item.effective_outcome.matchup.as_ref(),
+                    item.effective_outcome.reserve.as_ref(),
+                ]
+                .into_iter()
+                .flatten()
+                .next();
+                lines.push(Line::styled(
+                    format!(
+                        "Starts error {} | source {}",
+                        item.usable_starts_error
+                            .map(|error| format!("{error:+}"))
+                            .unwrap_or_else(|| "unknown".to_owned()),
+                        source
+                            .map(|outcome| format!(
+                                "{:?}/{:?}",
+                                outcome.source, outcome.completeness
+                            ))
+                            .unwrap_or_else(|| "unknown".to_owned())
+                    ),
+                    tui_meta_style(),
+                ));
+            }
+        }
+        None => lines.push(Line::styled(
+            "No frozen decision review yet — run `fantasy decision-record`.",
+            tui_meta_style(),
+        )),
+    }
 }
 
 fn today_lines(view: &FantasyTodayView) -> Vec<Line<'static>> {
@@ -765,6 +843,38 @@ mod tests {
             .starts_with("Start Fixture Player [firm; legal now: true"));
         assert_eq!(fixture.alternative_messages[0], "Bench Fixture Goalie");
         assert!(fixture.deadline_utc.is_some());
+    }
+
+    #[test]
+    fn l0_fantasy_today_tui_names_missing_review_recovery() {
+        let review = icelines_core::FantasyDecisionReviewView {
+            schema: icelines_core::FANTASY_DECISION_REVIEW_SCHEMA.to_owned(),
+            league_id: "league".to_owned(),
+            league_name: "League".to_owned(),
+            generated_at: chrono::Utc::now(),
+            week: None,
+            season: None,
+            display_alignment_tolerance: 1.0,
+            summary: icelines_core::FantasyDecisionReviewSummary {
+                decisions: 0,
+                with_effective_outcomes: 0,
+                supported_process: 0,
+                positive_results: 0,
+                comparable_projections: 0,
+            },
+            items: Vec::new(),
+            calibration: Vec::new(),
+            warnings: Vec::new(),
+        };
+        let mut lines = Vec::new();
+        append_review_lines(&mut lines, Some(&review), 80);
+        let rendered = lines
+            .into_iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert!(rendered.contains("LAST REVIEW"));
+        assert!(rendered.contains("fantasy decision-record"));
     }
 
     #[test]

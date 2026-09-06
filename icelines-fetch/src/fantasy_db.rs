@@ -6,11 +6,13 @@
 use anyhow::{bail, Context};
 use chrono::{DateTime, NaiveDate, Utc};
 use icelines_core::{
-    model::Position, FantasyAcquisitionKind, FantasyAssistantRules, FantasyCompetitionMode,
-    FantasyCompetitionRules, FantasyGoalieStartObservation, FantasyGoalieStartState,
-    FantasyObservationConfidence, FantasyPlatformSnapshot, FantasyPlayerAvailabilityStatus,
-    FantasyStatusObservation, FantasyWaiverWindow, RosterShape, RosterShapePlayerInput,
-    RosterShapeValidationInput, RosterShapeValidationView,
+    model::Position, validate_fantasy_decision_outcome_timing, FantasyAcquisitionKind,
+    FantasyAssistantRules, FantasyCompetitionMode, FantasyCompetitionRules, FantasyDecisionOutcome,
+    FantasyDecisionOutcomeCompleteness, FantasyDecisionOutcomeLane, FantasyGoalieStartObservation,
+    FantasyGoalieStartState, FantasyObservationConfidence, FantasyPickupSequenceView,
+    FantasyPlatformSnapshot, FantasyPlayerAvailabilityStatus, FantasyStatusObservation,
+    FantasyWaiverWindow, RosterShape, RosterShapePlayerInput, RosterShapeValidationInput,
+    RosterShapeValidationView, FANTASY_PICKUP_SEQUENCE_SCHEMA,
 };
 use rusqlite::{Connection, OpenFlags, OptionalExtension};
 use std::collections::{BTreeMap, BTreeSet};
@@ -138,6 +140,10 @@ pub struct FantasyDecisionOutcomeRow {
     pub outcome_kind: String,
     pub outcome_json: String,
     pub correction_of: Option<String>,
+    pub outcome_lane: Option<String>,
+    pub material_fingerprint: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub private_notes: Option<String>,
 }
 
 impl FantasyLeagueSnapshot {
@@ -473,6 +479,27 @@ fn run_migrations(conn: &Connection) -> anyhow::Result<()> {
             ON fl_decision_outcomes(decision_id, observed_at ASC, id ASC);",
     )
     .context("migration 020: create fantasy decision journal tables")?;
+
+    // Migration 021 — typed outcome lanes, idempotency, and private notes.
+    for (column, sql_type) in [
+        ("outcome_lane", "TEXT"),
+        ("material_fingerprint", "TEXT"),
+        ("private_notes", "TEXT"),
+    ] {
+        if !table_has_column(conn, "fl_decision_outcomes", column)? {
+            conn.execute(
+                &format!("ALTER TABLE fl_decision_outcomes ADD COLUMN {column} {sql_type}"),
+                [],
+            )
+            .with_context(|| format!("migration 021: add {column}"))?;
+        }
+    }
+    conn.execute_batch(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_fl_decision_outcomes_material
+            ON fl_decision_outcomes(decision_id, outcome_lane, material_fingerprint)
+            WHERE outcome_lane IS NOT NULL AND material_fingerprint IS NOT NULL;",
+    )
+    .context("migration 021: index typed fantasy decision outcomes")?;
 
     // Enable foreign-key enforcement (off by default in rusqlite).
     conn.execute_batch("PRAGMA foreign_keys = ON;")
@@ -2223,12 +2250,117 @@ impl FantasyDb {
         Ok(id)
     }
 
+    pub fn record_typed_decision_outcome(
+        &self,
+        outcome: &FantasyDecisionOutcome,
+        private_notes: Option<&str>,
+        correction_of: Option<&str>,
+    ) -> anyhow::Result<(String, bool)> {
+        outcome.validate().map_err(anyhow::Error::msg)?;
+        let fingerprint = outcome.material_fingerprint().map_err(anyhow::Error::msg)?;
+        let existing = self
+            .conn
+            .query_row(
+                "SELECT id FROM fl_decision_outcomes
+                 WHERE decision_id = ?1 AND outcome_lane = ?2 AND material_fingerprint = ?3",
+                rusqlite::params![outcome.decision_id, outcome.lane.as_str(), fingerprint],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?;
+        if let Some(id) = existing {
+            return Ok((id, false));
+        }
+        let projection_json = self
+            .conn
+            .query_row(
+                "SELECT projection_json FROM fl_decisions WHERE id = ?1",
+                [&outcome.decision_id],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?
+            .ok_or_else(|| anyhow::anyhow!("decision '{}' does not exist", outcome.decision_id))?;
+        let inserted_at = Utc::now();
+        match serde_json::from_str::<FantasyPickupSequenceView>(&projection_json) {
+            Ok(projection) if projection.schema == FANTASY_PICKUP_SEQUENCE_SCHEMA => {
+                validate_fantasy_decision_outcome_timing(outcome, &projection, inserted_at)
+                    .map_err(anyhow::Error::msg)?;
+            }
+            _ if outcome.completeness == FantasyDecisionOutcomeCompleteness::Final
+                && matches!(
+                    outcome.lane,
+                    FantasyDecisionOutcomeLane::ActiveValue | FantasyDecisionOutcomeLane::Matchup
+                ) =>
+            {
+                bail!(
+                    "cannot verify that the frozen week ended; record this observation as provisional"
+                );
+            }
+            _ => {}
+        }
+        if let Some(parent_id) = correction_of {
+            let parent = self
+                .conn
+                .query_row(
+                    "SELECT decision_id, outcome_lane FROM fl_decision_outcomes WHERE id = ?1",
+                    [parent_id],
+                    |row| Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?)),
+                )
+                .optional()?
+                .ok_or_else(|| anyhow::anyhow!("correction parent '{parent_id}' does not exist"))?;
+            if parent.0 != outcome.decision_id || parent.1.as_deref() != Some(outcome.lane.as_str())
+            {
+                bail!("correction parent must belong to the same decision and outcome lane");
+            }
+            let already_corrected = self
+                .conn
+                .query_row(
+                    "SELECT 1 FROM fl_decision_outcomes WHERE correction_of = ?1 LIMIT 1",
+                    [parent_id],
+                    |_| Ok(()),
+                )
+                .optional()?
+                .is_some();
+            if already_corrected {
+                bail!("correction parent already has a child; correction chains must be linear");
+            }
+        }
+        let id = uuid::Uuid::new_v4().to_string();
+        let payload = serde_json::to_string(outcome)?;
+        self.conn.execute(
+            "INSERT INTO fl_decision_outcomes
+                (id, decision_id, observed_at, outcome_kind, outcome_json, correction_of,
+                 outcome_lane, material_fingerprint, private_notes)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            rusqlite::params![
+                id,
+                outcome.decision_id,
+                inserted_at.to_rfc3339(),
+                icelines_core::FANTASY_DECISION_OUTCOME_SCHEMA,
+                payload,
+                correction_of,
+                outcome.lane.as_str(),
+                fingerprint,
+                private_notes.filter(|note| !note.trim().is_empty()),
+            ],
+        )?;
+        Ok((id, true))
+    }
+
     pub fn list_decision_outcomes(
         &self,
         decision_id: &str,
     ) -> anyhow::Result<Vec<FantasyDecisionOutcomeRow>> {
+        self.list_decision_outcomes_with_privacy(decision_id, false)
+    }
+
+    pub fn list_decision_outcomes_with_privacy(
+        &self,
+        decision_id: &str,
+        include_private: bool,
+    ) -> anyhow::Result<Vec<FantasyDecisionOutcomeRow>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, decision_id, observed_at, outcome_kind, outcome_json, correction_of
+            "SELECT id, decision_id, observed_at, outcome_kind, outcome_json, correction_of,
+                    outcome_lane, material_fingerprint, private_notes
              FROM fl_decision_outcomes WHERE decision_id = ?1
              ORDER BY observed_at ASC, id ASC",
         )?;
@@ -2241,6 +2373,41 @@ impl FantasyDb {
                     outcome_kind: row.get(3)?,
                     outcome_json: row.get(4)?,
                     correction_of: row.get(5)?,
+                    outcome_lane: row.get(6)?,
+                    material_fingerprint: row.get(7)?,
+                    private_notes: if include_private { row.get(8)? } else { None },
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(anyhow::Error::from)?;
+        Ok(rows)
+    }
+
+    pub fn list_decision_outcomes_for_league(
+        &self,
+        league_id: &str,
+        include_private: bool,
+    ) -> anyhow::Result<Vec<FantasyDecisionOutcomeRow>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT o.id, o.decision_id, o.observed_at, o.outcome_kind, o.outcome_json,
+                    o.correction_of, o.outcome_lane, o.material_fingerprint, o.private_notes
+             FROM fl_decision_outcomes o
+             JOIN fl_decisions d ON d.id = o.decision_id
+             WHERE d.league_id = ?1
+             ORDER BY o.observed_at ASC, o.id ASC",
+        )?;
+        let rows = stmt
+            .query_map([league_id], |row| {
+                Ok(FantasyDecisionOutcomeRow {
+                    id: row.get(0)?,
+                    decision_id: row.get(1)?,
+                    observed_at: row.get(2)?,
+                    outcome_kind: row.get(3)?,
+                    outcome_json: row.get(4)?,
+                    correction_of: row.get(5)?,
+                    outcome_lane: row.get(6)?,
+                    material_fingerprint: row.get(7)?,
+                    private_notes: if include_private { row.get(8)? } else { None },
                 })
             })?
             .collect::<Result<Vec<_>, _>>()
@@ -3465,6 +3632,81 @@ mod tests {
         assert_eq!(outcomes.len(), 2);
         assert_eq!(outcomes[1].id, correction);
         assert_eq!(outcomes[1].correction_of.as_deref(), Some(outcome.as_str()));
+    }
+
+    #[test]
+    fn l1_typed_decision_outcomes_are_idempotent_private_and_linear() {
+        use icelines_core::{
+            FantasyDecisionOutcomeCompleteness, FantasyDecisionOutcomeLane,
+            FantasyDecisionOutcomeSource, FANTASY_DECISION_OUTCOME_SCHEMA,
+        };
+
+        let db = FantasyDb::open_in_memory().expect("open in-memory db");
+        let league_id = db
+            .create_league("Typed Journal", "yahoo-standard")
+            .expect("create league");
+        let team_id = db.create_team(&league_id, "My Team", "Owner").unwrap();
+        let evaluated_at = Utc.with_ymd_and_hms(2026, 11, 9, 15, 0, 0).unwrap();
+        let (decision_id, _) = db
+            .record_decision(
+                &league_id,
+                &team_id,
+                "week_plan",
+                "sequence",
+                "fingerprint",
+                evaluated_at,
+                0,
+                None,
+                r#"{"schema":"fantasy_pickup_sequence.v1"}"#,
+            )
+            .unwrap();
+        let outcome = FantasyDecisionOutcome {
+            schema: FANTASY_DECISION_OUTCOME_SCHEMA.to_owned(),
+            decision_id: decision_id.clone(),
+            lane: FantasyDecisionOutcomeLane::Execution,
+            completeness: FantasyDecisionOutcomeCompleteness::Final,
+            source: FantasyDecisionOutcomeSource::Manager,
+            source_observed_at: Some(evaluated_at),
+            executed: Some(true),
+            actual_active_points_delta: None,
+            actual_usable_starts_delta: None,
+            matchup_result: None,
+            user_final_points: None,
+            opponent_final_points: None,
+            reserve_needed: None,
+            reserve_used: None,
+        };
+        let first = db
+            .record_typed_decision_outcome(&outcome, Some("private"), None)
+            .unwrap();
+        let duplicate = db
+            .record_typed_decision_outcome(&outcome, Some("cannot rewrite"), None)
+            .unwrap();
+        assert!(first.1);
+        assert_eq!(duplicate, (first.0.clone(), false));
+        let public = db
+            .list_decision_outcomes_with_privacy(&decision_id, false)
+            .unwrap();
+        assert_eq!(public[0].private_notes, None);
+        let private = db
+            .list_decision_outcomes_with_privacy(&decision_id, true)
+            .unwrap();
+        assert_eq!(private[0].private_notes.as_deref(), Some("private"));
+
+        let mut correction = outcome.clone();
+        correction.executed = Some(false);
+        let corrected = db
+            .record_typed_decision_outcome(&correction, None, Some(&first.0))
+            .unwrap();
+        let mut branch = outcome;
+        branch.source_observed_at = Some(evaluated_at + chrono::Duration::minutes(1));
+        assert!(db
+            .record_typed_decision_outcome(&branch, None, Some(&first.0))
+            .is_err());
+        assert_eq!(
+            db.list_decision_outcomes(&decision_id).unwrap()[1].id,
+            corrected.0
+        );
     }
 
     #[test]

@@ -2295,8 +2295,14 @@ icelines fantasy weekly-pickups --candidates 75 --json
 icelines fantasy week-plan --week 2026-11-09
 icelines fantasy week-plan --week 2026-11-09 --max-moves 3 --beam-width 40 --json
 icelines fantasy decision-record --week 2026-11-09 --chosen 0 --rationale "protect one move"
+icelines fantasy decision-outcome-record --decision ID --lane execution --executed true
+icelines fantasy decision-outcome-record --decision ID --lane active-value --active-points-delta 8.25 --usable-starts-delta 2
+icelines fantasy decision-outcome-record --decision ID --lane matchup --matchup-result win --user-final-points 143.5 --opponent-final-points 138.0
+icelines fantasy decision-outcome-record --decision ID --lane reserve --reserve-needed false --reserve-used false
 icelines fantasy decision-review
-icelines fantasy decision-review --include-private --json
+icelines fantasy decision-review --week 2026-11-09
+icelines fantasy decision-review --season 20262027 --json
+icelines fantasy decision-review --include-private
 icelines fantasy sleepers --positions D --top 20
 icelines fantasy sleepers --positions LW,RW --json
 icelines fantasy acquisition-record --add "Darren Raddysh" --drop "Bench Defenseman"
@@ -2334,10 +2340,27 @@ rationale is private and omitted from `decision-review` unless
 `--include-private` is supplied. Outcome rows are append-only in migration 020;
 historical projections are never rewritten from current data.
 
+`decision-outcome-record` appends one typed observation lane: execution,
+active value, matchup, or acquisition reserve. Corrections use `--corrects ID`
+and append a new row; they never update history. Identical material is
+idempotent. Private `--notes` are stored outside the public outcome payload and
+are omitted unless the local CLI uses `--include-private`.
+
+`decision-review` now emits `fantasy_decision_review.v1` and keeps process,
+result, and projection alignment separate. Process uses only frozen
+decision-time evidence. The ±1 fantasy-point alignment band is a disclosed
+display tolerance, not a confidence interval, and v1 never automatically
+retunes planner weights. `--legacy-json --json` temporarily preserves the old
+raw array for scripts and cannot be combined with week or season filters.
+
 The same private projection is available from the running web dashboard at
 `/fantasy/week-plan` and `/api/v1/fantasy/week-plan`. Add `?week=YYYY-MM-DD`
 with an ISO Monday to create a bookmark. These responses are read-only,
 render without JavaScript, and send `Cache-Control: no-store`.
+Read-only review is available at `/fantasy/decision-review` and
+`/api/v1/fantasy/decision-review`; use sticky `?week=YYYY-MM-DD` or
+`?season=YYYYZZZZ` filters. Private rationale and notes are never returned by
+these Web routes.
 
 ### Sleeper discovery
 

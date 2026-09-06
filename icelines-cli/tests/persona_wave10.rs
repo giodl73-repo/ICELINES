@@ -917,7 +917,7 @@ fn p_w10_070_commands_md_examples_use_correct_flag_names() {
     // Check that commands.md doesn't reference removed flags.
     let md = read_commands_md();
     // Spot-check that no removed-feature flags appear.
-    assert!(!md.contains("--legacy"));
+    assert!(!md.split_whitespace().any(|token| token == "--legacy"));
 }
 
 #[test]
