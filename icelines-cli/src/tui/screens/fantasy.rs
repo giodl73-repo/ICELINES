@@ -8,10 +8,11 @@ use icelines_core::{
         FantasySimulationScenarioRosterInput, FantasySimulationView, FantasyTodayState,
         FantasyTodayView,
     },
-    FantasyDecisionReviewView, FantasyTodayV2View, Scheme,
+    FantasyDecisionReviewView, FantasyReadinessView, FantasyTodayV2View, Scheme,
 };
 use icelines_fetch::{
     fantasy_decision_review_service::assemble_fantasy_decision_review,
+    fantasy_readiness_service::{assemble_fantasy_readiness, FantasyReadinessAssemblyRequest},
     fantasy_today_service::{assemble_fantasy_today, FantasyTodayAssemblyRequest},
     schedule_remaining::remaining_games_by_team_from_cache,
 };
@@ -73,6 +74,7 @@ pub fn render_today(f: &mut Frame, app: &App, area: Rect) {
             Paragraph::new(today_v2_lines(
                 view,
                 app.fantasy_today.decision_review.as_ref(),
+                app.fantasy_today.readiness.as_ref(),
                 inner.width,
             )),
             inner,
@@ -100,6 +102,22 @@ pub struct FantasyTodayScreenState {
     pub error: Option<String>,
     pub loaded_at: Option<chrono::DateTime<chrono::Utc>>,
     pub decision_review: Option<FantasyDecisionReviewView>,
+    pub readiness: Option<FantasyReadinessView>,
+}
+
+pub fn load_readiness_contract(stats_season: &str) -> Result<FantasyReadinessView, String> {
+    let today = FantasyTodayAssemblyRequest::from_default_paths(
+        None,
+        None,
+        stats_season.to_owned(),
+        icelines_core::CURRENT_SEASON,
+        chrono::Utc::now(),
+    )
+    .map_err(|error| error.to_string())?;
+    assemble_fantasy_readiness(FantasyReadinessAssemblyRequest {
+        today,
+        workflow: None,
+    })
 }
 
 pub fn load_today_contract(stats_season: &str) -> Result<FantasyTodayV2View, String> {
@@ -126,6 +144,7 @@ pub fn load_latest_decision_review() -> Result<FantasyDecisionReviewView, String
 fn today_v2_lines(
     view: &FantasyTodayV2View,
     review: Option<&FantasyDecisionReviewView>,
+    readiness: Option<&FantasyReadinessView>,
     width: u16,
 ) -> Vec<Line<'static>> {
     let summary = view.surface_decision();
@@ -176,8 +195,41 @@ fn today_v2_lines(
             tui_meta_style(),
         ));
     }
+    append_readiness_lines(&mut lines, readiness);
     append_review_lines(&mut lines, review, width);
     lines
+}
+
+fn append_readiness_lines(
+    lines: &mut Vec<Line<'static>>,
+    readiness: Option<&FantasyReadinessView>,
+) {
+    let Some(readiness) = readiness else {
+        return;
+    };
+    lines.push(Line::raw(""));
+    lines.push(Line::styled("WORKFLOW READINESS", tui_header_style()));
+    lines.push(Line::raw(format!(
+        "{} ready | {} provisional | {} blocked",
+        readiness.ready_workflows, readiness.provisional_workflows, readiness.blocked_workflows
+    )));
+    if let Some(row) = readiness
+        .workflows
+        .iter()
+        .find(|row| row.state != FantasyTodayState::Ready)
+    {
+        lines.push(Line::styled(
+            format!("{}: {:?}", row.workflow.as_str(), row.state),
+            if row.state == FantasyTodayState::Blocked {
+                tui_error_style()
+            } else {
+                tui_warning_style()
+            },
+        ));
+        if let Some(command) = row.recovery_commands.first() {
+            lines.push(Line::raw(format!("Recover: {command}")));
+        }
+    }
 }
 
 fn append_review_lines(
@@ -808,6 +860,56 @@ mod tests {
         let chrome = super::today_chrome();
         assert!(chrome.title.contains("Fantasy Today"));
         assert!(chrome.keybinds.iter().any(|key| key.key == ":"));
+    }
+
+    #[test]
+    fn l0_fantasy_today_tui_names_readiness_recovery() {
+        let view: FantasyReadinessView = serde_json::from_value(serde_json::json!({
+            "schema": "fantasy_readiness.v1",
+            "league_id": "league",
+            "league_name": "League",
+            "fantasy_team_id": "team",
+            "fantasy_team_name": "Team",
+            "stats_season": "20262027",
+            "evaluated_at": "2026-09-05T18:00:00Z",
+            "state": "blocked",
+            "ready_workflows": 0,
+            "provisional_workflows": 0,
+            "blocked_workflows": 1,
+            "workflows": [{
+                "workflow": "matchup",
+                "state": "blocked",
+                "ready_checks": 0,
+                "total_checks": 1,
+                "checks": [{
+                    "check_id": "schedule",
+                    "requirement": "required",
+                    "state": "blocked",
+                    "reason_code": "schedule_missing",
+                    "message": "schedule missing",
+                    "recovery_command": "icelines fantasy schedule-edge --refresh",
+                    "source_family": null,
+                    "observed_at": null,
+                    "fetched_at": null
+                }],
+                "recovery_commands": ["icelines fantasy schedule-edge --refresh"]
+            }],
+            "warnings": [],
+            "material_fingerprint": "fixture"
+        }))
+        .unwrap();
+        let mut lines = Vec::new();
+        append_readiness_lines(&mut lines, Some(&view));
+        let output = lines
+            .iter()
+            .flat_map(|line| line.spans.iter())
+            .map(|span| span.content.as_ref())
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(output.contains("WORKFLOW READINESS"));
+        assert!(output.contains("matchup: Blocked"));
+        assert!(output.contains("schedule-edge --refresh"));
     }
 
     #[test]

@@ -65,6 +65,11 @@ transaction advice, and preserves a stable PUCK handoff without consuming
 another top-level active-plan slot: see
 [`2026-09-05-league-aware-daily-decisions.md`](2026-09-05-league-aware-daily-decisions.md).
 
+Fantasy Data-Readiness Dashboard is an implemented child workstream of Fantasy
+War Room. Its `fantasy_readiness.v1` contract, shared CLI/TUI/Web projection,
+and recovery actions are documented in
+[`2026-09-05-fantasy-data-readiness-dashboard.md`](2026-09-05-fantasy-data-readiness-dashboard.md).
+
 ## Roadmap Ledger
 
 Jennings restored the measured baseline, Campbell established the shared

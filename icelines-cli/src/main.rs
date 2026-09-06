@@ -1135,6 +1135,27 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             }
         },
         Commands::Fantasy(sub) => match sub {
+            FantasySubcommand::Readiness {
+                workflow,
+                league,
+                team,
+                stats_season,
+                date,
+                at,
+                max_age_minutes,
+                current_goalie_appearances,
+                json,
+            } => commands::fantasy::run_readiness(
+                workflow,
+                league,
+                team,
+                stats_season,
+                date,
+                at,
+                max_age_minutes,
+                current_goalie_appearances,
+                json,
+            )?,
             FantasySubcommand::LeagueCreate { name, scheme } => {
                 commands::fantasy::run_league_create(name, scheme).await?
             }

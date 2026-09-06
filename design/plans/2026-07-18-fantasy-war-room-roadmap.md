@@ -403,6 +403,9 @@ icelines fantasy decision-review --season 20262027 --json
 
 ## Wave 23 — Data-Readiness Dashboard
 
+**Status:** Implemented 2026-09-05 via the shared `fantasy_readiness.v1`
+contract and CLI, TUI, and Web projections.
+
 ### User workflow
 
 ```powershell

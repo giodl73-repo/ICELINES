@@ -166,6 +166,7 @@
     { "module": "fantasy_daily", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
     { "module": "fantasy_db", "responsibilities": ["cache_snapshot_persistence", "feature_domain_composition"], "disposition": "split_source_domain" },
     { "module": "fantasy_decision_review_service", "responsibilities": ["cache_snapshot_persistence", "feature_domain_composition"], "disposition": "stay_fetch" },
+    { "module": "fantasy_readiness_service", "responsibilities": ["cache_snapshot_persistence", "feature_domain_composition"], "disposition": "stay_fetch" },
     { "module": "fantasy_import", "responsibilities": ["provider_dto_parser", "source_normalization_reconciliation", "feature_domain_composition"], "disposition": "split_source_domain" },
     { "module": "fantasy_matchup", "responsibilities": ["feature_domain_composition"], "disposition": "domain_extraction_deferred" },
     { "module": "fantasy_today_service", "responsibilities": ["cache_snapshot_persistence", "feature_domain_composition"], "disposition": "stay_fetch" },

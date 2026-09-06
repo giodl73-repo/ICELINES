@@ -36,6 +36,7 @@ pub mod fantasy_pickup_sequence;
 pub mod fantasy_platform_snapshot;
 pub mod fantasy_playoff_portfolio;
 pub mod fantasy_provider;
+pub mod fantasy_readiness;
 pub mod fantasy_schedule;
 pub mod fantasy_season_sim;
 pub mod fantasy_sim;
