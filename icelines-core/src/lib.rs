@@ -165,6 +165,11 @@ pub use view_model::fantasy_readiness::{
     FantasyReadinessWorkflow, FantasyReadinessWorkflowInput, FantasyReadinessWorkflowRow,
     FANTASY_READINESS_SCHEMA,
 };
+pub use view_model::fantasy_replacement_lookahead::{
+    build_fantasy_replacement_lookahead, FantasyReplacementLookaheadInput,
+    FantasyReplacementLookaheadView, FantasyReplacementOptionRow, FantasyReplacementPlayerInput,
+    FantasyReplacementWeekRow, FANTASY_REPLACEMENT_LOOKAHEAD_SCHEMA,
+};
 pub use view_model::fantasy_today::{
     build_fantasy_today, build_fantasy_today_v2, FantasyTodayAcquisitionSummary,
     FantasyTodayAction, FantasyTodayContext, FantasyTodayEvidenceRow, FantasyTodayFirmness,

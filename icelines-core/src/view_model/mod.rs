@@ -37,6 +37,7 @@ pub mod fantasy_platform_snapshot;
 pub mod fantasy_playoff_portfolio;
 pub mod fantasy_provider;
 pub mod fantasy_readiness;
+pub mod fantasy_replacement_lookahead;
 pub mod fantasy_schedule;
 pub mod fantasy_season_sim;
 pub mod fantasy_sim;
@@ -297,6 +298,11 @@ pub use fantasy_provider::{
     FantasyProviderCapabilityState, FantasyProviderConnectionState, FantasyProviderKind,
     FantasyProviderPlayerMappingCounts, FantasyProviderStatusError, FantasyProviderStatusView,
     FANTASY_PROVIDER_STATUS_SCHEMA,
+};
+pub use fantasy_replacement_lookahead::{
+    build_fantasy_replacement_lookahead, FantasyReplacementLookaheadInput,
+    FantasyReplacementLookaheadView, FantasyReplacementOptionRow, FantasyReplacementPlayerInput,
+    FantasyReplacementWeekRow, FANTASY_REPLACEMENT_LOOKAHEAD_SCHEMA,
 };
 pub use fantasy_schedule::{
     build_fantasy_schedule_view, FantasyDailySlateRow, FantasyRosterScheduleView,

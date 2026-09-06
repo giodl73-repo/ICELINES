@@ -1335,6 +1335,36 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 )
                 .await?
             }
+            FantasySubcommand::ReplacementLookahead {
+                week,
+                weeks,
+                drop,
+                injury,
+                team,
+                league,
+                season,
+                stats_season,
+                candidates,
+                top,
+                off_night_max_games,
+                json,
+            } => {
+                commands::fantasy::run_replacement_lookahead(
+                    week,
+                    weeks,
+                    drop,
+                    injury,
+                    team,
+                    league,
+                    season,
+                    stats_season,
+                    candidates,
+                    top,
+                    off_night_max_games,
+                    json,
+                )
+                .await?
+            }
             FantasySubcommand::PlayoffPortfolio {
                 rounds,
                 start,
