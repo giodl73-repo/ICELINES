@@ -2688,6 +2688,98 @@ async fn l1_depth_route_returns_200_html() {
 }
 
 #[tokio::test]
+async fn l1_player_by_name_redirects_to_canonical_card() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/player/by-name/Nick%20Suzuki?team=MTL")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::TEMPORARY_REDIRECT);
+    let location = response
+        .headers()
+        .get(axum::http::header::LOCATION)
+        .and_then(|value| value.to_str().ok())
+        .expect("redirect has a valid Location header");
+    assert!(location.starts_with("/player/"), "location: {location}");
+    assert!(!location.contains("by-name"), "location: {location}");
+}
+
+#[tokio::test]
+async fn l1_player_by_name_normalizes_missing_diacritics() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/player/by-name/Juraj%20Slafkovsky?team=MTL")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+
+    assert_eq!(response.status(), StatusCode::TEMPORARY_REDIRECT);
+}
+
+#[tokio::test]
+async fn l1_player_by_name_requires_disambiguation_for_duplicate_names() {
+    let app = router(WebState::new());
+
+    let ambiguous = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/player/by-name/Sebastian%20Aho")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(ambiguous.status(), StatusCode::MULTIPLE_CHOICES);
+    let body = response_text(ambiguous, 64 * 1024).await;
+    assert!(body.contains("Choose player"), "body: {body}");
+
+    let resolved = app
+        .oneshot(
+            Request::builder()
+                .uri("/player/by-name/Sebastian%20Aho?team=CAR")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    assert_eq!(resolved.status(), StatusCode::TEMPORARY_REDIRECT);
+}
+
+#[tokio::test]
+async fn l1_player_by_name_unknown_has_browser_recovery() {
+    let app = router(WebState::new());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/player/by-name/Definitely%20Not%20An%20NHL%20Player")
+                .body(Body::empty())
+                .expect("request builder ok"),
+        )
+        .await
+        .expect("oneshot dispatch ok");
+    let status = response.status();
+    let body = response_text(response, 64 * 1024).await;
+
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    assert!(body.contains("Player not found"), "body: {body}");
+    assert!(body.contains("Browse player leaders"), "body: {body}");
+}
+
+#[tokio::test]
 async fn l1_player_json_envelope_shape() {
     let state = WebState::new();
     *state.config.write().await = WebConfig::new("20252026", "regular");
