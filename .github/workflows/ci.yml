@@ -323,13 +323,13 @@ jobs:
             platform: windows
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
       - name: Check out exact Ferris revision
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           repository: ${{ env.FERRIS_REPOSITORY }}
           ref: ${{ env.FERRIS_REVISION }}
@@ -344,7 +344,7 @@ jobs:
         run: cargo build --locked --release --manifest-path _ferris-source/Cargo.toml -p ferris-cli --bin ferris
 
       - name: Download owner package
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: package-${{ matrix.artifact }}
           path: artifact-input
@@ -376,7 +376,7 @@ jobs:
 
       - name: Upload Ferris artifact evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ferris-artifact-evidence-${{ matrix.artifact }}
           path: artifact-evidence/*.json
