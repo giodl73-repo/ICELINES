@@ -197,6 +197,17 @@ struct SequenceEvaluation {
     final_roster: BTreeSet<String>,
 }
 
+#[derive(Debug, Clone)]
+struct DailyLineupEvaluation {
+    active_value: f64,
+    active_keys: BTreeSet<String>,
+    scheduled_players: usize,
+    open_active_slots: usize,
+    has_overflow: bool,
+}
+
+type DailyLineupCache = BTreeMap<(NaiveDate, Vec<String>), DailyLineupEvaluation>;
+
 pub fn build_fantasy_pickup_sequence(
     mut input: FantasyPickupSequenceInput,
 ) -> Result<FantasyPickupSequenceView, FantasyPickupSequenceError> {
@@ -213,7 +224,8 @@ pub fn build_fantasy_pickup_sequence(
         .filter(|player| player.initially_rostered)
         .map(|player| player.player_key.clone())
         .collect::<BTreeSet<_>>();
-    let baseline = evaluate_sequence(&input, &players, &initial_roster, &[])?;
+    let mut lineup_cache = DailyLineupCache::new();
+    let baseline = evaluate_sequence(&input, &players, &initial_roster, &[], &mut lineup_cache)?;
     let mut complete = vec![SearchState {
         transition_indexes: Vec::new(),
         evaluation: baseline.clone(),
@@ -235,12 +247,25 @@ pub fn build_fantasy_pickup_sequence(
                 .map_or(0, |index| index.saturating_add(1));
             for index in start..input.transitions.len() {
                 let transition = &input.transitions[index];
-                if !transition_is_legal(&input, &players, &initial_roster, state, transition)? {
+                if !transition_is_legal(
+                    &input,
+                    &players,
+                    &initial_roster,
+                    state,
+                    transition,
+                    &mut lineup_cache,
+                )? {
                     continue;
                 }
                 let mut indexes = state.transition_indexes.clone();
                 indexes.push(index);
-                let evaluation = evaluate_sequence(&input, &players, &initial_roster, &indexes)?;
+                let evaluation = evaluate_sequence(
+                    &input,
+                    &players,
+                    &initial_roster,
+                    &indexes,
+                    &mut lineup_cache,
+                )?;
                 if evaluation
                     .coverage
                     .iter()
@@ -269,10 +294,17 @@ pub fn build_fantasy_pickup_sequence(
 
     complete.sort_by(|a, b| compare_states(&input, &baseline, a, b));
     complete.dedup_by(|a, b| a.transition_indexes == b.transition_indexes);
-    let mut rows = complete
-        .iter()
-        .map(|state| build_sequence_row(&input, &players, &initial_roster, &baseline, state))
-        .collect::<Result<Vec<_>, _>>()?;
+    let mut rows = Vec::with_capacity(complete.len());
+    for state in &complete {
+        rows.push(build_sequence_row(
+            &input,
+            &players,
+            &initial_roster,
+            &baseline,
+            state,
+            &mut lineup_cache,
+        )?);
+    }
     rows.sort_by(compare_sequence_rows);
     let primary_sequence = rows.remove(0);
     let alternatives = rows
@@ -437,6 +469,7 @@ fn transition_is_legal(
     initial_roster: &BTreeSet<String>,
     state: &SearchState,
     transition: &FantasyPickupTransitionInput,
+    lineup_cache: &mut DailyLineupCache,
 ) -> Result<bool, FantasyPickupSequenceError> {
     let moves_after = state.transition_indexes.len() as u8 + 1;
     let allowed = if input
@@ -484,7 +517,13 @@ fn transition_is_legal(
     }
     let mut resulting_roster = roster;
     apply_transition(&mut resulting_roster, transition);
-    roster_fits_at(input, players, &resulting_roster, transition.local_date)
+    roster_fits_at(
+        input,
+        players,
+        &resulting_roster,
+        transition.local_date,
+        lineup_cache,
+    )
 }
 
 fn roster_at_transition(
@@ -509,11 +548,9 @@ fn roster_fits_at(
     players: &BTreeMap<String, &FantasyPickupSequencePlayerInput>,
     roster: &BTreeSet<String>,
     date: NaiveDate,
+    lineup_cache: &mut DailyLineupCache,
 ) -> Result<bool, FantasyPickupSequenceError> {
-    let lineup =
-        build_fantasy_daily_lineup(input.rules.clone(), lineup_inputs(players, roster, date))
-            .map_err(FantasyPickupSequenceError::DailyLineup)?;
-    Ok(lineup.overflow.is_empty())
+    Ok(!evaluate_daily_lineup(input, players, roster, date, lineup_cache)?.has_overflow)
 }
 
 fn evaluate_sequence(
@@ -521,6 +558,7 @@ fn evaluate_sequence(
     players: &BTreeMap<String, &FantasyPickupSequencePlayerInput>,
     initial_roster: &BTreeSet<String>,
     indexes: &[usize],
+    lineup_cache: &mut DailyLineupCache,
 ) -> Result<SequenceEvaluation, FantasyPickupSequenceError> {
     let mut result = SequenceEvaluation::default();
     let mut roster = initial_roster.clone();
@@ -531,47 +569,68 @@ fn evaluate_sequence(
             apply_transition(&mut roster, &input.transitions[indexes[cursor]]);
             cursor += 1;
         }
-        let lineup =
-            build_fantasy_daily_lineup(input.rules.clone(), lineup_inputs(players, &roster, date))
-                .map_err(FantasyPickupSequenceError::DailyLineup)?;
-        if !lineup.overflow.is_empty() {
+        let lineup = evaluate_daily_lineup(input, players, &roster, date, lineup_cache)?;
+        if lineup.has_overflow {
             return Err(FantasyPickupSequenceError::DailyLineup(format!(
                 "hypothetical roster exceeds capacity on {date}"
             )));
         }
-        let active_keys = lineup
-            .active
-            .iter()
-            .filter(|row| row.has_game && row.status == FantasyPlayerAvailabilityStatus::Healthy)
+        result.active_value += lineup.active_value;
+        result.usable_starts += lineup.active_keys.len();
+        result.coverage.push(FantasyPickupCoverageRow {
+            date,
+            scheduled_players: lineup.scheduled_players,
+            usable_starts: lineup.active_keys.len(),
+            benched_collisions: lineup
+                .scheduled_players
+                .saturating_sub(lineup.active_keys.len()),
+            open_active_slots: lineup.open_active_slots,
+            newly_started_player_keys: lineup.active_keys.into_iter().collect(),
+            displaced_player_keys: Vec::new(),
+        });
+    }
+    result.final_roster = roster;
+    Ok(result)
+}
+
+fn evaluate_daily_lineup(
+    input: &FantasyPickupSequenceInput,
+    players: &BTreeMap<String, &FantasyPickupSequencePlayerInput>,
+    roster: &BTreeSet<String>,
+    date: NaiveDate,
+    lineup_cache: &mut DailyLineupCache,
+) -> Result<DailyLineupEvaluation, FantasyPickupSequenceError> {
+    let cache_key = (date, roster.iter().cloned().collect::<Vec<_>>());
+    if let Some(cached) = lineup_cache.get(&cache_key) {
+        return Ok(cached.clone());
+    }
+    let lineup =
+        build_fantasy_daily_lineup(input.rules.clone(), lineup_inputs(players, roster, date))
+            .map_err(FantasyPickupSequenceError::DailyLineup)?;
+    let active = lineup
+        .active
+        .iter()
+        .filter(|row| row.has_game && row.status == FantasyPlayerAvailabilityStatus::Healthy)
+        .collect::<Vec<_>>();
+    let evaluation = DailyLineupEvaluation {
+        active_value: active.iter().map(|row| row.projected_value).sum(),
+        active_keys: active
+            .into_iter()
             .map(|row| row.player_key.clone())
-            .collect::<BTreeSet<_>>();
-        let scheduled_players = roster
+            .collect(),
+        scheduled_players: roster
             .iter()
             .filter(|key| {
                 players
                     .get(*key)
                     .is_some_and(|player| player.game_dates.contains(&date))
             })
-            .count();
-        result.active_value += lineup
-            .active
-            .iter()
-            .filter(|row| row.has_game && row.status == FantasyPlayerAvailabilityStatus::Healthy)
-            .map(|row| row.projected_value)
-            .sum::<f64>();
-        result.usable_starts += active_keys.len();
-        result.coverage.push(FantasyPickupCoverageRow {
-            date,
-            scheduled_players,
-            usable_starts: active_keys.len(),
-            benched_collisions: scheduled_players.saturating_sub(active_keys.len()),
-            open_active_slots: lineup.missing_active_slots.len(),
-            newly_started_player_keys: active_keys.into_iter().collect(),
-            displaced_player_keys: Vec::new(),
-        });
-    }
-    result.final_roster = roster;
-    Ok(result)
+            .count(),
+        open_active_slots: lineup.missing_active_slots.len(),
+        has_overflow: !lineup.overflow.is_empty(),
+    };
+    lineup_cache.insert(cache_key, evaluation.clone());
+    Ok(evaluation)
 }
 
 fn lineup_inputs(
@@ -609,12 +668,13 @@ fn build_sequence_row(
     initial_roster: &BTreeSet<String>,
     baseline: &SequenceEvaluation,
     state: &SearchState,
+    lineup_cache: &mut DailyLineupCache,
 ) -> Result<FantasyPickupSequenceRow, FantasyPickupSequenceError> {
     let mut previous = baseline.clone();
     let mut moves = Vec::new();
     for (position, index) in state.transition_indexes.iter().enumerate() {
         let prefix = &state.transition_indexes[..=position];
-        let current = evaluate_sequence(input, players, initial_roster, prefix)?;
+        let current = evaluate_sequence(input, players, initial_roster, prefix, lineup_cache)?;
         let transition = &input.transitions[*index];
         let add = players[&transition.add_player_key];
         let drop = transition

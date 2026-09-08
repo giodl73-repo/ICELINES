@@ -2453,6 +2453,11 @@ impl FantasyAssistantRules {
         if self.active_slot_count() == 0 {
             return Err("fantasy assistant rules require at least one active slot".to_owned());
         }
+        if self.active_slot_count() > MAX_ACTIVE_ASSIGNMENTS {
+            return Err(format!(
+                "fantasy assistant rules support at most {MAX_ACTIVE_ASSIGNMENTS} active slots"
+            ));
+        }
         if self.weekly_acquisition_limit == 0 {
             return Err("weekly acquisition limit must be at least one".to_owned());
         }
@@ -3318,10 +3323,39 @@ pub struct FantasyDailyLineupView {
     pub warnings: Vec<String>,
 }
 
-#[derive(Debug, Clone)]
+const MAX_ACTIVE_ASSIGNMENTS: usize = 32;
+
+#[derive(Debug, Clone, Copy)]
 struct AssignmentState {
     score: f64,
-    assignments: Vec<(usize, usize)>,
+    assignment_count: usize,
+    assignments: [u32; MAX_ACTIVE_ASSIGNMENTS],
+}
+
+impl AssignmentState {
+    fn empty() -> Self {
+        Self {
+            score: 0.0,
+            assignment_count: 0,
+            assignments: [0; MAX_ACTIVE_ASSIGNMENTS],
+        }
+    }
+
+    fn push(&mut self, player_index: usize, slot_index: usize) {
+        self.assignments[self.assignment_count] = ((player_index as u32) << 16) | slot_index as u32;
+        self.assignment_count += 1;
+    }
+
+    fn assignment_codes(&self) -> &[u32] {
+        &self.assignments[..self.assignment_count]
+    }
+
+    fn into_assignments(self) -> Vec<(usize, usize)> {
+        self.assignment_codes()
+            .iter()
+            .map(|code| ((code >> 16) as usize, (code & 0xffff) as usize))
+            .collect()
+    }
 }
 
 pub fn build_fantasy_daily_lineup(
@@ -3554,51 +3588,56 @@ fn maximum_weight_assignment(
     if slots.is_empty() || players.is_empty() {
         return Vec::new();
     }
-    let mut states = BTreeMap::<u32, AssignmentState>::new();
-    states.insert(
-        0,
-        AssignmentState {
-            score: 0.0,
-            assignments: Vec::new(),
-        },
-    );
+    debug_assert!(slots.len() < usize::BITS as usize);
+    debug_assert!(slots.len() <= MAX_ACTIVE_ASSIGNMENTS);
+    debug_assert!(players.len() <= u16::MAX as usize);
+    let state_count = 1usize << slots.len();
+    let mut states = vec![None::<AssignmentState>; state_count];
+    states[0] = Some(AssignmentState::empty());
     for (player_index, player) in players.iter().enumerate() {
-        let snapshot = states.clone();
-        for (mask, state) in snapshot {
+        // Adding a slot always increases the mask. Walking masks backwards means
+        // a state created for this player cannot be visited again until the next
+        // player, avoiding a full clone of the assignment table per player.
+        for mask in (0..state_count).rev() {
+            let Some(state) = states[mask] else {
+                continue;
+            };
             for (slot_index, slot) in slots.iter().enumerate() {
-                let bit = 1u32 << slot_index;
+                let bit = 1usize << slot_index;
                 if mask & bit != 0 || !slot.kind.accepts(&player.platform_positions) {
                     continue;
                 }
-                let mut next = state.clone();
+                let mut next = state;
                 next.score += if player.has_game && player.status.expected_available() {
                     player.projected_value
                 } else {
                     0.0
                 };
-                next.assignments.push((player_index, slot_index));
+                next.push(player_index, slot_index);
                 let next_mask = mask | bit;
-                let should_replace = states.get(&next_mask).is_none_or(|current| {
+                let should_replace = states[next_mask].as_ref().is_none_or(|current| {
                     next.score > current.score
                         || (next.score == current.score
-                            && next.assignments.as_slice() < current.assignments.as_slice())
+                            && next.assignment_codes() < current.assignment_codes())
                 });
                 if should_replace {
-                    states.insert(next_mask, next);
+                    states[next_mask] = Some(next);
                 }
             }
         }
     }
     states
         .into_iter()
+        .enumerate()
+        .filter_map(|(mask, state)| state.map(|state| (mask, state)))
         .max_by(|(a_mask, a), (b_mask, b)| {
             a_mask
                 .count_ones()
                 .cmp(&b_mask.count_ones())
                 .then_with(|| a.score.total_cmp(&b.score))
-                .then_with(|| b.assignments.cmp(&a.assignments))
+                .then_with(|| b.assignment_codes().cmp(a.assignment_codes()))
         })
-        .map_or_else(Vec::new, |(_, state)| state.assignments)
+        .map_or_else(Vec::new, |(_, state)| state.into_assignments())
 }
 
 #[cfg(test)]
@@ -3686,6 +3725,20 @@ mod tests {
         assert_eq!(
             rules.validate().unwrap_err(),
             "fantasy playoff rounds must be between one and four"
+        );
+    }
+
+    #[test]
+    fn rules_reject_lineups_larger_than_assignment_capacity() {
+        let mut rules = FantasyAssistantRules::configured_2026();
+        rules.active_slots = BTreeMap::from([(
+            FantasyActiveSlotKind::Center,
+            (MAX_ACTIVE_ASSIGNMENTS + 1) as u8,
+        )]);
+
+        assert_eq!(
+            rules.validate().unwrap_err(),
+            "fantasy assistant rules support at most 32 active slots"
         );
     }
 

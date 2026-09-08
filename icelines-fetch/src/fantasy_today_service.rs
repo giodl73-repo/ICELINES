@@ -10,15 +10,15 @@ use icelines_core::{
     apply_fantasy_pickup_reserve, build_fantasy_bench_coverage, build_fantasy_daily_lineup,
     build_fantasy_goalie_plan, build_fantasy_matchup_strategy, build_fantasy_morning_briefing,
     build_fantasy_today, build_fantasy_today_v2, build_fantasy_week_budget,
-    build_fantasy_weekly_pickups_with_reserve_override, fantasy_acquisition_availability,
-    goalie_scheme_stats_from_view, model::Season, name::normalize_name,
-    resolve_fantasy_player_status, scheme::compute_goalie_fantasy_score, score_fantasy_roster,
-    season_stats::SeasonType, FantasyAcquisitionInput, FantasyActiveSlotKind,
-    FantasyAssistantRules, FantasyBenchCoverageInput, FantasyBenchCoveragePlayerInput,
-    FantasyCompetitionMode, FantasyDailyTransactionCandidate, FantasyGoalieGameInput,
-    FantasyGoaliePlanInput, FantasyGoaliePlanPlayerInput, FantasyInjuryPlanView,
-    FantasyLineupPlayerInput, FantasyMatchupPointsSnapshotInput, FantasyMatchupStrategy,
-    FantasyMatchupStrategyInput, FantasyMatchupStrategyPlayerInput,
+    build_fantasy_weekly_pickups_with_reserve_override, compute_fantasy_score,
+    fantasy_acquisition_availability, goalie_scheme_stats_from_view, model::Season,
+    name::normalize_name, resolve_fantasy_player_status, scheme::compute_goalie_fantasy_score,
+    season_stats::SeasonType, skater_scheme_stats_from_view, FantasyAcquisitionInput,
+    FantasyActiveSlotKind, FantasyAssistantRules, FantasyBenchCoverageInput,
+    FantasyBenchCoveragePlayerInput, FantasyCompetitionMode, FantasyDailyTransactionCandidate,
+    FantasyGoalieGameInput, FantasyGoaliePlanInput, FantasyGoaliePlanPlayerInput,
+    FantasyInjuryPlanView, FantasyLineupPlayerInput, FantasyMatchupPointsSnapshotInput,
+    FantasyMatchupStrategy, FantasyMatchupStrategyInput, FantasyMatchupStrategyPlayerInput,
     FantasyMatchupStrategyTeamInput, FantasyPickupSequenceContext, FantasyPickupSequenceInput,
     FantasyPickupSequencePlayerInput, FantasyPickupSequenceView, FantasyPickupTransitionInput,
     FantasyPlatformSnapshot, FantasyPlayerAvailabilityStatus, FantasyTodayContext,
@@ -484,20 +484,26 @@ fn assemble_fantasy_today_inner(
         .chain(&goalies)
         .map(|view| (view.identity.name_normalized.clone(), view))
         .collect::<HashMap<_, _>>();
-    let all_scores = score_fantasy_roster(
-        &views.keys().cloned().collect::<Vec<_>>(),
-        &skaters,
-        &goalies,
-        &scheme,
-    )
-    .into_iter()
-    .map(|row| {
-        (
-            row.player.identity.name_normalized.clone(),
-            f64::from(row.score),
-        )
-    })
-    .collect::<HashMap<_, _>>();
+    let all_scores = skaters
+        .iter()
+        .map(|view| {
+            let score = compute_fantasy_score(
+                &skater_scheme_stats_from_view(view),
+                &scheme.skater,
+                view.gp(),
+            )
+            .map(|score| f64::from(score.total))
+            .unwrap_or_default();
+            (view.identity.name_normalized.clone(), score)
+        })
+        .chain(goalies.iter().map(|view| {
+            let score = goalie_scheme_stats_from_view(view)
+                .and_then(|stats| compute_goalie_fantasy_score(&stats, &scheme.goalie, view.gp()))
+                .map(|score| f64::from(score.total))
+                .unwrap_or_default();
+            (view.identity.name_normalized.clone(), score)
+        }))
+        .collect::<HashMap<_, _>>();
 
     let observations = db.list_latest_status_observations(&league.id)?;
     let roster = db.list_roster(&team.id)?;
@@ -1091,19 +1097,10 @@ fn build_week_plan(
             }
             let drops = if open_roster_slot {
                 std::iter::once(None)
-                    .chain(
-                        included_keys
-                            .iter()
-                            .filter(|key| *key != &candidate.key)
-                            .map(Some),
-                    )
+                    .chain(modeled_roster.iter().map(Some))
                     .collect::<Vec<_>>()
             } else {
-                included_keys
-                    .iter()
-                    .filter(|key| *key != &candidate.key)
-                    .map(Some)
-                    .collect::<Vec<_>>()
+                modeled_roster.iter().map(Some).collect::<Vec<_>>()
             };
             for drop in drops {
                 if drop.is_some_and(|key| {
