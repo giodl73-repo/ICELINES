@@ -1151,7 +1151,7 @@ dependencies = [
 [[package]]
 name = "fletch-core"
 version = "0.1.0"
-source = "git+https://github.com/giodl73-repo/FLETCH.git?branch=master#7c7aacd4fbc8753299e2fc3181368d2cc6d90337"
+source = "git+https://github.com/giodl73-repo/FLETCH.git?branch=master#d7bdef7b327a9361a955a10e85c2c0df35cd3de7"
 dependencies = [
  "reqwest",
  "serde",
@@ -1644,7 +1644,7 @@ dependencies = [
  "libc",
  "percent-encoding",
  "pin-project-lite",
- "socket2 0.6.3",
+ "socket2 0.5.10",
  "system-configuration",
  "tokio",
  "tower-service",
@@ -2881,7 +2881,7 @@ dependencies = [
  "quinn-udp",
  "rustc-hash",
  "rustls",
- "socket2 0.6.3",
+ "socket2 0.5.10",
  "thiserror 2.0.20",
  "tokio",
  "tracing",
@@ -2918,7 +2918,7 @@ dependencies = [
  "cfg_aliases",
  "libc",
  "once_cell",
- "socket2 0.6.3",
+ "socket2 0.5.10",
  "tracing",
  "windows-sys 0.60.2",
 ]
