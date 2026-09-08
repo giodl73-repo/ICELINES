@@ -400,3 +400,28 @@ collision is rare enough to handle at render time rather than at the data model 
 
 **Test required**: `test_name_truncation_collision()` — two players whose names share the first
 20 characters; assert display names are distinct in the rendered output.
+
+---
+
+## Fantasy Workflow Pitfalls
+
+### FP-01 — Re-resolving Known Players Turns Daily Planning Quadratic
+
+**Description**: The fantasy-today assembler already holds resolved `PlayerView` values, but its
+player-rate bootstrap passed every normalized name back through fuzzy roster lookup. With roughly
+1,500 players, that repeated normalization and full-pool scanning before the week-plan search and
+made the saved-league command take more than 20 minutes in a debug build.
+
+**Status**: CLOSED 2026-09-07
+
+**Structural solution required**: Score resolved skater and goalie views directly. Keep fuzzy name
+resolution only at boundaries that actually receive unresolved user or provider text. Memoize exact
+daily-lineup evaluations during pickup-sequence search, use compact assignment states, and generate
+drop transitions only from the modeled roster.
+
+**Test required**: Fantasy-today service tests must exercise the saved-state assembly path, lineup
+assignment tests must preserve multi-position and deterministic tie behavior, and the real saved
+Week 1 command must complete and produce the same typed `fantasy_today.v2` contract.
+
+**Verification**: On the 2026-09-07 saved league state, the debug CLI completed in 44.91 seconds
+after the fix; before the fix it remained CPU-bound beyond 20 minutes and had to be stopped.
