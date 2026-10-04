@@ -440,3 +440,4 @@ Successful remote PR artifact verified, full fetch slice passed and selected fai
 Current-head cold/loading/ready composition and cancelled late-response recovery captured: [pulse 48](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-48.md).
 Current-head remote artifact verified; stale-refresh fixture still under observation: [pulse 49](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-49.md).
 Refresh reporting bug corrected and checked; UI-boundary failure preserves results and retry detail: [pulse 50](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-50.md).
+Terminal refresh cancellation reporting corrected and checked; full 79adf7e6 remote matrix green: [pulse 51](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-51.md).

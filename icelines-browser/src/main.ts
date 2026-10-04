@@ -157,7 +157,11 @@ async function library(): Promise<void> {
 onLibraryChange(() => { void library(); void schedule.reloadLibrary(); });
 element<HTMLButtonElement>('retry-storage').onclick = () => { void library(); };
 async function perform(action: () => Promise<void>): Promise<void> {
-  try { await action(); } catch (error) { if (!(error instanceof EngineStoppedError) && !String(error).includes('cancelled')) status(String(error), true); } finally { updateState(); }
+  try { await action(); }
+  catch (error) {
+    const obsolete = error instanceof Error && error.message.startsWith('cancelled: ');
+    if (!(error instanceof EngineStoppedError) && !obsolete) status(String(error), true);
+  } finally { updateState(); }
 }
 async function activate(bytes: Uint8Array, id: string, policy = false): Promise<void> {
   if (bytes.length > MAX_BYTES) throw new Error('Package exceeds 100 MiB');
