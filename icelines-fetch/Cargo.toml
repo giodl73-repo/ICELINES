@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+icelines-data = { path = "../icelines-data" }
 icelines-core = { path = "../icelines-core" }
 icelines-query = { path = "../icelines-query" }
 icelines-sources = { path = "../icelines-sources" }
@@ -24,6 +25,7 @@ fletch-core.workspace = true
 toml.workspace       = true
 
 [dev-dependencies]
+icelines-wasm = { path = "../icelines-wasm" }
 httpmock.workspace = true
 tempfile.workspace = true
 tokio = { workspace = true, features = ["rt", "macros"] }

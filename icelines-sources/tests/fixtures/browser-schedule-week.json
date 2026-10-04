@@ -1,0 +1,9 @@
+{
+  "gameWeek": [
+    {"date":"2026-04-29","games":[
+      {"id":2025030104,"gameType":3,"startTimeUTC":"2026-04-29T23:00:00Z","gameState":"FINAL","awayTeam":{"abbrev":"NYR","placeName":{"default":"New York"},"score":3},"homeTeam":{"abbrev":"WSH","placeName":{"default":"Washington"},"score":0},"seriesStatus":{"gameNumberOfSeries":4,"topSeedTeamAbbrev":"WSH","topSeedWins":1,"bottomSeedTeamAbbrev":"NYR","bottomSeedWins":3}},
+      {"id":2025030125,"gameType":3,"startTimeUTC":"2026-04-30T00:30:00Z","gameState":"FUT","awayTeam":{"abbrev":"MTL"},"homeTeam":{"abbrev":"TBL"}}
+    ]},
+    {"date":"2026-04-30","games":[]}
+  ]
+}

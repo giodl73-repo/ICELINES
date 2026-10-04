@@ -165,3 +165,15 @@ need a new change ID unless it changes one of those controlled meanings.
 | Cargo feature/dependency boundary | Affects `IF-BUILD-001`, `REQ-DEP-001`, and `REQ-LEAN-001`. | `WP-007` changes manifests, features, or command availability. |
 | Major analytics cache contract | Affects `IF-CACHE-001`, cache record compatibility, consumer semantics, freshness/invalidation, and future hockey decision surfaces. | `WP-009` implements cache storage/read models or any dashboard/report/card claims to consume cached analytics. |
 | IceLines Signals surface promotion | Affects `IF-SIGNAL-001`, signal methodology, source-state disclosure, public copy, and future stat/cache/report surfaces. | Any CLI, TUI, Web, report/export, cache, or stable `StatId` surface claims to consume or publish Signals. |
+
+## CHG-119: Browser WASM workbench foundation (2026-10-03)
+
+Decision: accepted for WP-BW-01 feasibility and shared-loader foundation.
+User direction: implement the reviewed Browser WASM Workbench plan.
+Review: HART/KEEL/TAPE/FORGE/PACE/BENCH/EDGE/WIRE/SCOUT/GLASS/CREST/broadcast;
+planning approved with conditions, runtime/live/persistence proof pending.
+New boundaries: portable normalization crate, browser engine binding, static
+application build, explicit session versus IndexedDB persistence.
+Affected: REQ-BROWSER-001, IF-BROWSER-001, IF-FETCH-001, IF-BUILD-001, WP-BW-01.
+Existing native capability and lean/standalone statuses are unchanged.
+The build-step/JavaScript exception applies only to the new static browser surface.

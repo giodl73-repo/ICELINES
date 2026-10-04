@@ -2,6 +2,8 @@
 resolver = "2"
 members = [
     "icelines-core",
+    "icelines-data",
+    "icelines-wasm",
     "icelines-query",
     "icelines-sources",
     "icelines-fetch",
@@ -16,6 +18,15 @@ edition     = "2021"
 authors     = ["IceLines Contributors"]
 license     = "MIT"
 repository  = "https://github.com/giodl73-repo/ICELINES"
+
+# Browser-only profile: native releases retain their existing build settings.
+[profile.browser-release]
+inherits = "release"
+opt-level = "s"
+lto = "thin"
+codegen-units = 1
+debug = false
+strip = "debuginfo"
 
 [workspace.dependencies]
 # Shared across crates — pin versions here, reference with { workspace = true }

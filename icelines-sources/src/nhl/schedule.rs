@@ -134,9 +134,64 @@ fn seed_wins_for_team(series_status: &serde_json::Value, team: &str) -> Option<u
     }
 }
 
+/// Validate a complete game-week response before exposing any games. Unknown
+/// fields/states remain forward compatible; missing scores remain unavailable.
+pub fn parse_game_week(raw: &serde_json::Value) -> Result<Vec<ScheduledGame>, String> {
+    use chrono::{DateTime, NaiveDate};
+    use std::collections::HashSet;
+    let invalid = || "NHL schedule schema changed or contains inconsistent games".to_owned();
+    let days = raw["gameWeek"].as_array().ok_or_else(invalid)?;
+    if days.is_empty() || days.len() > 7 {
+        return Err(invalid());
+    }
+    let mut dates = HashSet::new();
+    let mut ids = HashSet::new();
+    let mut games = Vec::new();
+    for day in days {
+        let date = day["date"].as_str().ok_or_else(invalid)?;
+        if date.len() != 10
+            || NaiveDate::parse_from_str(date, "%Y-%m-%d").is_err()
+            || !dates.insert(date)
+        {
+            return Err(invalid());
+        }
+        let rows = day["games"].as_array().ok_or_else(invalid)?;
+        if rows.len() > 32 || games.len() + rows.len() > 128 {
+            return Err("NHL schedule exceeds bounded game-week size".into());
+        }
+        for row in rows {
+            let game = parse_game(row, Some(date)).ok_or_else(invalid)?;
+            if !ids.insert(game.game_id)
+                || game.date != date
+                || !matches!(row["gameType"].as_u64(), Some(1..=4))
+                || game.away_abbrev.is_empty()
+                || game.home_abbrev.is_empty()
+                || game.away_abbrev == game.home_abbrev
+                || DateTime::parse_from_rfc3339(&game.start_time_utc).is_err()
+            {
+                return Err(invalid());
+            }
+            for team in ["awayTeam", "homeTeam"] {
+                let score = &row[team]["score"];
+                if !score.is_null() && score.as_u64().is_none_or(|n| n > u8::MAX.into()) {
+                    return Err(invalid());
+                }
+            }
+            games.push(game);
+        }
+    }
+    games.sort_by(|a, b| {
+        a.date
+            .cmp(&b.date)
+            .then(a.start_time_utc.cmp(&b.start_time_utc))
+            .then(a.game_id.cmp(&b.game_id))
+    });
+    Ok(games)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::parse_game;
+    use super::{parse_game, parse_game_week};
     use serde_json::json;
 
     #[test]
@@ -167,5 +222,70 @@ mod tests {
     #[test]
     fn rejects_missing_game_id() {
         assert!(parse_game(&json!({"gameType": 2}), None).is_none());
+    }
+
+    fn week() -> serde_json::Value {
+        json!({"gameWeek": [{"date": "2026-04-29", "games": [{
+            "id": 2025030104_u64, "gameType": 3,
+            "startTimeUTC": "2026-04-29T23:00:00Z", "gameState": "FUT",
+            "awayTeam": {"abbrev": "NYR"}, "homeTeam": {"abbrev": "WSH"}
+        }]}]})
+    }
+
+    #[test]
+    fn game_week_preserves_unknown_scores_and_explicit_empty_days() {
+        let games = parse_game_week(&week()).unwrap();
+        assert_eq!(games[0].date, "2026-04-29");
+        assert_eq!(games[0].away_score, None);
+        assert!(!games[0].is_final());
+        assert!(
+            parse_game_week(&json!({"gameWeek": [{"date": "2026-04-30", "games": []}]}))
+                .unwrap()
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn browser_week_golden_preserves_zero_unavailable_and_series_context() {
+        let raw = serde_json::from_str(include_str!(
+            "../../tests/fixtures/browser-schedule-week.json"
+        ))
+        .unwrap();
+        let games = parse_game_week(&raw).unwrap();
+        assert_eq!(games.len(), 2);
+        assert_eq!(games[0].game_id, 2025030104);
+        assert_eq!(games[0].home_score, Some(0));
+        assert_eq!(
+            games[0].series_label().as_deref(),
+            Some("NYR 3–1 WSH · Game 4")
+        );
+        assert_eq!(games[1].away_score, None);
+    }
+
+    #[test]
+    fn game_week_rejects_partial_schema_duplicate_identity_and_wrapped_scores() {
+        for bad in [
+            json!({}),
+            json!({"gameWeek": []}),
+            json!({"gameWeek": [{"date": "2026-02-30", "games": []}]}),
+            json!({"gameWeek": [{"date": "2026-04-29"}]}),
+        ] {
+            assert!(parse_game_week(&bad).is_err());
+        }
+        for score in [json!(256), json!(-1), json!("3")] {
+            let mut raw = week();
+            raw["gameWeek"][0]["games"][0]["awayTeam"]["score"] = score;
+            assert!(parse_game_week(&raw).is_err());
+        }
+        let mut raw = week();
+        let game = raw["gameWeek"][0]["games"][0].clone();
+        raw["gameWeek"][0]["games"]
+            .as_array_mut()
+            .unwrap()
+            .push(game);
+        assert!(parse_game_week(&raw).is_err());
+        let mut raw = week();
+        raw["gameWeek"][0]["games"][0]["gameDate"] = json!("2026-04-30");
+        assert!(parse_game_week(&raw).is_err());
     }
 }

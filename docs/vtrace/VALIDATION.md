@@ -154,3 +154,21 @@ emulation and 390px computed containment also passed.
 | WP-008 residual breadth | Final rehearsal accepts selected evidence and broad gates, not exhaustive live-browser, touch/focus, report/export, transcript, local-state, or interactive TUI breadth. | Release/readiness copy could overstate the VTRACE closure. | Open a targeted wave before promoting any deferred breadth item beyond `passed_with_risk`. |
 | VAL-011 major analytics cache | Initial core schema, strict store/read, stale/partial/missing/invalidation, consumer-envelope, internal dashboard-style ViewModel, first named-cache Web report, first coach dashboard route, first opponent scout route, first player evidence-card route, first line-combination explorer route, first goalie readiness route, first practice focus route, first postgame review route, first postgame adjustment-review route, and first agent evidence summary route fixtures passed; broader downstream hockey screens are not implemented yet. | Future hockey screens or reports could overstate cache-backed analytics before product copy evidence exists. | A consumer surface claims to use cached analytics beyond the `icelines-core::analytics_cache`, `icelines-fetch::analytics_cache_store`, internal consumer-ViewModel, named-cache Web report, coach/dashboard/scout/player/line/goalie/practice/postgame/agent route evidence envelope. |
 | VAL-012 IceLines Signals | First signal descriptors, formulas, internal ViewModel boundary, CLI text/JSON, TUI player-card, Web player HTML/JSON, Markdown export, and team-scoped `signals-roster.v1` discovery surfaces exist. Cache, filter catalog, public cross-team leaderboard, and stable stat catalog surfaces are not implemented. | Future copy could overstate scorer-biased descriptive signals as prediction, player quality, or deployment advice. | A cache, filter catalog, public cross-team leaderboard, or stable stat catalog surface claims to consume or publish Signals, or existing CLI/TUI/Web/export/roster signal copy changes materially. |
+
+## Browser workbench validation target
+
+Target scenario: open Pages, load season, query/filter/player/goalie, live refresh
+to memory, save selected data, reload, retain saved data while session-only data
+is absent, export/import, and recover saved data offline with cached shell.
+Status: pending. See browser plan sections 8/11; build success cannot close this scenario.
+
+Pulse 19's local offline-reopen failure is superseded by pulse 27: with the
+server stopped and connection refusal confirmed, the shell reopened, restored
+905 saved skaters and ran a fresh six-row WASM query. Pulse 28 verifies selected
+two-tab local update/rollback; pulse 29 verifies actual library migration.
+Pulses 32–35 add narrow keyboard and transaction/conflict evidence. These local
+checks do not close the full deployed Pages/live/mobile/resource/rollback target.
+
+The implementation handoff roles review (2026-10-04) records release as needing
+work. Validation deployment is a prerequisite for exact-origin checks, not
+release acceptance. See `icelines-browser/PAGES.md` for the corrected ordering.

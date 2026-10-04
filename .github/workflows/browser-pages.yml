@@ -1,0 +1,99 @@
+name: Browser WASM / Pages
+on:
+  pull_request:
+    paths: ['icelines-core/**', 'icelines-data/**', 'icelines-query/**', 'icelines-sources/**', 'icelines-fetch/**', 'icelines-wasm/**', 'icelines-browser/**', 'data/seasons/**', 'Cargo.toml', 'Cargo.lock', 'scripts/*browser*', 'scripts/tests/test_browser*.py', '.github/workflows/browser*.yml']
+  push:
+    branches: [master]
+    paths: ['icelines-core/**', 'icelines-data/**', 'icelines-query/**', 'icelines-sources/**', 'icelines-fetch/**', 'icelines-wasm/**', 'icelines-browser/**', 'data/seasons/**', 'Cargo.toml', 'Cargo.lock', 'scripts/*browser*', 'scripts/tests/test_browser*.py', '.github/workflows/browser*.yml']
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish the reviewed build for validation or accepted release (master only; deployment approval required)'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: browser-pages-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          lfs: true
+      - name: Read pinned browser toolchain
+        id: toolchain
+        run: |
+          python - <<'PY'
+          import json, os
+          with open('icelines-browser/toolchain.json', encoding='utf-8') as source:
+              versions = json.load(source)
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              for name in ('rust', 'node', 'python'):
+                  output.write(f'{name}={versions[name]}\n')
+          PY
+      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067
+        with:
+          toolchain: ${{ steps.toolchain.outputs.rust }}
+          targets: wasm32-unknown-unknown
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: ${{ steps.toolchain.outputs.node }}
+          cache: npm
+          cache-dependency-path: icelines-browser/package-lock.json
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: ${{ steps.toolchain.outputs.python }}
+      - name: Install locked browser dependencies
+        working-directory: icelines-browser
+        run: npm ci --ignore-scripts
+      - name: Build and verify browser distribution
+        run: node scripts/build-browser.mjs --check
+      - name: Retain reviewed preview / rollback artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: icelines-browser-${{ github.sha }}
+          path: icelines-browser/dist
+          include-hidden-files: true
+          retention-days: 30
+          if-no-files-found: error
+      - name: Read existing Pages site
+        if: github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/master'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: gh-pages
+          path: target/pages-baseline
+          persist-credentials: false
+      - name: Preserve existing site and stage workbench
+        if: github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/master'
+        run: python scripts/stage-browser-pages.py target/pages-baseline icelines-browser/dist target/pages-site > target/pages-preservation.json
+      - name: Upload composed Pages artifact
+        if: github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/master'
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: target/pages-site
+      - name: Retain publication preservation evidence
+        if: github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/master'
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: pages-preservation-${{ github.sha }}
+          path: target/pages-preservation.json
+          retention-days: 30
+          if-no-files-found: error
+  deploy:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/master'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+      - name: Publish reviewed artifact
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
