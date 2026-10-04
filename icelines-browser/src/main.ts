@@ -341,10 +341,11 @@ async function refreshActiveStats(signal?: AbortSignal): Promise<void> {
     if (active !== previous) throw new Error('cancelled: context changed');
     await activate(bytes, previous.id, previous.keepUpdated);
   } catch (error) {
+    const wasCancelled = controller.signal.aborted;
     controller.abort();
     if (active?.id === previous.id && active !== previous) throw new Error(`Fresh data was loaded into memory, but the query could not run. ${error}`);
     if (active !== previous) throw new Error('cancelled: context changed');
-    if (controller.signal.aborted) throw new Error('Refresh cancelled. Your previous good data remains available.');
+    if (wasCancelled) throw new Error('Refresh cancelled. Your previous good data remains available.');
     throw new Error(`Live refresh failed. Your previous good data remains available. ${error}`);
   }
   finally { clearTimeout(timer); element('cancel').hidden = true; }

@@ -435,3 +435,8 @@ Remote toolchain/audit failures diagnosed; scoped fixes under verification: [pul
 Pinned-toolchain/TLS fixes passed full local checked build; fresh remote CI required: [pulse 43](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-43.md).
 Additional native fixture/date-boundary failures diagnosed; focused corrections under verification: [pulse 44](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-44.md).
 Focused date/provenance test corrections passed; remote validation remains live: [pulse 45](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-45.md).
+Current-head clean artifact identity verified; remote runs and full fetch slice live: [pulse 46](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-46.md).
+Successful remote PR artifact verified, full fetch slice passed and selected failure composition captured: [pulse 47](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-47.md).
+Current-head cold/loading/ready composition and cancelled late-response recovery captured: [pulse 48](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-48.md).
+Current-head remote artifact verified; stale-refresh fixture still under observation: [pulse 49](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-49.md).
+Refresh reporting bug corrected and checked; UI-boundary failure preserves results and retry detail: [pulse 50](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-50.md).
