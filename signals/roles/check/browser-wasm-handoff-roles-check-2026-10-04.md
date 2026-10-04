@@ -93,3 +93,25 @@ Follow-up: pulse 37 implements C1/C3's analysis-first/drilldown recommendation
 and verifies selected desktop/360px ready/cold layouts and keyboard flow. C2's
 full state matrix and representative-device/design acceptance remain open;
 the release verdict is unchanged.
+
+## Evidence reconciliation through pulse 54
+
+The original counts/verdict above remain a dated review snapshot. This follow-up
+records disposition without presenting one agent's lenses as independent approval.
+
+| Finding | Current disposition | Evidence / remaining requirement |
+|---|---|---|
+| K1, K2 | Amended | Validation deployment precedes exact-origin acceptance; plan records partial implementation. |
+| K3, F3, B3, W3, BR3 | Retained constraints | Worker/domain boundary, scoped native parity, unknown observations, explicit storage and private-link policy remain. Test counts do not certify all devices/lifecycles. |
+| F1 | Partially resolved | Isolated PR; clean local artifacts and retained remote PR artifacts verified (pulses 41/46/47/49/54). Both latest 1b4e0013 CI runs passed and its clean PR merge artifact was verified (54). A reviewed master release/rollback artifact still needs evidence. |
+| F2 | Open | Encoded-input/residency measurements are not full transient staging or browser peak memory on representative hardware. |
+| B1 | Open | Deployed live/mobile/resource/update/rollback acceptance still absent. |
+| B2 | Amended | Pulse 27 local offline success supersedes the pulse 19 failure; HTTPS acceptance remains separate. |
+| W1, W2 | Open | Exact deployed-origin stats and schedule evidence needed per adapter/schema. Relay host/owner remains deferred until that testing, per user. |
+| BR1, BR2 | Open | Measured narrow iframe/keyboard and local update rehearsal do not certify physical touch/screen reader or HTTPS deployment/rollback. |
+| C1, C3 | Implemented locally | Analysis-first context/summary and accessible drilldowns (37), repeated in current UI captures (47/48). |
+| C2 | Partially resolved | Desktop/narrow cold/loading/ready/unsaved/catalog-unavailable captured (47/48); failure/cancellation boundary composition preserves results and fits narrow width (50–52). Actual picker imports retain old fixture observations after boundary failure on narrow/desktop (53/54). Boundary stubs do not prove transport or a complete physical-device/source-state matrix. |
+
+**NEEDS-WORK for release acceptance remains.** Current review supports continued
+implementation review and local acceptance preparation; it does not approve
+merge, Pages settings migration, validation publication or production release.

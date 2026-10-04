@@ -15,7 +15,8 @@ The preservation inventory is retained as a separate artifact.
 ## Before first deployment
 
 1. Land the workflow and dependencies through the repository's review process.
-   The workflow is currently local and cannot be dispatched on GitHub yet.
+   The workflow is in draft PR #74; master publication dispatch becomes available
+   after it lands. Successful PR builds retain preview artifacts without publishing.
 2. Complete local artifact review and preparation checks before a validation
    deployment. Exact deployed-origin live/offline/update checks require an HTTPS
    deployment and therefore follow it. A validation deployment needs deliberate

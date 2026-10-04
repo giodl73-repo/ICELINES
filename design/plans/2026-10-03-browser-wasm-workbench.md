@@ -441,3 +441,6 @@ Current-head cold/loading/ready composition and cancelled late-response recovery
 Current-head remote artifact verified; stale-refresh fixture still under observation: [pulse 49](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-49.md).
 Refresh reporting bug corrected and checked; UI-boundary failure preserves results and retry detail: [pulse 50](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-50.md).
 Terminal refresh cancellation reporting corrected and checked; full 79adf7e6 remote matrix green: [pulse 51](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-51.md).
+Narrow UI-boundary failure/cancellation captures and all-role disposition reconciliation: [pulse 52](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-52.md).
+Dated fixture selected through the actual picker; failed refresh preserves old observation and unsaved state: [pulse 53](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-53.md).
+Latest implementation CI and retained PR artifact verified; dated desktop import/failure preserves rows and observation: [pulse 54](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-54.md).

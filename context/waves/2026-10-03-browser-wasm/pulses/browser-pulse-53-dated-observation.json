@@ -1,0 +1,23 @@
+{
+  "scenario": "dated import followed by acquisition UI-boundary failure",
+  "fixture_sha256": "0f7752db2d69dd55c93db5a186e9b4063c36dc2dc0d9c611153cf4a60b7e3516",
+  "fixture_bytes": 908887,
+  "source": "UI fixture: old observation",
+  "observed_at": "2025-07-01T00:00:00Z",
+  "fetched_at": "2025-07-02T00:00:00Z",
+  "origin": "http://127.0.0.1:8077/failure-ui-52/",
+  "frame_viewport": [
+    360,
+    800
+  ],
+  "document_client_width": 345,
+  "document_scroll_width": 345,
+  "query": "p>=100",
+  "rendered_rows": 6,
+  "rows_preserved": true,
+  "observation_preserved": true,
+  "saved_count": 0,
+  "actual_file_chooser": true,
+  "transport_exercised": false,
+  "physical_device": false
+}
