@@ -64,3 +64,13 @@ requirement is intentionally not claimed as met today.
 | REQ-LEAN-001 | Feature boundaries for `cli`, `web`, `tui`, and `net` are not yet implemented. | Cargo feature surgery begins or a release claims lean/offline CLI support. |
 | REQ-CACHE-001..004 | Major analytics cache is partial implementation; core/store/consumer fixtures plus the first named-cache report, coach dashboard, opponent scout route, player evidence-card route, line-combination explorer route, goalie readiness route, practice focus route, postgame review route, postgame adjustment-review route, and agent evidence summary route exist, while broader shipped surfaces remain pending. | Broader cache builders, metric families, practice workflows, postgame workflows, or agent surfaces claim to consume cached analytics. |
 | REQ-SIGNAL-001 | IceLines Signals has descriptor/formula/ViewModel evidence plus shipped CLI text/JSON, TUI player-card, Web HTML/JSON player surfaces, and a Markdown export packet. Cache, filters, leaderboards, and stable `StatId` promotion remain unclaimed. | A cache builder, filter/leaderboard, stable stat catalog row, or additional report/export field beyond `export md signals` claims to consume or publish a Signal. |
+
+## Browser workbench extension — REQ-BROWSER-001
+
+The GitHub Pages browser surface shall execute shared Rust queries on local data,
+load public release packages and user imports, refresh supported public data, and
+allow explicit temporary or locally saved datasets. Parent: user-directed browser
+workbench plan dated 2026-10-03; REQ-WB-002, REQ-QUERY-001, REQ-PARITY-001,
+REQ-DATA-001, REQ-FRESH-001 and REQ-REPORT-001 apply to this surface.
+Status: target; no deployed browser/live/storage capability accepted yet.
+Verification: WP-BW-01..06 gates in design/plans/2026-10-03-browser-wasm-workbench.md.

@@ -12,6 +12,16 @@ For the final forward-roadmap role review, see
 
 ## Canonical Active Workstreams
 
+### Browser workbench implementation
+
+- [Browser WASM Workbench](2026-10-03-browser-wasm-workbench.md) — Active partial implementation,
+  2026-10-03. GitHub Pages distribution, shared Rust engine, release/import
+  packages, live acquisition, and explicit session/local-save policies.
+  [12-role review](../../signals/roles/check/browser-wasm-workbench-roles-check-2026-10-03.md)
+  is approved with conditions for planning; implementation evidence is linked
+  from the plan, and release acceptance remains pending.
+  Not counted as an active portfolio slot until baseline scope/parent allocation.
+
 These are the only plans currently counted as active portfolio work. The limit
 is eight; adding another requires a named parent or an explicit roadmap review.
 The larger ledger below remains temporarily in place while closed plans move to

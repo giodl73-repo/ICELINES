@@ -291,3 +291,183 @@ This file is ready for `TRACE.md` refresh after Verification R2. The expected
 trace focus is whether every `REQ-*`, `IF-*`, `VAL-*`, `CR-*`, and `EVID-*` row
 links end-to-end without treating contextual scenario/interface references as
 closure evidence or inventing implementation proof.
+
+## Browser workbench foundation verification
+
+Commands: cargo check -p icelines-wasm --target wasm32-unknown-unknown;
+cargo test -p icelines-data -p icelines-wasm; cargo test -p icelines-fetch --test stats_loader;
+affected-crate cargo fmt/clippy. Tests use fixed bundled/hand-audited fixtures.
+Separate environment evidence: deployed-origin source CORS probes with browser,
+origin, endpoint, redirect and date. No live upstream unit/integration tests.
+Current results belong to pulse-01; command presence is not evidence of success.
+
+Subsequent polling/coordination evidence is recorded in
+[pulse 16](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-16.md): 95 Node
+tests passed, distributed WASM verified all 75 catalog packages, and local browser
+native Web Locks serialized two fixture acquisitions. The browser also displayed
+a saved revision conflict without replacing the winning saved copy. Accelerated
+timers and simulated visibility/offline predicates limit the browser claim;
+deployed live, native environment transitions and distribution gates remain open.
+
+[Pulse 17](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-17.md) records
+99 passing Node tests and export payload evidence using the actual browser/WASM.
+JSON/CSV carry completed-request context, floors, provenance and methodology;
+CSV guards formula-like text and metadata record boundaries. Captured browser
+Blobs establish button/payload wiring, not downloaded-file round-trip completion.
+
+[Pulse 18](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-18.md) records
+current production UI in a measured 360px embedded browsing context, contained
+table overflow, and top-level keyboard skip/table/player-dialog focus behavior.
+The viewport override did not take effect; physical mobile, horizontal keyboard
+scroll and complete accessibility acceptance are not claimed. Final TypeScript
+build/check and distributed-WASM package verification passed.
+
+[Pulse 19](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-19.md) records
+108 passing browser tests, actual cached-shell integrity checks and explicit
+same-build repair. A disposable localhost browser fixture detected a removed
+stylesheet and completed verified repair. Server-stopped application reload
+failed in the in-app browser; the offline-open gate remains unpassed. Online
+restart restored saved season data. Distributed-WASM verification passed for
+20 shell assets, 75 packages and four hand-audited count sorts.
+
+[Pulse 20](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-20.md) records
+113 passing browser tests, bounded catalog reads and strict package-path/context
+validation. Actual browser startup with a synthetic catalog-only 404 restored
+saved 2024-25 data, ran a six-row query and retried catalog access while retaining
+the active result. The verifier passed 21 shell assets and all 75 WASM packages.
+This recovery evidence does not establish offline navigation or live CORS access.
+
+[Pulse 21](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-21.md) records
+118 passing browser tests and bounded package downloads with body cancellation.
+A browser fixture retained saved 2024-25 data and its query after cancelling a
+stalled download, then loaded 2023-24 after two HTTP 503 responses on the third
+request. The new season remained in memory. Distribution verification passed
+21 shell assets and all 75 packages through actual WASM; largest shell plus
+one-package gzip sum was 399,568 bytes. Live access, offline reopening, file
+interchange, representative mobile and Pages release gates remain open.
+
+[Pulse 22](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-22.md) adds
+actual file evidence: production package export wrote 909,591 bytes matching
+the 2023-24 catalog SHA-256; file-picker reimport after unload restored the same
+nine-row query in memory. Actual JSON/CSV downloads passed an independent Python
+field, ordering, precision and metadata comparison. The browser download-event
+observer timed out despite the completed file, and chooser automation returned
+after an extended interval. This proves selected regular-season interchange,
+not broad cross-device picker behavior or complete release acceptance.
+
+[Pulse 23](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-23.md) adds
+270 full-row cases comparing actual distributed WASM with native-loader views:
+2024-25 regular/playoff, all nine exposed sorts, five qualification floors and
+three filters per player kind. 33,613 ordered rows and 90 empty cases passed.
+The native example generates expectations without BrowserEngine; numeric filter
+predicates are independent, while sorting/domain accessors share native contracts.
+The checked build now includes this gate. This does not establish every native
+route or close deployment, live CORS, offline, mobile and resource acceptance.
+
+[Pulse 24](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-24.md)
+records read-only Pages inspection: existing docs use legacy gh-pages publishing.
+Publication composition now preserves docs and installs the browser under
+workbench/. Four deterministic tests passed; staging the actual gh-pages commit
+preserved 95 files with hash checks and added 101 browser files. Root index bytes
+were unchanged. Actions source migration, remote execution, subpath browser
+acceptance and deployment/rollback remain open; no remote mutation occurred.
+
+[Pulse 25](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-25.md)
+records the full local offline checked build passing, including 118 browser tests,
+270 distributed/native parity cases, seven catalog and four composition tests,
+plus affected Rust suites. Actual composed `/ICELINES/workbench/` loading,
+public-filter bookmark reload and saved six-row query restoration passed; root
+docs rendered. Server-stopped reload again failed in the in-app browser and
+reached a host error document; offline reopening remains open. Deployed-origin,
+live, representative device, remote workflow and rollback gates remain open.
+
+[Pulse 26](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-26.md)
+adds a prepared retained-artifact rollback workflow and non-executing artifact
+verifier. Seven integrity/source fixture tests passed; the actual dirty local
+build was refused as a production rollback source. No remote restore/deploy is
+claimed. User relay hosting decision is deferred until deployed-origin testing.
+
+[Pulse 27](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-27.md)
+records a failing fragment-route cache regression followed by its correction.
+All 119 browser tests and the actual-distribution verifier passed (21 shell
+assets, 75 packages, four goldens, 399,663 gzip bytes). With the composed local
+server stopped and connection refusal independently confirmed, the application
+reopened from cache, restored 905 saved skaters and ran a fresh six-row WASM
+query. This supersedes the local offline failures in pulses 19/25. Deployed
+origin, live access, device, update and remote rollback gates remain open.
+
+[Pulse 28](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-28.md)
+records an actual installer-tab update defect and its regression/fix. All 121
+browser tests and actual-distribution verification passed. Two tabs required
+consent before replacing the build, both restored 905 saved skaters when moving
+to retained prior bytes and forward again, and the current build reopened and
+queried successfully with the server stopped. This establishes selected local
+same-schema season compatibility; browser schema migration, saved schedules,
+deployed live access, devices and remote artifact rollback remain open.
+
+[Pulse 29](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-29.md)
+records actual IndexedDB schema-one to schema-two migration with unmodified
+production application files. A held legacy connection produced the blocked
+message; closing it and retrying preserved all 908,625 season-package bytes,
+their revision and active pointer. The schedule store was added. An older schema
+open returned VersionError without changing records. App reload restored 905
+skaters and a fresh six-row WASM query passed. Broader devices, migration faults,
+saved schedule compatibility, deployment/live access and remote rollback remain
+open; no remote settings or publication changed.
+
+[Pulse 30](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-30.md)
+adds bounded Rust-owned eight-window residency and session-library controls.
+Four new Rust tests passed (12 total), with full checked build, 270 native/WASM
+parity cases, lint, 121 browser tests and actual-WASM residency verification.
+Actual UI loading nine windows evicted the oldest without deleting its saved
+copy; offline switching/querying and selected-only unload passed. Across 75
+packages, eight-window WASM linear memory reached 23.88 MiB and worst warm-query
+p95 was 3.0 ms. Full desktop peak memory, archive staging, mobile, deployment/
+live access and remote rollback remain open.
+
+[Pulse 31](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-31.md)
+records actual current-build playoff file-picker import of the verified GitHub
+release archive (332 skaters/27 goalies, no automatic save), and twelve actual
+regular/playoff production-worker conversions/loads. Expanded tar was 1,177,600
+bytes; slowest conversion was 12.0 ms and initial regular load 20.7 ms. Picker
+latency, worker-JS/browser/staging peak memory and mobile hardware are excluded.
+Deployment/live access, broader devices and remote rollback remain open.
+
+[Pulse 32](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-32.md)
+fixes session source-label overflow observed at 360px (document scroll width
+4,586px before, 345px after). Eight resident windows and a synthetic long-source
+import were exercised through production handlers. Narrow table keyboard
+scrolling and dialog focus/Enter/Escape passed, alongside 121 browser tests and
+distribution verification. Physical mobile and broader accessibility, total
+peak memory, deployment/live access and remote rollback remain unverified.
+
+[Pulse 33](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-33.md)
+reconciles season/schedule refresh-save consent after cross-tab library changes.
+124 tests passed, including revocation during pending schedule acquisition.
+Two actual browser tabs verified revocation/removal, zero saved records and a
+fresh six-player WASM query with memory preserved. Production distribution
+verification passed; deployed live refresh and broader conflict/device gates
+remain open.
+
+[Pulse 34](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-34.md)
+guards refresh writes with existing consent inside the IndexedDB transaction.
+Two new regressions failed before correction and 126 tests passed afterward.
+Actual browser storage without notification listeners refused revoked/removed
+season saves, retained six-player memory queries, and preserved a schedule's
+saved revision during a fresh fixture refresh. Deployment/live access and
+broader conflict/device acceptance remain open.
+
+[Pulse 35](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-35.md)
+requires selected revisions for transactional saved-copy removal. Two stale
+removal regressions failed before correction; all 128 tests passed afterward.
+Actual IndexedDB fixture checks preserved season/schedule replacements and
+active pointers, then removed them explicitly using the current revision.
+Deployed access, broader lifecycle/device coverage and rollback remain open.
+
+[Pulse 37](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-37.md)
+implements analysis-first composition with native Data Library/options/methodology
+drilldowns, visible memory/source summary and focus transfer after loading.
+128 tests and distribution verification passed. Actual desktop and measured
+360px contexts loaded/queryed a season; narrow containment, methodology access
+and selected player keyboard focus passed. Full state/device/resource/deployment
+acceptance remains open.

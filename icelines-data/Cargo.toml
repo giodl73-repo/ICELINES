@@ -1,0 +1,12 @@
+[package]
+name = "icelines-data"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+icelines-core = { path = "../icelines-core" }
+icelines-sources = { path = "../icelines-sources" }
+thiserror.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

@@ -691,3 +691,31 @@ selection, and missing/mismatched/duplicate sealed official deprecated holds.
 - Exact persisted storage path and rebuild command shape for the major analytics
   cache implementation wave; the first in-core coach-dashboard consumer fixture
   exists, but production downstream surfaces remain pending.
+
+## IF-BROWSER-001: Portable engine and browser data lifecycle
+
+Owner: HART/KEEL/FORGE/WIRE. Consumers: native loader, WASM worker, browser UI.
+Dependency DAG: core + sources -> icelines-data -> native fetch / icelines-wasm;
+query -> icelines-wasm. icelines-data accepts decoded records and has no I/O.
+Native loader delegates canonical record normalization to the same functions.
+The worker owns StatsRepository and returns owned projections; browser storage
+and network acquisition remain adapters. Package v1 and query envelopes are
+versioned; required context/schema is validated before activation.
+Full generation, storage, and live contracts: browser plan sections 4/5/11.
+The engine retains at most eight normalized season/type windows, one revision
+per context, with LRU eviction and a 64 MiB aggregate package-input budget.
+A larger active package runs alone; the budget does not measure peak memory.
+Worker `load` returns `{revision, residents}` atomically after normalization.
+`selectResident` requires an exact resident revision; missing/evicted inputs
+are refused without changing selection. `unload` releases only the selected
+window. Session residency never writes IndexedDB; worker failure clears it.
+Scores/schedule use the source-owned complete-week parser through stateless WASM
+projection. Browser schedule packages (schema 1) fingerprint requested date,
+source/fetch metadata and raw payload; shared Rust validates rows before use.
+IndexedDB schema 2 adds a separate schedules store transactionally without
+rewriting season records. Dataset/schedule active pointers and explicit refresh
+save policies are independent. Older schema-1 applications refuse upgraded
+storage; rollback requires a compatible build or exported backups. Migration
+rollback, version refusal and family independence have deterministic test evidence;
+real browser restoration has fixture evidence. Live reachability remains open.
+Status: foundation implementation in progress; compatibility evidence pending.
