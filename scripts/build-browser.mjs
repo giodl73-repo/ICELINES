@@ -5,17 +5,20 @@ import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const config = JSON.parse(await readFile(new URL('../icelines-browser/toolchain.json', import.meta.url), 'utf8'));
+// The repository's native `stable` override must not select a different compiler
+// from the browser toolchain for which CI installed the WASM target.
+const buildEnvironment = { ...process.env, RUSTUP_TOOLCHAIN: config.rust };
 const offline = process.argv.includes('--offline') ? ['--offline'] : [];
 const check = process.argv.includes('--check');
 const temporary = fileURLToPath(new URL('../target/browser-test-tmp/', import.meta.url));
 await mkdir(temporary, { recursive: true });
 function run(command, args) {
   const result = spawnSync(command, args, { cwd: root, stdio: 'inherit',
-    env: { ...process.env, TMP: temporary, TEMP: temporary, TMPDIR: temporary } });
+    env: { ...buildEnvironment, TMP: temporary, TEMP: temporary, TMPDIR: temporary } });
   if (result.error || result.status !== 0) throw result.error ?? new Error(`${command} failed (${result.status})`);
 }
 function capture(command, args) {
-  const result = spawnSync(command, args, { cwd: root, encoding: 'utf8' });
+  const result = spawnSync(command, args, { cwd: root, encoding: 'utf8', env: buildEnvironment });
   if (result.error || result.status !== 0) throw result.error ?? new Error(`${command} failed (${result.status})`);
   return result.stdout.trim();
 }

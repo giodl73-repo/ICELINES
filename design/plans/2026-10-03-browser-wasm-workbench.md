@@ -430,3 +430,6 @@ Analysis-first composition, expandable data/methodology controls and selected de
 Fresh full checked build and isolated browser review branch (independent checks running): [pulse 38](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-38.md).
 Scoped staged-blob inventory and complete staged whitespace audit (independent check still running): [pulse 39](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-39.md).
 Passing isolated minimal-lock checked build and scoped checkpoint readiness: [pulse 40](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-40.md).
+Clean committed artifact and draft PR #74 (remote CI in progress): [pulse 41](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-41.md).
+Remote toolchain/audit failures diagnosed; scoped fixes under verification: [pulse 42](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-42.md).
+Pinned-toolchain/TLS fixes passed full local checked build; fresh remote CI required: [pulse 43](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-43.md).
