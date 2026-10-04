@@ -444,3 +444,4 @@ Terminal refresh cancellation reporting corrected and checked; full 79adf7e6 rem
 Narrow UI-boundary failure/cancellation captures and all-role disposition reconciliation: [pulse 52](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-52.md).
 Dated fixture selected through the actual picker; failed refresh preserves old observation and unsaved state: [pulse 53](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-53.md).
 Latest implementation CI and retained PR artifact verified; dated desktop import/failure preserves rows and observation: [pulse 54](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-54.md).
+Current docs composed with the verified artifact; environment's gh-pages-only deployment policy identified and rollout amended: [pulse 55](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-55.md).

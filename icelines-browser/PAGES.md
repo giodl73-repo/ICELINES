@@ -30,7 +30,12 @@ The preservation inventory is retained as a separate artifact.
    on 2026-10-04 reported legacy branch mode. The workflow does not silently change
    this setting. Coordinate existing documentation publishers with this change;
    `gh-pages` remains the documentation input, not the Actions deployment output.
-5. Configure the `github-pages` environment review rules, dispatch on master with
+5. Inspect the `github-pages` environment rules before dispatch. The API check
+   on 2026-10-04 found a custom deployment branch policy allowing only `gh-pages`;
+   the prepared workflow deploys from `master`. An approved rollout must add a
+   `master` branch allowance while preserving the existing `gh-pages` allowance.
+   Do not remove all branch restrictions to make deployment pass. Configure any
+   agreed environment review rules, then dispatch on master with
    publish enabled, and verify both root docs and workbench on the exact HTTPS
    origin. Record the deployed build, source commit and preservation inventory.
 6. Test stats and schedule separately from the deployed origin. If direct access
