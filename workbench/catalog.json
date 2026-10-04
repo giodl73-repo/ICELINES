@@ -1,0 +1,1505 @@
+{
+  "schema_version": 1,
+  "packages": [
+    {
+      "id": "20252026-regular",
+      "season": 20252026,
+      "season_type": "regular",
+      "source": "repository:20252026",
+      "url": "data/93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44.json",
+      "sha256": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+      "bytes": 926515,
+      "skaters": 933,
+      "goalies": 98,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "0b970209ff7196ec6550fca06a4db6d889533b614b16369bc2b459d9c8535a2c",
+        "goalie-stats.json": "f52c071d7794d79cedd636d701b9bbcc0019227134d0c9e6cfe4bda6e15fe036",
+        "bios.json": "40725152dd281993851363a4022770fb01b92433c310af1de96cfb53e93f1a86",
+        "playoff-goalie-stats.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+        "playoff-bios.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+        "playoff-stats.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+      }
+    },
+    {
+      "id": "20242025-regular",
+      "season": 20242025,
+      "season_type": "regular",
+      "source": "repository:20242025",
+      "url": "data/ba4f8b9ab5e8882652099025360d8409b214a917d03ccc3c326a603a7ab86479.json",
+      "sha256": "ba4f8b9ab5e8882652099025360d8409b214a917d03ccc3c326a603a7ab86479",
+      "bytes": 908625,
+      "skaters": 905,
+      "goalies": 103,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "1a8026e397ef93b1c583bf108cdba365a7a02be71b791ce1f6c8cf3d30330fd0",
+        "goalie-stats.json": "7e716aecc9344ccc467eb016fe63673a3a824ac21009cb2db1fe4cb82962f3bf",
+        "bios.json": "96dfc4482d3ec720759721c3a44cdef108ac21ba2f352d507dfe4c7ac2f28f81",
+        "playoff-goalie-stats.json": "d778b43ce6e9b4381e32733f8a6c236e331d574fef161f816460c7cad50b2ed9",
+        "playoff-bios.json": "d11d0daf05f524695cf35b97ab064782d32abeb8b13f59db706dae8567bc6463",
+        "playoff-stats.json": "ae9b2e9831180fac6eb82740e94597a3044c9ea3d75c241942f6375f52f09d5f"
+      }
+    },
+    {
+      "id": "20242025-playoff",
+      "season": 20242025,
+      "season_type": "playoff",
+      "source": "repository:20242025",
+      "url": "data/fa8e36ef6f77c7fa6a2c4f67ad4fb0624c764fcb5aee4fdb07d63ebf840d5024.json",
+      "sha256": "fa8e36ef6f77c7fa6a2c4f67ad4fb0624c764fcb5aee4fdb07d63ebf840d5024",
+      "bytes": 259978,
+      "skaters": 332,
+      "goalies": 27,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "1a8026e397ef93b1c583bf108cdba365a7a02be71b791ce1f6c8cf3d30330fd0",
+        "goalie-stats.json": "7e716aecc9344ccc467eb016fe63673a3a824ac21009cb2db1fe4cb82962f3bf",
+        "bios.json": "96dfc4482d3ec720759721c3a44cdef108ac21ba2f352d507dfe4c7ac2f28f81",
+        "playoff-goalie-stats.json": "d778b43ce6e9b4381e32733f8a6c236e331d574fef161f816460c7cad50b2ed9",
+        "playoff-bios.json": "d11d0daf05f524695cf35b97ab064782d32abeb8b13f59db706dae8567bc6463",
+        "playoff-stats.json": "ae9b2e9831180fac6eb82740e94597a3044c9ea3d75c241942f6375f52f09d5f"
+      }
+    },
+    {
+      "id": "20232024-regular",
+      "season": 20232024,
+      "season_type": "regular",
+      "source": "repository:20232024",
+      "url": "data/84adc3c1c4791483adcb2ca9c8758334c56059aa95585ee2880773f9feb03adc.json",
+      "sha256": "84adc3c1c4791483adcb2ca9c8758334c56059aa95585ee2880773f9feb03adc",
+      "bytes": 909591,
+      "skaters": 911,
+      "goalies": 98,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "afca81dd9d08ac9a44d6c0e746a69654cec78c1d4d5e67d2125fc1b039aa985b",
+        "goalie-stats.json": "b2728efe270ffa09b28ca2a0b5fac110f4f76f130d113acda206cbedff02ffe4",
+        "bios.json": "649d5b68f2d75fe795b9396397efa22cb3625333ad4fa6c85acb2aaa7d499730",
+        "playoff-goalie-stats.json": "e340fdf95da1789d57fe2a46625302ff45401620aca0b6e4ff9382bba14b586e",
+        "playoff-bios.json": "6c6c92113917bb54993d04d373f5c916a11255d921225593ce20c3496d1c19d0",
+        "playoff-stats.json": "b839fd54e4bb1590d9f23a5206f90e70dfde94a12d39df6c8c02420481a6f977"
+      }
+    },
+    {
+      "id": "20232024-playoff",
+      "season": 20232024,
+      "season_type": "playoff",
+      "source": "repository:20232024",
+      "url": "data/cc059ed1b4fd0e288a0655301884c369dbbfc20a0dd3f5a2eb9928b68658ceed.json",
+      "sha256": "cc059ed1b4fd0e288a0655301884c369dbbfc20a0dd3f5a2eb9928b68658ceed",
+      "bytes": 264960,
+      "skaters": 339,
+      "goalies": 27,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "afca81dd9d08ac9a44d6c0e746a69654cec78c1d4d5e67d2125fc1b039aa985b",
+        "goalie-stats.json": "b2728efe270ffa09b28ca2a0b5fac110f4f76f130d113acda206cbedff02ffe4",
+        "bios.json": "649d5b68f2d75fe795b9396397efa22cb3625333ad4fa6c85acb2aaa7d499730",
+        "playoff-goalie-stats.json": "e340fdf95da1789d57fe2a46625302ff45401620aca0b6e4ff9382bba14b586e",
+        "playoff-bios.json": "6c6c92113917bb54993d04d373f5c916a11255d921225593ce20c3496d1c19d0",
+        "playoff-stats.json": "b839fd54e4bb1590d9f23a5206f90e70dfde94a12d39df6c8c02420481a6f977"
+      }
+    },
+    {
+      "id": "20222023-regular",
+      "season": 20222023,
+      "season_type": "regular",
+      "source": "repository:20222023",
+      "url": "data/158e8ff69270ed273eaee30b68fd308f4e4eb0ca96cce06fce452c9519c4c33a.json",
+      "sha256": "158e8ff69270ed273eaee30b68fd308f4e4eb0ca96cce06fce452c9519c4c33a",
+      "bytes": 936534,
+      "skaters": 939,
+      "goalies": 107,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "e7daba71679a9620b6f8671e32f0e922f1153cb8e315fe04b167768993ea1ee5",
+        "goalie-stats.json": "e2389d2f77f1ee0045318221a31a6f31df0375ff8ba97b92ed56dac09d18fd7b",
+        "bios.json": "aba98be206640d849179bec7cf34ccb4ca0e1c02b174253b983c20337b16d95e",
+        "playoff-goalie-stats.json": "7db76a6792b335d97756ea0835c34513ae55921cbf38931b6d9da4063cee19f6",
+        "playoff-bios.json": "19f34374215a5f7d1e7ae2f38b001fd4f401a8eaecc8d0f8ff8ba8b714f5de09",
+        "playoff-stats.json": "eb58ec53da2d0b5d6bc2f6972a77d2ff9e04ea29442b053b0564f73928f3b511"
+      }
+    },
+    {
+      "id": "20222023-playoff",
+      "season": 20222023,
+      "season_type": "playoff",
+      "source": "repository:20222023",
+      "url": "data/c1a9d2b5a588872d129081c88a405230aeda18e1e8b1f62e1c69b276a22eb056.json",
+      "sha256": "c1a9d2b5a588872d129081c88a405230aeda18e1e8b1f62e1c69b276a22eb056",
+      "bytes": 262089,
+      "skaters": 334,
+      "goalies": 28,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "e7daba71679a9620b6f8671e32f0e922f1153cb8e315fe04b167768993ea1ee5",
+        "goalie-stats.json": "e2389d2f77f1ee0045318221a31a6f31df0375ff8ba97b92ed56dac09d18fd7b",
+        "bios.json": "aba98be206640d849179bec7cf34ccb4ca0e1c02b174253b983c20337b16d95e",
+        "playoff-goalie-stats.json": "7db76a6792b335d97756ea0835c34513ae55921cbf38931b6d9da4063cee19f6",
+        "playoff-bios.json": "19f34374215a5f7d1e7ae2f38b001fd4f401a8eaecc8d0f8ff8ba8b714f5de09",
+        "playoff-stats.json": "eb58ec53da2d0b5d6bc2f6972a77d2ff9e04ea29442b053b0564f73928f3b511"
+      }
+    },
+    {
+      "id": "20212022-regular",
+      "season": 20212022,
+      "season_type": "regular",
+      "source": "repository:20212022",
+      "url": "data/32bbcdf0dbfb6567ff6d9d29216aa34823a0bfcb4796dd88d8256772d37f14bd.json",
+      "sha256": "32bbcdf0dbfb6567ff6d9d29216aa34823a0bfcb4796dd88d8256772d37f14bd",
+      "bytes": 988849,
+      "skaters": 1004,
+      "goalies": 119,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "546b6611cb6fa44773bcbea21f0ad8d6fb9f1da9ed89f5e764240fb37a5ce6cf",
+        "goalie-stats.json": "8e79f88cefdf9c28a5efd845ecb69277798b1c3be43e62983df04e8597ac228e",
+        "bios.json": "18827e92ead999f452c7c6cbeb11cc6a56b680f8aacec7c12182da85b6942fab",
+        "playoff-goalie-stats.json": "0c0e7540f8886373ff695df9b08a4a6fd46f98e323c69b0b9a20064e38b7c223",
+        "playoff-bios.json": "07a16dbb3b96a455ca4ba0f2d5383ce9d716a9c0e6e4e7f694c3784db077b521",
+        "playoff-stats.json": "ab44a880032f66d5eecdb7a401ba2bdef73b5717e65f467e2f0a0b02de91aa2d"
+      }
+    },
+    {
+      "id": "20212022-playoff",
+      "season": 20212022,
+      "season_type": "playoff",
+      "source": "repository:20212022",
+      "url": "data/d4f278799b3a92f617e3702c726725009348dea538b75bc1eeb75b79ddd7aedf.json",
+      "sha256": "d4f278799b3a92f617e3702c726725009348dea538b75bc1eeb75b79ddd7aedf",
+      "bytes": 263293,
+      "skaters": 335,
+      "goalies": 30,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "546b6611cb6fa44773bcbea21f0ad8d6fb9f1da9ed89f5e764240fb37a5ce6cf",
+        "goalie-stats.json": "8e79f88cefdf9c28a5efd845ecb69277798b1c3be43e62983df04e8597ac228e",
+        "bios.json": "18827e92ead999f452c7c6cbeb11cc6a56b680f8aacec7c12182da85b6942fab",
+        "playoff-goalie-stats.json": "0c0e7540f8886373ff695df9b08a4a6fd46f98e323c69b0b9a20064e38b7c223",
+        "playoff-bios.json": "07a16dbb3b96a455ca4ba0f2d5383ce9d716a9c0e6e4e7f694c3784db077b521",
+        "playoff-stats.json": "ab44a880032f66d5eecdb7a401ba2bdef73b5717e65f467e2f0a0b02de91aa2d"
+      }
+    },
+    {
+      "id": "20202021-regular",
+      "season": 20202021,
+      "season_type": "regular",
+      "source": "repository:20202021",
+      "url": "data/c47f0fc7d685ff43bb63e1496c690b1eece42f9e87695c9d86b84e5aa019aab3.json",
+      "sha256": "c47f0fc7d685ff43bb63e1496c690b1eece42f9e87695c9d86b84e5aa019aab3",
+      "bytes": 892768,
+      "skaters": 904,
+      "goalies": 98,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "230d85e811e825215d0f489b7ee268147f45587d27818bbb03496b2c738edd79",
+        "goalie-stats.json": "76ee227c8732b75a9803e3536b361bc3359c877ee4c4bd9a3e40dbca61312316",
+        "bios.json": "5814ab43a2ce5a882c144dffb7713f6fb04063a58e972b551ff04a10dc9c28d3",
+        "playoff-goalie-stats.json": "ad0631fec1169013c4a2ff90b7eef4e907d09e3e02848734331147a46fff7c52",
+        "playoff-bios.json": "ef50a5d9613d0c0cec89b4b3a507be752e6b4bdf5cc8ce57b9460f6a2c5fc3dc",
+        "playoff-stats.json": "e50df5d151d10e9d265d21e9d90268c50e99a4930dab0e03731567ac1b24a9a9"
+      }
+    },
+    {
+      "id": "20202021-playoff",
+      "season": 20202021,
+      "season_type": "playoff",
+      "source": "repository:20202021",
+      "url": "data/749b8bdc92ef93e04fcd15d5024c6e0fe8203ed211aeca9b1fe69139ad90e794.json",
+      "sha256": "749b8bdc92ef93e04fcd15d5024c6e0fe8203ed211aeca9b1fe69139ad90e794",
+      "bytes": 262152,
+      "skaters": 337,
+      "goalies": 24,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "230d85e811e825215d0f489b7ee268147f45587d27818bbb03496b2c738edd79",
+        "goalie-stats.json": "76ee227c8732b75a9803e3536b361bc3359c877ee4c4bd9a3e40dbca61312316",
+        "bios.json": "5814ab43a2ce5a882c144dffb7713f6fb04063a58e972b551ff04a10dc9c28d3",
+        "playoff-goalie-stats.json": "ad0631fec1169013c4a2ff90b7eef4e907d09e3e02848734331147a46fff7c52",
+        "playoff-bios.json": "ef50a5d9613d0c0cec89b4b3a507be752e6b4bdf5cc8ce57b9460f6a2c5fc3dc",
+        "playoff-stats.json": "e50df5d151d10e9d265d21e9d90268c50e99a4930dab0e03731567ac1b24a9a9"
+      }
+    },
+    {
+      "id": "20192020-regular",
+      "season": 20192020,
+      "season_type": "regular",
+      "source": "repository:20192020",
+      "url": "data/d652338f55ad15689b120370191009f1756d5b4069069e69e056d0025c07479a.json",
+      "sha256": "d652338f55ad15689b120370191009f1756d5b4069069e69e056d0025c07479a",
+      "bytes": 860817,
+      "skaters": 861,
+      "goalies": 87,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "ef9d5158daffb2edfd2d78c35215614584e1689af7b12ca1a87391c7a8726b32",
+        "goalie-stats.json": "5753114e06a7ea87d8993bb12de1890cdcd65f83e39b3f70c213df817cf520b7",
+        "bios.json": "3aeb2f074ce886039828c95106a90fcc0f525aa8cde71815e5a662e595509e4d",
+        "playoff-goalie-stats.json": "9ad2a053a4e03b217831c8d3aba9d5d68e898fbe45e465c19ca358fac131bd65",
+        "playoff-bios.json": "2e1260dd83a8e820790d6d62bf35723801d8a5bf5ce6477628bc48d33ce56020",
+        "playoff-stats.json": "5832d48d306d5c205d366d70a3aad34427daa99f55708d659c235e1873fccfd0"
+      }
+    },
+    {
+      "id": "20192020-playoff",
+      "season": 20192020,
+      "season_type": "playoff",
+      "source": "repository:20192020",
+      "url": "data/f68244dee682728408d976b91e95f77b2782c2c9c09bf6020374a7df49042a67.json",
+      "sha256": "f68244dee682728408d976b91e95f77b2782c2c9c09bf6020374a7df49042a67",
+      "bytes": 402760,
+      "skaters": 516,
+      "goalies": 42,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "ef9d5158daffb2edfd2d78c35215614584e1689af7b12ca1a87391c7a8726b32",
+        "goalie-stats.json": "5753114e06a7ea87d8993bb12de1890cdcd65f83e39b3f70c213df817cf520b7",
+        "bios.json": "3aeb2f074ce886039828c95106a90fcc0f525aa8cde71815e5a662e595509e4d",
+        "playoff-goalie-stats.json": "9ad2a053a4e03b217831c8d3aba9d5d68e898fbe45e465c19ca358fac131bd65",
+        "playoff-bios.json": "2e1260dd83a8e820790d6d62bf35723801d8a5bf5ce6477628bc48d33ce56020",
+        "playoff-stats.json": "5832d48d306d5c205d366d70a3aad34427daa99f55708d659c235e1873fccfd0"
+      }
+    },
+    {
+      "id": "20182019-regular",
+      "season": 20182019,
+      "season_type": "regular",
+      "source": "repository:20182019",
+      "url": "data/85026f809851048ba79b6a304f3fa74e3beb09f74acbdb8a488ec9725d82924e.json",
+      "sha256": "85026f809851048ba79b6a304f3fa74e3beb09f74acbdb8a488ec9725d82924e",
+      "bytes": 884461,
+      "skaters": 906,
+      "goalies": 93,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "becbeb3d15d50ef735e61d1b3f911ed8b9e949b35a9ab37f4398486602859b1a",
+        "goalie-stats.json": "89f937117ec862cc916348e604b181888fb52751c85d81fbb786de93b11a5896",
+        "bios.json": "e8e47c4292775f141505d28c09d9d6c327fee3edcc0e3798d19b3ce8aa2b4974",
+        "playoff-goalie-stats.json": "f41ca2dac79d89c4b641fb8a55b14a5faa9060cdc96d9c1da81d24133a4cc177",
+        "playoff-bios.json": "98a689784705fa8b1a00f193f9cdaf453462d587df13c172135292221098e4a5",
+        "playoff-stats.json": "61893feb836ff868678a51969aceb0f0e87143b84c34c15788bf99840affafaf"
+      }
+    },
+    {
+      "id": "20182019-playoff",
+      "season": 20182019,
+      "season_type": "playoff",
+      "source": "repository:20182019",
+      "url": "data/85c09738b02430146ddc75e3c301c88800532499bb743abe345445236fe4e6e0.json",
+      "sha256": "85c09738b02430146ddc75e3c301c88800532499bb743abe345445236fe4e6e0",
+      "bytes": 258349,
+      "skaters": 333,
+      "goalies": 22,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "becbeb3d15d50ef735e61d1b3f911ed8b9e949b35a9ab37f4398486602859b1a",
+        "goalie-stats.json": "89f937117ec862cc916348e604b181888fb52751c85d81fbb786de93b11a5896",
+        "bios.json": "e8e47c4292775f141505d28c09d9d6c327fee3edcc0e3798d19b3ce8aa2b4974",
+        "playoff-goalie-stats.json": "f41ca2dac79d89c4b641fb8a55b14a5faa9060cdc96d9c1da81d24133a4cc177",
+        "playoff-bios.json": "98a689784705fa8b1a00f193f9cdaf453462d587df13c172135292221098e4a5",
+        "playoff-stats.json": "61893feb836ff868678a51969aceb0f0e87143b84c34c15788bf99840affafaf"
+      }
+    },
+    {
+      "id": "20172018-regular",
+      "season": 20172018,
+      "season_type": "regular",
+      "source": "repository:20172018",
+      "url": "data/e373d8a934d5964d35119929e284d261bf6c0c141537156e6c4d3351a3f79d9a.json",
+      "sha256": "e373d8a934d5964d35119929e284d261bf6c0c141537156e6c4d3351a3f79d9a",
+      "bytes": 869271,
+      "skaters": 871,
+      "goalies": 95,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "8afa85bd0a5a6168fe25419d8e333865e05e541c718822d956cced2f7c3718c6",
+        "goalie-stats.json": "5a3e441cc79627fb65d2a52695c5bb60256f9fb0eaab84a9835f1a47c99c6da5",
+        "bios.json": "9dc8f09f40192e2f13147fed701c8b671d4eb3cdc2209685da0bd750f722726d",
+        "playoff-goalie-stats.json": "ac087b535566cfd7ca44d28bd237a4f0bdbf2f922b729d8a5f14db0715a2b0fe",
+        "playoff-bios.json": "b68e921f287b337207bb8f9cda7212c997f31dcab6e4f10c1095d1c3623e9a2e",
+        "playoff-stats.json": "ed088afa5334631bc2f5f843c71e9225a951ae99f4af553889e57c79e1261b21"
+      }
+    },
+    {
+      "id": "20172018-playoff",
+      "season": 20172018,
+      "season_type": "playoff",
+      "source": "repository:20172018",
+      "url": "data/f3a5940179542d62e64ed04b7835c3f6fd972f0b0764c3a83e0d92119309e13c.json",
+      "sha256": "f3a5940179542d62e64ed04b7835c3f6fd972f0b0764c3a83e0d92119309e13c",
+      "bytes": 260915,
+      "skaters": 333,
+      "goalies": 29,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "8afa85bd0a5a6168fe25419d8e333865e05e541c718822d956cced2f7c3718c6",
+        "goalie-stats.json": "5a3e441cc79627fb65d2a52695c5bb60256f9fb0eaab84a9835f1a47c99c6da5",
+        "bios.json": "9dc8f09f40192e2f13147fed701c8b671d4eb3cdc2209685da0bd750f722726d",
+        "playoff-goalie-stats.json": "ac087b535566cfd7ca44d28bd237a4f0bdbf2f922b729d8a5f14db0715a2b0fe",
+        "playoff-bios.json": "b68e921f287b337207bb8f9cda7212c997f31dcab6e4f10c1095d1c3623e9a2e",
+        "playoff-stats.json": "ed088afa5334631bc2f5f843c71e9225a951ae99f4af553889e57c79e1261b21"
+      }
+    },
+    {
+      "id": "20162017-regular",
+      "season": 20162017,
+      "season_type": "regular",
+      "source": "repository:20162017",
+      "url": "data/804dc96eb2671e1f09f4c93ec5dd906e664f4eb0c9c1eb0141a4c00015fb034d.json",
+      "sha256": "804dc96eb2671e1f09f4c93ec5dd906e664f4eb0c9c1eb0141a4c00015fb034d",
+      "bytes": 865646,
+      "skaters": 885,
+      "goalies": 95,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "f8d18f13dc2213caafbe1eb5b6adf7d2eb0789e50b569812af19fc0a5873228c",
+        "goalie-stats.json": "79ddba115e4770dc36bc09e6a9f568d9db6856f6e665c92ef98e9dde81fb331b",
+        "bios.json": "0f80a5ec0545587f8b931c4907df05a6269a34e4782d11fa8bd1d513fa9eb845",
+        "playoff-goalie-stats.json": "b039143dd93cc8ed1667d002a3d575df9780c0e52c057dd893bb8124b2cb584f",
+        "playoff-bios.json": "2c9e76f2bbac57b08edcfb870d0486f78c9a4c5d6202a9f6d537580308213a77",
+        "playoff-stats.json": "b380b51efb60657061fbcc8cc6e262c75b602571f6ea53bc6c3809ed77bb90d1"
+      }
+    },
+    {
+      "id": "20162017-playoff",
+      "season": 20162017,
+      "season_type": "playoff",
+      "source": "repository:20162017",
+      "url": "data/6a310b643850fb8f37e7896f1db5e475036ad309b7243f19662c9de65f281eef.json",
+      "sha256": "6a310b643850fb8f37e7896f1db5e475036ad309b7243f19662c9de65f281eef",
+      "bytes": 266101,
+      "skaters": 343,
+      "goalies": 23,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "f8d18f13dc2213caafbe1eb5b6adf7d2eb0789e50b569812af19fc0a5873228c",
+        "goalie-stats.json": "79ddba115e4770dc36bc09e6a9f568d9db6856f6e665c92ef98e9dde81fb331b",
+        "bios.json": "0f80a5ec0545587f8b931c4907df05a6269a34e4782d11fa8bd1d513fa9eb845",
+        "playoff-goalie-stats.json": "b039143dd93cc8ed1667d002a3d575df9780c0e52c057dd893bb8124b2cb584f",
+        "playoff-bios.json": "2c9e76f2bbac57b08edcfb870d0486f78c9a4c5d6202a9f6d537580308213a77",
+        "playoff-stats.json": "b380b51efb60657061fbcc8cc6e262c75b602571f6ea53bc6c3809ed77bb90d1"
+      }
+    },
+    {
+      "id": "20152016-regular",
+      "season": 20152016,
+      "season_type": "regular",
+      "source": "repository:20152016",
+      "url": "data/766e8d9e6c9decbe52a1127c163b48984a144f3124d0527aff9d2d953c2f0836.json",
+      "sha256": "766e8d9e6c9decbe52a1127c163b48984a144f3124d0527aff9d2d953c2f0836",
+      "bytes": 872850,
+      "skaters": 890,
+      "goalies": 92,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "24fb969089000526adc9c434c95d4b12c7aa9ddbd834b1a4e97719a97cb141a4",
+        "goalie-stats.json": "c0676908f71d4c24526a61fc75d80f72c4cd1fe9655a392437c47217c676b281",
+        "bios.json": "7782b6993ffd3643ec5137b9eaac297cd2575f6909130f804d7c9ff9a04a4525",
+        "playoff-goalie-stats.json": "e1427e82b73ae661fbb1ba74acb7586e885c96b178dc6cf1171152539dd8c246",
+        "playoff-bios.json": "85cc5b8df4ea9d0e6890785774506262fa52f851977f86542532283795e4058e",
+        "playoff-stats.json": "f277eff25f532af580af7a710a081f6f294808add35bf7e567693df9276a67ad"
+      }
+    },
+    {
+      "id": "20152016-playoff",
+      "season": 20152016,
+      "season_type": "playoff",
+      "source": "repository:20152016",
+      "url": "data/edc48e4fbbd917ec00154abc2cca9829999d481cf6779fba0a9dd3f209943e7b.json",
+      "sha256": "edc48e4fbbd917ec00154abc2cca9829999d481cf6779fba0a9dd3f209943e7b",
+      "bytes": 265706,
+      "skaters": 340,
+      "goalies": 28,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "24fb969089000526adc9c434c95d4b12c7aa9ddbd834b1a4e97719a97cb141a4",
+        "goalie-stats.json": "c0676908f71d4c24526a61fc75d80f72c4cd1fe9655a392437c47217c676b281",
+        "bios.json": "7782b6993ffd3643ec5137b9eaac297cd2575f6909130f804d7c9ff9a04a4525",
+        "playoff-goalie-stats.json": "e1427e82b73ae661fbb1ba74acb7586e885c96b178dc6cf1171152539dd8c246",
+        "playoff-bios.json": "85cc5b8df4ea9d0e6890785774506262fa52f851977f86542532283795e4058e",
+        "playoff-stats.json": "f277eff25f532af580af7a710a081f6f294808add35bf7e567693df9276a67ad"
+      }
+    },
+    {
+      "id": "20142015-regular",
+      "season": 20142015,
+      "season_type": "regular",
+      "source": "repository:20142015",
+      "url": "data/d4ed3a3a15778385bf998f866a055b667267f41191cabaf7aed4d823bf8dc571.json",
+      "sha256": "d4ed3a3a15778385bf998f866a055b667267f41191cabaf7aed4d823bf8dc571",
+      "bytes": 857046,
+      "skaters": 859,
+      "goalies": 92,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "63424a8e6b90a3af4a7738fdf278851dd6f185fe2f535f203d5e87e8deee36d5",
+        "goalie-stats.json": "cd8c9b378d92241c4e7948e09534be447487e5fed42e80fd01f3c71e518c461a",
+        "bios.json": "d4980514f353fba42fb3194593b0e4bb88c90071bf85cb25e27ee0f639052c4a",
+        "playoff-goalie-stats.json": "ca71801f938caa92474dce7d36cb1d89d0741a5edd46240830c216e382067bb6",
+        "playoff-bios.json": "af12e0a57918d9ee1564f20b2a1eea391c536ab93d9754a73ba9df9c64610df7",
+        "playoff-stats.json": "cd6b89b2c32cdfd7cf6e75495452300f0606a137058ea6805300575447e3958c"
+      }
+    },
+    {
+      "id": "20142015-playoff",
+      "season": 20142015,
+      "season_type": "playoff",
+      "source": "repository:20142015",
+      "url": "data/a4e3bfc162e64d1ddaf9876468a1c7a265a47646709e9cb8e06510c46c7d4a29.json",
+      "sha256": "a4e3bfc162e64d1ddaf9876468a1c7a265a47646709e9cb8e06510c46c7d4a29",
+      "bytes": 264283,
+      "skaters": 339,
+      "goalies": 26,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "63424a8e6b90a3af4a7738fdf278851dd6f185fe2f535f203d5e87e8deee36d5",
+        "goalie-stats.json": "cd8c9b378d92241c4e7948e09534be447487e5fed42e80fd01f3c71e518c461a",
+        "bios.json": "d4980514f353fba42fb3194593b0e4bb88c90071bf85cb25e27ee0f639052c4a",
+        "playoff-goalie-stats.json": "ca71801f938caa92474dce7d36cb1d89d0741a5edd46240830c216e382067bb6",
+        "playoff-bios.json": "af12e0a57918d9ee1564f20b2a1eea391c536ab93d9754a73ba9df9c64610df7",
+        "playoff-stats.json": "cd6b89b2c32cdfd7cf6e75495452300f0606a137058ea6805300575447e3958c"
+      }
+    },
+    {
+      "id": "20132014-regular",
+      "season": 20132014,
+      "season_type": "regular",
+      "source": "repository:20132014",
+      "url": "data/8ae56553db63447a7dd7e54c8706fc24ee68c9be27eabdc0a109e7ac1deb6782.json",
+      "sha256": "8ae56553db63447a7dd7e54c8706fc24ee68c9be27eabdc0a109e7ac1deb6782",
+      "bytes": 862203,
+      "skaters": 878,
+      "goalies": 97,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "e2afe6412386e292756bbe793935f6bf69957d2c96ac5ab193f4df6634af0da6",
+        "goalie-stats.json": "01f822aeddb1664509307da85415a6f85806cdf0b72f20a967d6f6a137babd2f",
+        "bios.json": "366e3d20f1de8debc93ca9f83ac357859c0ee90005e3f146dc8b729b73e9ed71",
+        "playoff-goalie-stats.json": "3b0f9e16f2999b2d5db0bf15c4f8353528e3f084316fe29b064a50c009bd112d",
+        "playoff-bios.json": "a178062b2b7a051bb2ce11a31995ae39946d01f2a33e9822f3e496f292b49752",
+        "playoff-stats.json": "9e092c6bacc1850cdf8bf7d45cf53830f2233c0edca15d3198557d774ea8d1b0"
+      }
+    },
+    {
+      "id": "20132014-playoff",
+      "season": 20132014,
+      "season_type": "playoff",
+      "source": "repository:20132014",
+      "url": "data/b51a9dad95a1dec4bef34c4d12ac6a1883db6575f91bca9c8b45e10ceb2ad5c1.json",
+      "sha256": "b51a9dad95a1dec4bef34c4d12ac6a1883db6575f91bca9c8b45e10ceb2ad5c1",
+      "bytes": 269000,
+      "skaters": 344,
+      "goalies": 28,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "e2afe6412386e292756bbe793935f6bf69957d2c96ac5ab193f4df6634af0da6",
+        "goalie-stats.json": "01f822aeddb1664509307da85415a6f85806cdf0b72f20a967d6f6a137babd2f",
+        "bios.json": "366e3d20f1de8debc93ca9f83ac357859c0ee90005e3f146dc8b729b73e9ed71",
+        "playoff-goalie-stats.json": "3b0f9e16f2999b2d5db0bf15c4f8353528e3f084316fe29b064a50c009bd112d",
+        "playoff-bios.json": "a178062b2b7a051bb2ce11a31995ae39946d01f2a33e9822f3e496f292b49752",
+        "playoff-stats.json": "9e092c6bacc1850cdf8bf7d45cf53830f2233c0edca15d3198557d774ea8d1b0"
+      }
+    },
+    {
+      "id": "20122013-regular",
+      "season": 20122013,
+      "season_type": "regular",
+      "source": "repository:20122013",
+      "url": "data/62cf411e302a89923d219ec788c9b2bd914d4effc6e7b223800503dd077b70c0.json",
+      "sha256": "62cf411e302a89923d219ec788c9b2bd914d4effc6e7b223800503dd077b70c0",
+      "bytes": 809752,
+      "skaters": 826,
+      "goalies": 82,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "7a4d48ad22ec1bbb873b490ac78bac2069330b4e6248851cd416c020ab2b675f",
+        "goalie-stats.json": "aa2acbfd4009e7f6f30e790490b2712b59464e2d8af7cc1daeef12a973a49c8e",
+        "bios.json": "4ad1bbcb172b62d44e483ccfccf75bc2a49de85532dd997ffc0c8f0ce069215f",
+        "playoff-goalie-stats.json": "af23db3f2cfceb174f5a6f16d7b5362d759e90ae7fca310990decaab837f7957",
+        "playoff-bios.json": "3553b4dad4e2dbd1782f187f80431b5efa71d868b52d12e2d39c9466bda7aea9",
+        "playoff-stats.json": "b24ae36d216da656da2b803b123d0a19f6ac6aaab2228c5e33c33c7d827bf6a3"
+      }
+    },
+    {
+      "id": "20122013-playoff",
+      "season": 20122013,
+      "season_type": "playoff",
+      "source": "repository:20122013",
+      "url": "data/3aaa88a09ac23380c3f254b49f3df61000db7d6a263a4f7393d142916f6e79b0.json",
+      "sha256": "3aaa88a09ac23380c3f254b49f3df61000db7d6a263a4f7393d142916f6e79b0",
+      "bytes": 270604,
+      "skaters": 349,
+      "goalies": 23,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "7a4d48ad22ec1bbb873b490ac78bac2069330b4e6248851cd416c020ab2b675f",
+        "goalie-stats.json": "aa2acbfd4009e7f6f30e790490b2712b59464e2d8af7cc1daeef12a973a49c8e",
+        "bios.json": "4ad1bbcb172b62d44e483ccfccf75bc2a49de85532dd997ffc0c8f0ce069215f",
+        "playoff-goalie-stats.json": "af23db3f2cfceb174f5a6f16d7b5362d759e90ae7fca310990decaab837f7957",
+        "playoff-bios.json": "3553b4dad4e2dbd1782f187f80431b5efa71d868b52d12e2d39c9466bda7aea9",
+        "playoff-stats.json": "b24ae36d216da656da2b803b123d0a19f6ac6aaab2228c5e33c33c7d827bf6a3"
+      }
+    },
+    {
+      "id": "20112012-regular",
+      "season": 20112012,
+      "season_type": "regular",
+      "source": "repository:20112012",
+      "url": "data/1a940d9dd373ffa3ce1330ec97e7073a43e81c16de72e85607888685e41fc279.json",
+      "sha256": "1a940d9dd373ffa3ce1330ec97e7073a43e81c16de72e85607888685e41fc279",
+      "bytes": 865276,
+      "skaters": 877,
+      "goalies": 89,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "991c73871c4b300465f48ad56d411ddf2be443efeeb4a20cefd892610ad5be70",
+        "goalie-stats.json": "cd9f2801b272e8c54bf70292dfb2b2fce65109940c7a6ce004bb0f1c3ea1b00a",
+        "bios.json": "a86c5aa83d38ac4772015916a855e76a4fbaa2dc7d0e68ed2697f204aee6968e",
+        "playoff-goalie-stats.json": "f101df3fe83d9d2db86267156d138be0a9ef860f09d6bb63586163c1d2db0ee0",
+        "playoff-bios.json": "a772d224a29b3a0be9f9ac663bcb549a11b5923fd36d32ea1717835302e77d46",
+        "playoff-stats.json": "412e0439314d45d8590c12e79762cb64703780ef83129c616d495a24c8225a66"
+      }
+    },
+    {
+      "id": "20112012-playoff",
+      "season": 20112012,
+      "season_type": "playoff",
+      "source": "repository:20112012",
+      "url": "data/b08e06a18c9bfc4b0904d112ef0ce94f557f846886c96934c0be25ec34d0d8c1.json",
+      "sha256": "b08e06a18c9bfc4b0904d112ef0ce94f557f846886c96934c0be25ec34d0d8c1",
+      "bytes": 268863,
+      "skaters": 347,
+      "goalies": 23,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "991c73871c4b300465f48ad56d411ddf2be443efeeb4a20cefd892610ad5be70",
+        "goalie-stats.json": "cd9f2801b272e8c54bf70292dfb2b2fce65109940c7a6ce004bb0f1c3ea1b00a",
+        "bios.json": "a86c5aa83d38ac4772015916a855e76a4fbaa2dc7d0e68ed2697f204aee6968e",
+        "playoff-goalie-stats.json": "f101df3fe83d9d2db86267156d138be0a9ef860f09d6bb63586163c1d2db0ee0",
+        "playoff-bios.json": "a772d224a29b3a0be9f9ac663bcb549a11b5923fd36d32ea1717835302e77d46",
+        "playoff-stats.json": "412e0439314d45d8590c12e79762cb64703780ef83129c616d495a24c8225a66"
+      }
+    },
+    {
+      "id": "20102011-regular",
+      "season": 20102011,
+      "season_type": "regular",
+      "source": "repository:20102011",
+      "url": "data/33d76e0ffd13ce763ecf81716b809bb5ab170be535fe391e284700880dc36b83.json",
+      "sha256": "33d76e0ffd13ce763ecf81716b809bb5ab170be535fe391e284700880dc36b83",
+      "bytes": 861262,
+      "skaters": 886,
+      "goalies": 87,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "d67990713a4cd9ef3466d4fba3ac09d91bf5e5373a1e4331379b302db5f07546",
+        "goalie-stats.json": "f63af6db88ac2b27ed193a8b8340813e1542a84c21f216b72e3b49d3b72e849d",
+        "bios.json": "cf907ae01a0fb18319f1624817620ca5b9a3eec0604f93eeb6211c1c0877bb5c",
+        "playoff-goalie-stats.json": "e641f09c6fcc1b1897637cbc2dc9e4ed9c7a3ace4b208f2ce75a6f908d6abb12",
+        "playoff-bios.json": "419801e24c9443e3f0c42263080d5ff64de36dbcb70b6bbbe40eebc7a60e543e",
+        "playoff-stats.json": "809e2ae53db17cde54930b9028c1fdc9cfa910b0f9f271599e3b3da635abf55f"
+      }
+    },
+    {
+      "id": "20102011-playoff",
+      "season": 20102011,
+      "season_type": "playoff",
+      "source": "repository:20102011",
+      "url": "data/762eb9b30cc797f7b6202a5f47eff0c00fe4e19c6ac5f31a328910764f3f124b.json",
+      "sha256": "762eb9b30cc797f7b6202a5f47eff0c00fe4e19c6ac5f31a328910764f3f124b",
+      "bytes": 263962,
+      "skaters": 339,
+      "goalies": 25,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "d67990713a4cd9ef3466d4fba3ac09d91bf5e5373a1e4331379b302db5f07546",
+        "goalie-stats.json": "f63af6db88ac2b27ed193a8b8340813e1542a84c21f216b72e3b49d3b72e849d",
+        "bios.json": "cf907ae01a0fb18319f1624817620ca5b9a3eec0604f93eeb6211c1c0877bb5c",
+        "playoff-goalie-stats.json": "e641f09c6fcc1b1897637cbc2dc9e4ed9c7a3ace4b208f2ce75a6f908d6abb12",
+        "playoff-bios.json": "419801e24c9443e3f0c42263080d5ff64de36dbcb70b6bbbe40eebc7a60e543e",
+        "playoff-stats.json": "809e2ae53db17cde54930b9028c1fdc9cfa910b0f9f271599e3b3da635abf55f"
+      }
+    },
+    {
+      "id": "20092010-regular",
+      "season": 20092010,
+      "season_type": "regular",
+      "source": "repository:20092010",
+      "url": "data/cf58953c546697199cbdf4717d225ed8417a540c7f6e5f9091e66e20b16d5982.json",
+      "sha256": "cf58953c546697199cbdf4717d225ed8417a540c7f6e5f9091e66e20b16d5982",
+      "bytes": 848598,
+      "skaters": 855,
+      "goalies": 83,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "cf0fab65ebd393e61baf2a9dc0222913eb4bf49302f92fdfdf7027f0f454baf0",
+        "goalie-stats.json": "960ce4b6804e27172ca82a98069a0713eea32324c322ffaff28d53e09a91691a",
+        "bios.json": "3b9a5bf56c30d79096297e3d17883b53daa5dee811b9d614c09821cea5123e00",
+        "playoff-goalie-stats.json": "5c627b7806fd4909262c409307a23a194feb343c54dbf9a677402abeeb58741b",
+        "playoff-bios.json": "23f4f6f82727b1a3801bc7e8a9208face197a329681e084e3be65f20c593a5d9",
+        "playoff-stats.json": "98fddb40dac3ecf8acf353c603da18b9c057cb22288fbf9fb5c7d78af7061866"
+      }
+    },
+    {
+      "id": "20092010-playoff",
+      "season": 20092010,
+      "season_type": "playoff",
+      "source": "repository:20092010",
+      "url": "data/35912d5c7e6ea016625b9e27f4cf1d8588a5cd0809e2d4ecbb9e08f4d037ec9f.json",
+      "sha256": "35912d5c7e6ea016625b9e27f4cf1d8588a5cd0809e2d4ecbb9e08f4d037ec9f",
+      "bytes": 267154,
+      "skaters": 342,
+      "goalies": 27,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "cf0fab65ebd393e61baf2a9dc0222913eb4bf49302f92fdfdf7027f0f454baf0",
+        "goalie-stats.json": "960ce4b6804e27172ca82a98069a0713eea32324c322ffaff28d53e09a91691a",
+        "bios.json": "3b9a5bf56c30d79096297e3d17883b53daa5dee811b9d614c09821cea5123e00",
+        "playoff-goalie-stats.json": "5c627b7806fd4909262c409307a23a194feb343c54dbf9a677402abeeb58741b",
+        "playoff-bios.json": "23f4f6f82727b1a3801bc7e8a9208face197a329681e084e3be65f20c593a5d9",
+        "playoff-stats.json": "98fddb40dac3ecf8acf353c603da18b9c057cb22288fbf9fb5c7d78af7061866"
+      }
+    },
+    {
+      "id": "20082009-regular",
+      "season": 20082009,
+      "season_type": "regular",
+      "source": "repository:20082009",
+      "url": "data/48bb5c0cdc2901aa0dae4f226148d7f2fa622e01eaf32610904deacde1171151.json",
+      "sha256": "48bb5c0cdc2901aa0dae4f226148d7f2fa622e01eaf32610904deacde1171151",
+      "bytes": 856255,
+      "skaters": 870,
+      "goalies": 89,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "81bf8a49dda6adfefad8d4190f96150a29bce509618a19987edb1c642726259f",
+        "goalie-stats.json": "0fdff397286a66c7a964028335e3461fa541d4d0a9966b172f0df851e54375db",
+        "bios.json": "b377aaf8d806800a1de3bdca57fda1d4f2c12a49abb8765c838ed98e7e79b7a1",
+        "playoff-goalie-stats.json": "61470a3a64731857c058ee074d515d09e86acf9b9f4b2e636c85cecb17981781",
+        "playoff-bios.json": "cb02e56d992e863a3f36417fc4ed2fcdbd85636bcf7e49dad6dd59364bafada2",
+        "playoff-stats.json": "65ec8738e3342d36b12bd3ac927b89b9d44b260501d36a13b82cbe8503f05419"
+      }
+    },
+    {
+      "id": "20082009-playoff",
+      "season": 20082009,
+      "season_type": "playoff",
+      "source": "repository:20082009",
+      "url": "data/68706d5bd97ec46a025a16c8c333536fa90686044c5d95df3e603fe01845b545.json",
+      "sha256": "68706d5bd97ec46a025a16c8c333536fa90686044c5d95df3e603fe01845b545",
+      "bytes": 259274,
+      "skaters": 333,
+      "goalies": 25,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "81bf8a49dda6adfefad8d4190f96150a29bce509618a19987edb1c642726259f",
+        "goalie-stats.json": "0fdff397286a66c7a964028335e3461fa541d4d0a9966b172f0df851e54375db",
+        "bios.json": "b377aaf8d806800a1de3bdca57fda1d4f2c12a49abb8765c838ed98e7e79b7a1",
+        "playoff-goalie-stats.json": "61470a3a64731857c058ee074d515d09e86acf9b9f4b2e636c85cecb17981781",
+        "playoff-bios.json": "cb02e56d992e863a3f36417fc4ed2fcdbd85636bcf7e49dad6dd59364bafada2",
+        "playoff-stats.json": "65ec8738e3342d36b12bd3ac927b89b9d44b260501d36a13b82cbe8503f05419"
+      }
+    },
+    {
+      "id": "20072008-regular",
+      "season": 20072008,
+      "season_type": "regular",
+      "source": "repository:20072008",
+      "url": "data/40856beb4fd668b0036ed55ed7a80b5b79d28262b6af88807ae8c57d3b32cfc2.json",
+      "sha256": "40856beb4fd668b0036ed55ed7a80b5b79d28262b6af88807ae8c57d3b32cfc2",
+      "bytes": 825438,
+      "skaters": 851,
+      "goalies": 89,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "e32e7d1a70d1049ea2e7d1fb59168c3e01260caf17c398a5889a46fb3f00fedc",
+        "goalie-stats.json": "a1f03472905afa74379fdc68f0d462c57631c882a1ea159eace8e71c2f4d8d2e",
+        "bios.json": "8f6a92cbd9aabe3e28ded7a7499beccbf212bbdd4d4c4d874feba491e3e2a899",
+        "playoff-goalie-stats.json": "044fc8aca39290c77439069f583dca8ff668270cf788bbfc9c5518675349a773",
+        "playoff-bios.json": "2a7889195482f97305931756623d4b0279c2334a2c23b492087857d6a6b0e5dc",
+        "playoff-stats.json": "a42b4dd2cbd40e7bf6b8cba0d11a84bac53ef5ef87174977765ac1b648b0d696"
+      }
+    },
+    {
+      "id": "20072008-playoff",
+      "season": 20072008,
+      "season_type": "playoff",
+      "source": "repository:20072008",
+      "url": "data/d05a58a7a73218eccb830db735bd6b3d54fe76c3708267ad3c8c6d438a3bd130.json",
+      "sha256": "d05a58a7a73218eccb830db735bd6b3d54fe76c3708267ad3c8c6d438a3bd130",
+      "bytes": 263177,
+      "skaters": 340,
+      "goalies": 22,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "e32e7d1a70d1049ea2e7d1fb59168c3e01260caf17c398a5889a46fb3f00fedc",
+        "goalie-stats.json": "a1f03472905afa74379fdc68f0d462c57631c882a1ea159eace8e71c2f4d8d2e",
+        "bios.json": "8f6a92cbd9aabe3e28ded7a7499beccbf212bbdd4d4c4d874feba491e3e2a899",
+        "playoff-goalie-stats.json": "044fc8aca39290c77439069f583dca8ff668270cf788bbfc9c5518675349a773",
+        "playoff-bios.json": "2a7889195482f97305931756623d4b0279c2334a2c23b492087857d6a6b0e5dc",
+        "playoff-stats.json": "a42b4dd2cbd40e7bf6b8cba0d11a84bac53ef5ef87174977765ac1b648b0d696"
+      }
+    },
+    {
+      "id": "20062007-regular",
+      "season": 20062007,
+      "season_type": "regular",
+      "source": "repository:20062007",
+      "url": "data/8a867c16c7216879816885df81849dae56b3591260b218d8f1a9e9a3ff7f3b82.json",
+      "sha256": "8a867c16c7216879816885df81849dae56b3591260b218d8f1a9e9a3ff7f3b82",
+      "bytes": 829179,
+      "skaters": 847,
+      "goalies": 84,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "52691ba385ca113315195c94e14637fc608792248ef0600622b17dadab7efef0",
+        "goalie-stats.json": "7fb633d008374069135b86637b396e7db7c0482f815985c76b891ac321016bbd",
+        "bios.json": "c19a086c36b7df620d5dade8117449edd35eac861335d828ea7064db0f2a1f9c",
+        "playoff-goalie-stats.json": "6bd52f34aaa5432ec0de8d725e55586e87552d636c1db3428e9c9fd177eabcdc",
+        "playoff-bios.json": "428eea17f61177ae07bb05b8791e73fecfdaa2eb783fa21fbb4262cf594b8f65",
+        "playoff-stats.json": "8df89d2c37a0b5286be13bf57d1ea7b4478bffb85be8717a3f10fb8dfa4f7c6e"
+      }
+    },
+    {
+      "id": "20062007-playoff",
+      "season": 20062007,
+      "season_type": "playoff",
+      "source": "repository:20062007",
+      "url": "data/88be7d706fb0539d509e31f8c1a5fe7c3698fb88b25e61c0c06ebcbac7534ade.json",
+      "sha256": "88be7d706fb0539d509e31f8c1a5fe7c3698fb88b25e61c0c06ebcbac7534ade",
+      "bytes": 256138,
+      "skaters": 331,
+      "goalies": 22,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "52691ba385ca113315195c94e14637fc608792248ef0600622b17dadab7efef0",
+        "goalie-stats.json": "7fb633d008374069135b86637b396e7db7c0482f815985c76b891ac321016bbd",
+        "bios.json": "c19a086c36b7df620d5dade8117449edd35eac861335d828ea7064db0f2a1f9c",
+        "playoff-goalie-stats.json": "6bd52f34aaa5432ec0de8d725e55586e87552d636c1db3428e9c9fd177eabcdc",
+        "playoff-bios.json": "428eea17f61177ae07bb05b8791e73fecfdaa2eb783fa21fbb4262cf594b8f65",
+        "playoff-stats.json": "8df89d2c37a0b5286be13bf57d1ea7b4478bffb85be8717a3f10fb8dfa4f7c6e"
+      }
+    },
+    {
+      "id": "20052006-regular",
+      "season": 20052006,
+      "season_type": "regular",
+      "source": "repository:20052006",
+      "url": "data/44bd5a05ed4b7f0bc4d6f52b6c1ec6ba24c27958d019e3fc1ad94ab756852dd3.json",
+      "sha256": "44bd5a05ed4b7f0bc4d6f52b6c1ec6ba24c27958d019e3fc1ad94ab756852dd3",
+      "bytes": 843241,
+      "skaters": 853,
+      "goalies": 91,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "2f02eb21f28560c9c4b18ee4a1450839a56cde89d97fe31d2b64e85cdcda23b5",
+        "goalie-stats.json": "9ff58c8ad0bf527d8d911327a3c68df3d5f0cac23328b432a0980b80352ea5e0",
+        "bios.json": "e407a4dd5f283c5b101f056f136a47b6ecf35fd42b8f23adfc85869fcea3c386",
+        "playoff-goalie-stats.json": "254b28560b17824f5750f6384c16cd1515678288e39e1193786e4eb956f553b8",
+        "playoff-bios.json": "2a6f6e5df15c1953ec306839b39abe59be5b3edda10c44a031304121f2b34fbe",
+        "playoff-stats.json": "25f5c251874c91cd800572f0f8fac76761052109798f4fc4de24c4d04be8a5be"
+      }
+    },
+    {
+      "id": "20052006-playoff",
+      "season": 20052006,
+      "season_type": "playoff",
+      "source": "repository:20052006",
+      "url": "data/59ec1db374ca849a09e1a06b68bfdfa14f5556732836c097f808a1da31671edf.json",
+      "sha256": "59ec1db374ca849a09e1a06b68bfdfa14f5556732836c097f808a1da31671edf",
+      "bytes": 259019,
+      "skaters": 333,
+      "goalies": 25,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "2f02eb21f28560c9c4b18ee4a1450839a56cde89d97fe31d2b64e85cdcda23b5",
+        "goalie-stats.json": "9ff58c8ad0bf527d8d911327a3c68df3d5f0cac23328b432a0980b80352ea5e0",
+        "bios.json": "e407a4dd5f283c5b101f056f136a47b6ecf35fd42b8f23adfc85869fcea3c386",
+        "playoff-goalie-stats.json": "254b28560b17824f5750f6384c16cd1515678288e39e1193786e4eb956f553b8",
+        "playoff-bios.json": "2a6f6e5df15c1953ec306839b39abe59be5b3edda10c44a031304121f2b34fbe",
+        "playoff-stats.json": "25f5c251874c91cd800572f0f8fac76761052109798f4fc4de24c4d04be8a5be"
+      }
+    },
+    {
+      "id": "20032004-regular",
+      "season": 20032004,
+      "season_type": "regular",
+      "source": "repository:20032004",
+      "url": "data/d07780df01a9e449189555c05bdd70151a374ea000641bb54110c9efb18fddb7.json",
+      "sha256": "d07780df01a9e449189555c05bdd70151a374ea000641bb54110c9efb18fddb7",
+      "bytes": 886180,
+      "skaters": 909,
+      "goalies": 94,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "e788e24f12322125876670d9dce774b496f712ef87c37a8fdbc8d7ab36f25c0f",
+        "goalie-stats.json": "4d6e5370e1ba9aa0ef41daeb329c691e477d5e95577df8d5418fb738ab863aeb",
+        "bios.json": "dcf13f32bbb6bbba0ba3acbd9d4635120e3bb4980b29faa823e2bebf58e0e72d",
+        "playoff-goalie-stats.json": "4dd8e8a22975d03897d71cb97bafb47372ee0b17da78257ed0b97663abee46e0",
+        "playoff-bios.json": "702a156e7dff347d879fd12c3e9dd495273f9d2377bb167954cc54aa2c09a702",
+        "playoff-stats.json": "4186a70c1490d23ef42310b3f21e84f353d8a3722acc994f3e92aae67e177faf"
+      }
+    },
+    {
+      "id": "20032004-playoff",
+      "season": 20032004,
+      "season_type": "playoff",
+      "source": "repository:20032004",
+      "url": "data/8f9a8adbad37810902a9c1d618f244c255f6f00acc96d87274c56d2901a33a70.json",
+      "sha256": "8f9a8adbad37810902a9c1d618f244c255f6f00acc96d87274c56d2901a33a70",
+      "bytes": 267212,
+      "skaters": 343,
+      "goalies": 27,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "e788e24f12322125876670d9dce774b496f712ef87c37a8fdbc8d7ab36f25c0f",
+        "goalie-stats.json": "4d6e5370e1ba9aa0ef41daeb329c691e477d5e95577df8d5418fb738ab863aeb",
+        "bios.json": "dcf13f32bbb6bbba0ba3acbd9d4635120e3bb4980b29faa823e2bebf58e0e72d",
+        "playoff-goalie-stats.json": "4dd8e8a22975d03897d71cb97bafb47372ee0b17da78257ed0b97663abee46e0",
+        "playoff-bios.json": "702a156e7dff347d879fd12c3e9dd495273f9d2377bb167954cc54aa2c09a702",
+        "playoff-stats.json": "4186a70c1490d23ef42310b3f21e84f353d8a3722acc994f3e92aae67e177faf"
+      }
+    },
+    {
+      "id": "20022003-regular",
+      "season": 20022003,
+      "season_type": "regular",
+      "source": "repository:20022003",
+      "url": "data/39dde521fce86179f4cf20c1fc582514c0deca5496994a96824365a9e1ac80ce.json",
+      "sha256": "39dde521fce86179f4cf20c1fc582514c0deca5496994a96824365a9e1ac80ce",
+      "bytes": 859084,
+      "skaters": 885,
+      "goalies": 91,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "9513d5fdcb76288527e90156bad218f866e7e077268d08aa758293dd7b0877d9",
+        "goalie-stats.json": "08e5947fe6487f8641eb996df7b4e57ccfaaed0e09c216e0387828c6182cb3a7",
+        "bios.json": "1126d297d3598e382371406ef462aefbd2421048c80c14808aefb898d8b05c75",
+        "playoff-goalie-stats.json": "cf768815989fd4b045b7b854449aafb5113b817576c88d7ab410e16d03e88518",
+        "playoff-bios.json": "bc97f96e2ef3eabda591b41777175d60207dc844f39413c9da82658c6f2ea8c0",
+        "playoff-stats.json": "b966013ecccd4486739d92487a3a1c28fbf483c5b139cb50f225db285842b61f"
+      }
+    },
+    {
+      "id": "20022003-playoff",
+      "season": 20022003,
+      "season_type": "playoff",
+      "source": "repository:20022003",
+      "url": "data/69442b6c75935b0d31e1430c1e3e325d2d5e8b1930e77154e404acd9c0cf3fff.json",
+      "sha256": "69442b6c75935b0d31e1430c1e3e325d2d5e8b1930e77154e404acd9c0cf3fff",
+      "bytes": 262138,
+      "skaters": 337,
+      "goalies": 25,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "9513d5fdcb76288527e90156bad218f866e7e077268d08aa758293dd7b0877d9",
+        "goalie-stats.json": "08e5947fe6487f8641eb996df7b4e57ccfaaed0e09c216e0387828c6182cb3a7",
+        "bios.json": "1126d297d3598e382371406ef462aefbd2421048c80c14808aefb898d8b05c75",
+        "playoff-goalie-stats.json": "cf768815989fd4b045b7b854449aafb5113b817576c88d7ab410e16d03e88518",
+        "playoff-bios.json": "bc97f96e2ef3eabda591b41777175d60207dc844f39413c9da82658c6f2ea8c0",
+        "playoff-stats.json": "b966013ecccd4486739d92487a3a1c28fbf483c5b139cb50f225db285842b61f"
+      }
+    },
+    {
+      "id": "20012002-regular",
+      "season": 20012002,
+      "season_type": "regular",
+      "source": "repository:20012002",
+      "url": "data/6482119660150a6f3e306cc72748897e4d2dc49900c4f7f95b27f359517b9701.json",
+      "sha256": "6482119660150a6f3e306cc72748897e4d2dc49900c4f7f95b27f359517b9701",
+      "bytes": 845117,
+      "skaters": 871,
+      "goalies": 89,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "1bdab974222f20f9ddc8cbf446f679852cf4ec1419f63fa951e1ddd0e242d913",
+        "goalie-stats.json": "6027676e3941a749f374ac04233895b5970a268ac8dddedc5cb7c60b6dd09667",
+        "bios.json": "df64ed5d3ad56da449548941b51f3b7d3bfc962267e87afe5b9a2025b7ddca4d",
+        "playoff-goalie-stats.json": "46646d8beb46c0fb135d4a743c02fb0fe94f73a8afd63d05f8abdcffe8bde86b",
+        "playoff-bios.json": "5e70cb36f9c4f4240237790c0733cc631a37f65ca39ce3e218f0703c6285e237",
+        "playoff-stats.json": "1159936add064279003942ddaf4e414de92a15524bd5fc7e09e620810329ea21"
+      }
+    },
+    {
+      "id": "20012002-playoff",
+      "season": 20012002,
+      "season_type": "playoff",
+      "source": "repository:20012002",
+      "url": "data/d8e4565c698a2cddb2e8fcfb41e414ad2ffa40ab1dfdef207bcd064f509fad1e.json",
+      "sha256": "d8e4565c698a2cddb2e8fcfb41e414ad2ffa40ab1dfdef207bcd064f509fad1e",
+      "bytes": 268188,
+      "skaters": 344,
+      "goalies": 28,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "1bdab974222f20f9ddc8cbf446f679852cf4ec1419f63fa951e1ddd0e242d913",
+        "goalie-stats.json": "6027676e3941a749f374ac04233895b5970a268ac8dddedc5cb7c60b6dd09667",
+        "bios.json": "df64ed5d3ad56da449548941b51f3b7d3bfc962267e87afe5b9a2025b7ddca4d",
+        "playoff-goalie-stats.json": "46646d8beb46c0fb135d4a743c02fb0fe94f73a8afd63d05f8abdcffe8bde86b",
+        "playoff-bios.json": "5e70cb36f9c4f4240237790c0733cc631a37f65ca39ce3e218f0703c6285e237",
+        "playoff-stats.json": "1159936add064279003942ddaf4e414de92a15524bd5fc7e09e620810329ea21"
+      }
+    },
+    {
+      "id": "20002001-regular",
+      "season": 20002001,
+      "season_type": "regular",
+      "source": "repository:20002001",
+      "url": "data/1f166f32133c18dbeb8e05089cf14d613514d55fb5cc9b3eda70cb414ced8378.json",
+      "sha256": "1f166f32133c18dbeb8e05089cf14d613514d55fb5cc9b3eda70cb414ced8378",
+      "bytes": 854477,
+      "skaters": 876,
+      "goalies": 89,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "886114ae6945423c4168d75641bebdd65b5b789eb2da56e30b6751d32523e1e5",
+        "goalie-stats.json": "b6dd65a1d2031752f3cc64e506f189b3d1061f46207114ce4633f66de25847e5",
+        "bios.json": "69860bd3d95a117fcecd60f1f3c978721df789f672f8ec7174680f25153da2f0",
+        "playoff-goalie-stats.json": "52a1a86dbeaf3058bbd2ad83e540b84fac137f14cf2fc5b02dcf708adfff3ea7",
+        "playoff-bios.json": "18c673206e4b235cb1cf7fdc6bcafb65ca69a2a4f7c3e55eb2399e6a8cd8ea9e",
+        "playoff-stats.json": "a7fd93985ff15ecd57479c77a005789c8942db8f127052ba127434302cbac46e"
+      }
+    },
+    {
+      "id": "20002001-playoff",
+      "season": 20002001,
+      "season_type": "playoff",
+      "source": "repository:20002001",
+      "url": "data/973e69e925cf34b98fa85f3aed2de1726f45be8cc91542c79da534390b029489.json",
+      "sha256": "973e69e925cf34b98fa85f3aed2de1726f45be8cc91542c79da534390b029489",
+      "bytes": 261769,
+      "skaters": 338,
+      "goalies": 23,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "886114ae6945423c4168d75641bebdd65b5b789eb2da56e30b6751d32523e1e5",
+        "goalie-stats.json": "b6dd65a1d2031752f3cc64e506f189b3d1061f46207114ce4633f66de25847e5",
+        "bios.json": "69860bd3d95a117fcecd60f1f3c978721df789f672f8ec7174680f25153da2f0",
+        "playoff-goalie-stats.json": "52a1a86dbeaf3058bbd2ad83e540b84fac137f14cf2fc5b02dcf708adfff3ea7",
+        "playoff-bios.json": "18c673206e4b235cb1cf7fdc6bcafb65ca69a2a4f7c3e55eb2399e6a8cd8ea9e",
+        "playoff-stats.json": "a7fd93985ff15ecd57479c77a005789c8942db8f127052ba127434302cbac46e"
+      }
+    },
+    {
+      "id": "19992000-regular",
+      "season": 19992000,
+      "season_type": "regular",
+      "source": "repository:19992000",
+      "url": "data/f40c947d4caa9af2dcf9b1e83646465c98f5fd0ab551f40799961bcf7ca10b21.json",
+      "sha256": "f40c947d4caa9af2dcf9b1e83646465c98f5fd0ab551f40799961bcf7ca10b21",
+      "bytes": 809404,
+      "skaters": 828,
+      "goalies": 83,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "537c75a374de3959c9470ac0df8052faae61700200ec5ef8b18b0c00752092c8",
+        "goalie-stats.json": "7d72691ee82aec2233cc512602c7419652c412fa700167767109e607b5d33044",
+        "bios.json": "08353c2583b9cfd545ae2ce6f29c694b79407d1147a8c08588a93873e6928899",
+        "playoff-goalie-stats.json": "3e0432818f7cb52f4b25a0954174e8186ccca054a1329d0e7485e9f237ff52f2",
+        "playoff-bios.json": "bc30d9f53dd42bf38d757538d1ae186c3c428cc31d6d355390909e00e43ea21a",
+        "playoff-stats.json": "a5a07309adecf17da1a901114a5c575dcffefb794a986404a36a1c6185b6f577"
+      }
+    },
+    {
+      "id": "19992000-playoff",
+      "season": 19992000,
+      "season_type": "playoff",
+      "source": "repository:19992000",
+      "url": "data/20151119eafc85c55121aa27ce0e1dd9893ac52e0ae01c6ee8ab7293bef2f52d.json",
+      "sha256": "20151119eafc85c55121aa27ce0e1dd9893ac52e0ae01c6ee8ab7293bef2f52d",
+      "bytes": 257832,
+      "skaters": 334,
+      "goalies": 21,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "537c75a374de3959c9470ac0df8052faae61700200ec5ef8b18b0c00752092c8",
+        "goalie-stats.json": "7d72691ee82aec2233cc512602c7419652c412fa700167767109e607b5d33044",
+        "bios.json": "08353c2583b9cfd545ae2ce6f29c694b79407d1147a8c08588a93873e6928899",
+        "playoff-goalie-stats.json": "3e0432818f7cb52f4b25a0954174e8186ccca054a1329d0e7485e9f237ff52f2",
+        "playoff-bios.json": "bc30d9f53dd42bf38d757538d1ae186c3c428cc31d6d355390909e00e43ea21a",
+        "playoff-stats.json": "a5a07309adecf17da1a901114a5c575dcffefb794a986404a36a1c6185b6f577"
+      }
+    },
+    {
+      "id": "19981999-regular",
+      "season": 19981999,
+      "season_type": "regular",
+      "source": "repository:19981999",
+      "url": "data/d9cf63456d56c93e59ec4e7b8e9cd9dc1ca502bbd9eff540515d7c12b1bc2f53.json",
+      "sha256": "d9cf63456d56c93e59ec4e7b8e9cd9dc1ca502bbd9eff540515d7c12b1bc2f53",
+      "bytes": 787336,
+      "skaters": 804,
+      "goalies": 85,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "0e239e5c28b504c79990638489ce254faad81103b18d63f603931f5525978370",
+        "goalie-stats.json": "b1f49e0a2d30d8c6f9906fdf6d64b7a9d0446e5806255080957dd50fc80cbfd4",
+        "bios.json": "4c6bda4fc788f3cf19cf7116693e843d7935019dd786048155515d228f142796",
+        "playoff-goalie-stats.json": "09a594bf2daa4bb284ea87e3d24cd6f874ecfa0a36deb5a06ec27ada22ac2fe1",
+        "playoff-bios.json": "5434b122268398652962ed113a5b17a81212b06c01d2501544e5f5fa5e2a4ca3",
+        "playoff-stats.json": "ab56956ba53a49126e01e4f99aa9cf989836bfbe677c9ef39e76c09711c8e409"
+      }
+    },
+    {
+      "id": "19981999-playoff",
+      "season": 19981999,
+      "season_type": "playoff",
+      "source": "repository:19981999",
+      "url": "data/c2ac8cb6f8fb13296ab7489e1ae51929ddaad3c6b3f7727f0b78452b35c9672b.json",
+      "sha256": "c2ac8cb6f8fb13296ab7489e1ae51929ddaad3c6b3f7727f0b78452b35c9672b",
+      "bytes": 277483,
+      "skaters": 358,
+      "goalies": 25,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "0e239e5c28b504c79990638489ce254faad81103b18d63f603931f5525978370",
+        "goalie-stats.json": "b1f49e0a2d30d8c6f9906fdf6d64b7a9d0446e5806255080957dd50fc80cbfd4",
+        "bios.json": "4c6bda4fc788f3cf19cf7116693e843d7935019dd786048155515d228f142796",
+        "playoff-goalie-stats.json": "09a594bf2daa4bb284ea87e3d24cd6f874ecfa0a36deb5a06ec27ada22ac2fe1",
+        "playoff-bios.json": "5434b122268398652962ed113a5b17a81212b06c01d2501544e5f5fa5e2a4ca3",
+        "playoff-stats.json": "ab56956ba53a49126e01e4f99aa9cf989836bfbe677c9ef39e76c09711c8e409"
+      }
+    },
+    {
+      "id": "19971998-regular",
+      "season": 19971998,
+      "season_type": "regular",
+      "source": "repository:19971998",
+      "url": "data/ee4b9a6d1c2ec32d5360a73e00ef70d3497e4c8956686c384956a3d2fefbd899.json",
+      "sha256": "ee4b9a6d1c2ec32d5360a73e00ef70d3497e4c8956686c384956a3d2fefbd899",
+      "bytes": 734809,
+      "skaters": 750,
+      "goalies": 73,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "c47a5deb9788be1f439deb5a53d94959af51420a157ad56ca743234d79be475f",
+        "goalie-stats.json": "0bc4690a35979cfecfda41c9fb5bf868cfba0b74edb4dc17443e9c070d8b0464",
+        "bios.json": "6bdd000bf96ca1d996ca0f5261cabbe61b25d8917e7df7fcad16403642f98544",
+        "playoff-goalie-stats.json": "821b01ec0073e6dd5f8250ed9d0e7e4f6600482d9b737ce3103aa92a7c66b879",
+        "playoff-bios.json": "1cd259e828cea74205be0687ea89b91d80005fea89dd092a3529f2d06758a392",
+        "playoff-stats.json": "541570d34a9bf1b2254221ba3a9e2d1458e1dc35a11db2d8fe44664ed467f2ba"
+      }
+    },
+    {
+      "id": "19971998-playoff",
+      "season": 19971998,
+      "season_type": "playoff",
+      "source": "repository:19971998",
+      "url": "data/1e86299c411f5b74445bf0d98f3a1304af3cec55ef0ea6033842a0d928086f7b.json",
+      "sha256": "1e86299c411f5b74445bf0d98f3a1304af3cec55ef0ea6033842a0d928086f7b",
+      "bytes": 265265,
+      "skaters": 340,
+      "goalies": 28,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "c47a5deb9788be1f439deb5a53d94959af51420a157ad56ca743234d79be475f",
+        "goalie-stats.json": "0bc4690a35979cfecfda41c9fb5bf868cfba0b74edb4dc17443e9c070d8b0464",
+        "bios.json": "6bdd000bf96ca1d996ca0f5261cabbe61b25d8917e7df7fcad16403642f98544",
+        "playoff-goalie-stats.json": "821b01ec0073e6dd5f8250ed9d0e7e4f6600482d9b737ce3103aa92a7c66b879",
+        "playoff-bios.json": "1cd259e828cea74205be0687ea89b91d80005fea89dd092a3529f2d06758a392",
+        "playoff-stats.json": "541570d34a9bf1b2254221ba3a9e2d1458e1dc35a11db2d8fe44664ed467f2ba"
+      }
+    },
+    {
+      "id": "19961997-regular",
+      "season": 19961997,
+      "season_type": "regular",
+      "source": "repository:19961997",
+      "url": "data/dd963d0e2beb516dbc8eebfb0788fc7aa287466bddfcdbf4f7bd8a8c00e1dd61.json",
+      "sha256": "dd963d0e2beb516dbc8eebfb0788fc7aa287466bddfcdbf4f7bd8a8c00e1dd61",
+      "bytes": 739627,
+      "skaters": 752,
+      "goalies": 77,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "c62af40316d1694a3d10befe63f5d2bb53e359953fef2b9ab2b6317386938eec",
+        "goalie-stats.json": "f3c529e89a46be784cea06f87baa0900a01b99a235b0ed95a9b2445268ced4e4",
+        "bios.json": "db8d0621b1cdd8e52ebdbf8d20c417ab5b460ac565afa2af1c5d6c5a0e4d16f0",
+        "playoff-goalie-stats.json": "aa39ea453eba5cbbc5c814ae6d845dfea4a9b0e302110fe623ddbbd96ba0a5a5",
+        "playoff-bios.json": "de7111f1255b7510fc892784acd9d73694a83bc935e5206ee03cf869c92495c5",
+        "playoff-stats.json": "639c62aa66be19a67315cff228ded33ce79ed006340c27a75d76edeb3250c907"
+      }
+    },
+    {
+      "id": "19961997-playoff",
+      "season": 19961997,
+      "season_type": "playoff",
+      "source": "repository:19961997",
+      "url": "data/df0b8890bede92f67ca5d6f9045fe63e52406ed8e0206b6f01b1aaff84f0c637.json",
+      "sha256": "df0b8890bede92f67ca5d6f9045fe63e52406ed8e0206b6f01b1aaff84f0c637",
+      "bytes": 264916,
+      "skaters": 343,
+      "goalies": 25,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "c62af40316d1694a3d10befe63f5d2bb53e359953fef2b9ab2b6317386938eec",
+        "goalie-stats.json": "f3c529e89a46be784cea06f87baa0900a01b99a235b0ed95a9b2445268ced4e4",
+        "bios.json": "db8d0621b1cdd8e52ebdbf8d20c417ab5b460ac565afa2af1c5d6c5a0e4d16f0",
+        "playoff-goalie-stats.json": "aa39ea453eba5cbbc5c814ae6d845dfea4a9b0e302110fe623ddbbd96ba0a5a5",
+        "playoff-bios.json": "de7111f1255b7510fc892784acd9d73694a83bc935e5206ee03cf869c92495c5",
+        "playoff-stats.json": "639c62aa66be19a67315cff228ded33ce79ed006340c27a75d76edeb3250c907"
+      }
+    },
+    {
+      "id": "19951996-regular",
+      "season": 19951996,
+      "season_type": "regular",
+      "source": "repository:19951996",
+      "url": "data/a5d64282ad3e0ff88f9d2e055ad87e1adf688f214c898b356d949bffa8eb72b3.json",
+      "sha256": "a5d64282ad3e0ff88f9d2e055ad87e1adf688f214c898b356d949bffa8eb72b3",
+      "bytes": 747478,
+      "skaters": 767,
+      "goalies": 78,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "84fdb7129ca6d9119d9411274c54deaacb5e8ba62a3332a59d5b0b2cc64afeb6",
+        "goalie-stats.json": "b0b11afff729fb7905c6ee9cf25e605f980429fff881e4289378ca9348c778a4",
+        "bios.json": "1cc86822403f35ad604a2612d7ba2b77ba09741d91ef6ae626ba42c097c30010",
+        "playoff-goalie-stats.json": "0ac79123a6ac2ba61c25b8a3b0a7b71249753c2ec8c0a8efaadcbf9a9acd4b8d",
+        "playoff-bios.json": "55987cf31492b09aca8cc869f957cf90af7b46c9ed2587c369f8a1366bb9271a",
+        "playoff-stats.json": "dd94338bcf69388d8ca8f5874ef5598c43774716f00a7523b4124e688b987ed8"
+      }
+    },
+    {
+      "id": "19951996-playoff",
+      "season": 19951996,
+      "season_type": "playoff",
+      "source": "repository:19951996",
+      "url": "data/a0d3ee4830222caafa7e090369d78c56048fa70883c62e7a55827953810874a0.json",
+      "sha256": "a0d3ee4830222caafa7e090369d78c56048fa70883c62e7a55827953810874a0",
+      "bytes": 270316,
+      "skaters": 347,
+      "goalies": 31,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "84fdb7129ca6d9119d9411274c54deaacb5e8ba62a3332a59d5b0b2cc64afeb6",
+        "goalie-stats.json": "b0b11afff729fb7905c6ee9cf25e605f980429fff881e4289378ca9348c778a4",
+        "bios.json": "1cc86822403f35ad604a2612d7ba2b77ba09741d91ef6ae626ba42c097c30010",
+        "playoff-goalie-stats.json": "0ac79123a6ac2ba61c25b8a3b0a7b71249753c2ec8c0a8efaadcbf9a9acd4b8d",
+        "playoff-bios.json": "55987cf31492b09aca8cc869f957cf90af7b46c9ed2587c369f8a1366bb9271a",
+        "playoff-stats.json": "dd94338bcf69388d8ca8f5874ef5598c43774716f00a7523b4124e688b987ed8"
+      }
+    },
+    {
+      "id": "19941995-regular",
+      "season": 19941995,
+      "season_type": "regular",
+      "source": "repository:19941995",
+      "url": "data/e438ec547d9efe69b84e2e37dfc047f70465b22bcb23e600707f10783559f14c.json",
+      "sha256": "e438ec547d9efe69b84e2e37dfc047f70465b22bcb23e600707f10783559f14c",
+      "bytes": 705563,
+      "skaters": 717,
+      "goalies": 68,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "904a8539914a4dcb3165904fbe2aa569587a7d5bc5f2ee193d989300c04ded89",
+        "goalie-stats.json": "3449864891b48782238fdac7331c5328153b995d99388e4d553bd08abe501d40",
+        "bios.json": "1e66d3ffbe7d7d3bcadce5a4978e5b46ed8a22a4161e5690b2495235128296cb",
+        "playoff-goalie-stats.json": "7d1512f9e579ea8459f81539182123f284dc9c18d5cc17bb24210c049e1f11d6",
+        "playoff-bios.json": "f69c3a7bc650f9997f203b52c37c06d8dbd3365d73dc01e62495a4e8567610ff",
+        "playoff-stats.json": "12daf987059f72940eb2bfddb9e49edda96af46ea64b32346e2e14efc23efe01"
+      }
+    },
+    {
+      "id": "19941995-playoff",
+      "season": 19941995,
+      "season_type": "playoff",
+      "source": "repository:19941995",
+      "url": "data/5f0fadb4255ef73d932e1eed170aa720345d43fda729197e1f861a8fe56ba36f.json",
+      "sha256": "5f0fadb4255ef73d932e1eed170aa720345d43fda729197e1f861a8fe56ba36f",
+      "bytes": 268354,
+      "skaters": 344,
+      "goalies": 32,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "904a8539914a4dcb3165904fbe2aa569587a7d5bc5f2ee193d989300c04ded89",
+        "goalie-stats.json": "3449864891b48782238fdac7331c5328153b995d99388e4d553bd08abe501d40",
+        "bios.json": "1e66d3ffbe7d7d3bcadce5a4978e5b46ed8a22a4161e5690b2495235128296cb",
+        "playoff-goalie-stats.json": "7d1512f9e579ea8459f81539182123f284dc9c18d5cc17bb24210c049e1f11d6",
+        "playoff-bios.json": "f69c3a7bc650f9997f203b52c37c06d8dbd3365d73dc01e62495a4e8567610ff",
+        "playoff-stats.json": "12daf987059f72940eb2bfddb9e49edda96af46ea64b32346e2e14efc23efe01"
+      }
+    },
+    {
+      "id": "19931994-regular",
+      "season": 19931994,
+      "season_type": "regular",
+      "source": "repository:19931994",
+      "url": "data/94b42a6f46857f6aa474bb070382dac08a727897c5992502a3eea0c94be0e645.json",
+      "sha256": "94b42a6f46857f6aa474bb070382dac08a727897c5992502a3eea0c94be0e645",
+      "bytes": 760939,
+      "skaters": 775,
+      "goalies": 80,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "2645c95623cd5b48b7217ae706e9b9ba736afafe6e971f73993dc44d6ead1f27",
+        "goalie-stats.json": "53eee4e01548f25a5d5a00abde689837b2784851ebb3c78f94db3fef334ef93b",
+        "bios.json": "fa99376ada3edb9321babc2fc3fad2b3ced9fcef44102f2ab84e3a3c14ca817a",
+        "playoff-goalie-stats.json": "4b2da2779c50d43b11dde4da6c7e5c1b02b47b4b3a09625adad976e2ac072715",
+        "playoff-bios.json": "d9c2a5a870eabed0c560850035f632c7fa10a3ae32e4be966abff71e11126c3e",
+        "playoff-stats.json": "b289e1e155802b0ccd02b86647a5011d949be877457d953230e0b94085bb23f7"
+      }
+    },
+    {
+      "id": "19931994-playoff",
+      "season": 19931994,
+      "season_type": "playoff",
+      "source": "repository:19931994",
+      "url": "data/e370c9477771d7fbbceae36bd77c3f4166398fa8711dd1187f596f4dfdea425b.json",
+      "sha256": "e370c9477771d7fbbceae36bd77c3f4166398fa8711dd1187f596f4dfdea425b",
+      "bytes": 265306,
+      "skaters": 342,
+      "goalies": 27,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "2645c95623cd5b48b7217ae706e9b9ba736afafe6e971f73993dc44d6ead1f27",
+        "goalie-stats.json": "53eee4e01548f25a5d5a00abde689837b2784851ebb3c78f94db3fef334ef93b",
+        "bios.json": "fa99376ada3edb9321babc2fc3fad2b3ced9fcef44102f2ab84e3a3c14ca817a",
+        "playoff-goalie-stats.json": "4b2da2779c50d43b11dde4da6c7e5c1b02b47b4b3a09625adad976e2ac072715",
+        "playoff-bios.json": "d9c2a5a870eabed0c560850035f632c7fa10a3ae32e4be966abff71e11126c3e",
+        "playoff-stats.json": "b289e1e155802b0ccd02b86647a5011d949be877457d953230e0b94085bb23f7"
+      }
+    },
+    {
+      "id": "19921993-regular",
+      "season": 19921993,
+      "season_type": "regular",
+      "source": "repository:19921993",
+      "url": "data/965e26ed0ef3437e42143881c68b0a57cb4d475ec594c5db2b5c1087d13e9a55.json",
+      "sha256": "965e26ed0ef3437e42143881c68b0a57cb4d475ec594c5db2b5c1087d13e9a55",
+      "bytes": 687976,
+      "skaters": 696,
+      "goalies": 72,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "ea1de3fb7f00917b0dc1b494003e34f10994b097ff7186b7280ac42a9c1ba23c",
+        "goalie-stats.json": "1e8d6524e20d8ad1ab6bfe18d14c4b8d4bfcd292e9d1068edd3b7d073b2d7225",
+        "bios.json": "be975446b09e4f1977207f1ae2ca4d0bf6c6ce0e90e9ba7d040cc90c9581af4e",
+        "playoff-goalie-stats.json": "3a0f68079e6452572d81a921344c3ee0ffd0d9bdcaa86ac908e7537d6b1923c4",
+        "playoff-bios.json": "ddcfd6219e5adfe3ed7929b634c99a9328ff02e9af1bbd014b265fcd1e8dd8f1",
+        "playoff-stats.json": "f5497fbb0bca13e431dbbc39183a015bb46d829faae57a2d5cd714bf2bb771b2"
+      }
+    },
+    {
+      "id": "19921993-playoff",
+      "season": 19921993,
+      "season_type": "playoff",
+      "source": "repository:19921993",
+      "url": "data/c9bc2a67c283ac6ec82ace05ac8ceab6a180157a1da60a05b290fdd210d46ac8.json",
+      "sha256": "c9bc2a67c283ac6ec82ace05ac8ceab6a180157a1da60a05b290fdd210d46ac8",
+      "bytes": 261498,
+      "skaters": 337,
+      "goalies": 27,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "ea1de3fb7f00917b0dc1b494003e34f10994b097ff7186b7280ac42a9c1ba23c",
+        "goalie-stats.json": "1e8d6524e20d8ad1ab6bfe18d14c4b8d4bfcd292e9d1068edd3b7d073b2d7225",
+        "bios.json": "be975446b09e4f1977207f1ae2ca4d0bf6c6ce0e90e9ba7d040cc90c9581af4e",
+        "playoff-goalie-stats.json": "3a0f68079e6452572d81a921344c3ee0ffd0d9bdcaa86ac908e7537d6b1923c4",
+        "playoff-bios.json": "ddcfd6219e5adfe3ed7929b634c99a9328ff02e9af1bbd014b265fcd1e8dd8f1",
+        "playoff-stats.json": "f5497fbb0bca13e431dbbc39183a015bb46d829faae57a2d5cd714bf2bb771b2"
+      }
+    },
+    {
+      "id": "19911992-regular",
+      "season": 19911992,
+      "season_type": "regular",
+      "source": "repository:19911992",
+      "url": "data/909d05eae322830402835a23475493f5caf2d83430566ea9cf1d858b5812bb93.json",
+      "sha256": "909d05eae322830402835a23475493f5caf2d83430566ea9cf1d858b5812bb93",
+      "bytes": 681944,
+      "skaters": 695,
+      "goalies": 73,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "08f3eda26587794fafa9250f4cfb80458e2c9459a3c84f5f41ef7fa1a651747b",
+        "goalie-stats.json": "09bcf535a1e3500129070e56a56a167bf7a26b7b0ff0d4758d8ae052a85f180b",
+        "bios.json": "f61cb6bd0870093da16495d52b643ea3433795956da7dc91f952ee52fa2da78b",
+        "playoff-goalie-stats.json": "97da3f713255cf314f9e849692f1d925a4f6c7b35acd0340caefd7aa654471d0",
+        "playoff-bios.json": "f7fb10d7be57a9aeb1f10cdd50b7975577a1a805a555556cebc26f48c0da6f42",
+        "playoff-stats.json": "e0490d8b35282eaa158d94d8311fad51837a2f7683585128559123f9e055722e"
+      }
+    },
+    {
+      "id": "19911992-playoff",
+      "season": 19911992,
+      "season_type": "playoff",
+      "source": "repository:19911992",
+      "url": "data/3c5bf4b98b45db476c415f5bba29a2afb6986db42e6723235173a8de12d4c8d2.json",
+      "sha256": "3c5bf4b98b45db476c415f5bba29a2afb6986db42e6723235173a8de12d4c8d2",
+      "bytes": 276696,
+      "skaters": 358,
+      "goalies": 26,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "08f3eda26587794fafa9250f4cfb80458e2c9459a3c84f5f41ef7fa1a651747b",
+        "goalie-stats.json": "09bcf535a1e3500129070e56a56a167bf7a26b7b0ff0d4758d8ae052a85f180b",
+        "bios.json": "f61cb6bd0870093da16495d52b643ea3433795956da7dc91f952ee52fa2da78b",
+        "playoff-goalie-stats.json": "97da3f713255cf314f9e849692f1d925a4f6c7b35acd0340caefd7aa654471d0",
+        "playoff-bios.json": "f7fb10d7be57a9aeb1f10cdd50b7975577a1a805a555556cebc26f48c0da6f42",
+        "playoff-stats.json": "e0490d8b35282eaa158d94d8311fad51837a2f7683585128559123f9e055722e"
+      }
+    },
+    {
+      "id": "19901991-regular",
+      "season": 19901991,
+      "season_type": "regular",
+      "source": "repository:19901991",
+      "url": "data/6498bfcd4e98ff2493937bfc000e76baf73fa88857f78e7e60eb3b98a830cdd3.json",
+      "sha256": "6498bfcd4e98ff2493937bfc000e76baf73fa88857f78e7e60eb3b98a830cdd3",
+      "bytes": 637269,
+      "skaters": 648,
+      "goalies": 77,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "0d06554cf5f714d2b95b3af25acf6cbe3aad47f0e88cbd033bafb2f1c1b3989d",
+        "goalie-stats.json": "03da5f2690bdf81691c89fca2cb6349617adc3d50a2f440f5288c1aa662a60b1",
+        "bios.json": "67604e43a59b4aee5146083946a1dbbc921228a14ec6f6f7bb4fe969c502bfad",
+        "playoff-goalie-stats.json": "79341f0526172be826dcac0199f02d9dc43dd691718c354355d37ba3b779bcaa",
+        "playoff-bios.json": "9665d6ff6b1c841fdd4a915597ab1fca2e956a33b094094f5493a3fbc79686be",
+        "playoff-stats.json": "cd9a6e2f50e7a8e014ade0db06909786fe4df5d8ea343ffe3df1185261d627ba"
+      }
+    },
+    {
+      "id": "19901991-playoff",
+      "season": 19901991,
+      "season_type": "playoff",
+      "source": "repository:19901991",
+      "url": "data/b55ae582bad9aa16e69306e7daa6779396b181eaa40e75c89b495893b4d6e236.json",
+      "sha256": "b55ae582bad9aa16e69306e7daa6779396b181eaa40e75c89b495893b4d6e236",
+      "bytes": 275451,
+      "skaters": 354,
+      "goalies": 30,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "0d06554cf5f714d2b95b3af25acf6cbe3aad47f0e88cbd033bafb2f1c1b3989d",
+        "goalie-stats.json": "03da5f2690bdf81691c89fca2cb6349617adc3d50a2f440f5288c1aa662a60b1",
+        "bios.json": "67604e43a59b4aee5146083946a1dbbc921228a14ec6f6f7bb4fe969c502bfad",
+        "playoff-goalie-stats.json": "79341f0526172be826dcac0199f02d9dc43dd691718c354355d37ba3b779bcaa",
+        "playoff-bios.json": "9665d6ff6b1c841fdd4a915597ab1fca2e956a33b094094f5493a3fbc79686be",
+        "playoff-stats.json": "cd9a6e2f50e7a8e014ade0db06909786fe4df5d8ea343ffe3df1185261d627ba"
+      }
+    },
+    {
+      "id": "19891990-regular",
+      "season": 19891990,
+      "season_type": "regular",
+      "source": "repository:19891990",
+      "url": "data/762ddb947aadc7d4bb6f38a1b9e77298c6b6620aed77f91679f34462c8db4f3c.json",
+      "sha256": "762ddb947aadc7d4bb6f38a1b9e77298c6b6620aed77f91679f34462c8db4f3c",
+      "bytes": 631007,
+      "skaters": 652,
+      "goalies": 70,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "245f3c8b815ac16ee8552525e359549dcbaf387759ca9f1576ba26475d6a8a57",
+        "goalie-stats.json": "a88450cba09178d47d95908016d9e9c815aef6e2e4089c2ac7477194bfea3c17",
+        "bios.json": "c9fcb13860e368ab805b3677a202cfb28126e07970ce7cb25c0178406eb63622",
+        "playoff-goalie-stats.json": "61c567acdf503b0bdf90c88d496a309dce35d807f5db123f69b3bc4515a59c69",
+        "playoff-bios.json": "8bf79de3f0833a05ffc6547625529cb0351bc76caaec701ae7bda4d2e00b1be3",
+        "playoff-stats.json": "e65d5ebf0f577d0ecb6b886274923520492a5b7fbb55079b2fc5204f35c8c44e"
+      }
+    },
+    {
+      "id": "19891990-playoff",
+      "season": 19891990,
+      "season_type": "playoff",
+      "source": "repository:19891990",
+      "url": "data/13c4f7f785a95c4d28f39efc6f36791a2b2d03bd38f657d0c1a7974050704483.json",
+      "sha256": "13c4f7f785a95c4d28f39efc6f36791a2b2d03bd38f657d0c1a7974050704483",
+      "bytes": 274505,
+      "skaters": 352,
+      "goalies": 32,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "245f3c8b815ac16ee8552525e359549dcbaf387759ca9f1576ba26475d6a8a57",
+        "goalie-stats.json": "a88450cba09178d47d95908016d9e9c815aef6e2e4089c2ac7477194bfea3c17",
+        "bios.json": "c9fcb13860e368ab805b3677a202cfb28126e07970ce7cb25c0178406eb63622",
+        "playoff-goalie-stats.json": "61c567acdf503b0bdf90c88d496a309dce35d807f5db123f69b3bc4515a59c69",
+        "playoff-bios.json": "8bf79de3f0833a05ffc6547625529cb0351bc76caaec701ae7bda4d2e00b1be3",
+        "playoff-stats.json": "e65d5ebf0f577d0ecb6b886274923520492a5b7fbb55079b2fc5204f35c8c44e"
+      }
+    },
+    {
+      "id": "19881989-regular",
+      "season": 19881989,
+      "season_type": "regular",
+      "source": "repository:19881989",
+      "url": "data/a8d9a7eb4c717d93d05b7a3dc0a667c5642f64d0328d57bc21d1f99266ae84d3.json",
+      "sha256": "a8d9a7eb4c717d93d05b7a3dc0a667c5642f64d0328d57bc21d1f99266ae84d3",
+      "bytes": 637726,
+      "skaters": 648,
+      "goalies": 68,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "fb5601fafa75375a61fbe8e0c0a208deef9e86c050cbc34a551ebe2c8b9f43b1",
+        "goalie-stats.json": "a742d141d881a6e388adf7a6ee6f62c42e7bb1ddb023170b2425ed136b056981",
+        "bios.json": "a82a6bff1579426d4988514ed87f30e88286885697a746cafa2620a0768b7f31",
+        "playoff-goalie-stats.json": "bb58db9820a52fdc2a0eb1bbc17b3ea4887990114c2aec3b68ee87b936a7b0a8",
+        "playoff-bios.json": "a5f85114ba79e149cb62344bd7c27aa695a772c4fbb02ba220e16252ebedf0f8",
+        "playoff-stats.json": "dbeb7a0ed7b0707b48603a5c8f83f9c0121cde8e914658657f55e9ec729312aa"
+      }
+    },
+    {
+      "id": "19881989-playoff",
+      "season": 19881989,
+      "season_type": "playoff",
+      "source": "repository:19881989",
+      "url": "data/bdab941946b3469e8488987bb5abaa261361377b959aab64de39dabb0a837da1.json",
+      "sha256": "bdab941946b3469e8488987bb5abaa261361377b959aab64de39dabb0a837da1",
+      "bytes": 273661,
+      "skaters": 352,
+      "goalies": 30,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "fb5601fafa75375a61fbe8e0c0a208deef9e86c050cbc34a551ebe2c8b9f43b1",
+        "goalie-stats.json": "a742d141d881a6e388adf7a6ee6f62c42e7bb1ddb023170b2425ed136b056981",
+        "bios.json": "a82a6bff1579426d4988514ed87f30e88286885697a746cafa2620a0768b7f31",
+        "playoff-goalie-stats.json": "bb58db9820a52fdc2a0eb1bbc17b3ea4887990114c2aec3b68ee87b936a7b0a8",
+        "playoff-bios.json": "a5f85114ba79e149cb62344bd7c27aa695a772c4fbb02ba220e16252ebedf0f8",
+        "playoff-stats.json": "dbeb7a0ed7b0707b48603a5c8f83f9c0121cde8e914658657f55e9ec729312aa"
+      }
+    },
+    {
+      "id": "19871988-regular",
+      "season": 19871988,
+      "season_type": "regular",
+      "source": "repository:19871988",
+      "url": "data/b898df00ab7902cbc2f2e8526a87eefee5951fe59adac666e347a8a85ba0c06f.json",
+      "sha256": "b898df00ab7902cbc2f2e8526a87eefee5951fe59adac666e347a8a85ba0c06f",
+      "bytes": 644102,
+      "skaters": 671,
+      "goalies": 63,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "a2cbb25a798bd5255e7ec0d7706d8bfa7836310d67cd2e8521bfada463222356",
+        "goalie-stats.json": "e9ef4df5061da9ce1b826dd603d5181b6c5f0f9c4b33ec5f35e40d76b4bf9920",
+        "bios.json": "8d0b3a605061202fd1d7d76ee9b231d46b8a23802b1866c730e09af9e92c4166",
+        "playoff-goalie-stats.json": "1dddc47eb64f3268933fe5deab507275b28c0d834392db6e8f0b1609bce50475",
+        "playoff-bios.json": "fa9ae1e64983099414296130f3f68c6edc6e3f0857e858e845028afa1dae5ee4",
+        "playoff-stats.json": "4562cfce929292a52d840d281ecb5b28f42cb8af941031cb8543d9d8f2fa2861"
+      }
+    },
+    {
+      "id": "19871988-playoff",
+      "season": 19871988,
+      "season_type": "playoff",
+      "source": "repository:19871988",
+      "url": "data/7681f9fe03c06a09c634ab24909c48da6d96a38432898630a4dd2e1112c01b73.json",
+      "sha256": "7681f9fe03c06a09c634ab24909c48da6d96a38432898630a4dd2e1112c01b73",
+      "bytes": 284302,
+      "skaters": 367,
+      "goalies": 29,
+      "observed_at": null,
+      "file_sha256": {
+        "stats.json": "a2cbb25a798bd5255e7ec0d7706d8bfa7836310d67cd2e8521bfada463222356",
+        "goalie-stats.json": "e9ef4df5061da9ce1b826dd603d5181b6c5f0f9c4b33ec5f35e40d76b4bf9920",
+        "bios.json": "8d0b3a605061202fd1d7d76ee9b231d46b8a23802b1866c730e09af9e92c4166",
+        "playoff-goalie-stats.json": "1dddc47eb64f3268933fe5deab507275b28c0d834392db6e8f0b1609bce50475",
+        "playoff-bios.json": "fa9ae1e64983099414296130f3f68c6edc6e3f0857e858e845028afa1dae5ee4",
+        "playoff-stats.json": "4562cfce929292a52d840d281ecb5b28f42cb8af941031cb8543d9d8f2fa2861"
+      }
+    }
+  ]
+}

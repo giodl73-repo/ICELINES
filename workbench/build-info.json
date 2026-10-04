@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "commit": "d1bbc239a01749e6cbe0f5ca6a4fdcea5f67ae07",
+  "working_tree_dirty": false,
+  "tools": {
+    "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+    "node": "v22.22.3",
+    "python": "Python 3.14.2",
+    "wasm_bindgen": "wasm-bindgen 0.2.118"
+  },
+  "wasm_sha256": "1344a015f6f61c6743185fabe92b37ecb39124f19826ab1d6fd4d55a7fdfe1f0"
+}
