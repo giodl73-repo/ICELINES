@@ -1,10 +1,10 @@
 name: Browser WASM / Pages
 on:
   pull_request:
-    paths: ['icelines-core/**', 'icelines-data/**', 'icelines-query/**', 'icelines-sources/**', 'icelines-fetch/**', 'icelines-wasm/**', 'icelines-browser/**', 'data/seasons/**', 'Cargo.toml', 'Cargo.lock', 'scripts/*browser*', 'scripts/tests/test_browser*.py', '.github/workflows/browser*.yml']
+    paths: ['icelines-core/**', 'icelines-data/**', 'icelines-query/**', 'icelines-sources/**', 'icelines-fetch/**', 'icelines-wasm/**', 'icelines-browser/**', 'icelines-relay/**', 'data/seasons/**', 'Cargo.toml', 'Cargo.lock', 'scripts/*browser*', 'scripts/tests/test_browser*.py', '.github/workflows/browser*.yml']
   push:
     branches: [master]
-    paths: ['icelines-core/**', 'icelines-data/**', 'icelines-query/**', 'icelines-sources/**', 'icelines-fetch/**', 'icelines-wasm/**', 'icelines-browser/**', 'data/seasons/**', 'Cargo.toml', 'Cargo.lock', 'scripts/*browser*', 'scripts/tests/test_browser*.py', '.github/workflows/browser*.yml']
+    paths: ['icelines-core/**', 'icelines-data/**', 'icelines-query/**', 'icelines-sources/**', 'icelines-fetch/**', 'icelines-wasm/**', 'icelines-browser/**', 'icelines-relay/**', 'data/seasons/**', 'Cargo.toml', 'Cargo.lock', 'scripts/*browser*', 'scripts/tests/test_browser*.py', '.github/workflows/browser*.yml']
   workflow_dispatch:
     inputs:
       publish:
@@ -49,6 +49,8 @@ jobs:
       - name: Install locked browser dependencies
         working-directory: icelines-browser
         run: npm ci --ignore-scripts
+      - name: Test NHL relay
+        run: node --test icelines-relay/worker.test.mjs
       - name: Build and verify browser distribution
         run: node scripts/build-browser.mjs --check
       - name: Retain reviewed preview / rollback artifact

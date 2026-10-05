@@ -26,7 +26,7 @@ async function report(kind: string, name: string, season: number, type: string, 
   const rows: unknown[] = [];
   let expectedTotal: number | undefined;
   for (let start = 0; start < 10000; start += 100) {
-    const url = new URL(`https://api.nhle.com/stats/rest/en/${kind}/${name}`);
+    const url = new URL(`https://icelines-relay.giodl73.workers.dev/stats/rest/en/${kind}/${name}`);
     url.search = new URLSearchParams({ isAggregate: 'false', isGame: 'false', start: String(start), limit: '100', cayenneExp: `seasonId=${season} and gameTypeId=${type === 'playoff' ? 3 : 2}` }).toString();
     const data = await readPublicJSON(url, options) as { data?: unknown[]; total?: number } | null;
     if (!data || !Array.isArray(data.data) || !Number.isInteger(data.total) || data.total! < 0 || data.total! > 10000 || data.data.length > 100) throw new Error('Source schema changed');
@@ -65,7 +65,7 @@ export async function refreshSchedule(date: string, signal: AbortSignal, depende
 async function acquireSchedule(date: string, signal: AbortSignal, dependencies: Partial<Omit<ReadOptions, 'signal' | 'deadline'>>): Promise<Uint8Array> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(date + 'T00:00:00Z'))
     || new Date(date + 'T00:00:00Z').toISOString().slice(0, 10) !== date) throw new Error('Choose a valid schedule date');
-  const raw = await readPublicJSON(new URL('https://api-web.nhle.com/v1/schedule/' + date),
+  const raw = await readPublicJSON(new URL('https://icelines-relay.giodl73.workers.dev/v1/schedule/' + date),
     { ...dependencies, signal, deadline: (dependencies.now ?? Date.now)() + 120000 });
   // All hockey/date/score projection and payload validation belong to Rust.
   return new TextEncoder().encode(JSON.stringify(raw));
