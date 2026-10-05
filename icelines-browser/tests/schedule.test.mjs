@@ -14,7 +14,7 @@ test('schedule acquisition uses a fixed date endpoint and bounded uncached safe 
     seen = { url: String(url), options }; return new Response(JSON.stringify(raw));
   } });
   assert.deepEqual(JSON.parse(new TextDecoder().decode(result)), raw);
-  assert.equal(seen.url, 'https://api-web.nhle.com/v1/schedule/2026-10-03');
+  assert.equal(seen.url, 'https://icelines-relay.giodl73.workers.dev/v1/schedule/2026-10-03');
   assert.equal(seen.options.cache, 'no-store'); assert.equal(seen.options.credentials, 'omit'); assert.equal(seen.options.redirect, 'error');
 });
 

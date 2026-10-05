@@ -71,7 +71,7 @@ test('bookmarked fragment routes resolve cached HTML under the composed workbenc
 });
 test('live/session packages, query-bearing URLs and other deployment paths are never intercepted', async () => {
   const h = harness();
-  for (const path of ['https://api.nhle.com/stats/rest/en/skater/bios', 'https://example.test/ICELINES/data/abc.json', 'https://example.test/ICELINES/style.css?token=private', 'https://example.test/OTHER/style.css']) {
+  for (const path of ['https://api.nhle.com/stats/rest/en/skater/bios', 'https://icelines-relay.giodl73.workers.dev/stats/rest/en/skater/bios', 'https://example.test/ICELINES/data/abc.json', 'https://example.test/ICELINES/style.css?token=private', 'https://example.test/OTHER/style.css']) {
     assert.equal(await h.dispatch('fetch', { request: new Request(path) }), undefined);
   }
   assert.equal(await h.dispatch('fetch', { request: new Request('https://example.test/ICELINES/style.css', { method: 'POST' }) }), undefined);
