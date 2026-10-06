@@ -288,7 +288,7 @@ jobs:
           --output "${{ matrix.archive }}.ferris-producer.json"
 
       - name: Upload verified package
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: package-${{ matrix.artifact }}
           path: |
@@ -376,7 +376,7 @@ jobs:
 
       - name: Upload Ferris artifact evidence
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: ferris-artifact-evidence-${{ matrix.artifact }}
           path: artifact-evidence/*.json
