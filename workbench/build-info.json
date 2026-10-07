@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "commit": "d1bbc239a01749e6cbe0f5ca6a4fdcea5f67ae07",
+  "commit": "4ae78a8c340bd3eda676633b8775f0cf18078a28",
   "working_tree_dirty": false,
   "tools": {
     "rust": "rustc 1.95.0 (59807616e 2026-04-14)",

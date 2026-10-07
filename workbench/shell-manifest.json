@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "build": "dd80c23b88c9646a4bcd78756ae3007a0a6724eab493f474c61826e65534fed1",
+  "build": "4f7f1e6de9be3772720538c7464af640dc27730dbd060c360b1bad04c7a0568b",
   "worker_sha256": "0cf24ac769be0a1e0dfe20dc2b1069b3a23f1fb5596610dbc4debd87363e89b9",
   "assets": [
     {
       "path": "build-info.json",
-      "sha256": "cc1afdf2759a91bc4a5798edd09e9602f21ffb1b7b5bb51bc28c084410f76d59",
+      "sha256": "c6bf3e25d47e231551106649a64eb9412ad4cf5ba41592e08973df8dc56e96c6",
       "bytes": 365,
-      "gzip_bytes": 268
+      "gzip_bytes": 267
     },
     {
       "path": "catalog.json",
@@ -35,9 +35,9 @@
     },
     {
       "path": "src/acquisition.js",
-      "sha256": "693a42d639e1cf543d5653301e5b319d93cb90e5a25fbcd4b416801de552265d",
-      "bytes": 4917,
-      "gzip_bytes": 1790
+      "sha256": "26c50c79e5b6bf9fc54f3e14c76c462b9c65d271031afe570509125fdd9586fe",
+      "bytes": 4957,
+      "gzip_bytes": 1800
     },
     {
       "path": "src/archive.js",
