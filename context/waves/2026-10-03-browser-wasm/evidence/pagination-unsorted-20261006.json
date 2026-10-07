@@ -1,0 +1,107 @@
+{
+  "pages": [
+    {
+      "start": 0,
+      "total": 940,
+      "rows": 100,
+      "first": 8480990,
+      "last": 8481609
+    },
+    {
+      "start": 100,
+      "total": 940,
+      "rows": 100,
+      "first": 8478891,
+      "last": 8483573
+    },
+    {
+      "start": 200,
+      "total": 940,
+      "rows": 100,
+      "first": 8482105,
+      "last": 8481704
+    },
+    {
+      "start": 300,
+      "total": 940,
+      "rows": 100,
+      "first": 8483465,
+      "last": 8482684
+    },
+    {
+      "start": 400,
+      "total": 940,
+      "rows": 100,
+      "first": 8476856,
+      "last": 8481523
+    },
+    {
+      "start": 500,
+      "total": 940,
+      "rows": 100,
+      "first": 8475149,
+      "last": 8477949
+    },
+    {
+      "start": 600,
+      "total": 940,
+      "rows": 100,
+      "first": 8484403,
+      "last": 8477488
+    },
+    {
+      "start": 700,
+      "total": 940,
+      "rows": 100,
+      "first": 8481043,
+      "last": 8480849
+    },
+    {
+      "start": 800,
+      "total": 940,
+      "rows": 100,
+      "first": 8478888,
+      "last": 8480043
+    },
+    {
+      "start": 900,
+      "total": 940,
+      "rows": 40,
+      "first": 8476921,
+      "last": 8481032
+    }
+  ],
+  "rows": 940,
+  "uniquePlayers": 924,
+  "duplicates": 16,
+  "pastrnak": [
+    {
+      "assists": 71,
+      "evGoals": 19,
+      "evPoints": 67,
+      "faceoffWinPct": 0.22222,
+      "gameWinningGoals": 4,
+      "gamesPlayed": 77,
+      "goals": 29,
+      "lastName": "Pastrnak",
+      "otGoals": 1,
+      "penaltyMinutes": 72,
+      "playerId": 8477956,
+      "plusMinus": 4,
+      "points": 100,
+      "pointsPerGame": 1.2987,
+      "positionCode": "R",
+      "ppGoals": 10,
+      "ppPoints": 33,
+      "seasonId": 20252026,
+      "shGoals": 0,
+      "shPoints": 0,
+      "shootingPct": 0.11111,
+      "shootsCatches": "R",
+      "shots": 261,
+      "skaterFullName": "David Pastrnak",
+      "teamAbbrevs": "BOS",
+      "timeOnIcePerGame": 1239.3376
+    }
+  ]
+}

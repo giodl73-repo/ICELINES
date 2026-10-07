@@ -78,7 +78,7 @@ test('refresh assembles all required reports with no more than two concurrent re
   const fetch = async target => {
     inFlight++; peak = Math.max(peak, inFlight); paths.push(target.pathname);
     await new Promise(resolve => setTimeout(resolve, 1)); inFlight--;
-    return json({ data: [{ seasonId: 20242025 }], total: 1 });
+    return json({ data: [{ seasonId: 20242025, playerId: 1 }], total: 1 });
   };
   const bytes = await refreshStats(20242025, 'playoff', new AbortController().signal, { fetch });
   const data = JSON.parse(new TextDecoder().decode(bytes));
@@ -87,11 +87,51 @@ test('refresh assembles all required reports with no more than two concurrent re
   assert.equal(data.goalies.length, 1);
 });
 test('incomplete/changing pagination never returns a replacement package', async () => {
-  for (const first of [{ data: [], total: 1 }, { data: [{}], total: 2 }]) {
+  for (const first of [{ data: [], total: 1 }, { data: [{ playerId: 1 }], total: 2 }]) {
     const fetch = async target => target.searchParams.get('start') === '0' ? json(first) : json({ data: [{}], total: 3 });
     await assert.rejects(refreshStats(20242025, 'regular', new AbortController().signal, { fetch }), /pagination/);
   }
 });
 test('invalid season context is rejected before fetching', async () => {
   await assert.rejects(refreshStats(20242026, 'regular', new AbortController().signal, { fetch: async () => { assert.fail('must not fetch'); } }), /Invalid season/);
+});
+
+// Equal totals alone do not prove a complete offset-paginated report.
+test('refresh requires ordered unique players and matching report coverage', async () => {
+  const cases = [
+    [{ playerId: 1 }, { playerId: 1 }],
+    [{ playerId: 2 }, { playerId: 1 }],
+    [{ playerId: 0 }],
+    [{ playerId: '1' }],
+  ];
+  for (const rows of cases) {
+    await assert.rejects(refreshStats(20242025, 'regular', new AbortController().signal, {
+      fetch: async () => json({ data: rows, total: rows.length }),
+    }), /pagination/);
+  }
+  await assert.rejects(refreshStats(20242025, 'regular', new AbortController().signal, {
+    fetch: async target => json({ data: [{ playerId: target.pathname.endsWith('/bios') ? 1 : 2 }], total: 1 }),
+  }), /coverage/);
+});
+
+test('duplicates across page boundaries cannot replace good data', async () => {
+  await assert.rejects(refreshStats(20242025, 'regular', new AbortController().signal, {
+    fetch: async target => {
+      assert.deepEqual(JSON.parse(target.searchParams.get('sort')), [{ property: 'playerId', direction: 'ASC' }]);
+      const start = Number(target.searchParams.get('start'));
+      return json({ data: start === 0 ? Array.from({ length: 100 }, (_, i) => ({ playerId: i + 1 })) : [{ playerId: 100 }], total: 101 });
+    },
+  }), /duplicate or unordered pagination/);
+});
+
+test('ordered multiple pages retain every player exactly once', async () => {
+  const bytes = await refreshStats(20242025, 'regular', new AbortController().signal, {
+    fetch: async target => {
+      assert.deepEqual(JSON.parse(target.searchParams.get('sort')), [{ property: 'playerId', direction: 'ASC' }]);
+      const start = Number(target.searchParams.get('start'));
+      return json({ data: Array.from({ length: start === 0 ? 100 : 1 }, (_, i) => ({ playerId: start + i + 1 })), total: 101 });
+    },
+  });
+  const result = JSON.parse(new TextDecoder().decode(bytes));
+  for (const name of ['bios', 'stats', 'goalies']) assert.deepEqual(result[name].map(r => r.playerId), Array.from({ length: 101 }, (_, i) => i + 1));
 });

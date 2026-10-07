@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-06",
+  "pr": "https://github.com/giodl73-repo/ICELINES/pull/75",
+  "merged_commit": "4ae78a8c340bd3eda676633b8775f0cf18078a28",
+  "pages_commit": "ae53f8bc2fc44b4f955d0b161429cdac70bdb73c",
+  "pages_run": 37550820648,
+  "pages_conclusion": "success",
+  "browser_url": "https://giodl73-repo.github.io/ICELINES/workbench/",
+  "publication_verification": "deployed-relay-publication-20261006.json",
+  "observations": [
+    "Update discovered via Reload application and activated via Reload with update.",
+    "Saved repository season survived update: 933 skaters.",
+    "First live refresh succeeded in memory: 929 skaters; browser error/warning log empty.",
+    "Reload discarded unsaved live snapshot; Load saved recovered previous 933-skater snapshot.",
+    "Second live refresh succeeded in memory: 916 skaters.",
+    "Schedule refresh for 2026-10-04 succeeded, including current LIVE and FUT rows.",
+    "Save locally and Save schedule locally succeeded with keep-updated checkboxes off.",
+    "Reload restored local live season with 916 skaters and the saved schedule.",
+    "Saved live p>=100 query returned seven players; previous repository query returned eight, with Pastrnak absent from the live result.",
+    "Package export attempt timed out in browser tooling; no successful export claimed."
+  ],
+  "open_findings": [
+    "Live pagination completeness needs investigation: totals varied between refreshes and one known leader was absent. Acquisition currently sends no stable sort parameter.",
+    "Actual deployed offline reopening, rollback, representative device and full resource gates remain open."
+  ],
+  "screenshot": "C:\\Users\\giodl\\.codex\\visualizations\\2026\\10\\03\\01a103f8-5ae6-70b3-972f-0bce05607d96\\icelines-relay-live-saved-20261006.png"
+}

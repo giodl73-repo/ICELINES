@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { handle, upstreamURL, ORIGIN, MAX_BYTES } from './worker.mjs';
+import worker, { handle, upstreamURL, ORIGIN, MAX_BYTES, PLAYER_SORT } from './worker.mjs';
 const path = '/stats/rest/en/skater/summary?isAggregate=false&isGame=false&start=0&limit=100&cayenneExp=seasonId%3D20252026+and+gameTypeId%3D2';
 const request = (route = path, options = {}) => new Request('https://relay.example' + route, { headers: { Origin: ORIGIN }, ...options });
 test('only fixed NHL hosts, reports, dates and bounded pages can be selected', () => {
@@ -48,4 +48,12 @@ test('rate limiting stops requests before upstream access and failures close acc
   assert.equal(denied.headers.get('Access-Control-Expose-Headers'), 'Retry-After');
   assert.equal((await handle(request(), noFetch, 15000, { limit: async () => { throw new Error('binding unavailable'); } })).status, 503);
   assert.equal((await worker.fetch(request(), {})).status, 503);
+});
+
+test('relay fixes player ordering for legacy clients and accepts only canonical sorting', () => {
+  const legacy = upstreamURL(request().url);
+  assert.equal(legacy.searchParams.get('sort'), PLAYER_SORT);
+  const ordered = path + '&sort=' + encodeURIComponent(PLAYER_SORT);
+  assert.equal(upstreamURL(request(ordered).url).searchParams.get('sort'), PLAYER_SORT);
+  for (const route of [path + '&sort=points', ordered + '&sort=' + encodeURIComponent(PLAYER_SORT)]) assert.throws(() => upstreamURL(request(route).url));
 });

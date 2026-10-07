@@ -1,7 +1,7 @@
 # Browser WASM Workbench
 
 **Date:** 2026-10-03
-**Status:** Active partial implementation — local WP-BW-02–06 slices verified; deployed/live/device/resource/rollback acceptance remains open. No deployed browser capability is claimed shipped.
+**Status:** Active partial implementation — Pages shell update, live relay access and explicit stats/schedule persistence verified on 2026-10-06. Live report completeness correction, deployed offline/rollback and device/resource gates remain open.
 **Scope:** A GitHub Pages application running the shared IceLines Rust engine on the user's device, with release packages, imported files, live refresh, and optional local persistence.
 **Review:** [Planning review](../../signals/roles/check/browser-wasm-workbench-roles-check-2026-10-03.md); [implementation handoff review](../../signals/roles/check/browser-wasm-handoff-roles-check-2026-10-04.md) (release needs work).
 
@@ -445,3 +445,28 @@ Narrow UI-boundary failure/cancellation captures and all-role disposition reconc
 Dated fixture selected through the actual picker; failed refresh preserves old observation and unsaved state: [pulse 53](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-53.md).
 Latest implementation CI and retained PR artifact verified; dated desktop import/failure preserves rows and observation: [pulse 54](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-54.md).
 Current docs composed with the verified artifact; environment's gh-pages-only deployment policy identified and rollout amended: [pulse 55](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-55.md).
+
+
+## 2026-10-06 deployed validation and pagination correction
+
+PR 75 merged at `4ae78a8c`; the verified 102-file artifact was published in
+`gh-pages` commit `ae53f8bc`, Pages run 37550820648 succeeded, and all 24 shell
+HTTP assets match. Existing documentation bytes are unchanged. The normal
+application update restored the previously saved season. Live stats and schedule
+refreshes and explicit saving/restoration passed on the actual Pages origin.
+
+Full coverage did not pass: live skater counts varied, and an unsorted 940-row
+report yielded only 924 unique IDs. The follow-up correction requests stable
+player-ID order, checks cross-page identity order and compares bios/summary
+coverage before activation. Direct sorted NHL probes returned all 940 skaters
+and 98 goalies. See `context/waves/2026-10-03-browser-wasm/evidence/` and the
+stable-NHL-pagination role review. Production correction validation and PR CI
+remain separate from this direct-source evidence. No full release acceptance
+is claimed; deployed offline, rollback and representative device/resource
+requirements remain open.
+
+
+Relay correction runtime reconciliation: Worker `7f92df73` passed full sorted
+acquisition and Rust WASM; the existing Pages app refreshed 940 skaters and all
+eight 100-point leaders, then explicitly saved the complete snapshot. Browser
+coverage guards are prepared but require follow-up PR merge and publication.

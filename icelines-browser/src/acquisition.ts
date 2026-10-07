@@ -25,13 +25,19 @@ export async function boundedBytes(response: Response): Promise<Uint8Array> {
 async function report(kind: string, name: string, season: number, type: string, options: ReadOptions): Promise<unknown[]> {
   const rows: unknown[] = [];
   let expectedTotal: number | undefined;
+  let previousPlayerId = 0;
   for (let start = 0; start < 10000; start += 100) {
     const url = new URL(`https://icelines-relay.giodl73.workers.dev/stats/rest/en/${kind}/${name}`);
-    url.search = new URLSearchParams({ isAggregate: 'false', isGame: 'false', start: String(start), limit: '100', cayenneExp: `seasonId=${season} and gameTypeId=${type === 'playoff' ? 3 : 2}` }).toString();
+    url.search = new URLSearchParams({ isAggregate: 'false', isGame: 'false', start: String(start), limit: '100', sort: JSON.stringify([{ property: 'playerId', direction: 'ASC' }]), cayenneExp: `seasonId=${season} and gameTypeId=${type === 'playoff' ? 3 : 2}` }).toString();
     const data = await readPublicJSON(url, options) as { data?: unknown[]; total?: number } | null;
     if (!data || !Array.isArray(data.data) || !Number.isInteger(data.total) || data.total! < 0 || data.total! > 10000 || data.data.length > 100) throw new Error('Source schema changed');
     if (expectedTotal !== undefined && expectedTotal !== data.total) throw new Error('Source changed during pagination; refresh again');
     expectedTotal = data.total;
+    for (const row of data.data) {
+      const playerId = (row as { playerId?: unknown } | null)?.playerId;
+      if (typeof playerId !== 'number' || !Number.isSafeInteger(playerId) || playerId <= previousPlayerId) throw new Error('Source returned duplicate or unordered pagination; refresh again');
+      previousPlayerId = playerId;
+    }
     rows.push(...data.data);
     if (rows.length > data.total!) throw new Error('Source returned inconsistent pagination');
     if (rows.length === data.total) return rows;
@@ -52,6 +58,8 @@ async function acquireStats(season: number, seasonType: 'regular' | 'playoff', s
   try {
   // Two requests at most; goalie fetch follows skater acquisition.
   const [bios, stats] = await Promise.all([report('skater', 'bios', season, seasonType, options), report('skater', 'summary', season, seasonType, options)]);
+  const biosIds = bios.map(row => (row as { playerId: number }).playerId);
+  if (biosIds.length !== stats.length || stats.some((row, index) => (row as { playerId: number }).playerId !== biosIds[index])) throw new Error('Source reports disagree on player coverage; refresh again');
   const goalies = await report('goalie', 'summary', season, seasonType, options);
   const packageData: PackageData = { schema_version: 1, season, season_type: seasonType,
     source: 'NHL live API', observed_at: null, fetched_at: new Date().toISOString(), bios, stats, goalies };
