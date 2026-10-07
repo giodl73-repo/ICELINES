@@ -12,7 +12,7 @@ import { digest, MAX_BYTES, refreshStats } from './acquisition.js';
 import { listSaved, loadSaved, onLibraryChange, packageMetadata, removeSaved, savedActiveId, saveDataset, MAX_SCHEDULE_BYTES } from './library.js';
 import { SORT_OPTIONS, parseViewHash, serializeViewHash, isPublicDataset, localDatasetForView } from './view-state.js';
 import type { ViewState } from './view-state.js';
-import type { CatalogEntry, Dataset, PackageData, PlayerRow, QueryRequest, QueryResult, SavedDatasetEntry, ScheduledGame } from './types.js';
+import type { CatalogEntry, Dataset, PackageData, PackageMetadata, PlayerRow, QueryRequest, QueryResult, SavedDatasetEntry, ScheduledGame } from './types.js';
 
 function element<T extends HTMLElement>(id: string): T { const value = document.getElementById(id); if (!value) throw new Error(`Missing control ${id}`); return value as T; }
 const catalogSelect = element<HTMLSelectElement>('catalog');
@@ -167,9 +167,8 @@ async function activate(bytes: Uint8Array, id: string, policy = false): Promise<
   if (bytes.length > MAX_BYTES) throw new Error('Package exceeds 100 MiB');
   const generation = engine.changeContext();
   const staging = bytes.slice().buffer;
-  const { revision, residents: revisions } = await engine.request<{ revision: string; residents: string[] }>('load', staging, [staging]);
+  const { revision, residents: revisions, metadata } = await engine.request<{ revision: string; residents: string[]; metadata: PackageMetadata }>('load', staging, [staging]);
   if (generation !== engine.generation) throw new Error('cancelled: context changed');
-  const metadata = packageMetadata(JSON.parse(textDecoder.decode(bytes)) as PackageData);
   active = { id, bytes, revision, metadata, keepUpdated: policy };
   for (const key of resident.keys()) if (!revisions.includes(key)) resident.delete(key);
   resident.set(revision, active);

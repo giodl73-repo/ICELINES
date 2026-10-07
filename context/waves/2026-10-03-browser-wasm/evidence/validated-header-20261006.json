@@ -1,0 +1,28 @@
+{
+  "build_info": {
+    "schema_version": 1,
+    "commit": "2bcf3aaf5d9facd2c1e04af4fcf65442bfac1812",
+    "working_tree_dirty": true,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "5b407c14f0a727855114091d66c5ddf363659c36aaa308bf1fc3950c841253de"
+  },
+  "metadata": {
+    "schema_version": 1,
+    "season": 20242025,
+    "season_type": "regular",
+    "source": "repository:20242025",
+    "observed_at": null,
+    "fetched_at": null
+  },
+  "header_matches": true,
+  "staging_detached": true,
+  "backup_bytes": 908625,
+  "revision": "ba4f8b9ab5e8882652099025360d8409b214a917d03ccc3c326a603a7ab86479",
+  "players": 905,
+  "passed": true
+}

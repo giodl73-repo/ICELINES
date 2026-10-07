@@ -60,3 +60,27 @@ archive sender detachment and correct 905-skater/103-goalie projections. This is
 local dirty-source evidence based on dd547229, with the disclosed unchanged guard
 WASM identity. It demonstrates ownership semantics, not total heap/peak memory.
 Current-head clean CI and whole-browser staging/resource acceptance remain open.
+
+## Validated header and acceptance reconciliation
+
+Rust now serializes the active package's six metadata fields in the worker load
+response. UI activation consumes that header instead of decoding raw JSON again.
+A native regression verifies initial absence, regular/playoff resident selection,
+rejected replacement preservation and unload. 18 Rust tests, 133 browser tests,
+TypeScript and Clippy pass. Rebuilt actual WASM verifies all 75 packages. The local
+worker probe matches the header and revision, detaches staging, keeps 908625 backup
+bytes and queries 905 skaters. UI activation also displays the correct 2024-25
+context and 905 rows with Kucherov first. This evidence is a dirty local build over
+2bcf3aaf (WASM 5b407c14f0a727855114091d66c5ddf363659c36aaa308bf1fc3950c841253de).
+
+The prior 2bcf3aaf browser CI 37558731398 passed and its clean synthetic preview
+93b043a2 verified 102 files/75 packages. New header source needs fresh CI.
+
+Deployed PR75 exports and actual file-picker round-trip now pass. Package bytes
+and complete goalie JSON/CSV reexports remain identical; all eight goalie rows and
+49 schedule games match. Blob observer timeouts did not mean missing files:
+filesystem/content verification confirms all diagnostic Blob downloads too.
+See deployed-export-verification and deployed-file-roundtrip evidence. Physical
+phone/picker latency, deployed offline/rollback, new PR publication and full peak
+memory remain open. The 100 MiB whitespace probe allocated 105.25 MiB WASM; it is
+not a main-UI or whole-browser peak measurement.

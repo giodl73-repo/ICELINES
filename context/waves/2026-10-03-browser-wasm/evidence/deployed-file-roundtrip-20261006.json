@@ -1,0 +1,20 @@
+{
+  "origin": "https://giodl73-repo.github.io/ICELINES/workbench/",
+  "published_source": "PR75/master 4ae78a8c",
+  "season_file": "icelines-20252026-regular (2).json",
+  "season_reexport": "icelines-20252026-regular (3).json",
+  "package_bytes": 924767,
+  "package_sha256": "a0215c383a25fb558060c9bae6cde8a91bc894266d4700bf737a2ee3445fe274",
+  "package_roundtrip_identical": true,
+  "full_query_json_identical": true,
+  "query_csv_identical": true,
+  "goalie_rows": 8,
+  "import_status": "Imported into memory. Save locally to keep it.",
+  "schedule_file": "icelines-schedule-2026-10-04.json",
+  "schedule_sha256": "f51d7532700f65056df554e764b49813bb1efff0465dd8c4b3dc9e9205511703",
+  "schedule_rows": 49,
+  "schedule_import_status": "Schedule imported into memory. Save locally to keep it.",
+  "saved_season_library_entries": 1,
+  "saved_schedule_library_entries": 1,
+  "scope": "Actual deployed file-picker imports and season reexports. Schedule already had an identical saved copy; no new save was invoked. No claim of physical-phone or picker latency acceptance. PR80 preview is not deployed."
+}

@@ -466,3 +466,9 @@ active results and resident order. All 75 packages load/query through the guarde
 WASM. The original oversized-name browser reproduction is rejected with 67 MiB
 allocated WASM and the previous 905-player query preserved. Total browser peak
 memory, maximum staging copies and physical-mobile acceptance remain open.
+
+Follow-up memory: a valid whitespace-padded 100 MiB package loaded through owned
+staging with 105.25 MiB allocated WASM and a retained 100 MiB backup. The generated
+binding still copies worker input into WASM; total peak is unmeasured. Returning
+validated Rust header metadata with load removes the UI's subsequent full-package
+JSON decode, without rewriting original backup bytes or data revisions.

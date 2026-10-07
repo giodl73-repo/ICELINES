@@ -64,3 +64,17 @@ backup remains usable when validation refuses a replacement.
 The historical 15-finding counts and scoped verdict remain. The first guard CI
 passed; follow-up source CI is required. Local ownership evidence does not clear
 P2 #2's whole-browser peak-memory gate or P2 #9's current committed-artifact/CI gate.
+
+## Validated header amendment
+
+The same five lenses were reapplied: KEEL keeps Rust's validated active package
+as metadata authority; WIRE adds an owned six-field header to the existing load
+value without changing request envelopes or backup bytes; BENCH verifies header
+selection/rejected replacement/unload, 18 Rust tests, 133 browser tests and actual
+worker/UI activation; FORGE keeps errors in the worker's typed response/recovery
+boundary; EDGE removes the redundant full raw UI decode but keeps full peak memory
+and staging-copy concerns explicit. Historical counts and scoped verdict remain.
+The committed 2bcf3aaf CI/artifact gate passed; this newer header source needs fresh
+CI. Production download and reimport evidence now passes, including actual files;
+the Blob download-event timeout was not a failure to save files. Phone resources,
+full peak memory, deployed offline reopening/rollback and publication stay open.

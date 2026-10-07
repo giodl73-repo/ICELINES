@@ -1,0 +1,55 @@
+{
+  "origin": "https://giodl73-repo.github.io/ICELINES/workbench/",
+  "published_source": "PR75/master 4ae78a8c",
+  "files": {
+    "package": {
+      "filename": "icelines-20252026-regular (2).json",
+      "bytes": 924767,
+      "sha256": "a0215c383a25fb558060c9bae6cde8a91bc894266d4700bf737a2ee3445fe274"
+    },
+    "json": {
+      "filename": "icelines-20252026-query (1).json",
+      "bytes": 3926,
+      "sha256": "291650064bd842b6354948452821fa471e35c87ebd8c1d31984c4c0bb2ab8f31"
+    },
+    "csv": {
+      "filename": "icelines-20252026-query.csv",
+      "bytes": 2010,
+      "sha256": "459196d9c0d6ea5fa62688c898f8e26747d69913681b916d1e4d872ee1605632"
+    },
+    "schedule": {
+      "filename": "icelines-schedule-2026-10-04.json",
+      "bytes": 92087,
+      "sha256": "f51d7532700f65056df554e764b49813bb1efff0465dd8c4b3dc9e9205511703"
+    }
+  },
+  "package_skaters": 940,
+  "package_goalies": 98,
+  "goalie_query_rows": 8,
+  "json_csv_agree": true,
+  "query_revision_matches_package": true,
+  "schedule_games": 49,
+  "fixture_downloads": {
+    "http": {
+      "saved": true,
+      "bytes": 79,
+      "sha256": "a6d5f9817f52175cd75c322d10bfa51b385681d292f4001517f3162f12ee598c"
+    },
+    "detached": {
+      "saved": true,
+      "bytes": 77,
+      "sha256": "40fec3effb9d7a8313a9ad79df814b884aacc97e3409f9925f89d4c4473a1231"
+    },
+    "attached": {
+      "saved": true,
+      "bytes": 77,
+      "sha256": "40fec3effb9d7a8313a9ad79df814b884aacc97e3409f9925f89d4c4473a1231"
+    },
+    "visible-blob": {
+      "saved": true,
+      "bytes": 77,
+      "sha256": "40fec3effb9d7a8313a9ad79df814b884aacc97e3409f9925f89d4c4473a1231"
+    }
+  },
+  "scope": "Actual deployed downloads only; latest PR80 not published. No file-picker reimport in this probe. Blob event timeout was observer behavior, not missing files."
+}

@@ -340,3 +340,8 @@ only six header fields; complete package bytes remain available for save/export.
 Legacy saved envelopes with duplicate report arrays still validate against their
 raw bytes; those arrays are discarded from display metadata without rewriting
 or deleting the saved package. Storage policy and package schema are unchanged.
+
+Activation now takes its six metadata fields from the validated Rust package in
+its worker load response, avoiding a second full raw JSON decode in the UI.
+Catalog/saved-envelope integrity checks remain in place. This removes one decode,
+not all input staging allocations or a proof of full browser peak memory.
