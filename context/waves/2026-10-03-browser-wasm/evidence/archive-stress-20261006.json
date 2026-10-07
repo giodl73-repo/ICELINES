@@ -1,0 +1,50 @@
+{
+  "measured_at": "2026-10-07T00:35:12.522Z",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+  "samples": [
+    {
+      "file": "expanded-over-limit.tar.gz",
+      "compressed_bytes": 102993,
+      "rejection_ms": 635.3000000119209,
+      "error": "Error: Error: Expanded archive exceeds 100 MiB",
+      "previous_query_preserved": true,
+      "rows": 9
+    },
+    {
+      "file": "file-over-limit.tar.gz",
+      "compressed_bytes": 89,
+      "rejection_ms": 1.0999999940395355,
+      "error": "Error: Error: Expanded archive file exceeds limits",
+      "previous_query_preserved": true,
+      "rows": 9
+    },
+    {
+      "file": "compressed-over-limit.tar.gz",
+      "compressed_bytes": 26214401,
+      "rejection_ms": 9.099999994039536,
+      "error": "Error: Error: Compressed archive exceeds 25 MiB",
+      "previous_query_preserved": true,
+      "rows": 9
+    }
+  ],
+  "note": "Actual local browser worker rejection timing and data preservation. Excludes file picker, total peak memory and mobile hardware.",
+  "artifact_identity": {
+    "commit": "4ae78a8c340bd3eda676633b8775f0cf18078a28",
+    "shell_build": "4f7f1e6de9be3772720538c7464af640dc27730dbd060c360b1bad04c7a0568b",
+    "verified_files": 102,
+    "packages": 75
+  },
+  "build_info": {
+    "schema_version": 1,
+    "commit": "4ae78a8c340bd3eda676633b8775f0cf18078a28",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "1344a015f6f61c6743185fabe92b37ecb39124f19826ab1d6fd4d55a7fdfe1f0"
+  },
+  "passed": true
+}

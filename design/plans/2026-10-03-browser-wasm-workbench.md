@@ -24,21 +24,17 @@ Expand other native UI surfaces only after this complete path passes its gates.
 
 Public release archives are build inputs for a versioned, lazy-loaded catalog.
 The existing Pages documentation stays at `/ICELINES/`; the browser is composed
-under `/ICELINES/workbench/`. Switching legacy Pages publishing to Actions is an
-explicit rollout step, with documentation publication coordinated and rollback
-acceptance still required; see [rollout](../../icelines-browser/PAGES.md).
+under `/ICELINES/workbench/` using the existing `gh-pages` branch publisher. A future Actions publication path would require an explicit source migration; remote rollback acceptance is still required; see [rollout](../../icelines-browser/PAGES.md).
 LFS inputs use the same conversion path if actual assets are identified. Live
 stats and schedule acquisition are separate adapters; their browser access must
 be proven from the deployed origin. If direct access fails, record a constrained
 relay's hosting and operating owner before implementing it.
 User decision on 2026-10-04: choose relay hosting after deployed-origin testing.
-No relay provider or operating owner is allocated yet.
+Follow-up decision: Cloudflare Free, operated through the user's account. The bounded relay is deployed; see section 12 and the rollout guide for dated evidence.
 
 The delivery order is engine/contracts → one-season parity → local library →
 live refresh → browser UX → Pages release. Current implementation evidence is
-listed in section 12; local offline reopening passed in pulse 27. Deployment,
-live access, deployed offline/update behavior, mobile, and other release gates
-remain open. The roles verdict approves planning
+listed in section 12; local offline reopening passed in pulse 27. Pages deployment, relay live access, saved-data recovery and update/reload now have deployed-browser evidence. Deployed offline reopening, remote rollback, physical mobile and full resource gates remain open. The roles verdict approves planning
 with conditions and is not a release approval.
 
 ## 1. Outcome and first release
