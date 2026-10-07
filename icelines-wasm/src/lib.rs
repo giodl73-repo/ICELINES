@@ -21,6 +21,8 @@ use sha2::{Digest, Sha256};
 use thiserror::Error;
 use wasm_bindgen::prelude::*;
 
+mod package_limits;
+
 const MAX_PACKAGE_BYTES: usize = 100 * 1024 * 1024;
 const MAX_RESIDENT_WINDOWS: usize = 8;
 const MAX_RESIDENT_INPUT_BYTES: usize = 64 * 1024 * 1024;
@@ -228,6 +230,7 @@ impl BrowserEngine {
         if self.select_revision(&revision).is_ok() {
             return Ok(revision);
         }
+        package_limits::validate(bytes).map_err(EngineError::InvalidPackage)?;
         let package: SeasonPackage = serde_json::from_slice(bytes)
             .map_err(|e| EngineError::InvalidPackage(e.to_string()))?;
         if package.schema_version != 1 {
@@ -589,6 +592,32 @@ mod tests {
         assert_eq!(engine.execute(&request("")).unwrap().season, 20252026);
     }
 
+    #[test]
+    fn resource_rejection_preserves_active_data_and_resident_order() {
+        let mut engine = BrowserEngine::new();
+        load(&mut engine, &season_package(20232024)).unwrap();
+        load(&mut engine, &season_package(20242025)).unwrap();
+        let revisions = engine.resident_revisions();
+        let before = serde_json::to_value(engine.execute(&request("")).unwrap()).unwrap();
+        let mut oversized_name = package();
+        oversized_name["bios"][0]["skaterFullName"] = "x".repeat(1025).into();
+        let mut oversized_metadata = package();
+        oversized_metadata["source"] = "x".repeat(1025).into();
+        let mut oversized_rows = package();
+        oversized_rows["bios"] = vec![package()["bios"][0].clone(); 10_001].into();
+        for invalid in [oversized_name, oversized_metadata, oversized_rows] {
+            let error = load(&mut engine, &invalid).unwrap_err().to_string();
+            assert!(
+                error.contains("package string exceeds") || error.contains("package array exceeds"),
+                "{error}"
+            );
+            assert_eq!(engine.resident_revisions(), revisions);
+            assert_eq!(
+                serde_json::to_value(engine.execute(&request("")).unwrap()).unwrap(),
+                before
+            );
+        }
+    }
     fn request(filter: &str) -> QueryRequest {
         QueryRequest {
             filter: filter.into(),

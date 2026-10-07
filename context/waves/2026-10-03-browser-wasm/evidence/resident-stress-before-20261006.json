@@ -1,0 +1,24 @@
+{
+  "measured_at": "2026-10-07T00:49:00.126Z",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+  "note": "Synthetic 60 MiB player-name string; allocated WASM is a lower bound, excludes main/worker JS and browser overhead.",
+  "build_info": {
+    "schema_version": 1,
+    "commit": "4ae78a8c340bd3eda676633b8775f0cf18078a28",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "1344a015f6f61c6743185fabe92b37ecb39124f19826ab1d6fd4d55a7fdfe1f0"
+  },
+  "allocated_wasm_bytes": 390725632,
+  "package_bytes": 63824258,
+  "load_ms": 1543,
+  "revision": "aab4b10feb219a44071a20ffd81fd06b2a9ea7ca4becb64d3fc22ceaa801b512",
+  "loaded": true,
+  "allocated_wasm_mib": 372.625,
+  "provisional_250_mib_total_target": "contradicted by WASM allocation alone"
+}

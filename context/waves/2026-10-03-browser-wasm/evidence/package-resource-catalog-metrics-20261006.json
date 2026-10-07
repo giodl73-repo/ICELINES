@@ -1,0 +1,536 @@
+{
+  "packages": 75,
+  "maximums": {
+    "max_string_utf8_bytes": 29,
+    "aggregate_text_bytes": 637984,
+    "json_nodes": 106012,
+    "max_array_items": 1004
+  },
+  "samples": [
+    {
+      "id": "20252026-regular",
+      "max_string_utf8_bytes": 27,
+      "aggregate_text_bytes": 600963,
+      "json_nodes": 98625,
+      "max_array_items": 940
+    },
+    {
+      "id": "20242025-regular",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 588793,
+      "json_nodes": 96860,
+      "max_array_items": 920
+    },
+    {
+      "id": "20242025-playoff",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 162955,
+      "json_nodes": 29176,
+      "max_array_items": 332
+    },
+    {
+      "id": "20232024-regular",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 588366,
+      "json_nodes": 97025,
+      "max_array_items": 924
+    },
+    {
+      "id": "20232024-playoff",
+      "max_string_utf8_bytes": 22,
+      "aggregate_text_bytes": 166224,
+      "json_nodes": 29764,
+      "max_array_items": 339
+    },
+    {
+      "id": "20222023-regular",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 604944,
+      "json_nodes": 100148,
+      "max_array_items": 951
+    },
+    {
+      "id": "20222023-playoff",
+      "max_string_utf8_bytes": 24,
+      "aggregate_text_bytes": 163938,
+      "json_nodes": 29391,
+      "max_array_items": 334
+    },
+    {
+      "id": "20212022-regular",
+      "max_string_utf8_bytes": 24,
+      "aggregate_text_bytes": 637984,
+      "json_nodes": 106012,
+      "max_array_items": 1004
+    },
+    {
+      "id": "20212022-playoff",
+      "max_string_utf8_bytes": 24,
+      "aggregate_text_bytes": 164745,
+      "json_nodes": 29569,
+      "max_array_items": 335
+    },
+    {
+      "id": "20202021-regular",
+      "max_string_utf8_bytes": 24,
+      "aggregate_text_bytes": 576615,
+      "json_nodes": 95925,
+      "max_array_items": 913
+    },
+    {
+      "id": "20202021-playoff",
+      "max_string_utf8_bytes": 24,
+      "aggregate_text_bytes": 164185,
+      "json_nodes": 29455,
+      "max_array_items": 337
+    },
+    {
+      "id": "20192020-regular",
+      "max_string_utf8_bytes": 24,
+      "aggregate_text_bytes": 554432,
+      "json_nodes": 92408,
+      "max_array_items": 883
+    },
+    {
+      "id": "20192020-playoff",
+      "max_string_utf8_bytes": 24,
+      "aggregate_text_bytes": 252460,
+      "json_nodes": 45337,
+      "max_array_items": 516
+    },
+    {
+      "id": "20182019-regular",
+      "max_string_utf8_bytes": 27,
+      "aggregate_text_bytes": 568826,
+      "json_nodes": 94990,
+      "max_array_items": 906
+    },
+    {
+      "id": "20182019-playoff",
+      "max_string_utf8_bytes": 24,
+      "aggregate_text_bytes": 161713,
+      "json_nodes": 29025,
+      "max_array_items": 333
+    },
+    {
+      "id": "20172018-regular",
+      "max_string_utf8_bytes": 27,
+      "aggregate_text_bytes": 558075,
+      "json_nodes": 93484,
+      "max_array_items": 890
+    },
+    {
+      "id": "20172018-playoff",
+      "max_string_utf8_bytes": 24,
+      "aggregate_text_bytes": 163084,
+      "json_nodes": 29354,
+      "max_array_items": 333
+    },
+    {
+      "id": "20162017-regular",
+      "max_string_utf8_bytes": 27,
+      "aggregate_text_bytes": 555893,
+      "json_nodes": 93284,
+      "max_array_items": 888
+    },
+    {
+      "id": "20162017-playoff",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 166335,
+      "json_nodes": 29912,
+      "max_array_items": 343
+    },
+    {
+      "id": "20152016-regular",
+      "max_string_utf8_bytes": 27,
+      "aggregate_text_bytes": 560102,
+      "json_nodes": 94143,
+      "max_array_items": 898
+    },
+    {
+      "id": "20152016-playoff",
+      "max_string_utf8_bytes": 24,
+      "aggregate_text_bytes": 166034,
+      "json_nodes": 29895,
+      "max_array_items": 340
+    },
+    {
+      "id": "20142015-regular",
+      "max_string_utf8_bytes": 27,
+      "aggregate_text_bytes": 549093,
+      "json_nodes": 92543,
+      "max_array_items": 882
+    },
+    {
+      "id": "20142015-playoff",
+      "max_string_utf8_bytes": 22,
+      "aggregate_text_bytes": 165026,
+      "json_nodes": 29717,
+      "max_array_items": 339
+    },
+    {
+      "id": "20132014-regular",
+      "max_string_utf8_bytes": 29,
+      "aggregate_text_bytes": 551664,
+      "json_nodes": 93178,
+      "max_array_items": 886
+    },
+    {
+      "id": "20132014-playoff",
+      "max_string_utf8_bytes": 27,
+      "aggregate_text_bytes": 167757,
+      "json_nodes": 30231,
+      "max_array_items": 344
+    },
+    {
+      "id": "20122013-regular",
+      "max_string_utf8_bytes": 27,
+      "aggregate_text_bytes": 519374,
+      "json_nodes": 87773,
+      "max_array_items": 839
+    },
+    {
+      "id": "20122013-playoff",
+      "max_string_utf8_bytes": 27,
+      "aggregate_text_bytes": 168971,
+      "json_nodes": 30416,
+      "max_array_items": 349
+    },
+    {
+      "id": "20112012-regular",
+      "max_string_utf8_bytes": 29,
+      "aggregate_text_bytes": 553377,
+      "json_nodes": 93602,
+      "max_array_items": 894
+    },
+    {
+      "id": "20112012-playoff",
+      "max_string_utf8_bytes": 27,
+      "aggregate_text_bytes": 167994,
+      "json_nodes": 30248,
+      "max_array_items": 347
+    },
+    {
+      "id": "20102011-regular",
+      "max_string_utf8_bytes": 29,
+      "aggregate_text_bytes": 550508,
+      "json_nodes": 93208,
+      "max_array_items": 891
+    },
+    {
+      "id": "20102011-playoff",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 164531,
+      "json_nodes": 29670,
+      "max_array_items": 339
+    },
+    {
+      "id": "20092010-regular",
+      "max_string_utf8_bytes": 29,
+      "aggregate_text_bytes": 542251,
+      "json_nodes": 91820,
+      "max_array_items": 879
+    },
+    {
+      "id": "20092010-playoff",
+      "max_string_utf8_bytes": 29,
+      "aggregate_text_bytes": 166351,
+      "json_nodes": 30016,
+      "max_array_items": 342
+    },
+    {
+      "id": "20082009-regular",
+      "max_string_utf8_bytes": 29,
+      "aggregate_text_bytes": 546799,
+      "json_nodes": 92702,
+      "max_array_items": 885
+    },
+    {
+      "id": "20082009-playoff",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 161740,
+      "json_nodes": 29166,
+      "max_array_items": 333
+    },
+    {
+      "id": "20072008-regular",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 526894,
+      "json_nodes": 89402,
+      "max_array_items": 852
+    },
+    {
+      "id": "20072008-playoff",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 164317,
+      "json_nodes": 29613,
+      "max_array_items": 340
+    },
+    {
+      "id": "20062007-regular",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 529255,
+      "json_nodes": 89767,
+      "max_array_items": 858
+    },
+    {
+      "id": "20062007-playoff",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 159959,
+      "json_nodes": 28857,
+      "max_array_items": 331
+    },
+    {
+      "id": "20052006-regular",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 538362,
+      "json_nodes": 91296,
+      "max_array_items": 870
+    },
+    {
+      "id": "20052006-playoff",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 161741,
+      "json_nodes": 29166,
+      "max_array_items": 333
+    },
+    {
+      "id": "20032004-regular",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 566243,
+      "json_nodes": 96037,
+      "max_array_items": 916
+    },
+    {
+      "id": "20032004-playoff",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 166884,
+      "json_nodes": 30100,
+      "max_array_items": 343
+    },
+    {
+      "id": "20022003-regular",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 548729,
+      "json_nodes": 93096,
+      "max_array_items": 888
+    },
+    {
+      "id": "20022003-playoff",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 163470,
+      "json_nodes": 29502,
+      "max_array_items": 337
+    },
+    {
+      "id": "20012002-regular",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 539945,
+      "json_nodes": 91602,
+      "max_array_items": 874
+    },
+    {
+      "id": "20012002-playoff",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 167489,
+      "json_nodes": 30231,
+      "max_array_items": 344
+    },
+    {
+      "id": "20002001-regular",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 545569,
+      "json_nodes": 92602,
+      "max_array_items": 884
+    },
+    {
+      "id": "20002001-playoff",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 163462,
+      "json_nodes": 29492,
+      "max_array_items": 338
+    },
+    {
+      "id": "19992000-regular",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 516917,
+      "json_nodes": 87720,
+      "max_array_items": 838
+    },
+    {
+      "id": "19992000-playoff",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 161053,
+      "json_nodes": 29062,
+      "max_array_items": 334
+    },
+    {
+      "id": "19981999-regular",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 503217,
+      "json_nodes": 85414,
+      "max_array_items": 814
+    },
+    {
+      "id": "19981999-playoff",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 173238,
+      "json_nodes": 31266,
+      "max_array_items": 358
+    },
+    {
+      "id": "19971998-regular",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 469361,
+      "json_nodes": 79650,
+      "max_array_items": 762
+    },
+    {
+      "id": "19971998-playoff",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 165568,
+      "json_nodes": 29895,
+      "max_array_items": 340
+    },
+    {
+      "id": "19961997-regular",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 474632,
+      "json_nodes": 80538,
+      "max_array_items": 769
+    },
+    {
+      "id": "19961997-playoff",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 166286,
+      "json_nodes": 30006,
+      "max_array_items": 343
+    },
+    {
+      "id": "19951996-regular",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 479538,
+      "json_nodes": 81385,
+      "max_array_items": 777
+    },
+    {
+      "id": "19951996-playoff",
+      "max_string_utf8_bytes": 22,
+      "aggregate_text_bytes": 169447,
+      "json_nodes": 30624,
+      "max_array_items": 347
+    },
+    {
+      "id": "19941995-regular",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 453823,
+      "json_nodes": 77015,
+      "max_array_items": 738
+    },
+    {
+      "id": "19941995-playoff",
+      "max_string_utf8_bytes": 22,
+      "aggregate_text_bytes": 168185,
+      "json_nodes": 30419,
+      "max_array_items": 344
+    },
+    {
+      "id": "19931994-regular",
+      "max_string_utf8_bytes": 26,
+      "aggregate_text_bytes": 488019,
+      "json_nodes": 82879,
+      "max_array_items": 791
+    },
+    {
+      "id": "19931994-playoff",
+      "max_string_utf8_bytes": 22,
+      "aggregate_text_bytes": 166256,
+      "json_nodes": 30016,
+      "max_array_items": 342
+    },
+    {
+      "id": "19921993-regular",
+      "max_string_utf8_bytes": 22,
+      "aggregate_text_bytes": 440783,
+      "json_nodes": 74903,
+      "max_array_items": 715
+    },
+    {
+      "id": "19921993-playoff",
+      "max_string_utf8_bytes": 22,
+      "aggregate_text_bytes": 163829,
+      "json_nodes": 29596,
+      "max_array_items": 337
+    },
+    {
+      "id": "19911992-regular",
+      "max_string_utf8_bytes": 22,
+      "aggregate_text_bytes": 437458,
+      "json_nodes": 74350,
+      "max_array_items": 709
+    },
+    {
+      "id": "19911992-playoff",
+      "max_string_utf8_bytes": 22,
+      "aggregate_text_bytes": 173315,
+      "json_nodes": 31313,
+      "max_array_items": 358
+    },
+    {
+      "id": "19901991-regular",
+      "max_string_utf8_bytes": 22,
+      "aggregate_text_bytes": 408547,
+      "json_nodes": 69538,
+      "max_array_items": 659
+    },
+    {
+      "id": "19901991-playoff",
+      "max_string_utf8_bytes": 22,
+      "aggregate_text_bytes": 172442,
+      "json_nodes": 31165,
+      "max_array_items": 354
+    },
+    {
+      "id": "19891990-regular",
+      "max_string_utf8_bytes": 22,
+      "aggregate_text_bytes": 404628,
+      "json_nodes": 68809,
+      "max_array_items": 655
+    },
+    {
+      "id": "19891990-playoff",
+      "max_string_utf8_bytes": 22,
+      "aggregate_text_bytes": 172018,
+      "json_nodes": 31091,
+      "max_array_items": 352
+    },
+    {
+      "id": "19881989-regular",
+      "max_string_utf8_bytes": 22,
+      "aggregate_text_bytes": 408892,
+      "json_nodes": 69515,
+      "max_array_items": 663
+    },
+    {
+      "id": "19881989-playoff",
+      "max_string_utf8_bytes": 22,
+      "aggregate_text_bytes": 171529,
+      "json_nodes": 30997,
+      "max_array_items": 352
+    },
+    {
+      "id": "19871988-regular",
+      "max_string_utf8_bytes": 22,
+      "aggregate_text_bytes": 413121,
+      "json_nodes": 70180,
+      "max_array_items": 672
+    },
+    {
+      "id": "19871988-playoff",
+      "max_string_utf8_bytes": 22,
+      "aggregate_text_bytes": 178227,
+      "json_nodes": 32210,
+      "max_array_items": 367
+    }
+  ]
+}

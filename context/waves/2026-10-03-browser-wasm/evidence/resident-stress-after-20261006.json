@@ -1,0 +1,26 @@
+{
+  "measured_at": "2026-10-07T00:55:58.535Z",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+  "note": "Local resource guard build; dirty build-info is disclosed. Synthetic 60 MiB player-name rejection; allocated WASM excludes JavaScript and browser overhead.",
+  "build_info": {
+    "schema_version": 1,
+    "commit": "ca0494b467ba24c26c9fb5e0898279a35c5288ae",
+    "working_tree_dirty": true,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "c5fd6e9448cfcb3016525fb87586fce3bc10f8f01be63cb9393aff9a3cfb2d57"
+  },
+  "allocated_wasm_bytes": 70254592,
+  "package_bytes": 63824258,
+  "rejection_ms": 382.5,
+  "rejection": "Error: invalid package: package string exceeds 6144 encoded bytes",
+  "previous_query_preserved": true,
+  "active_skaters": 905,
+  "active_revision": "ba4f8b9ab5e8882652099025360d8409b214a917d03ccc3c326a603a7ab86479",
+  "allocated_wasm_mib": 67,
+  "passed": true
+}
