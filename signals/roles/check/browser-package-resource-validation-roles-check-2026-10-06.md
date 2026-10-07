@@ -48,3 +48,19 @@ Amendments: document explicit input limits and compatibility refusal (README);
 retain boundary/state regressions plus before/after/catalog evidence (implemented);
 verify clean committed WASM/current CI and continue whole-browser/device gates
 (pending). BW-02 records the failure in design/PITFALLS.md.
+## Staging ownership amendment
+
+The same five lenses were reapplied to the staging follow-up. KEEL: raw backup
+bytes and six-field display metadata keep one prepared hockey repository. WIRE:
+transfers consume only caller-owned staging or temporary archive bytes; legacy
+saved envelopes keep their integrity/header validation. BENCH: 133 browser tests
+cover explicit detachment, borrowed-input retention and intact raw report backup;
+actual browser worker evidence proves both input and converted-output ownership.
+FORGE: transferred buffers are listed explicitly, unchanged query/control payloads
+use default cloning, and send failure still settles requests through recovery.
+EDGE: stored duplicate arrays cannot override raw data, and the previous query/
+backup remains usable when validation refuses a replacement.
+
+The historical 15-finding counts and scoped verdict remain. The first guard CI
+passed; follow-up source CI is required. Local ownership evidence does not clear
+P2 #2's whole-browser peak-memory gate or P2 #9's current committed-artifact/CI gate.

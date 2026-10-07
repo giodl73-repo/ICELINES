@@ -330,3 +330,13 @@ change and allocated 372.625 MiB of WASM memory. The guarded build rejected the
 same package, kept its previous 905-player query, and allocated 67 MiB. These are
 single desktop lower-bound observations, not full peak-memory or mobile results.
 See the dated resource-validation pulse for build identities and limitations.
+
+Owned staging buffers are explicitly transferred to the worker for season loads,
+schedule projections and archive input. Raw season/schedule backup bytes remain
+owned by the session; callers transfer a staging copy. Archive conversion returns
+its new package buffer by transfer. The client still clones borrowed inputs when
+no transfer list is supplied. Session and restored dataset metadata now retain
+only six header fields; complete package bytes remain available for save/export.
+Legacy saved envelopes with duplicate report arrays still validate against their
+raw bytes; those arrays are discarded from display metadata without rewriting
+or deleting the saved package. Storage policy and package schema are unchanged.

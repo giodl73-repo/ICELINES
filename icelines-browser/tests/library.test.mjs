@@ -74,7 +74,8 @@ test('library entries retain verified headers without package bytes or player ar
     }
     const entry = entries[0];
     const selected = await loadSaved(entry.id, entry.revision);
-    assert.equal(selected.metadata.stats.length, 100);
+    assert.equal('stats' in selected.metadata, false);
+    assert.equal(JSON.parse(new TextDecoder().decode(selected.bytes)).stats.length, 100);
     assert.equal(selected.bytes.byteLength, entry.byteLength);
   } finally { globalThis.indexedDB = indexedDB; }
 });
@@ -211,11 +212,13 @@ test('stored byte corruption or revision tampering is refused', async () => {
   await assert.rejects(validateSavedDataset(wrongDigest), /corrupt or unsupported/);
 });
 
-test('saved metadata cannot override package context and reconstructed arrays come from bytes', async () => {
+test('saved metadata cannot override package context or retain independent report arrays', async () => {
   const wrongContext = dataset('context', 'r1'); wrongContext.metadata.season_type = 'playoff';
   await assert.rejects(validateSavedDataset(wrongContext), /corrupt or unsupported/);
   const duplicate = dataset('arrays', 'r1'); duplicate.metadata.stats = [{ injected: 'not in original bytes' }];
-  assert.deepEqual((await validateSavedDataset(duplicate)).metadata.stats, []);
+  const restored = await validateSavedDataset(duplicate);
+  assert.equal('stats' in restored.metadata, false);
+  assert.deepEqual(JSON.parse(new TextDecoder().decode(restored.bytes)).stats, []);
 });
 
 test('future package schemas, unknown fields, invalid UTF-8 and malformed policies are refused', async () => {

@@ -39,3 +39,24 @@ became a 907,753-byte model, converted in 218.4 ms, loaded in 20.8 ms, and retur
 prove near-limit model memory. Full browser peak/staging memory, phone testing,
 export download, deployed offline reopening and remote rollback remain open.
 The guard fixes the reproduced model amplification, not every resource gate.
+## Staging ownership follow-up
+
+The main thread previously copied a staging buffer and then structured-cloned it
+into the worker. Load/schedule requests now explicitly transfer that staging copy,
+while the raw backup remains attached. Archive input is consumed as temporary
+compressed bytes; its converted output is transferred back. Default client calls
+without a transfer list retain the previous borrowed-input behavior.
+
+Session/restored metadata is reduced to six header fields, so it does not retain
+another full decoded bios/stats/goalie tree. Digest-verified raw bytes remain the
+backup. Existing saved records, including legacy duplicate metadata arrays, are
+accepted through the same envelope/header checks; no schema migration or deletion
+occurs. Library tests check report data remains intact in the raw package.
+
+All 133 browser tests pass; TypeScript check and the actual WASM 75-package build
+pass. [Browser ownership report](../evidence/owned-buffers-20261006.json) records
+real desktop worker input detachment, intact backup digest, header-only metadata,
+archive sender detachment and correct 905-skater/103-goalie projections. This is
+local dirty-source evidence based on dd547229, with the disclosed unchanged guard
+WASM identity. It demonstrates ownership semantics, not total heap/peak memory.
+Current-head clean CI and whole-browser staging/resource acceptance remain open.

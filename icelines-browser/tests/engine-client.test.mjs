@@ -5,7 +5,7 @@ function setup(timeout = 120000) {
   const workers = [], failures = [];
   const client = new EngineClient(message => failures.push(message), () => {
     const worker = { messages: [], terminated: false, onmessage: null, onerror: null, onmessageerror: null,
-      postMessage(value) { this.messages.push(value); }, terminate() { this.terminated = true; } };
+      postMessage(value, transfer = []) { this.messages.push(structuredClone(value, { transfer })); }, terminate() { this.terminated = true; } };
     workers.push(worker); return worker;
   }, timeout);
   return { client, workers, failures };
@@ -75,4 +75,25 @@ test('unresponsive worker is terminated by bounded watchdog', async () => {
   const { client, workers, failures } = setup(10);
   await assert.rejects(client.request('query', {}), /did not respond/);
   assert.equal(workers[0].terminated, true); assert.equal(failures.length, 1);
+});
+
+test('explicit staging transfer detaches only the owned copy and keeps backup bytes intact', async () => {
+  const {client, workers} = setup();
+  const backup = new Uint8Array([1, 2, 3]); const staging = backup.slice().buffer;
+  const pending = client.request('load', staging, [staging]);
+  assert.equal(staging.byteLength, 0);
+  assert.deepEqual([...backup], [1, 2, 3]);
+  assert.deepEqual([...new Uint8Array(workers[0].messages.at(-1).payload)], [1, 2, 3]);
+  reply(workers[0], {revision:'accepted'});
+  assert.equal((await pending).revision, 'accepted');
+  assert.deepEqual([...backup], [1, 2, 3]);
+});
+
+test('borrowed input stays attached unless the caller explicitly transfers ownership', async () => {
+  const {client, workers} = setup(); const bytes = new Uint8Array([4, 5, 6]);
+  const pending = client.request('load', bytes.buffer);
+  assert.equal(bytes.byteLength, 3);
+  assert.notEqual(workers[0].messages.at(-1).payload, bytes.buffer);
+  reply(workers[0], 'accepted'); assert.equal(await pending, 'accepted');
+  assert.deepEqual([...bytes], [4, 5, 6]);
 });

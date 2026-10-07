@@ -55,6 +55,6 @@ self.onmessage = (event: MessageEvent<EngineRequest>) => {
       const kind = error instanceof WebAssembly.RuntimeError ? 'engine_failure' : message.includes('cancelled') ? 'cancelled' : message.includes('missing data') ? 'missing_data' : 'engine_error';
       response.error = { kind, message };
     }
-    self.postMessage(response);
+    self.postMessage(response, { transfer: response.value instanceof ArrayBuffer ? [response.value] : [] });
   });
 };
