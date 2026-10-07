@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-06",
+  "pages_source_commit": "4ae78a8c340bd3eda676633b8775f0cf18078a28",
+  "worker_version": "7f92df73-2907-42c8-b498-6e01d2a64e85",
+  "viewport": {
+    "width": 360,
+    "height": 800
+  },
+  "observations": {
+    "root_client_width": 345,
+    "root_scroll_width": 345,
+    "leaders_table_client_width": 313,
+    "leaders_table_scroll_width": 465,
+    "schedule_table_client_width": 313,
+    "schedule_table_scroll_width": 732,
+    "keyboard_arrow_right_scroll_left": 40,
+    "player_dialog_client_width": 294,
+    "player_dialog_scroll_width": 294,
+    "expanded_player_dialog_client_height": 766,
+    "expanded_player_dialog_scroll_height": 2288,
+    "escape_closes_dialog": true,
+    "escape_restores_focus": "Connor McDavid",
+    "goalie_filter": "wins>=30",
+    "goalie_result_count": 8,
+    "first_goalie": "Andrei Vasilevskiy",
+    "first_goalie_wins": 39,
+    "refresh_loading_controls": "refresh disabled and Cancel visible",
+    "refresh_completion": "in-memory",
+    "cancellation": "Refresh cancelled. Your previous good data remains available.",
+    "results_after_cancel": "8 goalies",
+    "query_export": "button invoked; downloaded bytes not observed"
+  },
+  "limits": [
+    "Desktop Chromium at mobile viewport; not physical phone performance or mobile browser engine proof.",
+    "Actual deployed offline reopening and remote rollback remain unverified.",
+    "Total browser peak memory and import/decompression stress gates remain open."
+  ],
+  "screenshots": [
+    "icelines-mobile-ready-20261006.png",
+    "icelines-mobile-table-20261006.png",
+    "icelines-mobile-player-20261006.png",
+    "icelines-mobile-loading-20261006.png",
+    "icelines-mobile-cancelled-20261006.png"
+  ]
+}
