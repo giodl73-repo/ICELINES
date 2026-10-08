@@ -445,6 +445,7 @@ Direct NHL sorted probes returned 940/940 unique skaters and 98 unique goalies.
 Production relay plus WASM verification passed in 22 requests; the existing
 Pages client refreshed all 940 skaters with all eight 100-point leaders. New
 browser guard publication remains pending.
+<<<<<<< HEAD
 
 ### BW-02 — Package Bytes Do Not Bound Normalized Allocation
 
@@ -472,3 +473,5 @@ staging with 105.25 MiB allocated WASM and a retained 100 MiB backup. The genera
 binding still copies worker input into WASM; total peak is unmeasured. Returning
 validated Rust header metadata with load removes the UI's subsequent full-package
 JSON decode, without rewriting original backup bytes or data revisions.
+=======
+>>>>>>> origin/master
