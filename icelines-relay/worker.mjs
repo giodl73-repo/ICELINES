@@ -1,5 +1,6 @@
 // Public, read-only NHL relay. No browser credentials or arbitrary target URLs.
 export const ORIGIN = 'https://giodl73-repo.github.io';
+export const PLAYER_SORT = JSON.stringify([{ property: 'playerId', direction: 'ASC' }]);
 export const MAX_BYTES = 2 * 1024 * 1024;
 export function upstreamURL(input) {
   const url = new URL(input);
@@ -11,7 +12,9 @@ export function upstreamURL(input) {
   }
   if (!['/stats/rest/en/skater/bios', '/stats/rest/en/skater/summary', '/stats/rest/en/goalie/summary'].includes(url.pathname)) throw new Error('Unknown route');
   const allowed = ['isAggregate', 'isGame', 'start', 'limit', 'cayenneExp'];
-  if ([...url.searchParams.keys()].some(key => !allowed.includes(key)) || allowed.some(key => url.searchParams.getAll(key).length !== 1)) throw new Error('Invalid parameters');
+  if ([...url.searchParams.keys()].some(key => !allowed.includes(key) && key !== 'sort') || allowed.some(key => url.searchParams.getAll(key).length !== 1)) throw new Error('Invalid parameters');
+  const sorts = url.searchParams.getAll('sort');
+  if (sorts.length > 1 || (sorts.length === 1 && sorts[0] !== PLAYER_SORT)) throw new Error('Invalid sort');
   if (url.searchParams.get('isAggregate') !== 'false' || url.searchParams.get('isGame') !== 'false' || url.searchParams.get('limit') !== '100') throw new Error('Invalid report mode');
   const start = url.searchParams.get('start');
   if (!/^(0|[1-9]\d*)$/.test(start) || Number(start) >= 10000 || Number(start) % 100) throw new Error('Invalid page');
@@ -21,6 +24,8 @@ export function upstreamURL(input) {
   if (year < 1917 || year > new Date().getUTCFullYear() + 1 || season % 10000 !== year + 1) throw new Error('Invalid season');
   const target = new URL(url.pathname, 'https://api.nhle.com');
   for (const key of allowed) target.searchParams.set(key, url.searchParams.get(key));
+  // Inject deterministic ordering for older deployed clients too.
+  target.searchParams.set('sort', PLAYER_SORT);
   return target;
 }
 export async function handle(request, transport = fetch, timeoutMs = 15000, limiter) {

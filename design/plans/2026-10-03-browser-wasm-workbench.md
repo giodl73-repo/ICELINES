@@ -1,7 +1,7 @@
 # Browser WASM Workbench
 
 **Date:** 2026-10-03
-**Status:** Active partial implementation — local WP-BW-02–06 slices verified; deployed/live/device/resource/rollback acceptance remains open. No deployed browser capability is claimed shipped.
+**Status:** Active partial implementation — Pages shell update, live relay access and explicit stats/schedule persistence verified on 2026-10-06. Live report completeness correction, deployed offline/rollback and device/resource gates remain open.
 **Scope:** A GitHub Pages application running the shared IceLines Rust engine on the user's device, with release packages, imported files, live refresh, and optional local persistence.
 **Review:** [Planning review](../../signals/roles/check/browser-wasm-workbench-roles-check-2026-10-03.md); [implementation handoff review](../../signals/roles/check/browser-wasm-handoff-roles-check-2026-10-04.md) (release needs work).
 
@@ -24,21 +24,17 @@ Expand other native UI surfaces only after this complete path passes its gates.
 
 Public release archives are build inputs for a versioned, lazy-loaded catalog.
 The existing Pages documentation stays at `/ICELINES/`; the browser is composed
-under `/ICELINES/workbench/`. Switching legacy Pages publishing to Actions is an
-explicit rollout step, with documentation publication coordinated and rollback
-acceptance still required; see [rollout](../../icelines-browser/PAGES.md).
+under `/ICELINES/workbench/` using the existing `gh-pages` branch publisher. A future Actions publication path would require an explicit source migration; remote rollback acceptance is still required; see [rollout](../../icelines-browser/PAGES.md).
 LFS inputs use the same conversion path if actual assets are identified. Live
 stats and schedule acquisition are separate adapters; their browser access must
 be proven from the deployed origin. If direct access fails, record a constrained
 relay's hosting and operating owner before implementing it.
 User decision on 2026-10-04: choose relay hosting after deployed-origin testing.
-No relay provider or operating owner is allocated yet.
+Follow-up decision: Cloudflare Free, operated through the user's account. The bounded relay is deployed; see section 12 and the rollout guide for dated evidence.
 
 The delivery order is engine/contracts → one-season parity → local library →
 live refresh → browser UX → Pages release. Current implementation evidence is
-listed in section 12; local offline reopening passed in pulse 27. Deployment,
-live access, deployed offline/update behavior, mobile, and other release gates
-remain open. The roles verdict approves planning
+listed in section 12; local offline reopening passed in pulse 27. Pages deployment, relay live access, saved-data recovery and update/reload now have deployed-browser evidence. Deployed offline reopening, remote rollback, physical mobile and full resource gates remain open. The roles verdict approves planning
 with conditions and is not a release approval.
 
 ## 1. Outcome and first release
@@ -445,3 +441,28 @@ Narrow UI-boundary failure/cancellation captures and all-role disposition reconc
 Dated fixture selected through the actual picker; failed refresh preserves old observation and unsaved state: [pulse 53](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-53.md).
 Latest implementation CI and retained PR artifact verified; dated desktop import/failure preserves rows and observation: [pulse 54](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-54.md).
 Current docs composed with the verified artifact; environment's gh-pages-only deployment policy identified and rollout amended: [pulse 55](../../context/waves/2026-10-03-browser-wasm/pulses/pulse-55.md).
+
+
+## 2026-10-06 deployed validation and pagination correction
+
+PR 75 merged at `4ae78a8c`; the verified 102-file artifact was published in
+`gh-pages` commit `ae53f8bc`, Pages run 37550820648 succeeded, and all 24 shell
+HTTP assets match. Existing documentation bytes are unchanged. The normal
+application update restored the previously saved season. Live stats and schedule
+refreshes and explicit saving/restoration passed on the actual Pages origin.
+
+Full coverage did not pass: live skater counts varied, and an unsorted 940-row
+report yielded only 924 unique IDs. The follow-up correction requests stable
+player-ID order, checks cross-page identity order and compares bios/summary
+coverage before activation. Direct sorted NHL probes returned all 940 skaters
+and 98 goalies. See `context/waves/2026-10-03-browser-wasm/evidence/` and the
+stable-NHL-pagination role review. Production correction validation and PR CI
+remain separate from this direct-source evidence. No full release acceptance
+is claimed; deployed offline, rollback and representative device/resource
+requirements remain open.
+
+
+Relay correction runtime reconciliation: Worker `7f92df73` passed full sorted
+acquisition and Rust WASM; the existing Pages app refreshed 940 skaters and all
+eight 100-point leaders, then explicitly saved the complete snapshot. Browser
+coverage guards are prepared but require follow-up PR merge and publication.

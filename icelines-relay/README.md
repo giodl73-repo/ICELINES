@@ -4,7 +4,9 @@ The pilot targets Workers Free in the user's Cloudflare account at
 `https://icelines-relay.giodl73.workers.dev`. The relay was deployed and its four
 upstream routes validated on 2026-10-04. This code forwards only skater bios,
 skater summary, goalie summary and a calendar-valid schedule date. It is
-not an arbitrary URL proxy. Rust normalization and queries stay in the browser.
+not an arbitrary URL proxy. Stats pages always request ascending `playerId`
+ordering, including requests from older clients without a sort parameter. Only
+the exact canonical sort is accepted when supplied. Rust normalization and queries stay in the browser.
 
 Public GET requests omit upstream cookies, authorization and browser Origin.
 The only browser origin granted CORS is `https://giodl73-repo.github.io`.
@@ -46,3 +48,22 @@ HTTP 502; inspect request status and warning events when diagnosing failures.
 On rollback,
 restore the prior browser build before reverting or disabling this Worker.
 Authentication and CI deployment secrets are separate from the public endpoint.
+
+## Pagination correction (2026-10-06)
+
+Actual Pages-origin refreshes exposed unsorted offset pagination: a 940-row
+summary response sequence contained only 924 unique players. Earlier route
+smokes and eight-leader probes did not establish full report completeness.
+Direct NHL requests with ascending player ID returned 940 unique bios, 940
+unique summaries and 98 unique goalies in strict order. The relay injects that
+ordering for existing clients; new browser acquisition also requests it and
+rejects duplicate/unordered IDs or disagreeing bios/summary coverage before
+building a replacement package. Live mid-acquisition mutations can still cause
+a refusal; retry preserves the previous good dataset.
+
+
+The correction is deployed as Worker version
+`7f92df73-2907-42c8-b498-6e01d2a64e85`. Full relay acquisition plus actual Rust
+WASM passed (22 requests, 924767 bytes, eight leaders, 49 games); the existing
+Pages client refreshed all 940 skaters and restored Pastrnak among eight
+100-point leaders. New browser guards require the follow-up PR and publication.

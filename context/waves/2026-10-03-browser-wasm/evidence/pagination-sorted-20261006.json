@@ -1,0 +1,23 @@
+[
+  {
+    "report": "skater/bios",
+    "total": 940,
+    "unique": 940,
+    "ordered": true,
+    "pastrnak": 1
+  },
+  {
+    "report": "skater/summary",
+    "total": 940,
+    "unique": 940,
+    "ordered": true,
+    "pastrnak": 1
+  },
+  {
+    "report": "goalie/summary",
+    "total": 98,
+    "unique": 98,
+    "ordered": true,
+    "pastrnak": 0
+  }
+]

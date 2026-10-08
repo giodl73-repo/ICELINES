@@ -1,77 +1,116 @@
-# Pages rollout
+# Static Pages rollout
 
-The repository already serves documentation at
-`https://giodl73-repo.github.io/ICELINES/` from the `gh-pages` branch.
-The browser belongs at `https://giodl73-repo.github.io/ICELINES/workbench/`.
-Do not deploy the standalone browser distribution as the site root.
+The repository serves documentation at
+`https://giodl73-repo.github.io/ICELINES/` from `gh-pages:/`.
+The static WASM workbench lives at
+`https://giodl73-repo.github.io/ICELINES/workbench/`.
+Rust runs in the browser worker; Pages serves HTML, JavaScript, WASM and packages.
 
-The prepared workflow builds the browser on PR/master and retains its preview
-artifact. A manual master dispatch with `publish=true` checks out the existing
-`gh-pages` site, composes it with the browser under `workbench/`, verifies every
-copied file's hash, and uploads that combined site. `.git` is excluded; a previous
-workbench subtree is replaced, while documentation remains byte-identical.
-The preservation inventory is retained as a separate artifact.
+## Current publication method
 
-## Before first deployment
+User decision on 2026-10-04: keep the existing branch publishing setup and put
+built static files under `workbench/`. No Pages source migration or environment
+branch-policy change is required for this method. A code-review PR and a static
+publication are separate operations; the implementation was merged in PR #74.
 
-1. Land the workflow and dependencies through the repository's review process.
-   The workflow is in draft PR #74; master publication dispatch becomes available
-   after it lands. Successful PR builds retain preview artifacts without publishing.
-2. Complete local artifact review and preparation checks before a validation
-   deployment. Exact deployed-origin live/offline/update checks require an HTTPS
-   deployment and therefore follow it. A validation deployment needs deliberate
-   approval and does not establish release acceptance. Build/test success alone
-   does not approve publication.
-3. Inspect the retained browser artifact under the representative
-   `/ICELINES/workbench/` subpath. Verify worker/WASM/catalog loading, deep-link
-   reload, saved-data recovery and root documentation links.
-4. Record the current `gh-pages` commit and preserve the existing site. Configure
-   repository Pages Source to **GitHub Actions** deliberately: the API observation
-   on 2026-10-04 reported legacy branch mode. The workflow does not silently change
-   this setting. Coordinate existing documentation publishers with this change;
-   `gh-pages` remains the documentation input, not the Actions deployment output.
-5. Inspect the `github-pages` environment rules before dispatch. The API check
-   on 2026-10-04 found a custom deployment branch policy allowing only `gh-pages`;
-   the prepared workflow deploys from `master`. An approved rollout must add a
-   `master` branch allowance while preserving the existing `gh-pages` allowance.
-   Do not remove all branch restrictions to make deployment pass. Configure any
-   agreed environment review rules, then dispatch on master with
-   publish enabled, and verify both root docs and workbench on the exact HTTPS
-   origin. Record the deployed build, source commit and preservation inventory.
-6. Test stats and schedule separately from the deployed origin. If direct access
-   fails, choose relay hosting and operating ownership before implementation, per
-   the user's decision. Complete live refresh, deployed offline/update, physical
-   mobile/resource and remote rollback checks before accepting the first release.
+1. Require a successful reviewed master build and repository CI. Download its
+   retained `icelines-browser-<commit>` artifact and run
+   `scripts/verify-browser-artifact.py` with the exact source commit and shell hash.
+2. Read the current gh-pages commit into a clean isolated checkout. Compose a
+   fresh output using `scripts/stage-browser-pages.py`, preserving documentation
+   and placing the verified artifact under workbench. Never publish the browser
+   as the site root.
+3. Review only the workbench subtree and, if missing, the root `.nojekyll` marker.
+   Verify staged Git blob bytes match the artifact; Windows checkout line-ending
+   conversion must not invalidate shell hashes. Existing documentation Git blobs
+   must remain unchanged.
+4. After publication authorization, commit and push normally to gh-pages. A
+   non-fast-forward rejection means reread the current docs and recompose; do
+   not force-push over another publisher. GitHub's branch Pages workflow publishes
+   this branch. An Actions push using GITHUB_TOKEN does not itself trigger a branch
+   Pages build; future automation must account for that documented limitation.
+5. Verify the Pages deployment, exact HTTPS shell/worker/WASM MIME and identity,
+   root docs, deep-link reload, saved-data recovery and live adapters separately.
+   Native HTTP probes do not establish browser access.
 
-Browser storage and service-worker scope are deployment-path specific. Saves
-made in a local preview or at the site root do not automatically move into the
-new workbench path. Users transfer those datasets through package export/import.
+## Historical first validation publication
 
-## Rollback preparation
+Source: `d1bbc239a01749e6cbe0f5ca6a4fdcea5f67ae07`.
+Retained master build: Actions run `37224191804`; repository CI also passed.
+Publication commit: `1b3b9dfcc6aab2af0e591018ab024e23db2fd996` on gh-pages.
+Pages run `37239443772` succeeded. All 102 staged browser files match retained
+bytes; all 95 existing documentation files were preserved. HTTPS verification
+matched 24 shell/worker/manifest files and the original Git root index.
+Root index SHA-256: `83e77bbb606d5375e57dd1eeb893b6db7e2245e21e83e2293148440ad0334c23`.
+Earlier `cb48...` evidence hashes the CRLF Windows checkout, not the served Git blob.
 
-Keep a downloaded previous-good `icelines-browser-<commit>` artifact beyond the
-30-day Actions retention when it is the chosen recovery build. Also preserve
-the deployed composed site and its preservation inventory. Rebuilding an old
-commit is not proof of the same published bytes.
+Actual deployed-browser checks loaded the catalog, ran skater/goalie queries,
+opened player details and restored an explicitly saved season after reload.
+Direct stats and schedule refresh both failed with TypeError: Failed to fetch;
+existing stats remained available. Initial native diagnostics returned HTTP 403. Controlled follow-up requests
+with a browser User-Agent returned 200 JSON for bios, summary and schedule, but
+omitted Access-Control-Allow-Origin for the GitHub Pages origin. The stats summary
+request with NHL’s own website Origin returned that allowed-origin header. This
+confirms a CORS blocker for our browser acquisition. At that stage, relay hosting and ownership had not yet been selected.
+This publication does not close live/device/full peak-memory/offline/update/rollback
+release acceptance.
 
-For a rollback rehearsal, download the previous-good browser artifact into a
-new local directory and compose it with the current documentation baseline:
+## Storage and rollback
+
+Storage and service-worker scope are deployment-path specific. Local preview
+saves do not automatically transfer to the public path; use package export/import.
+Keep downloaded previous-good artifacts beyond Actions retention. For subsequent
+updates, restore verified prior workbench bytes alongside the current docs in a
+new normal gh-pages commit. Do not reset the entire documentation branch to an
+old commit. Verify saved-data compatibility and update/reload behavior before
+claiming rollback acceptance. Remote rollback has not been exercised.
+
+The merged browser-pages and browser-rollback workflows provide an alternative
+Actions-based publication path. That path would need a deliberate Pages source
+migration and a master environment allowance; it is not the current default.
+Its retained-master artifact guard and verification remain useful, but the
+Actions rollback workflow is not proof of branch-method rollback.
+
+## Current relay-enabled validation deployment
+
+A fresh GitHub Pages API check on 2026-10-06 confirmed `build_type: legacy`,
+source `gh-pages:/`. The branch publication procedure above remains active.
+The relay-enabled update used source
+`4ae78a8c340bd3eda676633b8775f0cf18078a28` (merged PR #75), browser run
+`37253045085`, and Pages commit
+`ae53f8bc2fc44b4f955d0b161429cdac70bdb73c`.
+Pages run `37550820648` succeeded. Its shell identity is
+`4f7f1e6de9be3772720538c7464af640dc27730dbd060c360b1bad04c7a0568b`.
+All 102 staged browser files matched the retained artifact, 95 documentation
+files were preserved, and 24 served shell/worker/manifest files matched their
+recorded hashes. Root documentation retained the Git/HTTPS identity above.
+
+The user selected Cloudflare Free, with their account as operating owner.
+The `icelines-relay` Worker supplies bounded NHL stats and schedule routes;
+see `icelines-relay/README.md`. Worker version
+`7f92df73-2907-42c8-b498-6e01d2a64e85` corrects upstream pagination ordering
+for the deployed PR #75 browser. Actual deployed-browser checks loaded all 940
+skaters, found all eight 100-point leaders, and recovered explicitly saved live
+data after reload. PR #79 adds stricter browser completeness guards; those guards
+are not part of the recorded PR #75 static deployment.
+
+Verification commands take positional arguments:
 
 ```powershell
-gh run download <previous-good-run-id> --name icelines-browser-<commit> --dir target/rollback-browser
-python scripts/stage-browser-pages.py target/pages-baseline target/rollback-browser target/rollback-site
+python scripts/verify-browser-artifact.py <artifact-dir> <full-source-commit> <shell-sha256>
+python scripts/stage-browser-pages.py <pages-baseline> <artifact-dir> <new-output>
 ```
 
-The staging output must be new. Verify the old browser's manifest and binary
-identity, preserve current documentation, and test saved-data compatibility and
-update/reload behavior before deploying that exact composed artifact. A reviewed
-rollback dispatch/deployment and its browser acceptance are still release gates;
-the normal publish workflow rebuilds master. The prepared
-`browser-rollback.yml` workflow restores retained bytes instead: dispatch on
-master with the successful source run ID, full source commit, and reviewed shell
-build SHA-256. It accepts only successful same-repository master browser builds,
-verifies clean source identity and shell/worker/WASM/package integrity without
-executing artifact code, and composes it with current documentation. The same
-github-pages environment review applies; publication and rollback share one
-concurrency group. It has not run remotely. Actual deployment and saved-data
-compatibility evidence remain required before rollback is proven.
+Use the successful merged master artifact for publication. Retain the staging
+preservation inventory outside the site. Do not dispatch the alternative Actions
+publication workflows assuming they update the active branch deployment.
+
+Evidence is under `context/waves/2026-10-03-browser-wasm/evidence/`, including
+`deployed-relay-publication-20261006.json`,
+`pagination-relay-runtime-20261006.json`, and
+`deployed-mobile-viewport-evidence-20261006.json`. Desktop Chromium at 360px
+verified contained table scrolling, player dialog dismissal/focus restoration,
+goalie queries and refresh cancellation preserving prior results. This does not
+establish physical-phone performance. Actual deployed offline reopening, remote
+rollback, full peak-memory and import/decompression stress acceptance remain open.
+Export buttons were invoked, but downloaded bytes have not yet been verified.

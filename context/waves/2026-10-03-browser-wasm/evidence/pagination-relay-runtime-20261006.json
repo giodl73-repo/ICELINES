@@ -1,0 +1,13 @@
+{
+  "worker_version": "7f92df73-2907-42c8-b498-6e01d2a64e85",
+  "requests": 22,
+  "package_bytes": 924767,
+  "wasm_revision": "b1426a0ef1fabe2dab72046df57d6e07ce9d366460f2e9a2c34550ee5fdf45b1",
+  "wasm_leaders": 8,
+  "schedule_games": 49,
+  "legacy_pages_refresh_skaters": 940,
+  "legacy_pages_p100_leaders": 8,
+  "pastrnak_present": true,
+  "save_complete_snapshot": "success",
+  "limits": "New browser guards remain unpublished; current Pages client benefits from relay-injected sorting."
+}

@@ -425,3 +425,23 @@ Week 1 command must complete and produce the same typed `fantasy_today.v2` contr
 
 **Verification**: On the 2026-09-07 saved league state, the debug CLI completed in 44.91 seconds
 after the fix; before the fix it remained CPU-bound beyond 20 minutes and had to be stopped.
+
+
+### BW-01 — Equal Page Totals Can Hide Missing NHL Players
+
+**Description**: Without an explicit unique ordering, NHL offset pages reported
+940 rows but contained only 924 unique players. Normalization collapsed the
+repeats and silently omitted other players. A stable total and a few correct
+leader rows did not establish a complete season.
+
+**Structural solution**: Request ascending player ID for single-season reports;
+reject non-increasing IDs across page boundaries and mismatched skater bios and
+summary coverage before replacing active data. The relay injects this order for
+legacy browser builds too. Keep previous data when acquisition fails.
+
+**Verification**: Deterministic regressions cover duplicate boundary rows,
+reordering, invalid IDs, report disagreement and complete 101-row pagination.
+Direct NHL sorted probes returned 940/940 unique skaters and 98 unique goalies.
+Production relay plus WASM verification passed in 22 requests; the existing
+Pages client refreshed all 940 skaters with all eight 100-point leaders. New
+browser guard publication remains pending.
