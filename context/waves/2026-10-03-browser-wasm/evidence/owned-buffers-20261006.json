@@ -1,0 +1,27 @@
+{
+  "measured_at": "2026-10-07T01:43:29.700Z",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+  "note": "Local owned staging copies and archive return transfers; total browser peak memory remains unmeasured.",
+  "build_info": {
+    "schema_version": 1,
+    "commit": "dd547229353cf301ab62d3c7e6784f6a1b7b7253",
+    "working_tree_dirty": true,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "c5fd6e9448cfcb3016525fb87586fce3bc10f8f01be63cb9393aff9a3cfb2d57"
+  },
+  "load_staging_detached": true,
+  "backup_intact": true,
+  "header_only": true,
+  "header_season": 20242025,
+  "archive_input_detached": true,
+  "returned_package_bytes": 907753,
+  "archive_sender_detached": true,
+  "skaters": 905,
+  "goalies": 103,
+  "passed": true
+}

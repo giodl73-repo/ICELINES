@@ -1,0 +1,25 @@
+{
+  "at": "2026-10-07T02:08:25.604Z",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+  "note": "WASM allocation is a lower bound, not total peak memory.",
+  "build_info": {
+    "schema_version": 1,
+    "commit": "93b043a27dd3fde14b10503edaa4112f27ac30e5",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "ca2e4df9d2ad3e457d0fc5af045fa373bbab280a05afba50a264ffab72d6dcee"
+  },
+  "allocated_wasm_bytes": 110362624,
+  "input_bytes": 104857600,
+  "load_ms": 948.1999999880791,
+  "revision": "33fc33b22bb276a0ad1b8dcfd7e31935ba509354cf1b23de9508945fc42c110c",
+  "staging_detached": true,
+  "backup_bytes": 104857600,
+  "loaded": true,
+  "allocated_wasm_mib": 105.25
+}

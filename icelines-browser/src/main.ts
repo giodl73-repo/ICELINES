@@ -9,10 +9,10 @@ import { reconcileSavePolicy } from './save-policy.js';
 import { readPublicBytes } from './network.js';
 import { MAX_ARCHIVE_BYTES } from './archive.js';
 import { digest, MAX_BYTES, refreshStats } from './acquisition.js';
-import { listSaved, loadSaved, onLibraryChange, removeSaved, savedActiveId, saveDataset, MAX_SCHEDULE_BYTES } from './library.js';
+import { listSaved, loadSaved, onLibraryChange, packageMetadata, removeSaved, savedActiveId, saveDataset, MAX_SCHEDULE_BYTES } from './library.js';
 import { SORT_OPTIONS, parseViewHash, serializeViewHash, isPublicDataset, localDatasetForView } from './view-state.js';
 import type { ViewState } from './view-state.js';
-import type { CatalogEntry, Dataset, PackageData, PlayerRow, QueryRequest, QueryResult, SavedDatasetEntry, ScheduledGame } from './types.js';
+import type { CatalogEntry, Dataset, PackageData, PackageMetadata, PlayerRow, QueryRequest, QueryResult, SavedDatasetEntry, ScheduledGame } from './types.js';
 
 function element<T extends HTMLElement>(id: string): T { const value = document.getElementById(id); if (!value) throw new Error(`Missing control ${id}`); return value as T; }
 const catalogSelect = element<HTMLSelectElement>('catalog');
@@ -166,9 +166,9 @@ async function perform(action: () => Promise<void>): Promise<void> {
 async function activate(bytes: Uint8Array, id: string, policy = false): Promise<void> {
   if (bytes.length > MAX_BYTES) throw new Error('Package exceeds 100 MiB');
   const generation = engine.changeContext();
-  const { revision, residents: revisions } = await engine.request<{ revision: string; residents: string[] }>('load', bytes.slice().buffer);
+  const staging = bytes.slice().buffer;
+  const { revision, residents: revisions, metadata } = await engine.request<{ revision: string; residents: string[]; metadata: PackageMetadata }>('load', staging, [staging]);
   if (generation !== engine.generation) throw new Error('cancelled: context changed');
-  const metadata: PackageData = JSON.parse(textDecoder.decode(bytes));
   active = { id, bytes, revision, metadata, keepUpdated: policy };
   for (const key of resident.keys()) if (!revisions.includes(key)) resident.delete(key);
   resident.set(revision, active);
@@ -275,7 +275,7 @@ async function loadCatalog(entry: CatalogEntry): Promise<void> {
   const bytes = stored ? stored.bytes : await readPublicBytes(new URL(entry.url, location.href.split('#')[0]), entry.bytes,
     {signal:controller.signal,deadline:Date.now() + 120000});
   if (bytes.length !== entry.bytes || await digest(bytes) !== entry.sha256) throw new Error('Package size or checksum mismatch');
-  const context = JSON.parse(textDecoder.decode(bytes));
+  const context = packageMetadata(JSON.parse(textDecoder.decode(bytes)) as PackageData);
   if (context.season !== entry.season || context.season_type !== entry.season_type || context.source !== entry.source) throw new Error('Package does not match catalog context');
   requireCurrentAcquisition(sequence, controller.signal);
   await activate(bytes, entry.id, stored?.keepUpdated); status(retained ? 'Loaded your saved public season.' : 'Season loaded in memory. Save locally to keep it.');
@@ -300,7 +300,7 @@ element<HTMLInputElement>('import').onchange = event => { void perform(async () 
   if (archive) {
     status('Validating and decompressing the local archive…'); engine.changeContext();
     bytes = new Uint8Array(await engine.request<ArrayBuffer>('importArchive', { bytes: bytes.buffer, filename: file.name,
-      seasonType: element<HTMLSelectElement>('import-type').value }));
+      seasonType: element<HTMLSelectElement>('import-type').value }, [bytes.buffer]));
   }
   const id = 'import-' + (await digest(bytes)).slice(0, 16);
   requireCurrentAcquisition(sequence, controller.signal);
@@ -453,7 +453,10 @@ const scheduleDate = element<HTMLInputElement>('schedule-date');
 const today = new Date();
 scheduleDate.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 let renderedScheduleRevision: string | undefined;
-const schedule = new ScheduleController(bytes => engine.request<ScheduledGame[]>('schedule', bytes.slice().buffer), state => {
+const schedule = new ScheduleController(bytes => {
+  const staging = bytes.slice().buffer;
+  return engine.request<ScheduledGame[]>('schedule', staging, [staging]);
+}, state => {
   element('schedule-status').textContent = state.message;
   element('schedule-cancel').hidden = !state.loading;
   element<HTMLButtonElement>('schedule-refresh').disabled = state.loading;

@@ -1,4 +1,4 @@
-import type { Dataset, PackageData, SavedDatasetEntry, ScheduleDataset, ScheduleMetadata, SavedScheduleEntry } from './types.js';
+import type { Dataset, PackageData, PackageMetadata, SavedDatasetEntry, ScheduleDataset, ScheduleMetadata, SavedScheduleEntry } from './types.js';
 import { digest, MAX_BYTES } from './acquisition.js';
 
 const packageKeys = ['schema_version', 'season', 'season_type', 'source', 'observed_at', 'fetched_at', 'bios', 'stats', 'goalies'];
@@ -26,7 +26,12 @@ export async function validateSavedDataset(value: unknown): Promise<Dataset> {
     || [parsed.observed_at, parsed.fetched_at].some(time => time !== null && typeof time !== 'string')) return invalid();
   // Reconstruct all display metadata from the digest-verified package bytes.
   // Stored duplicate arrays are never an independent source of player data.
-  return { id: value.id, revision: value.revision, bytes: value.bytes, keepUpdated: value.keepUpdated, metadata: parsed as unknown as PackageData };
+  return { id: value.id, revision: value.revision, bytes: value.bytes, keepUpdated: value.keepUpdated, metadata: packageMetadata(parsed as unknown as PackageData) };
+}
+// Keep the raw validated bytes for backup; do not retain a second source-row tree.
+export function packageMetadata(data: PackageData): PackageMetadata {
+  return { schema_version: data.schema_version, season: data.season, season_type: data.season_type,
+    source: data.source, observed_at: data.observed_at, fetched_at: data.fetched_at };
 }
 const namespace = 'icelines-v1:' + new URL('../', import.meta.url).pathname;
 const channel = (() => {

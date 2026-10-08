@@ -1,7 +1,7 @@
 import type { EngineRequest, EngineResponse, QueryRequest } from './types.js';
 import { importArchive } from './archive.js';
 interface Engine {
-  load_package(bytes: Uint8Array): string; query(request: string): string;
+  load_package(bytes: Uint8Array): string; package_metadata(): string; query(request: string): string;
   player_detail(id: number): string; current_season(): number; free(): void;
   schedule_week(bytes: Uint8Array): string;
   select_resident(revision: string): void; resident_revisions(): string; unload_active(): void;
@@ -39,7 +39,7 @@ self.onmessage = (event: MessageEvent<EngineRequest>) => {
         }
         case 'load': {
           const revision = engine.load_package(new Uint8Array(request.payload as ArrayBuffer));
-          response.value = { revision, residents: JSON.parse(engine.resident_revisions()) }; break;
+          response.value = { revision, residents: JSON.parse(engine.resident_revisions()), metadata: JSON.parse(engine.package_metadata()) }; break;
         }
         case 'query': response.value = JSON.parse(engine.query(JSON.stringify(request.payload as QueryRequest))); break;
         case 'detail': response.value = JSON.parse(engine.player_detail(Number(request.payload))); break;
@@ -55,6 +55,6 @@ self.onmessage = (event: MessageEvent<EngineRequest>) => {
       const kind = error instanceof WebAssembly.RuntimeError ? 'engine_failure' : message.includes('cancelled') ? 'cancelled' : message.includes('missing data') ? 'missing_data' : 'engine_error';
       response.error = { kind, message };
     }
-    self.postMessage(response);
+    self.postMessage(response, { transfer: response.value instanceof ArrayBuffer ? [response.value] : [] });
   });
 };

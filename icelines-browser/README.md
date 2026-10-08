@@ -306,3 +306,42 @@ analysis primary with expandable Data Library, application options and methodolo
 Memory/source state remains visible; season loading closes the library and moves
 focus to analysis. Desktop and measured 360px keyboard/layout checks passed;
 physical mobile and the complete state-composition matrix remain open.
+
+## Browser package resource validation
+
+Before decoding a new season package into owned hockey records, the Rust binding
+checks the JSON with a streaming resource visitor. It accepts at most 1,024 UTF-8
+bytes per decoded string (including keys), 8 MiB of aggregate decoded text,
+10,000 items per array, and 500,000 JSON nodes (keys included). An allocation-free
+lexical pass also limits encoded string tokens to 6,144 bytes: six encoded bytes
+can represent one decoded ASCII byte with a Unicode escape. The existing 100 MiB
+package-byte limit and schema/context validation still apply. Inputs exceeding a
+limit are rejected, never truncated; the active query and resident order remain
+available. Exactly cached validated revisions reuse their prepared repository.
+
+These limits address normalization amplification; they are not a total-browser
+memory guarantee. Across the 75 published packages, measured maxima were 29 bytes
+per string, 637,984 aggregate text bytes, 1,004 array items and 106,012 nodes.
+Custom imports and old saved packages must meet the new browser transport limits.
+Native loaders keep their existing policies and shared hockey normalization.
+
+A local browser reproduction accepted a synthetic 60 MiB player name before this
+change and allocated 372.625 MiB of WASM memory. The guarded build rejected the
+same package, kept its previous 905-player query, and allocated 67 MiB. These are
+single desktop lower-bound observations, not full peak-memory or mobile results.
+See the dated resource-validation pulse for build identities and limitations.
+
+Owned staging buffers are explicitly transferred to the worker for season loads,
+schedule projections and archive input. Raw season/schedule backup bytes remain
+owned by the session; callers transfer a staging copy. Archive conversion returns
+its new package buffer by transfer. The client still clones borrowed inputs when
+no transfer list is supplied. Session and restored dataset metadata now retain
+only six header fields; complete package bytes remain available for save/export.
+Legacy saved envelopes with duplicate report arrays still validate against their
+raw bytes; those arrays are discarded from display metadata without rewriting
+or deleting the saved package. Storage policy and package schema are unchanged.
+
+Activation now takes its six metadata fields from the validated Rust package in
+its worker load response, avoiding a second full raw JSON decode in the UI.
+Catalog/saved-envelope integrity checks remain in place. This removes one decode,
+not all input staging allocations or a proof of full browser peak memory.

@@ -50,7 +50,8 @@ export class EngineClient {
     for (const pending of this.pending.values()) { clearTimeout(pending.timer); pending.reject(new Error('cancelled: context changed')); }
     this.pending.clear(); return this.generation;
   }
-  request<T>(operation: Operation, payload: unknown): Promise<T> {
+  // Listed buffers are consumed by the worker; callers retain backup bytes separately.
+  request<T>(operation: Operation, payload: unknown, transfer: Transferable[] = []): Promise<T> {
     const worker = this.worker;
     if (!worker) return Promise.reject(new EngineStoppedError('Engine unavailable. Restart it or reload the application.'));
     const request: EngineRequest = { schema_version: 1, request_id: ++this.nextId, context_generation: this.generation, operation, payload };
@@ -58,7 +59,7 @@ export class EngineClient {
       const epoch = this.epoch;
       const timer = setTimeout(() => this.fail(epoch, 'Engine did not respond within two minutes.'), this.timeoutMs);
       this.pending.set(request.request_id, { generation: request.context_generation, timer, resolve: value => resolve(value as T), reject });
-      try { worker.postMessage(request); }
+      try { worker.postMessage(request, transfer); }
       catch { this.fail(epoch, 'Engine request could not be sent.'); }
     });
   }

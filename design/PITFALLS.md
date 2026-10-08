@@ -445,3 +445,30 @@ Direct NHL sorted probes returned 940/940 unique skaters and 98 unique goalies.
 Production relay plus WASM verification passed in 22 requests; the existing
 Pages client refreshed all 940 skaters with all eight 100-point leaders. New
 browser guard publication remains pending.
+
+### BW-02 — Package Bytes Do Not Bound Normalized Allocation
+
+**Description**: A schema-valid 63,824,258-byte package containing one synthetic
+60 MiB player name passed the browser's 100 MiB byte cap. Owned source records,
+identity clones and normalized-name processing drove allocated WASM memory to
+372.625 MiB. A 96 MiB whitespace-padded archive that converted to a small model
+did not exercise this amplification path.
+
+**Structural solution**: Preflight untrusted season JSON before owned record
+deserialization/repository cloning. Bound encoded and decoded string length,
+aggregate text, array items and total nodes; retain schema validation afterward.
+Reject, do not truncate, and keep active/resident data on failure. Treat raw-input
+accounting, linear memory and full browser peak memory as different evidence.
+
+**Verification**: Boundary regressions cover UTF-8, escaped strings, aggregate
+text, arrays, nested nodes and malformed JSON. Rejected replacements preserve
+active results and resident order. All 75 packages load/query through the guarded
+WASM. The original oversized-name browser reproduction is rejected with 67 MiB
+allocated WASM and the previous 905-player query preserved. Total browser peak
+memory, maximum staging copies and physical-mobile acceptance remain open.
+
+Follow-up memory: a valid whitespace-padded 100 MiB package loaded through owned
+staging with 105.25 MiB allocated WASM and a retained 100 MiB backup. The generated
+binding still copies worker input into WASM; total peak is unmeasured. Returning
+validated Rust header metadata with load removes the UI's subsequent full-package
+JSON decode, without rewriting original backup bytes or data revisions.

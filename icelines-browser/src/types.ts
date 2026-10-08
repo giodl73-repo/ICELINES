@@ -7,8 +7,9 @@ export interface PackageData {
   source: string; observed_at: string | null; fetched_at: string | null;
   bios: unknown[]; stats: unknown[]; goalies: unknown[];
 }
+export type PackageMetadata = Pick<PackageData, 'schema_version' | 'season' | 'season_type' | 'source' | 'observed_at' | 'fetched_at'>;
 export interface Dataset {
-  id: string; revision: string; bytes: Uint8Array; metadata: PackageData;
+  id: string; revision: string; bytes: Uint8Array; metadata: PackageMetadata;
   keepUpdated: boolean;
 }
 export interface SavedDatasetEntry {

@@ -21,6 +21,8 @@ use sha2::{Digest, Sha256};
 use thiserror::Error;
 use wasm_bindgen::prelude::*;
 
+mod package_limits;
+
 const MAX_PACKAGE_BYTES: usize = 100 * 1024 * 1024;
 const MAX_RESIDENT_WINDOWS: usize = 8;
 const MAX_RESIDENT_INPUT_BYTES: usize = 64 * 1024 * 1024;
@@ -99,6 +101,16 @@ pub struct QueryResult {
     pub rows: Vec<PlayerRow>,
 }
 
+#[derive(Debug, Serialize)]
+struct PackageMetadata<'a> {
+    schema_version: u32,
+    season: u32,
+    season_type: &'a SeasonType,
+    source: &'a str,
+    observed_at: &'a Option<String>,
+    fetched_at: &'a Option<String>,
+}
+
 struct PreparedProvider;
 impl DataProvider for PreparedProvider {
     fn ensure(&self, _: &PlanRequirement, _: &mut dyn FnMut(FetchEvent)) -> Result<(), FetchError> {
@@ -150,6 +162,14 @@ impl BrowserEngine {
             .execute(&request)
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
         serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+
+    /// Return the validated active header without decoding the raw package again.
+    pub fn package_metadata(&self) -> Result<String, JsValue> {
+        let metadata = self
+            .active_metadata()
+            .map_err(|e| JsValue::from_str(&e.to_string()))?;
+        serde_json::to_string(&metadata).map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
     pub fn export_package(&self) -> Result<Vec<u8>, JsValue> {
@@ -218,6 +238,22 @@ impl BrowserEngine {
 }
 
 impl BrowserEngine {
+    fn active_metadata(&self) -> Result<PackageMetadata<'_>, EngineError> {
+        let package = &self
+            .active
+            .as_ref()
+            .ok_or_else(|| EngineError::MissingData("load a package".into()))?
+            .package;
+        Ok(PackageMetadata {
+            schema_version: package.schema_version,
+            season: package.season,
+            season_type: &package.season_type,
+            source: &package.source,
+            observed_at: &package.observed_at,
+            fetched_at: &package.fetched_at,
+        })
+    }
+
     pub fn load_bytes(&mut self, bytes: &[u8]) -> Result<String, EngineError> {
         if bytes.len() > MAX_PACKAGE_BYTES {
             return Err(EngineError::InvalidPackage(
@@ -228,6 +264,7 @@ impl BrowserEngine {
         if self.select_revision(&revision).is_ok() {
             return Ok(revision);
         }
+        package_limits::validate(bytes).map_err(EngineError::InvalidPackage)?;
         let package: SeasonPackage = serde_json::from_slice(bytes)
             .map_err(|e| EngineError::InvalidPackage(e.to_string()))?;
         if package.schema_version != 1 {
@@ -589,6 +626,32 @@ mod tests {
         assert_eq!(engine.execute(&request("")).unwrap().season, 20252026);
     }
 
+    #[test]
+    fn resource_rejection_preserves_active_data_and_resident_order() {
+        let mut engine = BrowserEngine::new();
+        load(&mut engine, &season_package(20232024)).unwrap();
+        load(&mut engine, &season_package(20242025)).unwrap();
+        let revisions = engine.resident_revisions();
+        let before = serde_json::to_value(engine.execute(&request("")).unwrap()).unwrap();
+        let mut oversized_name = package();
+        oversized_name["bios"][0]["skaterFullName"] = "x".repeat(1025).into();
+        let mut oversized_metadata = package();
+        oversized_metadata["source"] = "x".repeat(1025).into();
+        let mut oversized_rows = package();
+        oversized_rows["bios"] = vec![package()["bios"][0].clone(); 10_001].into();
+        for invalid in [oversized_name, oversized_metadata, oversized_rows] {
+            let error = load(&mut engine, &invalid).unwrap_err().to_string();
+            assert!(
+                error.contains("package string exceeds") || error.contains("package array exceeds"),
+                "{error}"
+            );
+            assert_eq!(engine.resident_revisions(), revisions);
+            assert_eq!(
+                serde_json::to_value(engine.execute(&request("")).unwrap()).unwrap(),
+                before
+            );
+        }
+    }
     fn request(filter: &str) -> QueryRequest {
         QueryRequest {
             filter: filter.into(),
@@ -601,6 +664,47 @@ mod tests {
 
     fn load(engine: &mut BrowserEngine, value: &serde_json::Value) -> Result<String, EngineError> {
         engine.load_bytes(&serde_json::to_vec(value).unwrap())
+    }
+
+    #[test]
+    fn metadata_tracks_validated_selection_without_player_arrays() {
+        let mut engine = BrowserEngine::new();
+        assert!(engine.active_metadata().is_err());
+        let original = package();
+        let first = load(&mut engine, &original).unwrap();
+        let expected = |package: &serde_json::Value| {
+            let mut header = package.clone();
+            for key in ["bios", "stats", "goalies"] {
+                header.as_object_mut().unwrap().remove(key);
+            }
+            header
+        };
+        assert_eq!(
+            serde_json::to_value(engine.active_metadata().unwrap()).unwrap(),
+            expected(&original)
+        );
+        let mut replacement = package();
+        replacement["source"] = "Replacement source".into();
+        replacement["season_type"] = "playoff".into();
+        load(&mut engine, &replacement).unwrap();
+        assert_eq!(
+            serde_json::to_value(engine.active_metadata().unwrap()).unwrap(),
+            expected(&replacement)
+        );
+        let mut invalid = replacement.clone();
+        invalid["schema_version"] = 2.into();
+        assert!(load(&mut engine, &invalid).is_err());
+        assert_eq!(
+            serde_json::to_value(engine.active_metadata().unwrap()).unwrap(),
+            expected(&replacement)
+        );
+        engine.select_revision(&first).unwrap();
+        assert_eq!(
+            serde_json::to_value(engine.active_metadata().unwrap()).unwrap(),
+            expected(&original)
+        );
+        engine.unload_active();
+        assert!(engine.active_metadata().is_err());
     }
 
     #[test]
