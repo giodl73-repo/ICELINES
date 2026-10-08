@@ -9,7 +9,7 @@ import { reconcileSavePolicy } from './save-policy.js';
 import { readPublicBytes } from './network.js';
 import { MAX_ARCHIVE_BYTES } from './archive.js';
 import { digest, MAX_BYTES, refreshStats } from './acquisition.js';
-import { listSaved, loadSaved, onLibraryChange, removeSaved, savedActiveId, saveDataset, MAX_SCHEDULE_BYTES } from './library.js';
+import { listSaved, loadSaved, onLibraryChange, packageMetadata, removeSaved, savedActiveId, saveDataset, MAX_SCHEDULE_BYTES } from './library.js';
 import { SORT_OPTIONS, parseViewHash, serializeViewHash, isPublicDataset, localDatasetForView } from './view-state.js';
 function element(id) { const value = document.getElementById(id); if (!value)
     throw new Error(`Missing control ${id}`); return value; }
@@ -219,10 +219,10 @@ async function activate(bytes, id, policy = false) {
     if (bytes.length > MAX_BYTES)
         throw new Error('Package exceeds 100 MiB');
     const generation = engine.changeContext();
-    const { revision, residents: revisions } = await engine.request('load', bytes.slice().buffer);
+    const staging = bytes.slice().buffer;
+    const { revision, residents: revisions, metadata } = await engine.request('load', staging, [staging]);
     if (generation !== engine.generation)
         throw new Error('cancelled: context changed');
-    const metadata = JSON.parse(textDecoder.decode(bytes));
     active = { id, bytes, revision, metadata, keepUpdated: policy };
     for (const key of resident.keys())
         if (!revisions.includes(key))
@@ -379,7 +379,7 @@ async function loadCatalog(entry) {
         const bytes = stored ? stored.bytes : await readPublicBytes(new URL(entry.url, location.href.split('#')[0]), entry.bytes, { signal: controller.signal, deadline: Date.now() + 120000 });
         if (bytes.length !== entry.bytes || await digest(bytes) !== entry.sha256)
             throw new Error('Package size or checksum mismatch');
-        const context = JSON.parse(textDecoder.decode(bytes));
+        const context = packageMetadata(JSON.parse(textDecoder.decode(bytes)));
         if (context.season !== entry.season || context.season_type !== entry.season_type || context.source !== entry.source)
             throw new Error('Package does not match catalog context');
         requireCurrentAcquisition(sequence, controller.signal);
@@ -424,7 +424,7 @@ element('import').onchange = event => {
             status('Validating and decompressing the local archive…');
             engine.changeContext();
             bytes = new Uint8Array(await engine.request('importArchive', { bytes: bytes.buffer, filename: file.name,
-                seasonType: element('import-type').value }));
+                seasonType: element('import-type').value }, [bytes.buffer]));
         }
         const id = 'import-' + (await digest(bytes)).slice(0, 16);
         requireCurrentAcquisition(sequence, controller.signal);
@@ -705,7 +705,10 @@ const scheduleDate = element('schedule-date');
 const today = new Date();
 scheduleDate.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 let renderedScheduleRevision;
-const schedule = new ScheduleController(bytes => engine.request('schedule', bytes.slice().buffer), state => {
+const schedule = new ScheduleController(bytes => {
+    const staging = bytes.slice().buffer;
+    return engine.request('schedule', staging, [staging]);
+}, state => {
     element('schedule-status').textContent = state.message;
     element('schedule-cancel').hidden = !state.loading;
     element('schedule-refresh').disabled = state.loading;

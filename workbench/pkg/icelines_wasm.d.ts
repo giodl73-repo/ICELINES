@@ -11,6 +11,10 @@ export class BrowserEngine {
      */
     load_package(bytes: Uint8Array): string;
     constructor();
+    /**
+     * Return the validated active header without decoding the raw package again.
+     */
+    package_metadata(): string;
     player_detail(player_id: number): string;
     query(request: string): string;
     resident_revisions(): string;
@@ -34,6 +38,7 @@ export interface InitOutput {
     readonly browserengine_export_package: (a: number) => [number, number, number, number];
     readonly browserengine_load_package: (a: number, b: number, c: number) => [number, number, number, number];
     readonly browserengine_new: () => number;
+    readonly browserengine_package_metadata: (a: number) => [number, number, number, number];
     readonly browserengine_player_detail: (a: number, b: number) => [number, number, number, number];
     readonly browserengine_query: (a: number, b: number, c: number) => [number, number, number, number];
     readonly browserengine_resident_revisions: (a: number) => [number, number];

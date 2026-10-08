@@ -88,7 +88,8 @@ export class EngineClient {
         this.pending.clear();
         return this.generation;
     }
-    request(operation, payload) {
+    // Listed buffers are consumed by the worker; callers retain backup bytes separately.
+    request(operation, payload, transfer = []) {
         const worker = this.worker;
         if (!worker)
             return Promise.reject(new EngineStoppedError('Engine unavailable. Restart it or reload the application.'));
@@ -98,7 +99,7 @@ export class EngineClient {
             const timer = setTimeout(() => this.fail(epoch, 'Engine did not respond within two minutes.'), this.timeoutMs);
             this.pending.set(request.request_id, { generation: request.context_generation, timer, resolve: value => resolve(value), reject });
             try {
-                worker.postMessage(request);
+                worker.postMessage(request, transfer);
             }
             catch {
                 this.fail(epoch, 'Engine request could not be sent.');

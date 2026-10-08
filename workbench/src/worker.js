@@ -42,7 +42,7 @@ self.onmessage = (event) => {
                 }
                 case 'load': {
                     const revision = engine.load_package(new Uint8Array(request.payload));
-                    response.value = { revision, residents: JSON.parse(engine.resident_revisions()) };
+                    response.value = { revision, residents: JSON.parse(engine.resident_revisions()), metadata: JSON.parse(engine.package_metadata()) };
                     break;
                 }
                 case 'query':
@@ -76,6 +76,6 @@ self.onmessage = (event) => {
             const kind = error instanceof WebAssembly.RuntimeError ? 'engine_failure' : message.includes('cancelled') ? 'cancelled' : message.includes('missing data') ? 'missing_data' : 'engine_error';
             response.error = { kind, message };
         }
-        self.postMessage(response);
+        self.postMessage(response, { transfer: response.value instanceof ArrayBuffer ? [response.value] : [] });
     });
 };

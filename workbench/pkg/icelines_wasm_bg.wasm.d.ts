@@ -6,6 +6,7 @@ export const browserengine_current_season: (a: number) => number;
 export const browserengine_export_package: (a: number) => [number, number, number, number];
 export const browserengine_load_package: (a: number, b: number, c: number) => [number, number, number, number];
 export const browserengine_new: () => number;
+export const browserengine_package_metadata: (a: number) => [number, number, number, number];
 export const browserengine_player_detail: (a: number, b: number) => [number, number, number, number];
 export const browserengine_query: (a: number, b: number, c: number) => [number, number, number, number];
 export const browserengine_resident_revisions: (a: number) => [number, number];

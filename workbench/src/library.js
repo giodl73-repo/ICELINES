@@ -32,7 +32,12 @@ export async function validateSavedDataset(value) {
         return invalid();
     // Reconstruct all display metadata from the digest-verified package bytes.
     // Stored duplicate arrays are never an independent source of player data.
-    return { id: value.id, revision: value.revision, bytes: value.bytes, keepUpdated: value.keepUpdated, metadata: parsed };
+    return { id: value.id, revision: value.revision, bytes: value.bytes, keepUpdated: value.keepUpdated, metadata: packageMetadata(parsed) };
+}
+// Keep the raw validated bytes for backup; do not retain a second source-row tree.
+export function packageMetadata(data) {
+    return { schema_version: data.schema_version, season: data.season, season_type: data.season_type,
+        source: data.source, observed_at: data.observed_at, fetched_at: data.fetched_at };
 }
 const namespace = 'icelines-v1:' + new URL('../', import.meta.url).pathname;
 const channel = (() => {

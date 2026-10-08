@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "build": "4f7f1e6de9be3772720538c7464af640dc27730dbd060c360b1bad04c7a0568b",
+  "build": "d943a3f4f5baa2b5e98a99c3b70f33dece0c0eb0abb0e06a3518839fe14b2cae",
   "worker_sha256": "0cf24ac769be0a1e0dfe20dc2b1069b3a23f1fb5596610dbc4debd87363e89b9",
   "assets": [
     {
       "path": "build-info.json",
-      "sha256": "c6bf3e25d47e231551106649a64eb9412ad4cf5ba41592e08973df8dc56e96c6",
+      "sha256": "6f3eeab53b73f13839a9275210e7136eda112530db7cb2db50d7ec08d8080c38",
       "bytes": 365,
-      "gzip_bytes": 267
+      "gzip_bytes": 268
     },
     {
       "path": "catalog.json",
@@ -23,21 +23,21 @@
     },
     {
       "path": "pkg/icelines_wasm.js",
-      "sha256": "9ae5be431a9bd1e78217a4650a3193a16920aab0d657dade86ba68c7c1baedbd",
-      "bytes": 12348,
-      "gzip_bytes": 2914
+      "sha256": "4b15c2eb21ef2700537fe78d742a04bfcf20723236e1d578ec837a2ae9e8f153",
+      "bytes": 13044,
+      "gzip_bytes": 2971
     },
     {
       "path": "pkg/icelines_wasm_bg.wasm",
-      "sha256": "1344a015f6f61c6743185fabe92b37ecb39124f19826ab1d6fd4d55a7fdfe1f0",
-      "bytes": 624177,
-      "gzip_bytes": 218423
+      "sha256": "6e964f3e0af4c4a034fd82730bc912fd6ecad56869d1d27caf49f92db371407b",
+      "bytes": 629939,
+      "gzip_bytes": 220259
     },
     {
       "path": "src/acquisition.js",
-      "sha256": "26c50c79e5b6bf9fc54f3e14c76c462b9c65d271031afe570509125fdd9586fe",
-      "bytes": 4957,
-      "gzip_bytes": 1800
+      "sha256": "0f00abb38bfe32175283bc7941c8a93a4351c57f3fbb8baeaa88710cd3e6cddf",
+      "bytes": 5656,
+      "gzip_bytes": 2011
     },
     {
       "path": "src/archive.js",
@@ -53,15 +53,15 @@
     },
     {
       "path": "src/engine-client.js",
-      "sha256": "45ee8e9b2fddd16be789793e02a2b7b40a40ec8ec0e5dbd03bdce5666580290f",
-      "bytes": 4355,
-      "gzip_bytes": 1187
+      "sha256": "929b2495f5a7ae905949094ec124e4e59bce183662d392958c372bb2aa09dca9",
+      "bytes": 4470,
+      "gzip_bytes": 1253
     },
     {
       "path": "src/library.js",
-      "sha256": "d95e0942280af86bcb6660f181d17c809a9a3a04fbf6002a9691efba0e56ea96",
-      "bytes": 17515,
-      "gzip_bytes": 4039
+      "sha256": "615924dabebf30e278516a28f4ef7ed1fcd020af8769e98ec5078317ce5671b2",
+      "bytes": 17851,
+      "gzip_bytes": 4134
     },
     {
       "path": "src/live-coordination.js",
@@ -71,9 +71,9 @@
     },
     {
       "path": "src/main.js",
-      "sha256": "fc92ac6e9e93e7bd888e62e35dd23edd5963539c1bbdd88072cb2c87f7d7fefe",
-      "bytes": 38168,
-      "gzip_bytes": 9126
+      "sha256": "f7c977b7a569313849815265dcc31600bb442488193003f03ff2bae5a36025d5",
+      "bytes": 38264,
+      "gzip_bytes": 9159
     },
     {
       "path": "src/network.js",
@@ -125,9 +125,9 @@
     },
     {
       "path": "src/worker.js",
-      "sha256": "ea3f8d4c649e09459ac945f9d8a5608a62bc1da094faae3a72d32b2ad33afda7",
-      "bytes": 3699,
-      "gzip_bytes": 1069
+      "sha256": "12a6c48e58a22f545477760166bc8752a24d8cd7a8977b683df1a98fd0f03e42",
+      "bytes": 3825,
+      "gzip_bytes": 1116
     },
     {
       "path": "style.css",
