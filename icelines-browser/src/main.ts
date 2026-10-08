@@ -1,3 +1,4 @@
+import { initializeAppearance } from './appearance.js';
 import { EngineClient, EngineStoppedError } from './engine-client.js';
 import { registerOfflineShell } from './offline.js';
 import { ScheduleController } from './schedule.js';
@@ -13,6 +14,8 @@ import { listSaved, loadSaved, onLibraryChange, packageMetadata, removeSaved, sa
 import { SORT_OPTIONS, parseViewHash, serializeViewHash, isPublicDataset, localDatasetForView } from './view-state.js';
 import type { ViewState } from './view-state.js';
 import type { CatalogEntry, Dataset, PackageData, PackageMetadata, PlayerRow, QueryRequest, QueryResult, SavedDatasetEntry, ScheduledGame } from './types.js';
+
+initializeAppearance();
 
 function element<T extends HTMLElement>(id: string): T { const value = document.getElementById(id); if (!value) throw new Error(`Missing control ${id}`); return value as T; }
 const catalogSelect = element<HTMLSelectElement>('catalog');
