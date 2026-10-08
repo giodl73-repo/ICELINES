@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#041e42"><title>IceLines · Browser workbench</title><link rel="stylesheet" href="./style.css"></head>
+<html lang="en" data-theme="night-game"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#071419"><title>IceLines · Browser workbench</title><link rel="stylesheet" href="./style.css"></head>
 <body><a class="skip" href="#analysis">Skip to analysis</a>
-<header><strong class="brand">ICE<span>LINES</span></strong><span>Browser workbench</span><span id="context">Choose a dataset</span></header>
-<main><div class="session-summary"><div id="data-state"></div><p id="status" role="status" aria-live="polite">Starting engine…</p></div>
+<header><strong class="brand">ICE<span>LINES</span><span class="brand-caption">The hockey workbench</span></strong><span id="context">Choose a dataset</span><label class="appearance-control">Appearance<select id="appearance"><option value="night-game">Night Game</option><option value="fresh-ice">Fresh Ice</option><option value="hockey-club">Hockey Club</option></select></label><span id="appearance-status" class="appearance-status" role="status" aria-live="polite"></span></header>
+<main><div class="workbench-hero"><div class="hero-kicker">Built for the hockey obsessed</div><h1 class="hero-title">Know your game.</h1><p class="hero-copy">Your rink. Your numbers. Your edge.</p><div class="rink-mark" aria-hidden="true"></div></div><div class="session-summary"><div id="data-state"></div><p id="status" role="status" aria-live="polite">Starting engine…</p></div>
 <details id="data-library"><summary>Data library · load, save and refresh</summary><section aria-labelledby="library-title" class="library"><h2 id="library-title">Your data, your rink.</h2>
 <p>Run IceLines on your device. Load a season, refresh it, and save only what you want to keep.</p>
 <div class="actions"><label>Season package<select id="catalog" aria-label="Season package"></select></label><button id="load">Load season</button>
