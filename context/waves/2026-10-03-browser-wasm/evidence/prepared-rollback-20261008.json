@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-08",
+  "previous_run": 37724796795,
+  "previous_commit": "0caaeaebe83b29ef73de173e9702cdfef7a04084",
+  "previous_shell": "d943a3f4f5baa2b5e98a99c3b70f33dece0c0eb0abb0e06a3518839fe14b2cae",
+  "current_run": 37854895167,
+  "current_commit": "696c656bead479bde0048059b551c49aa53856eb",
+  "current_shell": "5875fe2396a1a1f19c105355cc597323613e0c10924318b8279b51789d0b445f",
+  "preserved_documentation_files": 95,
+  "previous_browser_files": 102,
+  "current_browser_files": 103,
+  "documentation_inventories_identical": true,
+  "remote_rehearsal_performed": false,
+  "scope": "Artifact verification and local staging only; no public rollback or browser compatibility claim."
+}

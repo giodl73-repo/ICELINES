@@ -63,8 +63,9 @@ Prepare a disposable localhost recovery fixture with
 The fixture removes only its test build's cached stylesheet. Production assets
 remain unchanged and the fixture is excluded from publication.
 [Recovery evidence](../context/waves/2026-10-03-browser-wasm/pulses/pulse-19.md)
-proves missing-file detection and browser repair. Server-stopped reopening failed
-in the in-app browser; offline reopening remains an unpassed acceptance gate.
+proves missing-file detection and browser repair. Its initial local reopen failure
+was superseded by successful server-stopped reopening in pulse 27. Actual deployed
+HTTPS reopening with browser networking disabled remains an unpassed gate.
 
 Generate content-addressed public packages:
 
@@ -100,11 +101,13 @@ requests and master changes, checking out LFS objects when present. It retains
 the distribution as a preview artifact for 30 days. Publication requires a
 manual dispatch with `publish` enabled on master, after release gates are met;
 the `github-pages` environment can enforce repository-configured review.
-The workflow is prepared but has not yet been executed on GitHub. Retained
-artifacts support recovery; a verified rollback deployment remains a gate.
+The workflow has executed on GitHub; publication run 37854895167 (attempt 2)
+deployed source 696c656b on 2026-10-08. Retained artifacts support recovery;
+a verified remote rollback rehearsal remains a gate.
 Publication preserves the existing documentation site and adds `/workbench/`.
-The repository currently uses legacy branch Pages publishing; switching to
-Actions and coordinating documentation publication are explicit rollout steps.
+Pages now uses Actions publishing. The workflow composes the current `gh-pages`
+documentation with the workbench; documentation-only branch changes require
+a new composed publication to appear on the site.
 See [Pages rollout](PAGES.md).
 Load a published package or import a browser-format JSON package or local release
 `.tar.gz` archive, query skaters
