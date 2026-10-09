@@ -1,7 +1,7 @@
 # Browser WASM Workbench
 
 **Date:** 2026-10-03
-**Status:** Active partial implementation — Pages shell update, live relay access and explicit stats/schedule persistence verified on 2026-10-06. Live report completeness correction, deployed offline/rollback and device/resource gates remain open.
+**Status:** Active partial implementation — first-release features and three appearance themes are deployed. PR #79 pagination and PR #80 resource corrections are included in the 2026-10-08 release. Deployed offline/rollback and device/resource acceptance remain open; see the [acceptance ledger](../../context/waves/2026-10-03-browser-wasm/ACCEPTANCE.md).
 **Scope:** A GitHub Pages application running the shared IceLines Rust engine on the user's device, with release packages, imported files, live refresh, and optional local persistence.
 **Review:** [Planning review](../../signals/roles/check/browser-wasm-workbench-roles-check-2026-10-03.md); [implementation handoff review](../../signals/roles/check/browser-wasm-handoff-roles-check-2026-10-04.md) (release needs work).
 
@@ -24,7 +24,10 @@ Expand other native UI surfaces only after this complete path passes its gates.
 
 Public release archives are build inputs for a versioned, lazy-loaded catalog.
 The existing Pages documentation stays at `/ICELINES/`; the browser is composed
-under `/ICELINES/workbench/` using the existing `gh-pages` branch publisher. A future Actions publication path would require an explicit source migration; remote rollback acceptance is still required; see [rollout](../../icelines-browser/PAGES.md).
+under `/ICELINES/workbench/`. On 2026-10-08, the theme publication moved Pages
+to the existing Actions publication workflow; `gh-pages` remains the documentation
+input for composition. Remote rollback acceptance is still required; see
+[rollout](../../icelines-browser/PAGES.md).
 LFS inputs use the same conversion path if actual assets are identified. Live
 stats and schedule acquisition are separate adapters; their browser access must
 be proven from the deployed origin. If direct access fails, record a constrained

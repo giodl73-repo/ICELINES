@@ -160,7 +160,11 @@ emulation and 390px computed containment also passed.
 Target scenario: open Pages, load season, query/filter/player/goalie, live refresh
 to memory, save selected data, reload, retain saved data while session-only data
 is absent, export/import, and recover saved data offline with cached shell.
-Status: pending. See browser plan sections 8/11; build success cannot close this scenario.
+Status: partial. Deployed live/save/export/update observations and the clean
+2026-10-08 release distribution have evidence. See
+`context/waves/2026-10-03-browser-wasm/ACCEPTANCE.md` for the per-requirement
+disposition and remaining offline/rollback/physical-device/full-resource gates.
+Build success and static HTTP integrity cannot close this scenario.
 
 Pulse 19's local offline-reopen failure is superseded by pulse 27: with the
 server stopped and connection refusal confirmed, the shell reopened, restored

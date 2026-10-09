@@ -51,6 +51,7 @@ if (check) {
   run('python', ['-m', 'unittest', 'discover', '-s', 'scripts/tests', '-p', 'test_browser_catalog.py']);
   run('python', ['-m', 'unittest', 'discover', '-s', 'scripts/tests', '-p', 'test_browser_pages.py']);
   run('python', ['-m', 'unittest', 'discover', '-s', 'scripts/tests', '-p', 'test_browser_artifact.py']);
+  run('python', ['-m', 'unittest', 'discover', '-s', 'scripts/tests', '-p', 'test_browser_deployment.py']);
   // Explicit file paths work across Windows and Linux shells without glob expansion.
   const { readdir } = await import('node:fs/promises');
   const tests = (await readdir(new URL('../icelines-browser/tests/', import.meta.url))).filter(name => name.endsWith('.test.mjs')).sort().map(name => 'icelines-browser/tests/' + name);

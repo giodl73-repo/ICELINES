@@ -72,5 +72,9 @@ load public release packages and user imports, refresh supported public data, an
 allow explicit temporary or locally saved datasets. Parent: user-directed browser
 workbench plan dated 2026-10-03; REQ-WB-002, REQ-QUERY-001, REQ-PARITY-001,
 REQ-DATA-001, REQ-FRESH-001 and REQ-REPORT-001 apply to this surface.
-Status: target; no deployed browser/live/storage capability accepted yet.
+Status: partial; shared WASM queries, deployed live refresh, explicit local
+storage and application updates have runtime evidence. First-release acceptance
+remains open for deployed offline reopening, remote rollback, physical-device
+and full browser resource measurements. See the dated acceptance ledger in
+`context/waves/2026-10-03-browser-wasm/ACCEPTANCE.md`.
 Verification: WP-BW-01..06 gates in design/plans/2026-10-03-browser-wasm-workbench.md.
