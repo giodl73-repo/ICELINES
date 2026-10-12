@@ -348,3 +348,37 @@ Activation now takes its six metadata fields from the validated Rust package in
 its worker load response, avoiding a second full raw JSON decode in the UI.
 Catalog/saved-envelope integrity checks remain in place. This removes one decode,
 not all input staging allocations or a proof of full browser peak memory.
+## Local browser acceptance from VS Code
+
+The terminal can run a dedicated Chromium browser without the ChatGPT desktop
+browser controller. Install the locked development dependencies and browser once:
+
+```powershell
+cd icelines-browser
+npm ci
+npx playwright install chromium
+```
+
+Run against a retained, verified CI distribution (the artifact path is relative
+to the repository root), or explicitly select the public deployment:
+
+```powershell
+npm run acceptance:offline -- --artifact target/wasm-acceptance-6016f77b
+npm run acceptance:offline -- --url https://giodl73-repo.github.io/ICELINES/workbench/
+```
+
+The runner uses a new temporary browser profile. It saves one public season,
+loads another without saving, verifies shell readiness, closes the browser
+process, then launches a new process with networking disabled. For local runs
+it also stops the HTTP server. It checks saved-season restoration, absence of
+the unsaved season from the saved library, a newly applied filter, player detail,
+and failure of an uncached network probe. Results and screenshots go to
+`target/browser-acceptance-*/`; the report identifies the browser and build.
+Profiles are retained in the OS temporary directory for inspection and contain
+only the public packages selected by this test.
+
+This is an opt-in acceptance command, separate from mocked/unit CI tests. It
+requests public Pages assets when `--url` is selected, never live NHL endpoints.
+It does not publish, change the everyday browser profile, measure total process
+memory, substitute for a physical phone, or prove remote rollback. Browser
+viewport emulation remains distinct from real-device acceptance.
