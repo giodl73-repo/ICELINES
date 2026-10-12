@@ -71,7 +71,7 @@ jobs:
 
       - name: Set up Python (for current season refresh)
         if: matrix.season == '20252026'
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@v7.0.0
         with:
           python-version: '3.13'
 
