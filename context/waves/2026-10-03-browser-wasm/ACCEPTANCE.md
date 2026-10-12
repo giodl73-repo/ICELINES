@@ -33,7 +33,7 @@ It does not declare the full plan complete.
 | Application update with saved data | Live two-tab update to 696c656b restored saved season and 49-game schedule; restored p >= 100 returned eight skaters | Selected deployed update passes |
 | Deployed offline reopening and saved query | deployed-offline-reopen-20261012.json: isolated Chromium 153 process closed/reopened offline; saved 933-row season restored, unsaved second season absent, fresh 835-row filter and player detail pass; uncached network probe fails | Selected desktop acceptance passes; physical mobile remains separate |
 | Previous-version rollback and forward restore | Retained artifacts and rollback workflow; local rollback rehearsals | OPEN: remote rehearsal must preserve current documentation and saved bytes; no production rollback performed in this follow-up |
-| Whole-browser staging/resident peak memory | Encoded-input limits, WASM high-water measurements, ownership/transfer evidence | OPEN: total browser peak must be measured on representative hardware; WASM linear memory is insufficient |
+| Whole-browser staging/resident peak memory | desktop-process-memory-20261012.json: Windows process-tree samples across all 75 packages, eight residents, regular/playoff imports and warm queries; 590.81 MiB sampled private bytes, 900.45 MiB summed working set, 230.92 MiB blank-browser private baseline | OPEN: provisional 250 MiB target is exceeded; investigate allocations and validate representative devices. Sampled private allocations and shared-page working-set sums are not exact concurrent physical-memory peaks |
 | Physical mobile, touch/picker and latency | Desktop browser at narrow viewport | OPEN: real mobile browser/device measurements required |
 | Compare/history/team/cards/fantasy | Plan WP-BW-07 requires separately scoped contracts and parity | Later waves; not implemented or implicitly accepted by the first slice |
 
@@ -50,6 +50,13 @@ It does not declare the full plan complete.
 3. Measure browser-process/staging peak separately from WASM memory, with an
    isolated profile and attributed processes. Run the all-package/resident/import
    cases and warm-query measurements; disclose baseline and instrument limitations.
+   The 2026-10-12 Windows headless Chromium run now supplies process counters:
+   all 75 package phases have samples, median sampling interval 185 ms and maximum
+   interval 755 ms. Regular/playoff imports returned 905/332 players; the slowest
+   of 20 warm query/render samples was 130.77 ms. The private-allocation peak was
+   359.89 MiB above the blank-browser peak. These observations exceed the current
+   total-memory target. Do not reinterpret the baseline-subtracted number as a
+   passing total-memory budget or claim a leak without allocation evidence.
 4. Run the responsive/picker/keyboard flows on a physical phone. Record mobile
    engine, device and timing; do not substitute a desktop viewport capture.
 
@@ -57,7 +64,9 @@ The earlier ChatGPT UI browser controller was unavailable. On 2026-10-12 the
 VS Code terminal successfully ran a repository-owned, pinned Playwright browser
 in an isolated persistent profile, including a new process with offline network
 control. The Windows computer-use helper is unnecessary for this test runner.
-Whole-process memory instrumentation and physical-phone evidence remain open.
+Windows process-tree instrumentation is now available through
+`npm run measure:memory`. The memory-budget disposition and physical-phone
+evidence remain open. Measurement completion is distinct from target acceptance.
 
 Prepared rollback selection is recorded in
 `evidence/prepared-rollback-20261008.json`: previous artifact 0caaeaeb and current

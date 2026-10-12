@@ -382,3 +382,29 @@ requests public Pages assets when `--url` is selected, never live NHL endpoints.
 It does not publish, change the everyday browser profile, measure total process
 memory, substitute for a physical phone, or prove remote rollback. Browser
 viewport emulation remains distinct from real-device acceptance.
+
+### Windows whole-browser memory measurement
+
+Use the retained distribution and an original public release archive:
+
+```powershell
+npm run measure:memory -- --artifact target/wasm-acceptance-6016f77b --archive C:/src/icelines/target/browser-releases/data-20242025.tar.gz
+```
+
+This launches an isolated headless Chromium process and samples only that
+process tree with Windows OS counters. It records hardware, a blank-browser
+baseline, all catalog packages and the eight-window residency limit, regular
+and playoff archive imports, warm query/render timings, and engine restart.
+Each package phase must have samples; actual sample intervals are reported.
+The report and raw samples are saved to `target/browser-memory-*/`.
+
+Private bytes measure private allocations, including nonresident allocations.
+Summed working sets can count shared pages more than once. Sample maxima can
+miss short spikes, and the sum of per-process lifetime peaks is not a concurrent
+group peak. Node, the local HTTP server and the sampler are excluded. The
+sampler's own overhead affects timings. These workstation measurements do not
+establish physical-phone behavior or an exact instantaneous memory bound.
+
+The command succeeds when measurement completes. The separate
+`provisional_250_mib_target` fields state whether the observed counters meet the
+plan's provisional target; `completed: true` is not a release-acceptance claim.
