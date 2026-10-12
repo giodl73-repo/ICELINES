@@ -83,3 +83,14 @@ allocations and still fails the budget. Offline saved/unsaved restoration,
 fresh query and player detail passed after process close/server stop; all 140
 unit tests passed. Required PR CI remains separate. No significant total-memory
 or latency improvement and no full release approval is claimed.
+
+Follow-up: the actual PR CI artifact at temporary merge commit bc337886 passed
+the retained-artifact verifier (104 files, 75 packages) and the same isolated
+offline runtime sequence. Its two parents identify reviewed head 2cf0f0d6 and
+master 4f13fd70. The phone procedure is explicitly not run, preserves existing
+saved data, uses actual file pickers, requires fresh offline operations and
+labels unavailable timing/resource evidence unmeasured. Its Android/Windows and
+Safari/Mac inspector instructions cite primary vendor documentation. The blank
+browser inventory reports browser UI targets without mapping their URLs to
+renderer PIDs or subtracting those allocations from the acceptance target.
+These additions strengthen the evidence boundaries; all three P1 gates remain.

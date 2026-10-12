@@ -1,0 +1,107 @@
+{
+  "scope": "Fresh isolated blank Chromium; diagnostic inspector attached; no app loaded. Includes built-in browser UI, not a replacement for normal app workload acceptance. CDP and OS snapshots are sequential; target URLs are not mapped to individual renderer PIDs. No user profile is inspected.",
+  "browser": "153.0.8010.12",
+  "root": 8416,
+  "targets": [
+    {
+      "type": "page",
+      "url": "about:blank"
+    },
+    {
+      "type": "browser_ui",
+      "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html"
+    },
+    {
+      "type": "browser_ui",
+      "url": "chrome://omnibox-popup.top-chrome/"
+    }
+  ],
+  "processes": [
+    {
+      "type": "browser",
+      "id": 8416,
+      "cpuTime": 0.935586
+    },
+    {
+      "type": "renderer",
+      "id": 6560,
+      "cpuTime": 0.081938
+    },
+    {
+      "type": "renderer",
+      "id": 55860,
+      "cpuTime": 0.071904
+    },
+    {
+      "type": "renderer",
+      "id": 58868,
+      "cpuTime": 0.162594
+    },
+    {
+      "type": "GPU",
+      "id": 18424,
+      "cpuTime": 0.366955
+    },
+    {
+      "type": "network.mojom.NetworkService",
+      "id": 55856,
+      "cpuTime": 0.30542
+    },
+    {
+      "type": "storage.mojom.StorageService",
+      "id": 44816,
+      "cpuTime": 0.057668
+    }
+  ],
+  "os_processes": [
+    {
+      "id": 8416,
+      "type": "browser-or-helper",
+      "private_bytes": 37560320,
+      "name": "chrome"
+    },
+    {
+      "id": 49540,
+      "type": "crashpad-handler",
+      "private_bytes": 2998272,
+      "name": "chrome"
+    },
+    {
+      "id": 18424,
+      "type": "gpu-process",
+      "private_bytes": 80588800,
+      "name": "chrome"
+    },
+    {
+      "id": 55856,
+      "type": "utility",
+      "private_bytes": 16621568,
+      "name": "chrome"
+    },
+    {
+      "id": 44816,
+      "type": "utility",
+      "private_bytes": 10350592,
+      "name": "chrome"
+    },
+    {
+      "id": 58868,
+      "type": "renderer",
+      "private_bytes": 48959488,
+      "name": "chrome"
+    },
+    {
+      "id": 6560,
+      "type": "renderer",
+      "private_bytes": 17600512,
+      "name": "chrome"
+    },
+    {
+      "id": 55860,
+      "type": "renderer",
+      "private_bytes": 20307968,
+      "name": "chrome"
+    }
+  ],
+  "captured_at": "2026-10-12T18:03:08.442Z"
+}
