@@ -1,3 +1,4 @@
+import { PlayerTable } from './player-table.js';
 import { initializeAppearance } from './appearance.js';
 import { EngineClient, EngineStoppedError } from './engine-client.js';
 import { registerOfflineShell } from './offline.js';
@@ -16,6 +17,7 @@ import type { ViewState } from './view-state.js';
 import type { CatalogEntry, Dataset, PackageData, PackageMetadata, PlayerRow, QueryRequest, QueryResult, SavedDatasetEntry, ScheduledGame } from './types.js';
 
 initializeAppearance();
+const playerTable = new PlayerTable(element('rows'), element('head'), row => { void perform(() => player(row)); });
 
 function element<T extends HTMLElement>(id: string): T { const value = document.getElementById(id); if (!value) throw new Error(`Missing control ${id}`); return value as T; }
 const catalogSelect = element<HTMLSelectElement>('catalog');
@@ -65,7 +67,7 @@ const engine = new EngineClient(message => {
   resident.clear();
   engineUnavailable = true; cancelAcquisition(); ++querySequence;
   recoveryCopy = active ?? recoveryCopy; active = undefined; result = undefined;
-  element('rows').replaceChildren(); element('evidence').textContent = '';
+  playerTable.clear(); element('evidence').textContent = '';
   const dialog = element<HTMLDialogElement>('player-dialog'); if (dialog.open) dialog.close();
   element('empty').textContent = 'Engine unavailable. Restart it or load your data again after recovery.';
   status(message, true); updateState();
@@ -77,7 +79,7 @@ async function recoverEngine(): Promise<void> {
   resident.clear();
   cancelAcquisition(); ++querySequence;
   recoveryCopy = active ?? recoveryCopy; active = undefined; result = undefined;
-  element('rows').replaceChildren(); element('evidence').textContent = '';
+  playerTable.clear(); element('evidence').textContent = '';
   const dialog = element<HTMLDialogElement>('player-dialog'); if (dialog.open) dialog.close();
   status('Restarting engine and checking saved data…'); updateState();
   try {
@@ -207,22 +209,7 @@ async function activateSaved(entry: SavedDatasetEntry): Promise<void> {
   await activate(dataset.bytes, dataset.id, dataset.keepUpdated);
 }
 function renderRows(rows: PlayerRow[]): void {
-  const goalie = kind.value === 'goalies';
-  const columns = goalie ? ['#', 'Player', 'Team', 'GP', 'Wins', 'SV%', 'GAA'] : ['#', 'Player', 'Team', 'GP', 'G', 'A', 'PTS', 'Pace / 82'];
-  const header = document.createElement('tr');
-  for (const title of columns) { const cell = document.createElement('th'); cell.scope = 'col'; cell.textContent = title; header.append(cell); }
-  element('head').replaceChildren(header);
-  const body = element('rows'); body.replaceChildren();
-  rows.forEach((row, index) => {
-    const tr = document.createElement('tr');
-    const values = goalie ? [index + 1, row.name, row.team, row.gp, row.wins, row.save_pct?.toFixed(3), row.gaa?.toFixed(2)] : [index + 1, row.name, row.team, row.gp, row.goals, row.assists, row.points, row.pace_82?.toFixed(1)];
-    values.forEach((value, column) => {
-      const cell = document.createElement('td');
-      if (column === 1) { const button = document.createElement('button'); button.textContent = row.name; button.onclick = () => { void perform(() => player(row)); }; cell.append(button); }
-      else cell.textContent = value == null ? '—' : String(value);
-      tr.append(cell);
-    }); body.append(tr);
-  });
+  playerTable.render(rows, kind.value === 'goalies');
   element('empty').textContent = rows.length ? `${rows.length} players` : 'No players match. Adjust or clear the filter.';
 }
 async function player(row: PlayerRow): Promise<void> {
@@ -241,7 +228,7 @@ async function runQuery(): Promise<void> {
     kind: kind.value as ViewState['kind'], sort: sort.value, gp: minimumGames.value,
     data: isPublicDataset(active, catalog) ? 'public' : 'local', filter: filter.value };
   serializeViewHash(view); // Validate bookmarkable controls before starting work.
-  result = undefined; element('rows').replaceChildren(); element('evidence').textContent = '';
+  result = undefined; playerTable.clear(false); element('evidence').textContent = '';
   element('empty').textContent = 'Running query…'; updateState();
   let next: QueryResult;
   const request: QueryRequest = { filter: view.filter, sort: view.sort,
@@ -322,7 +309,7 @@ element('remove').onclick = () => { void perform(async () => {
 element('unload').onclick = () => { void perform(async () => {
   cancelAcquisition(); engine.changeContext(); await engine.request('unload', null);
   if (active) resident.delete(active.revision);
-  active = undefined; result = undefined; element('rows').replaceChildren(); element('head').replaceChildren();
+  active = undefined; result = undefined; playerTable.clear(); element('head').replaceChildren();
   element('empty').textContent = 'Load a package to explore players.'; element('evidence').textContent = ''; status('Unloaded from memory. Saved copies remain in your library.');
 }); };
 keepUpdated.onchange = () => { void perform(async () => {
@@ -389,7 +376,7 @@ element('create-link').onclick = () => {
 element('share-filter').onchange = () => { element<HTMLInputElement>('shared-link').value = ''; };
 async function applyViewRoute(view: ViewState): Promise<void> {
   const sequence = ++routeSequence; routing = true; cancelAcquisition(); ++querySequence;
-  result = undefined; element('rows').replaceChildren(); element('evidence').textContent = '';
+  result = undefined; playerTable.clear(); element('evidence').textContent = '';
   kind.value = view.kind; setSortOptions(); sort.value = view.sort; minimumGames.value = view.gp; filter.value = view.filter;
   updateState();
   try {
