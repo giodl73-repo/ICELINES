@@ -109,3 +109,18 @@ a particular renderer's bytes to the address bar without further evidence.
 Browser UI and GPU allocations remain included in whole-browser measurements.
 This small debugger-attached snapshot is attribution evidence, not a substitute
 for the full normal workload or a rationale to relabel the 250 MiB target.
+
+## Exact PR CI artifact
+
+Completed browser run 38288081921 produced artifact 11765060462 at temporary
+PR merge commit bc337886 (parents: master 4f13fd70 and reviewed head 2cf0f0d6).
+`ci-review-artifact-20261012.json` records that provenance, exact shell/WASM
+hashes, 104 verified files and 75 verified packages. This is a review artifact;
+it is not a master publication. Its WASM hash matches the retained public CI
+binary rather than the Windows-local build used for matching memory controls.
+
+The exact CI distribution passed offline close/reopen with the local HTTP server
+stopped: saved 933-row season restored, second unsaved season not persisted,
+fresh filter returned 835 rows and player detail opened. See
+`ci-review-offline-reopen-20261012.json`. This confirms that the renderer works
+with the CI-produced WASM binary; it does not add phone, memory or rollback proof.

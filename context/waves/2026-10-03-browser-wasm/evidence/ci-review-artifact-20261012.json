@@ -1,0 +1,17 @@
+{
+  "scope": "Verified PR review artifact and isolated desktop offline runtime. Not a master publication, physical phone test, memory acceptance or public rollback.",
+  "workflow_run": 38288081921,
+  "workflow_head": "2cf0f0d6bb4b7165395b9c978f09644aad50d621",
+  "artifact_id": 11765060462,
+  "artifact_name": "icelines-browser-bc3378866361708c8c09cdacde5d5f9756a045ad",
+  "artifact_commit": "bc3378866361708c8c09cdacde5d5f9756a045ad",
+  "merge_parents": [
+    "4f13fd70f99a6948d9b2fa08303806aa26e8f826",
+    "2cf0f0d6bb4b7165395b9c978f09644aad50d621"
+  ],
+  "shell_build": "ee1a91cb4e69fb014368f8601f1ffe81c03bcc2a01083425ad91fd71358fd810",
+  "wasm_sha256": "6e964f3e0af4c4a034fd82730bc912fd6ecad56869d1d27caf49f92db371407b",
+  "verified_files": 104,
+  "packages": 75,
+  "offline_evidence": "ci-review-offline-reopen-20261012.json"
+}
