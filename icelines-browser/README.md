@@ -408,3 +408,12 @@ establish physical-phone behavior or an exact instantaneous memory bound.
 The command succeeds when measurement completes. The separate
 `provisional_250_mib_target` fields state whether the observed counters meet the
 plan's provisional target; `completed: true` is not a release-acceptance claim.
+
+Append `--diagnose-gc` to inspect the benchmark's page and engine worker via
+Chromium's debugging protocol. This records JS heaps, DOM counters, WASM linear
+memory and browser process types, then forces page and worker garbage collection
+separately. These interventions help attribute retained allocations; they are
+not normal app behavior. Target comparisons exclude all diagnostic phases and
+the subsequent engine restart because it follows forced collection. Run without
+this flag for normal-workload acceptance. Inspector overhead is also present in
+diagnostic runs; compare normal runs when assessing an optimization.

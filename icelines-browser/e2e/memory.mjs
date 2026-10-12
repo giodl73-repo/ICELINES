@@ -8,11 +8,14 @@ import { fileURLToPath } from 'node:url';
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createInterface } from 'node:readline';
+import { diagnoseMemory } from './memory-diagnostics.mjs';
+import { normalWorkloadPhases } from './memory-scope.mjs';
 
 if (process.platform !== 'win32') throw new Error('This sampler uses Windows process counters; other platforms need their own OS sampler.');
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const args = process.argv.slice(2);
 const option = name => { const index = args.indexOf(name); return index < 0 ? undefined : args[index + 1]; };
+const diagnostics = args.includes('--diagnose-gc');
 if (!option('--artifact') || !option('--archive')) throw new Error('Provide --artifact <retained distribution> and --archive <public .tar.gz release>. Paths are relative to the repository root.');
 const root = resolve(repository, option('--artifact'));
 const archive = resolve(repository, option('--archive'));
@@ -124,6 +127,7 @@ try {
   }
   phase = 'resident_settled';
   await pause(1500);
+  if (diagnostics) report.diagnostics = await diagnoseMemory(browser, context, page, new URL('src/worker.js', url).href, name => { phase = name; }, () => pause(1500));
   phase = 'engine_restarted';
   if (!(await page.locator('#restart-engine').isVisible())) await page.locator('#data-library > summary').click();
   await page.locator('#restart-engine').click();
@@ -144,8 +148,11 @@ try {
   const intervals = samples.slice(1).map((sample, index) => sample.elapsed_ms - samples[index].elapsed_ms);
   report.sampling.actual_median_interval_ms = intervals.toSorted((a, b) => a - b)[Math.floor(intervals.length / 2)];
   report.sampling.actual_max_interval_ms = Math.max(...intervals);
-  report.sampled_peak_private_bytes = Math.max(...report.memory.map(phase => phase.peak_private_bytes));
-  report.sampled_peak_working_set_bytes = Math.max(...report.memory.map(phase => phase.peak_working_set_bytes));
+  const normalPhases = normalWorkloadPhases(report.memory);
+  if (!normalPhases.length) throw new Error('No normal workload phases measured.');
+  report.target_scope = diagnostics ? 'Pre-intervention samples only; post-GC engine restart is diagnostic, not a normal-workload control.' : 'All normal workload phases including engine restart.';
+  report.sampled_peak_private_bytes = Math.max(...normalPhases.map(phase => phase.peak_private_bytes));
+  report.sampled_peak_working_set_bytes = Math.max(...normalPhases.map(phase => phase.peak_working_set_bytes));
   const baseline = report.memory.find(phase => phase.phase === 'blank_browser');
   report.sampled_private_bytes_over_blank_baseline = report.sampled_peak_private_bytes - baseline.peak_private_bytes;
   report.provisional_250_mib_target = {
