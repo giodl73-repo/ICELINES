@@ -40,6 +40,7 @@ test('shorter results erase spare names and callbacks; unload releases the pool'
   const { table, body } = fixture(); table.render([row, { ...row, player_id: 2 }], false);
   const spare = body.children[1], spareButton = spare.children[1].children[0];
   table.render([row], false); assert.equal(spare.textContent, ''); assert.equal(spareButton.onclick, null);
+  table.render([row, row], false); assert.notEqual(body.children[1], spare);
   const previous = body.children[0]; table.clear(); table.render([row], false);
   assert.notEqual(body.children[0], previous); assert.equal(previous.textContent, '');
 });
@@ -57,4 +58,5 @@ test('pool is bounded without limiting results', () => {
   table.render(rows, false); const retained = body.children[1023], beyondPool = body.children[1024];
   assert.equal(body.children.length, 1030); table.render(rows, false);
   assert.equal(body.children.length, 1030); assert.equal(body.children[1023], retained); assert.notEqual(body.children[1024], beyondPool);
+  assert.equal(beyondPool.textContent, ''); assert.equal(beyondPool.children[1].children[0].onclick, null);
 });

@@ -7,17 +7,19 @@ type RowNodes = { element: HTMLTableRowElement; values: Text[]; button: HTMLButt
 
 export class PlayerTable {
   private pool: RowNodes[] = [];
+  private visible: RowNodes[] = [];
   private goalie: boolean | undefined;
   constructor(private readonly body: HTMLElement, private readonly head: HTMLElement,
     private readonly openPlayer: (row: PlayerRow) => void) {}
 
   clear(release = true): void {
     // Detached buttons must not retain callbacks or names from a previous dataset.
-    for (const nodes of this.pool) {
+    for (const nodes of this.visible) {
       nodes.button.onclick = null;
       for (const text of nodes.values) text.nodeValue = '';
     }
     this.body.replaceChildren();
+    this.visible = [];
     if (release) { this.pool = []; this.goalie = undefined; this.head.replaceChildren(); }
   }
 
@@ -49,8 +51,11 @@ export class PlayerTable {
       }
       values.forEach((value, column) => { nodes!.values[column].nodeValue = value == null ? '—' : String(value); });
       nodes.button.onclick = () => this.openPlayer(row);
+      this.visible.push(nodes);
       fragment.append(nodes.element);
     });
     this.body.append(fragment);
+    // A smaller result must release spare nodes from a larger season/filter.
+    this.pool.length = Math.min(rows.length, MAX_REUSABLE_ROWS);
   }
 }
