@@ -96,3 +96,16 @@ server stopped and uncached network probe failing. All 140 browser unit tests
 passed. Actual WASM distribution verification covered 75 packages and the
 eight-window residency bound. Physical-phone and public rollback gates remain
 open; the public app has not been republished for this experiment.
+
+## Blank-browser target attribution
+
+`blank-browser-targets-20261012.json` records a fresh isolated Chrome 153 process
+with no IceLines page loaded. Its CDP target inventory includes `about:blank`
+and two `browser_ui` targets for Chrome's omnibox popup. OS and CDP snapshots
+show three renderer processes plus browser, GPU, utilities and a crashpad helper.
+This helps explain why the blank baseline is substantial. The snapshots are
+sequential and do not map target URLs to individual renderer PIDs; do not assign
+a particular renderer's bytes to the address bar without further evidence.
+Browser UI and GPU allocations remain included in whole-browser measurements.
+This small debugger-attached snapshot is attribution evidence, not a substitute
+for the full normal workload or a rationale to relabel the 250 MiB target.

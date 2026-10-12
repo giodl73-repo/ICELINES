@@ -59,6 +59,8 @@ It does not declare the full plan complete.
    passing total-memory budget or claim a leak without allocation evidence.
 4. Run the responsive/picker/keyboard flows on a physical phone. Record mobile
    engine, device and timing; do not substitute a desktop viewport capture.
+   The executable manual sequence and instrument options are in
+   `PHONE-ACCEPTANCE.md`; its status is not run until real-device evidence exists.
 
 The earlier ChatGPT UI browser controller was unavailable. On 2026-10-12 the
 VS Code terminal successfully ran a repository-owned, pinned Playwright browser
