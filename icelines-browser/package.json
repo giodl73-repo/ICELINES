@@ -6,9 +6,12 @@
   "scripts": {
     "build": "node build.mjs",
     "check": "tsc --noEmit",
-    "test": "npm run build && node --test tests/*.test.mjs"
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "acceptance:offline": "node e2e/offline-reopen.mjs",
+    "measure:memory": "node e2e/memory.mjs"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "fake-indexeddb": "6.2.5",
     "typescript": "5.9.3"
   }

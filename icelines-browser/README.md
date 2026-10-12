@@ -348,3 +348,63 @@ Activation now takes its six metadata fields from the validated Rust package in
 its worker load response, avoiding a second full raw JSON decode in the UI.
 Catalog/saved-envelope integrity checks remain in place. This removes one decode,
 not all input staging allocations or a proof of full browser peak memory.
+## Local browser acceptance from VS Code
+
+The terminal can run a dedicated Chromium browser without the ChatGPT desktop
+browser controller. Install the locked development dependencies and browser once:
+
+```powershell
+cd icelines-browser
+npm ci
+npx playwright install chromium
+```
+
+Run against a retained, verified CI distribution (the artifact path is relative
+to the repository root), or explicitly select the public deployment:
+
+```powershell
+npm run acceptance:offline -- --artifact target/wasm-acceptance-6016f77b
+npm run acceptance:offline -- --url https://giodl73-repo.github.io/ICELINES/workbench/
+```
+
+The runner uses a new temporary browser profile. It saves one public season,
+loads another without saving, verifies shell readiness, closes the browser
+process, then launches a new process with networking disabled. For local runs
+it also stops the HTTP server. It checks saved-season restoration, absence of
+the unsaved season from the saved library, a newly applied filter, player detail,
+and failure of an uncached network probe. Results and screenshots go to
+`target/browser-acceptance-*/`; the report identifies the browser and build.
+Profiles are retained in the OS temporary directory for inspection and contain
+only the public packages selected by this test.
+
+This is an opt-in acceptance command, separate from mocked/unit CI tests. It
+requests public Pages assets when `--url` is selected, never live NHL endpoints.
+It does not publish, change the everyday browser profile, measure total process
+memory, substitute for a physical phone, or prove remote rollback. Browser
+viewport emulation remains distinct from real-device acceptance.
+
+### Windows whole-browser memory measurement
+
+Use the retained distribution and an original public release archive:
+
+```powershell
+npm run measure:memory -- --artifact target/wasm-acceptance-6016f77b --archive C:/src/icelines/target/browser-releases/data-20242025.tar.gz
+```
+
+This launches an isolated headless Chromium process and samples only that
+process tree with Windows OS counters. It records hardware, a blank-browser
+baseline, all catalog packages and the eight-window residency limit, regular
+and playoff archive imports, warm query/render timings, and engine restart.
+Each package phase must have samples; actual sample intervals are reported.
+The report and raw samples are saved to `target/browser-memory-*/`.
+
+Private bytes measure private allocations, including nonresident allocations.
+Summed working sets can count shared pages more than once. Sample maxima can
+miss short spikes, and the sum of per-process lifetime peaks is not a concurrent
+group peak. Node, the local HTTP server and the sampler are excluded. The
+sampler's own overhead affects timings. These workstation measurements do not
+establish physical-phone behavior or an exact instantaneous memory bound.
+
+The command succeeds when measurement completes. The separate
+`provisional_250_mib_target` fields state whether the observed counters meet the
+plan's provisional target; `completed: true` is not a release-acceptance claim.

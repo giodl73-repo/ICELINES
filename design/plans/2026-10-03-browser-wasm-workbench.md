@@ -1,7 +1,7 @@
 # Browser WASM Workbench
 
 **Date:** 2026-10-03
-**Status:** Active partial implementation — first-release features and three appearance themes are deployed. PR #79 pagination and PR #80 resource corrections are included in the 2026-10-08 release. Deployed offline/rollback and device/resource acceptance remain open; see the [acceptance ledger](../../context/waves/2026-10-03-browser-wasm/ACCEPTANCE.md).
+**Status:** Active partial implementation — first-release features and three appearance themes are deployed. PR #79 pagination and PR #80 resource corrections are included in the 2026-10-08 release. Deployed desktop Chromium offline reopening passed on 2026-10-12. Remote rollback and device/resource acceptance remain open; see the [acceptance ledger](../../context/waves/2026-10-03-browser-wasm/ACCEPTANCE.md).
 **Scope:** A GitHub Pages application running the shared IceLines Rust engine on the user's device, with release packages, imported files, live refresh, and optional local persistence.
 **Review:** [Planning review](../../signals/roles/check/browser-wasm-workbench-roles-check-2026-10-03.md); [implementation handoff review](../../signals/roles/check/browser-wasm-handoff-roles-check-2026-10-04.md) (release needs work).
 
@@ -37,7 +37,7 @@ Follow-up decision: Cloudflare Free, operated through the user's account. The bo
 
 The delivery order is engine/contracts → one-season parity → local library →
 live refresh → browser UX → Pages release. Current implementation evidence is
-listed in section 12; local offline reopening passed in pulse 27. Pages deployment, relay live access, saved-data recovery and update/reload now have deployed-browser evidence. Deployed offline reopening, remote rollback, physical mobile and full resource gates remain open. The roles verdict approves planning
+listed in section 12; local offline reopening passed in pulse 27. Pages deployment, relay live access, saved-data recovery and update/reload now have deployed-browser evidence. Deployed desktop Chromium offline reopening passed on 2026-10-12; remote rollback, physical mobile and full resource gates remain open. The roles verdict approves planning
 with conditions and is not a release approval.
 
 ## 1. Outcome and first release
