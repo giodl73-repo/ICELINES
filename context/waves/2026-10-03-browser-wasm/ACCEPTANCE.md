@@ -68,6 +68,14 @@ Windows process-tree instrumentation is now available through
 `npm run measure:memory`. The memory-budget disposition and physical-phone
 evidence remain open. Measurement completion is distinct from target acceptance.
 
+The allocation follow-up is recorded in `MEMORY-ATTRIBUTION.md` with separate
+control, prototype and corrected-renderer evidence. WASM linear memory was
+23.88 MiB; forced page GC exposed collectable renderer allocations. The first
+row-reuse prototype retained spare DOM rows and was corrected to release them
+when results shrink. The corrected pool returns to approximately the control's
+post-GC node count. Forced collection and the modest single-run differences do
+not close the whole-browser memory gate or substitute for phone measurements.
+
 Prepared rollback selection is recorded in
 `evidence/prepared-rollback-20261008.json`: previous artifact 0caaeaeb and current
 artifact 696c656b both pass the retained-artifact verifier. Their local composed

@@ -63,3 +63,36 @@ Commit aeda6df5 trims the pool to the current result size and clears callbacks
 on every displayed row, including rows beyond the reusable pool. Its tests also
 verify that spare rows are released when results shrink. Measurement of that
 correction is separate from the prototype results above.
+
+## Corrected pool ownership
+
+The clean 4d90de8b artifact includes the aeda6df5 correction and the experiment
+notes, with the same WASM binary as the Windows control. Its diagnostic capture
+(`desktop-trimmed-row-attribution-20261012.json`) shows 10,193 DOM nodes before
+collection and 6,108 afterward. The pool no longer holds the larger season's
+spare rows. WASM linear memory remains 23.88 MiB. Warm-query median (upper middle
+of 20 samples) was 67.30 ms; the matching control was 68.25 ms. This does not
+demonstrate a material latency improvement.
+
+The pre-intervention private-allocation peak was 575.26 MiB, with a 226.42 MiB
+blank-browser peak. These diagnostic-mode numbers exclude debugger setup,
+forced GC and post-GC restart from target comparisons. The corrected renderer
+prevents repeat-query node replacement and excess pool retention, but these
+observations do not establish a significant whole-browser memory improvement.
+
+The normal corrected-artifact run, without debugger attachment or forced GC,
+completed every package phase, both archive imports, 20 warm queries and engine
+restart (`desktop-trimmed-row-memory-20261012.json`). Peak private allocations
+were 573.44 MiB, summed working sets 881.21 MiB, and blank private allocations
+233.02 MiB. Peak-minus-blank was 340.41 MiB, versus the control's 354.19 MiB;
+this remains a diagnostic comparison, not a changed target definition. Warm
+median was 68.63 ms and maximum 95.32 ms; regular/playoff imports returned
+905/332 players. No sampled phase was missing. The 250 MiB target still fails.
+
+The corrected artifact also passed the full offline close/reopen sequence
+(`trimmed-row-offline-reopen-20261012.json`): saved 933-row season restored,
+unsaved season absent, fresh 835-row query and player detail passed with the
+server stopped and uncached network probe failing. All 140 browser unit tests
+passed. Actual WASM distribution verification covered 75 packages and the
+eight-window residency bound. Physical-phone and public rollback gates remain
+open; the public app has not been republished for this experiment.
