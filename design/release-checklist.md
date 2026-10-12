@@ -219,4 +219,8 @@ Current warning-class advisory ledger:
 | Advisory | Class | Dependency path | Owner | Rationale | Removal condition |
 |---|---|---|---|---|---|
 | `RUSTSEC-2025-0052` (`async-std`) | unmaintained warning | `httpmock` -> `icelines-fetch` tests | BENCH / FORGE | Test-only mock dependency; not shipped in the release binary. Keep visible so a fixture/mock replacement can retire it. | Remove when `httpmock` drops `async-std`, or replace the mock stack if the warning becomes a vulnerability or runtime dependency. |
-| `RUSTSEC-2026-0190` (`anyhow`) | unsound warning | direct workspace dependency | FORGE | The advisory affects `Error::downcast_mut`; IceLines does not call that API. Audit remains visible and blocking for vulnerability-class findings. | Upgrade immediately when a fixed compatible `anyhow` release is published; reassess sooner if `downcast_mut` enters the codebase. |
+
+The 2026-10-12 lockfile refresh pins `quinn-proto` 0.11.18,
+`event-listener` 5.4.2 and `lru` 0.18.2 to their advisory fixes. The previous
+`anyhow` ledger entry is no longer reported by the current audit. Keep the
+ledger aligned with actual audit output; patched findings do not need exceptions.
