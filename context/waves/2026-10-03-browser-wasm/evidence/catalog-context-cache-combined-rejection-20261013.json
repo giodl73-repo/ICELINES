@@ -1,0 +1,38 @@
+{
+  "started_at": "2026-10-13T19:54:18.171Z",
+  "verified": true,
+  "scope": "Actual browser catalog-context fault injection on a verified local artifact. First saved season remains active; rejected source mismatch must not create a resident window or replace the table. Not offline, phone, total-memory or public-deployment proof.",
+  "evidence": {
+    "injected_catalog_context": {
+      "id": "20242025-regular",
+      "source": "repository:20242025:deliberate-mismatch"
+    },
+    "saved_unfiltered_rows": 933,
+    "rejected_load_preserved_rows": 933,
+    "query_after_rejection_rows": 835,
+    "detail_after_rejection": "Connor McDavid"
+  },
+  "retained_artifact": {
+    "commit": "47e7ab29d0ac2ddc4e0b436ce15cd9c2503fa53f",
+    "shell_build": "557ef7dc71406a7cf6ea2b6d46b120e138b92436775ccda6de1db0830ed44037",
+    "verified_files": 104,
+    "packages": 75
+  },
+  "url": "http://127.0.0.1:58746/ICELINES/workbench/",
+  "browser": "153.0.8010.12",
+  "build": {
+    "schema_version": 1,
+    "commit": "47e7ab29d0ac2ddc4e0b436ce15cd9c2503fa53f",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "d91f75da1725094ead601aa1024caecf83a7da737c18251e0e9d9996e6356d58"
+  },
+  "saved_package": "20252026-regular",
+  "unsaved_package": "20242025-regular",
+  "finished_at": "2026-10-13T19:54:21.221Z"
+}

@@ -256,6 +256,55 @@ engine replaces or selects active data; removing that guard is not an acceptable
 optimization. This is a hypothesis for the next experiment, not measured savings.
 The 250 MiB target remains exceeded and unchanged.
 
+## Catalog decoding and interaction experiment — not adopted (2026-10-13)
+
+Prototype 7e069abe replaces the page's full catalog-package JSON decode with a
+small expected-context payload. Rust validates season/type/source before any
+fresh replacement or cached selection, then returns its validated metadata.
+Generic imports remain supported. The page's cached shortcut also checks its
+already validated metadata. Combined prototype 47e7ab29 adds the cleared-row
+cache described above. Neither runtime experiment is adopted into stable code.
+
+| Run (sequential) | Blank private MiB | Full private peak MiB | Warm median ms (upper middle) | Warm maximum ms |
+|---|---:|---:|---:|---:|
+| Catalog prototype | 229.72 | 568.04 | 50.54 | 62.86 |
+| Fresh existing-renderer control | 235.50 | 551.60 | 50.98 | 62.68 |
+| Catalog plus cleared-row cache | 225.86 | 549.45 | 51.48 | 66.95 |
+
+The original process sampler covers all 75 packages, eight residents, both
+905/332-player archive imports, 20 warm queries and engine restart. No debugger
+intervention, browser-flag change or forced GC was used. One 120 ms targeted
+unit-test invocation overlapped an early standalone package phase; timing
+claims are not made. The combined run's blank baseline is substantially lower
+than the control's, so its slightly lower total is not evidence of a useful
+saving. The standalone does not improve the observed peak. This set supplies no
+basis for promoting either prototype or claiming a general speed improvement.
+
+Candidate/combined Windows WASM SHA-256 is
+`d91f75da1725094ead601aa1024caecf83a7da737c18251e0e9d9996e6356d58`,
+different from the existing-renderer control's
+`4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee`.
+The new context-validation binding intentionally changes the Rust/WASM adapter;
+these are not identical-binary comparisons. Domain projection code, data and
+dependencies are unchanged. The standalone starter gzip sum is 413,337 bytes
+versus the prior 410,619-byte local control, still within the separate 10 MiB gate.
+
+All 20 native Rust tests and 148 browser unit tests pass for the prototypes.
+Actual-WASM distribution verification loads all 75 packages through the new
+binding, checks generic-import revision parity and rejects a mismatched resident
+context without reordering or changing active selection. The actual browser
+fault injection rejects a wrong source while retaining the saved 933-player
+table and one resident window; a subsequent 835-player query and detail pass.
+Separate offline process-close, pending/error/retry and combined tail-row reuse
+checks pass. These functional checks do not establish a memory saving. Raw
+evidence is prefixed catalog-context; prototype source branches remain separate.
+
+PR #89's reviewed head a7a57dc4 passed 29 CI checks, with deployment skipped,
+and was squash-merged as e0741daa. That merge contains the previously measured
+deferred startup and attached-row improvements, not these new prototypes.
+The public site remains the separately verified 0e34ce88 release. The 250 MiB
+whole-browser target remains exceeded; physical Android is still deferred.
+
 ## Blank-browser target attribution
 
 `blank-browser-targets-20261012.json` records a fresh isolated Chrome 153 process

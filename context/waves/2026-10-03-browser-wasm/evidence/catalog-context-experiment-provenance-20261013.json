@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "standalone_runtime": "7e069abe8717bab7a20b33e117e29a60753e9fe3",
+  "combined_runtime": "47e7ab29d0ac2ddc4e0b436ce15cd9c2503fa53f",
+  "control_runtime": "653c876b",
+  "wasm_candidate_sha256": "d91f75da1725094ead601aa1024caecf83a7da737c18251e0e9d9996e6356d58",
+  "wasm_control_sha256": "4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee",
+  "source_scope": "Rust/WASM catalog-context method atomically checks fresh and cached season/type/source before selection. Worker receives nested staging bytes and small context; page avoids full player-record decode. Combined experiment also retains at most 1024 cleared rows.",
+  "tests": {
+    "rust_native": 20,
+    "browser_unit": 148,
+    "actual_wasm": "All 75 catalog loads plus generic import parity and cached rejection preserving LRU order",
+    "actual_browser": "Catalog source mismatch preserves saved 933-player table and one resident window, then 835-row query/detail pass. Separate process-close offline/pending/failure/retry checks pass; combined case confirms cleared-tail reuse."
+  },
+  "measurement": "Original whole-browser process sampler, all 75 packages, both archive imports, 20 queries and restart. Sequential standalone, control, combined. No forced GC or debugger intervention. A 120 ms targeted unit-test invocation overlapped an early standalone package phase; no speed claim.",
+  "decision": "Neither experiment adopted. Standalone private peak 568.04 MiB, control 551.60, combined 549.45; blank baselines 229.72,235.50,225.86 MiB. No meaningful peak saving established. Runtime prototype branches retained separately; stable source is merged PR89.",
+  "merged_pr": 89,
+  "reviewed_head": "a7a57dc4fa20c04bb9fad2daed5fece0839e4454",
+  "merge_commit": "e0741daad56749cc3a3292e3f054b56d9f2605a2",
+  "required_checks": "29 success, deployment skipped before squash merge",
+  "target_mib": 250,
+  "target_changed": false,
+  "android": "Deferred by user",
+  "publication": "No new publication"
+}
