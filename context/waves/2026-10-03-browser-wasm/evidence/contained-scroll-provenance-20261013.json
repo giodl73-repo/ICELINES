@@ -1,0 +1,23 @@
+{
+  "scope": "Full normal Windows workload with identical WASM, flags, OS sampler and observer; only scroll presentation changed. No data/query reduction or forced GC. Not physical device or a budget pass.",
+  "branch": "codex/wasm-contained-scroll-experiment",
+  "candidate": "74b8e894396eccdeedd10f25bdccc69047144920",
+  "adopted": false,
+  "summaries": [
+    {
+      "commit": "74b8e894396eccdeedd10f25bdccc69047144920",
+      "private_peak_mib": 457.4140625,
+      "blank_peak_mib": 239.015625
+    },
+    {
+      "commit": "680a89cb594004c4160e1333928e2a0c5ae05e0b",
+      "private_peak_mib": 444.73046875,
+      "blank_peak_mib": 237.69140625
+    }
+  ],
+  "browser_probe_sha256": "b38ea60c2b342bcb891f486e113d40f6e788387eec62ed661ae0fbf3f9303a28",
+  "wasm_sha256": "4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee",
+  "functional_evidence": "All 933 ranks/names, 77 goalie fallback, AX/printing, 120 Tab/reverse steps and terminal boundaries pass; maximum 40 mounted, normal document roughly2800px, internal full scroll range roughly67000px.",
+  "early_failures": "Initial nested anchoring failed; subsequent mutable style/position probes are not exact retained-artifact evidence. Final committed candidate disables container anchoring and restores its scroll position after node recycling.",
+  "decision": "Candidate peak exceeds matching control. No memory saving established; leave runtime experiment unadopted and restore published source."
+}

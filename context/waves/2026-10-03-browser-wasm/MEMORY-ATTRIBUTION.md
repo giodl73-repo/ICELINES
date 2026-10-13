@@ -595,3 +595,24 @@ uses a second extractor, checks page bounds/first pace, emits UTF-8 files and AS
 stdout. Corrected raw reports and reference/provenance use viewport-print-utf8 and
 viewport-master-print-utf8. This closes PDF data-text inspection, not the250 MiB
 budget or physical Android. No new browser application runtime is adopted.
+
+## Bounded scroll-area experiment
+
+Isolated74b8e894 changes the default virtual table to a70vh internal scroll area,
+with sticky headers and explicit inner-scroll restoration during node recycling
+and printing. Full queries/exports remain unchanged. Initial strong traversal
+finds nested anchoring movement; container anchoring exclusion and scroll-position
+restoration fix it. The exact final candidate passes all933 ranks/names, last
+player detail, forward/reverse120-step keyboard navigation, terminal boundaries,
+77-goalie fallback, AX names, printing/restoration, failure/retry and390px layout.
+At most40 players are mounted; normal document height is about2800px while the
+full internal scroll extent remains about67000px. Type checking/149 units pass.
+
+The original normal75-package/two-import/20-query/eight-window/restart workload
+peaks457.41 MiB for the candidate versus444.73 MiB for matching
+control. Blank baselines239.02 / 237.69 MiB vary; identical Windows WASM,
+browser flags, original sampler and observer are retained, with no forced GC.
+No saving is established and the experiment is not adopted or published.
+The stable generated artifact and runtime source are restored. Exact candidate,
+control, browser and initial failed traversal reports use contained-scroll prefixes.
+The250 MiB requirement remains unmet; physical phone remains deferred.
