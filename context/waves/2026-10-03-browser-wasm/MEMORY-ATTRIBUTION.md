@@ -345,6 +345,28 @@ public in-place update, rollback and forward restore pass with unchanged saved
 bytes; see public-optimization-publication-provenance-20261013.json. Earlier
 incomplete notice waits remain separately recorded and their cause is unproven.
 
+## Pending opacity experiment — not adopted (2026-10-13)
+
+Prototype 8fc3ee9a tests opacity:0 plus inert during pending queries instead of
+visibility:hidden plus inert. CSS defines opacity as non-inherited and visibility
+as inherited ([CSS Color](https://www.w3.org/TR/css-color-4/#transparency),
+[CSS Display](https://www.w3.org/TR/css-display-3/#visibility)). Avoiding descendant
+restyling was a hypothesis, not an established performance property.
+
+The original process sampler and strengthened commit barrier complete all 75
+packages, eight-window residency, both 905/332-player imports, 20 warm queries and
+restart. Matching Windows WASM bytes remain 4f99584f; no forced GC or debugger
+intervention. Candidate private peak is 545.82 MiB with 227.37 MiB blank peak;
+fresh existing-renderer control is 544.31 MiB with 230.95 MiB blank peak. This
+pair establishes no useful total-memory saving. The prototype is **not adopted**.
+
+TypeScript and 147 unit tests pass. A separate actual-browser offline check
+restores 933 players, verifies pending computed opacity zero and inert true,
+filters to 835 without readding common rows, opens detail, clears failed-query
+rows and retries. Functional correctness does not prove a memory benefit.
+Evidence is prefixed pending-opacity. The stable source and public e0741daa
+release retain visibility:hidden. The 250 MiB target is unchanged and unmet.
+
 ## Blank-browser target attribution
 
 `blank-browser-targets-20261012.json` records a fresh isolated Chrome 153 process
