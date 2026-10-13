@@ -1,0 +1,59 @@
+{
+  "started_at": "2026-10-13T19:17:56.065Z",
+  "verified": true,
+  "scope": "Isolated Chromium process close/reopen with offline network control; saved versus unsaved seasons, fresh query and player detail. Not physical-phone, total-memory or remote-rollback proof.",
+  "evidence": {
+    "saved_unfiltered_rows": 933,
+    "browser_process_closed": true,
+    "local_server_stopped": true,
+    "offline": {
+      "online": false,
+      "probe_failed": true
+    },
+    "pending_table": {
+      "visibility": "hidden",
+      "inert": true,
+      "rows": 933
+    },
+    "fresh_filtered_rows": 835,
+    "attached_rows": {
+      "common_rows_unchanged": true,
+      "added": 0,
+      "removed": 98,
+      "rows": 835,
+      "previous_rows": 933
+    },
+    "player_detail": "Connor McDavid",
+    "failed_requests": [
+      {
+        "url": "http://127.0.0.1:60903/ICELINES/workbench/uncached-acceptance-probe-1791919080407",
+        "error": "net::ERR_INTERNET_DISCONNECTED"
+      }
+    ],
+    "failed_query_cleared_rows": true,
+    "retry_query_rows": 835
+  },
+  "retained_artifact": {
+    "commit": "653c876bd7ea6984df542b57ca4478c4cefdae7f",
+    "shell_build": "2e9f4c93f022fb3d027adf0b89cd906d9988ca5d7ab4219076913b6593043cb1",
+    "verified_files": 104,
+    "packages": 75
+  },
+  "url": "http://127.0.0.1:60903/ICELINES/workbench/",
+  "browser": "153.0.8010.12",
+  "build": {
+    "schema_version": 1,
+    "commit": "653c876bd7ea6984df542b57ca4478c4cefdae7f",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee"
+  },
+  "saved_package": "20252026-regular",
+  "unsaved_package": "20242025-regular",
+  "finished_at": "2026-10-13T19:18:02.696Z"
+}

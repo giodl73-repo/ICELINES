@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "rejected_candidate": {
+    "commit": "ad8bfb240e003318704090ee34eb56b158dffffc",
+    "verified": false,
+    "error": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 0\nReceived: 835",
+    "common_rows_unchanged": true,
+    "added": 835,
+    "removed": 933,
+    "cause": "runQuery still called clear(false), bypassing the attached-row optimization. Corrected in 653c876b; initial memory runs do not exercise the intended intervention."
+  },
+  "production_memory_runner_sha256": "c4d94c54a7797b229661853a9f7b0bbd755856fe9e45de7f6cb184d91ca7847c",
+  "acceptance_command": "node icelines-browser/e2e/offline-reopen.mjs --artifact target/wasm-attached-rows-corrected --verify-attached-rows",
+  "target_mib": 250,
+  "target_changed": false,
+  "android": "Deferred by the user; no phone acceptance claim",
+  "publication": "Candidate not deployed"
+}

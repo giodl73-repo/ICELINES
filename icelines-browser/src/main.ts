@@ -63,7 +63,7 @@ function showAnalysis(): void {
   panel.open = false;
   if (transferFocus) element('analysis').focus();
 }
-const engine = new EngineClient(message => {
+const engine = EngineClient.deferred(message => {
   resident.clear();
   engineUnavailable = true; cancelAcquisition(); ++querySequence;
   recoveryCopy = active ?? recoveryCopy; active = undefined; result = undefined;
@@ -228,7 +228,7 @@ async function runQuery(): Promise<void> {
     kind: kind.value as ViewState['kind'], sort: sort.value, gp: minimumGames.value,
     data: isPublicDataset(active, catalog) ? 'public' : 'local', filter: filter.value };
   serializeViewHash(view); // Validate bookmarkable controls before starting work.
-  result = undefined; playerTable.clear(false); element('evidence').textContent = '';
+  result = undefined; playerTable.suspend(); element('evidence').textContent = '';
   element('empty').textContent = 'Running query…'; updateState();
   let next: QueryResult;
   const request: QueryRequest = { filter: view.filter, sort: view.sort,
@@ -236,7 +236,10 @@ async function runQuery(): Promise<void> {
   try {
     next = await engine.request<QueryResult>('query', request);
   } catch (error) {
-    if (sequence === querySequence) element('empty').textContent = 'Query unavailable. Adjust the filter or load the required data.';
+    if (sequence === querySequence) {
+      playerTable.clear(false);
+      element('empty').textContent = 'Query unavailable. Adjust the filter or load the required data.';
+    }
     throw error;
   }
   if (sequence !== querySequence) return;
@@ -427,7 +430,7 @@ async function reloadCatalog(): Promise<void> {
 element('retry-catalog').onclick = () => { void reloadCatalog(); };
 async function start(): Promise<void> {
   await reloadCatalog();
-  await engine.request('currentSeason', null); await library();
+  await library();
   started = true;
   const view = parseViewHash(location.hash);
   if (view) { await applyViewRoute(view); return; }

@@ -97,6 +97,105 @@ passed. Actual WASM distribution verification covered 75 packages and the
 eight-window residency bound. Physical-phone and public rollback gates remain
 open; the public app has not been republished for this experiment.
 
+## Deferred engine startup (2026-10-13)
+
+The page previously created its worker immediately and awaited an unused
+current-season request before opening the library. The candidate creates the
+worker on the first data operation. Explicit restart/recovery still starts it
+immediately; initial creation preserves the caller's selected context generation.
+Saved stats and saved schedules automatically start it when restoration needs Rust.
+
+Control: clean master 405cfe68. Candidate: clean 393b9c2c. Both Windows-built
+artifacts use WASM SHA-256
+`4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee`.
+This is distinct from the retained Linux CI binary; no Rust or dependency changes
+are part of this optimization.
+
+| Settled empty-library run | Blank browser private MiB | Idle private MiB | Idle minus blank, diagnostic only | Engine workers |
+|---|---:|---:|---:|---:|
+| Control 1 | 234.31 | 287.58 | 53.27 | 1 |
+| Candidate 1 | 230.64 | 275.27 | 44.64 | 0 |
+| Candidate 2 | 227.49 | 272.80 | 45.30 | 0 |
+| Control 2 | 230.90 | 290.18 | 59.28 | 1 |
+
+The startup-only probe waits for application readiness, completed offline-shell
+preparation and five idle seconds. Worker inventory is collected afterward, in a
+diagnostic phase. These sequential runs suggest a modest idle saving; neither
+total nor baseline-subtracted numbers redefine the 250 MiB whole-browser target.
+The standard runner's early startup boundary alone was inconclusive because the
+blank-browser baselines varied and it did not wait for full application readiness.
+
+The full workload still fails: control 572.34 MiB private peak and candidate
+566.14 MiB, with blank peaks 245.56/228.30 MiB. The baseline difference exceeds
+the peak difference, so this does not establish a full-workload memory saving.
+Both load all 75 packages, retain at most eight windows, import 905/332 players,
+run 20 warm queries and restart. Warm medians were 68.47/69.41 ms and maxima
+86.76/101.11 ms; no speed improvement is claimed. A separate public browser
+verification overlapped part of the control run, further limiting timing claims.
+
+All 144 browser unit tests and TypeScript checks pass. Candidate offline reopening
+restores the saved season, excludes the unsaved season, runs a fresh filter and
+opens player detail. A second actual-browser test starts with zero engine workers,
+imports/projects a two-game schedule as its first engine operation, observes one
+worker, saves it without a stats dataset and restores it offline after process
+closure. Evidence files are prefixed demand-engine in this directory.
+
+The user explicitly retained the 250 MiB target and deferred physical Android
+testing. This change is an incremental startup optimization, not full resource
+acceptance. No forced GC or debugger-buffer change was used in these candidate
+and control workload measurements.
+
+## Attached rows across queries (2026-10-13)
+
+The deferred-engine build 393b9c2c is the control for this next experiment.
+Corrected candidate 653c876b retains common table rows in the document, updates
+changed text in place and only appends/removes the changed tail. During pending
+queries, visibility:hidden and inert hide stale results without discarding their
+layout. Current query failures still clear the table. Reused focused buttons blur
+when their player identity changes. All rows remain available, including results
+beyond the 1024-node reuse pool; query/export/domain semantics are unchanged.
+
+The first implementation was ineffective because runQuery still called
+clear(false). The actual offline MutationObserver caught 835 added and 933 removed
+rows despite reused node identities. Those early memory runs do not exercise the
+intended intervention. The caller was corrected before the measurements below.
+See attached-rows-provenance-20261013.json for the rejected candidate boundary.
+
+Both clean artifacts share Windows WASM SHA-256
+`4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee`.
+The original OS sampler covers all 75 packages, eight resident windows, imports
+of 905/332 players, 20 warm queries and engine restart. There is no forced GC,
+debugger intervention or browser-flag change. Runs are sequential; the repeat
+pair reverses candidate/control order.
+
+| Run | Blank private MiB | Full private peak MiB | Warm median ms (upper middle) | Warm maximum ms |
+|---|---:|---:|---:|---:|
+| Control 1 | 233.22 | 570.14 | 67.93 | 87.65 |
+| Candidate 1 | 228.76 | 541.93 | 56.98 | 122.28 |
+| Candidate 2 | 230.23 | 539.78 | 50.35 | 60.67 |
+| Control 2 | 232.91 | 570.70 | 68.04 | 87.62 |
+
+The two comparisons observe approximately 28–31 MiB lower private peaks. Blank
+baselines differ by approximately 3–4 MiB, smaller than the observed savings.
+These are observed Windows process-counter results, not a general speed claim.
+Candidate 1's maximum query time is worse than the control. The 250 MiB total
+limit still fails; baseline subtraction does not redefine it. Evidence files
+are prefixed attached-rows in this directory's evidence/ folder.
+
+TypeScript and all 147 browser unit tests pass. The committed opt-in browser
+check can be reproduced with:
+
+```powershell
+node icelines-browser/e2e/offline-reopen.mjs --artifact target/wasm-attached-rows-corrected --verify-attached-rows
+```
+
+It closes the process and stops the server, restores a saved 933-player season
+offline, verifies pending rows are hidden/inert and still attached, then filters
+to 835 rows with zero added rows and exactly 98 removed rows. Player detail,
+malformed-query clearing and a successful 835-row retry pass. This browser
+inspection is separate from normal memory measurements. The candidate is not
+deployed; physical Android remains deferred by the user.
+
 ## Blank-browser target attribution
 
 `blank-browser-targets-20261012.json` records a fresh isolated Chrome 153 process

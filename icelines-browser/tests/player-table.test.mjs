@@ -5,7 +5,7 @@ import { PlayerTable } from '../dist/src/player-table.js';
 // Small DOM double checks ownership and identity; browser acceptance exercises
 // the actual DOM, worker queries and dialog interaction.
 class Node {
-  children = []; parent = null; onclick = null; nodeValue = null;
+  children = []; parent = null; onclick = null; nodeValue = null; style = {};
   constructor(tag) { this.tag = tag; }
   append(...nodes) {
     for (const node of nodes) {
@@ -15,6 +15,8 @@ class Node {
     }
   }
   replaceChildren(...nodes) { for (const node of this.children) node.parent = null; this.children = []; this.append(...nodes); }
+  remove() { if (this.parent) { this.parent.children.splice(this.parent.children.indexOf(this), 1); this.parent = null; } }
+  blur() { if (document.activeElement === this) document.activeElement = null; }
   set textContent(value) { this.replaceChildren(Object.assign(new Node('text'), { nodeValue: value })); }
   get textContent() { return this.nodeValue ?? this.children.map(node => node.textContent).join(''); }
 }
@@ -59,4 +61,43 @@ test('pool is bounded without limiting results', () => {
   assert.equal(body.children.length, 1030); table.render(rows, false);
   assert.equal(body.children.length, 1030); assert.equal(body.children[1023], retained); assert.notEqual(body.children[1024], beyondPool);
   assert.equal(beyondPool.textContent, ''); assert.equal(beyondPool.children[1].children[0].onclick, null);
+});
+
+test('repeat queries keep common rows attached and only append growth', () => {
+  const { table, body, opened } = fixture();
+  table.render([row, row], false);
+  const first = body.children[0], second = body.children[1];
+  const append = body.append.bind(body);
+  body.replaceChildren = () => assert.fail('same-column query detached the table');
+  body.append = (...nodes) => {
+    assert.ok(!nodes.some(node => node === first || node === second), 'common row was reparented');
+    append(...nodes);
+  };
+  const changed = { ...row, player_id: 3, name: 'Current player' };
+  table.render([changed, row, row], false);
+  assert.equal(body.children[0], first); assert.equal(body.children[1], second);
+  assert.equal(body.children.length, 3);
+  first.children[1].children[0].onclick(); assert.deepEqual(opened, [changed]);
+  const removed = body.children[2];
+  table.render([row], false);
+  assert.equal(body.children.length, 1); assert.equal(removed.textContent, '');
+  assert.equal(second.parent, null); assert.equal(second.children[1].children[0].onclick, null);
+  table.render([], false); assert.equal(body.children.length, 0); assert.equal(first.textContent, '');
+});
+
+test('focused reused button keeps focus for the same player and clears it when the rank changes identity', () => {
+  const { table, body } = fixture(); table.render([row], false);
+  const button = body.children[0].children[1].children[0]; document.activeElement = button;
+  table.render([{ ...row, points: 3 }], false); assert.equal(document.activeElement, button);
+  table.render([{ ...row, player_id: 2 }], false); assert.equal(document.activeElement, null);
+});
+
+test('pending queries hide and disable stale rows without detaching them; rendering and failure clearing restore the body', () => {
+  const { table, body } = fixture(); table.render([row], false); const tr = body.children[0];
+  table.suspend(); assert.equal(body.style.visibility, 'hidden'); assert.equal(body.inert, true);
+  assert.equal(body.children[0], tr); assert.equal(tr.parent, body);
+  table.render([row], false); assert.equal(body.children[0], tr);
+  assert.equal(body.style.visibility, ''); assert.equal(body.inert, false);
+  table.suspend(); table.clear(false); assert.equal(body.children.length, 0);
+  assert.equal(body.style.visibility, ''); assert.equal(body.inert, false); assert.equal(tr.textContent, '');
 });

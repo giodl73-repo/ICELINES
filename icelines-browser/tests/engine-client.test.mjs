@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EngineClient, EngineStoppedError } from '../dist/src/engine-client.js';
-function setup(timeout = 120000) {
+function setup(timeout = 120000, options = {}) {
   const workers = [], failures = [];
   const client = new EngineClient(message => failures.push(message), () => {
     const worker = { messages: [], terminated: false, onmessage: null, onerror: null, onmessageerror: null,
       postMessage(value, transfer = []) { this.messages.push(structuredClone(value, { transfer })); }, terminate() { this.terminated = true; } };
     workers.push(worker); return worker;
-  }, timeout);
+  }, timeout, options);
   return { client, workers, failures };
 }
 function reply(worker, value, error, overrides = {}) {
@@ -15,6 +15,51 @@ function reply(worker, value, error, overrides = {}) {
   worker.onmessage({ data: { schema_version: 1, request_id: request.request_id,
     context_generation: request.context_generation, ...(error ? { error } : { value }), ...overrides } });
 }
+
+test('deferred first load preserves the context chosen before any worker exists', async () => {
+  const {client, workers, failures} = setup(120000, {deferStart:true});
+  assert.equal(workers.length, 0); assert.equal(client.available, true);
+  client.changeContext(); const generation = client.changeContext();
+  const pending = client.request('load', new Uint8Array([1,2,3]).buffer);
+  assert.equal(workers.length, 1);
+  assert.equal(client.generation, generation);
+  assert.equal(workers[0].messages[0].context_generation, generation);
+  reply(workers[0], 'loaded'); assert.equal(await pending, 'loaded');
+  assert.deepEqual(failures, []);
+});
+
+test('deferred concurrent requests share one worker and failure requires explicit recovery', async () => {
+  const {client, workers, failures} = setup(120000, {deferStart:true});
+  const requests = [client.request('schedule', new ArrayBuffer(0)), client.request('query', {})];
+  const checks = requests.map(p=>assert.rejects(p, EngineStoppedError));
+  assert.equal(workers.length, 1); workers[0].onerror(); await Promise.all(checks);
+  await assert.rejects(client.request('query', {}), EngineStoppedError);
+  assert.equal(workers.length, 1); assert.equal(failures.length, 1);
+  client.restart(); const recovered=client.request('currentSeason',null);
+  reply(workers[0], 'obsolete'); reply(workers[1],20262027);
+  assert.equal(await recovered,20262027);
+});
+
+test('explicit restart before the first request invalidates the cold context once', async () => {
+  const {client, workers} = setup(120000, {deferStart:true});
+  const generation=client.changeContext(); client.restart();
+  assert.equal(workers.length,1); assert.equal(client.generation,generation+1);
+  const request=client.request('currentSeason',null);
+  reply(workers[0],20262027); assert.equal(await request,20262027);
+  assert.equal(workers.length,1);
+});
+
+test('deferred constructor failure is reported once and does not retry on ordinary requests', async () => {
+  let attempts=0; const failures=[];
+  const client=new EngineClient(message=>failures.push(message),()=>{attempts++;throw new Error('worker unavailable');},120000,{deferStart:true});
+  assert.equal(attempts,0);
+  await assert.rejects(client.request('load',new ArrayBuffer(0)),EngineStoppedError);
+  assert.equal(attempts,1); assert.equal(failures.length,1); assert.equal(client.available,false);
+  await assert.rejects(client.request('schedule',new ArrayBuffer(0)),EngineStoppedError);
+  assert.equal(attempts,1);
+  client.restart(); await Promise.resolve();
+  assert.equal(attempts,2); assert.equal(failures.length,2);
+});
 test('matching owned response resolves and ordinary query errors leave engine usable', async () => {
   const { client, workers, failures } = setup();
   const first = client.request('currentSeason', null); reply(workers[0], 20252026); assert.equal(await first, 20252026);
