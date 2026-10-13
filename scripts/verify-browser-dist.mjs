@@ -70,10 +70,12 @@ for (const entry of catalog.packages) {
   largestStarterGzipBytes = Math.max(largestStarterGzipBytes, runtimeGzipBytes + gzipSync(bytes).length);
   const engine = new BrowserEngine();
   try {
-    assert.equal(engine.load_package(bytes), entry.sha256);
+    const context = JSON.stringify({ season: entry.season, season_type: entry.season_type, source: entry.source });
+    assert.equal(engine.load_catalog_package(bytes, context), entry.sha256);
     const result = JSON.parse(engine.query(JSON.stringify({ filter: '', sort: 'points', goalies: false, minimum_games: 0, today: '2025-07-01' })));
     assert.equal(result.season, entry.season); assert.equal(result.season_type, entry.season_type);
     assert.ok(result.rows.length > 0 && result.rows.length <= entry.skaters);
+    assert.equal(engine.load_package(bytes), entry.sha256, 'Generic imports retain catalog-load revision parity');
   } finally { engine.free(); }
   allowed.add(entry.url);
 }
@@ -92,10 +94,15 @@ assert.ok(catalog.packages.length >= 9, 'Residency acceptance requires at least 
 const residentEngine = new BrowserEngine();
 try {
   const windows = catalog.packages.slice(0,9);
-  for (const entry of windows) residentEngine.load_package(await readFile(new URL(entry.url,dist)));
+  for (const entry of windows) residentEngine.load_catalog_package(await readFile(new URL(entry.url,dist)),
+    JSON.stringify({season:entry.season,season_type:entry.season_type,source:entry.source}));
   const revisions = JSON.parse(residentEngine.resident_revisions());
   assert.equal(revisions.length,8);
   assert.ok(!revisions.includes(windows[0].sha256), 'Oldest of nine windows must be evicted');
+  const awaitedResidentBytes = await readFile(new URL(windows[1].url,dist));
+  assert.throws(() => residentEngine.load_catalog_package(awaitedResidentBytes,
+    JSON.stringify({season:windows[1].season,season_type:windows[1].season_type,source:'mismatched-catalog-source'})));
+  assert.equal(residentEngine.resident_revisions(), JSON.stringify(revisions), 'Catalog rejection must preserve active selection and LRU order');
   assert.throws(() => residentEngine.select_resident(windows[0].sha256));
   residentEngine.select_resident(windows[1].sha256);
   const restored = JSON.parse(residentEngine.query(JSON.stringify({filter:'',sort:'points',goalies:false,minimum_games:0,today:'2026-10-04'})));

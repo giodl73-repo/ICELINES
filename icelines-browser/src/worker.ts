@@ -2,6 +2,7 @@ import type { EngineRequest, EngineResponse, QueryRequest } from './types.js';
 import { importArchive } from './archive.js';
 interface Engine {
   load_package(bytes: Uint8Array): string; package_metadata(): string; query(request: string): string;
+  load_catalog_package(bytes: Uint8Array, expected: string): string;
   player_detail(id: number): string; current_season(): number; free(): void;
   schedule_week(bytes: Uint8Array): string;
   select_resident(revision: string): void; resident_revisions(): string; unload_active(): void;
@@ -39,6 +40,11 @@ self.onmessage = (event: MessageEvent<EngineRequest>) => {
         }
         case 'load': {
           const revision = engine.load_package(new Uint8Array(request.payload as ArrayBuffer));
+          response.value = { revision, residents: JSON.parse(engine.resident_revisions()), metadata: JSON.parse(engine.package_metadata()) }; break;
+        }
+        case 'loadCatalog': {
+          const input = request.payload as { bytes: ArrayBuffer; context: { season: number; season_type: string; source: string } };
+          const revision = engine.load_catalog_package(new Uint8Array(input.bytes), JSON.stringify(input.context));
           response.value = { revision, residents: JSON.parse(engine.resident_revisions()), metadata: JSON.parse(engine.package_metadata()) }; break;
         }
         case 'query': response.value = JSON.parse(engine.query(JSON.stringify(request.payload as QueryRequest))); break;

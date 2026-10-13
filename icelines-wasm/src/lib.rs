@@ -127,6 +127,28 @@ struct ActivePackage {
     input_bytes: usize,
 }
 
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CatalogContext {
+    season: u32,
+    season_type: SeasonType,
+    source: String,
+}
+
+impl CatalogContext {
+    fn validate(&self, package: &SeasonPackage) -> Result<(), EngineError> {
+        if self.season != package.season
+            || self.season_type != package.season_type
+            || self.source != package.source
+        {
+            return Err(EngineError::InvalidPackage(
+                "package does not match catalog context".into(),
+            ));
+        }
+        Ok(())
+    }
+}
+
 #[wasm_bindgen]
 pub struct BrowserEngine {
     active: Option<ActivePackage>,
@@ -152,6 +174,16 @@ impl BrowserEngine {
     /// Stage and validate before replacing the active repository.
     pub fn load_package(&mut self, bytes: &[u8]) -> Result<String, JsValue> {
         self.load_bytes(bytes)
+            .map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+
+    /// Check catalog identity before selecting or replacing any resident window.
+    pub fn load_catalog_package(
+        &mut self,
+        bytes: &[u8],
+        expected: &str,
+    ) -> Result<String, JsValue> {
+        self.load_catalog_bytes(bytes, expected)
             .map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
@@ -255,18 +287,48 @@ impl BrowserEngine {
     }
 
     pub fn load_bytes(&mut self, bytes: &[u8]) -> Result<String, EngineError> {
+        self.load_bytes_with_context(bytes, None)
+    }
+
+    pub fn load_catalog_bytes(
+        &mut self,
+        bytes: &[u8],
+        expected: &str,
+    ) -> Result<String, EngineError> {
+        let context: CatalogContext = serde_json::from_str(expected)
+            .map_err(|e| EngineError::InvalidPackage(format!("invalid catalog context: {e}")))?;
+        self.load_bytes_with_context(bytes, Some(&context))
+    }
+
+    fn load_bytes_with_context(
+        &mut self,
+        bytes: &[u8],
+        context: Option<&CatalogContext>,
+    ) -> Result<String, EngineError> {
         if bytes.len() > MAX_PACKAGE_BYTES {
             return Err(EngineError::InvalidPackage(
                 "expanded package exceeds 100 MiB".into(),
             ));
         }
         let revision = format!("{:x}", Sha256::digest(bytes));
-        if self.select_revision(&revision).is_ok() {
+        if let Some(window) = self
+            .active
+            .iter()
+            .chain(self.resident.iter())
+            .find(|window| window.revision == revision)
+        {
+            if let Some(context) = context {
+                context.validate(&window.package)?;
+            }
+            self.select_revision(&revision)?;
             return Ok(revision);
         }
         package_limits::validate(bytes).map_err(EngineError::InvalidPackage)?;
         let package: SeasonPackage = serde_json::from_slice(bytes)
             .map_err(|e| EngineError::InvalidPackage(e.to_string()))?;
+        if let Some(context) = context {
+            context.validate(&package)?;
+        }
         if package.schema_version != 1 {
             return Err(EngineError::InvalidPackage(
                 "unsupported schema version".into(),
@@ -553,6 +615,70 @@ mod tests {
         value["season"] = season.into();
         value["stats"][0]["seasonId"] = season.into();
         value
+    }
+
+    #[test]
+    fn catalog_context_rejection_preserves_active_and_resident_order() {
+        let mut engine = BrowserEngine::new();
+        load(&mut engine, &season_package(20232024)).unwrap();
+        load(&mut engine, &season_package(20242025)).unwrap();
+        let bytes = serde_json::to_vec(&package()).unwrap();
+        let before = serde_json::to_value(engine.execute(&request("")).unwrap()).unwrap();
+        let order = engine.resident_revisions();
+        for context in [
+            serde_json::json!({"season": 20242025, "season_type": "regular", "source": "fixture"}),
+            serde_json::json!({"season": 20252026, "season_type": "playoff", "source": "fixture"}),
+            serde_json::json!({"season": 20252026, "season_type": "regular", "source": "other"}),
+        ] {
+            let error = engine
+                .load_catalog_bytes(&bytes, &context.to_string())
+                .unwrap_err();
+            assert!(error.to_string().contains("does not match catalog context"));
+            assert_eq!(engine.resident_revisions(), order);
+            assert_eq!(
+                serde_json::to_value(engine.execute(&request("")).unwrap()).unwrap(),
+                before
+            );
+        }
+    }
+
+    #[test]
+    fn catalog_cache_hits_validate_before_selection_and_preserve_query_parity() {
+        let mut engine = BrowserEngine::new();
+        let bytes = serde_json::to_vec(&package()).unwrap();
+        let context =
+            serde_json::json!({"season": 20252026, "season_type": "regular", "source": "fixture"})
+                .to_string();
+        let revision = engine.load_catalog_bytes(&bytes, &context).unwrap();
+        let expected = serde_json::to_value(engine.execute(&request("")).unwrap()).unwrap();
+        for active_season in [20252026, 20242025] {
+            load(&mut engine, &season_package(active_season)).unwrap();
+            let order = engine.resident_revisions();
+            let before = serde_json::to_value(engine.execute(&request("")).unwrap()).unwrap();
+            for invalid in [
+                r#"{"season":20242025,"season_type":"regular","source":"fixture"}"#,
+                r#"{"season":20252026,"season_type":"playoff","source":"fixture"}"#,
+                r#"{"season":20252026,"season_type":"regular","source":"other"}"#,
+                r#"{"season":20252026,"season_type":"regular","source":"fixture","extra":1}"#,
+                r#"{"season":20252026,"season_type":"regular"}"#,
+                "invalid JSON",
+            ] {
+                assert!(engine.load_catalog_bytes(&bytes, invalid).is_err());
+                assert_eq!(engine.resident_revisions(), order);
+                assert_eq!(
+                    serde_json::to_value(engine.execute(&request("")).unwrap()).unwrap(),
+                    before
+                );
+            }
+        }
+        assert_eq!(
+            engine.load_catalog_bytes(&bytes, &context).unwrap(),
+            revision
+        );
+        assert_eq!(
+            serde_json::to_value(engine.execute(&request("")).unwrap()).unwrap(),
+            expected
+        );
     }
 
     #[test]
