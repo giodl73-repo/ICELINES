@@ -1,0 +1,18 @@
+{
+  "run_id": 38480364686,
+  "conclusion": "success",
+  "artifact_id": 11856449383,
+  "artifact_name": "icelines-browser-e21a643e8194da7923f7cd409af046f7d56337d3",
+  "artifact_commit": "e21a643e8194da7923f7cd409af046f7d56337d3",
+  "parents": [
+    "ede05b79502273e29c7b5f1c2a2991cbc7f3bab3",
+    "58b6941fdb5a85b867fc1202454d23ba27ba3bbd"
+  ],
+  "reviewed_head": "58b6941fdb5a85b867fc1202454d23ba27ba3bbd",
+  "shell_build": "bc6c6f7f03ec1ef1794b9818984ec69e05e37e9b5d6099eeefd5f78e162e9d7b",
+  "wasm_sha256": "2e4c853309a32d8366c282afe113626fde5c25b26349bd9194ceafe59123f57b",
+  "verified_files": 105,
+  "packages": 75,
+  "browser_regression_sha256": "fe2af4a4c9312fbf34b4b5ee6b77eee930cde91ca14e8c5dfbe3109b4b29207f",
+  "scope": "Exact latest retained PR CI bytes tested in actual owned Chromium including all 933 names/ranks, AX, printing full rows/restoration, keyboard/detail/failure and offline process-close saved933/fresh835/detail. Not master publication, Windows memory, Android, physical reader/printer or resolved PDF accented-name extraction."
+}

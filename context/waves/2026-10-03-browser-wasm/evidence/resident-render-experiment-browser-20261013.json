@@ -1,0 +1,18 @@
+{
+  "verified": true,
+  "artifact": {
+    "commit": "a971155cde1420eabb32dfe44e245968e1919e56",
+    "shell_build": "a7cc18c1a64c72a7906ddf89a7346e52a2362f24ac58db2ccc8306d248e9fc30",
+    "verified_files": 105,
+    "packages": 75
+  },
+  "scope": "Resident-list experiment: unchanged queries preserve list nodes/handlers; selection, saved state, same-revision import replacement, unload keep semantics.",
+  "evidence": {
+    "queries_preserve_nodes_and_handlers": 5,
+    "season_selection": true,
+    "save_kept": true,
+    "same_revision_import_replaced_record": true,
+    "import_record_selected_after_switch": true,
+    "unload_preserved_saved": true
+  }
+}

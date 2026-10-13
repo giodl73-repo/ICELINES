@@ -1,0 +1,8 @@
+{
+  "artifact_commit": "680a89cb594004c4160e1333928e2a0c5ae05e0b",
+  "scope": "Original full workload with sequential read-only CDP heap/DOM/WASM/process snapshots. No forced GC, altered flags or observer-buffer changes. Inspector timing can affect collection; nearest preceding OS sample sometimes belongs to a prior workload phase. Renderer totals include all owned renderer processes and cannot be assigned solely to the app or WASM.",
+  "runner_sha256": "1543691e615b3601dcd26d204525f564ef9a0de1bb18aa259ac3b87627ec9189",
+  "snapshot_helper_sha256": "dc3e021c7e797dd6e0d4f9bf966543f3a28d80d45461811910b6b2e87ea8806c",
+  "sampler_sha256": "fef055f0dbbdaee58013089814436f5cd8c8d231c90e9c3fa40e416d4aaa50bc",
+  "acceptance_comparison": false
+}

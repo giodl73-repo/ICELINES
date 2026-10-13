@@ -1,0 +1,12 @@
+{
+  "experiment_branch": "codex/wasm-resident-render-experiment",
+  "experiment_commit": "a971155cde1420eabb32dfe44e245968e1919e56",
+  "adopted": false,
+  "control_report": "viewport-print-memory-20261013.json",
+  "experiment_peak_mib": 444.4921875,
+  "experiment_blank_mib": 232.47265625,
+  "control_peak_mib": 447.03125,
+  "control_blank_mib": 234.60546875,
+  "scope": "Resident-list signature skip and late lookup. Five unchanged queries preserve list nodes/handlers; selection, save, same-revision reimport and unload checks pass. Approximately 2.54 MiB total difference accompanies 2.13 MiB blank-baseline difference; no convincing normal-workload saving established. Runtime experiment not promoted.",
+  "browser_probe_sha256": "b179ac38c1a2ee4434a384d365d52ebe7f2d41a08469df6695fa5c316b4bfde0"
+}
