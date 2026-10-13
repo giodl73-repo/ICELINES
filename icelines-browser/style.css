@@ -28,3 +28,4 @@ table{border-collapse:collapse;width:100%;background:var(--surface);color:var(--
 }
 #analysis .table-scroll:has(.viewport-table){max-height:70vh;overflow:auto}.viewport-table thead{position:sticky;top:0;z-index:1;background:var(--surface)}
 #analysis .table-scroll:has(.viewport-table){scroll-padding-top:48px}
+#analysis .table-scroll:has(.viewport-table){overflow-anchor:none}

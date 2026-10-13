@@ -123,6 +123,7 @@ export class ViewportTable {
     this.start = start; this.end = end;
     const focused = document.activeElement?.closest<HTMLTableRowElement>('tr[data-result-index]');
     const focusedIndex = preserveFocus && focused && this.body.contains(focused) ? Number(focused.dataset.resultIndex) : undefined;
+    const previousScroll = container.scrollTop;
     // Blurring a recycled focused button can force layout during the update.
     // Keep document height stable while spacers are temporarily detached.
     container.style.minHeight = `${Math.min(this.htmlTable.getBoundingClientRect().height, window.innerHeight * .7)}px`;
@@ -146,6 +147,7 @@ export class ViewportTable {
       if (end < this.rows.length) this.body.append(this.bottom);
     }
     container.style.minHeight = '';
+    if (virtual) container.scrollTop = previousScroll;
     if (focusedIndex !== undefined) {
       if (focusedIndex >= start && focusedIndex < end) {
         this.body.querySelector<HTMLButtonElement>(`tr[data-result-index="${focusedIndex}"] button`)?.focus({ preventScroll: true });
