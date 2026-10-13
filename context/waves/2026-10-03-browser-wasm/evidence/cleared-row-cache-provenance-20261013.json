@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "candidate_commit": "18fcb68a38d9479c2c3036a6ca8c2f7f67b83f62",
+  "control_commit": "653c876b",
+  "candidate_scope": "At most 1024 cleared row shells retained across same-column shrink/grow. Player text, IDs and callbacks cleared; unload and column transitions release the pool.",
+  "unit_tests": 147,
+  "memory_method": "Original production OS-process sampler, all 75 packages, both imports, 20 queries and restart. Sequential candidate then fresh control. No forced GC or debugger intervention.",
+  "acceptance_runner_sha256": "74982d8839e1b0b1bfa11ce2383950e0661df9fb55beddeed767c9478766075f",
+  "acceptance": "Actual browser confirms 28 tail rows cleared, all original row nodes reused when returning to the larger season, correct tail-player detail, process-close offline restoration, failed query clearing and retry.",
+  "decision": "Not adopted: observed private peaks 537.18 versus 529.66 MiB, with blank baselines 234.07 versus 226.30 MiB. The total difference is approximately the baseline difference; no meaningful saving established. Stable implementation continues trimming spare pool entries.",
+  "target_mib": 250,
+  "target_changed": false,
+  "publication": "Neither experiment nor local evidence commits deployed; PR89 runtime unchanged."
+}
