@@ -63,7 +63,7 @@ function showAnalysis(): void {
   panel.open = false;
   if (transferFocus) element('analysis').focus();
 }
-const engine = new EngineClient(message => {
+const engine = EngineClient.deferred(message => {
   resident.clear();
   engineUnavailable = true; cancelAcquisition(); ++querySequence;
   recoveryCopy = active ?? recoveryCopy; active = undefined; result = undefined;
@@ -427,7 +427,7 @@ async function reloadCatalog(): Promise<void> {
 element('retry-catalog').onclick = () => { void reloadCatalog(); };
 async function start(): Promise<void> {
   await reloadCatalog();
-  await engine.request('currentSeason', null); await library();
+  await library();
   started = true;
   const view = parseViewHash(location.hash);
   if (view) { await applyViewRoute(view); return; }

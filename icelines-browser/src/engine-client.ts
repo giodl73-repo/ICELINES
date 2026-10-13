@@ -5,15 +5,26 @@ export class EngineClient {
   private worker?: WorkerHandle;
   private epoch = 0;
   private nextId = 0;
+  private cold = false;
   generation = 0;
-  get available(): boolean { return !!this.worker; }
+  get available(): boolean { return this.cold || !!this.worker; }
   private pending = new Map<number, { generation: number; resolve: (value: unknown) => void; reject: (reason: Error) => void; timer: ReturnType<typeof setTimeout> }>();
   constructor(private onFailure: (message: string) => void,
     private createWorker: () => WorkerHandle = () => new Worker(new URL('./worker.js', import.meta.url), { type: 'module' }),
-    private timeoutMs = 120000) { this.restart(); }
+    private timeoutMs = 120000, options: { deferStart?: boolean } = {}) {
+    this.cold = options.deferStart ?? false;
+    if (!this.cold) this.restart();
+  }
+  static deferred(onFailure: (message: string) => void): EngineClient {
+    return new EngineClient(onFailure, undefined, undefined, { deferStart: true });
+  }
   restart(): void {
     this.worker?.terminate(); this.worker = undefined;
-    this.changeContext(); const epoch = ++this.epoch;
+    this.changeContext(); this.startWorker();
+  }
+  private startWorker(): void {
+    this.cold = false;
+    const epoch = ++this.epoch;
     let worker: WorkerHandle;
     try { worker = this.createWorker(); }
     catch { queueMicrotask(() => this.fail(epoch, 'Engine could not start.')); return; }
@@ -52,6 +63,9 @@ export class EngineClient {
   }
   // Listed buffers are consumed by the worker; callers retain backup bytes separately.
   request<T>(operation: Operation, payload: unknown, transfer: Transferable[] = []): Promise<T> {
+    // Starting the first worker must preserve a context already selected by
+    // the caller. Only an explicit restart cancels work/advances generation.
+    if (this.cold) this.startWorker();
     const worker = this.worker;
     if (!worker) return Promise.reject(new EngineStoppedError('Engine unavailable. Restart it or reload the application.'));
     const request: EngineRequest = { schema_version: 1, request_id: ++this.nextId, context_generation: this.generation, operation, payload };
