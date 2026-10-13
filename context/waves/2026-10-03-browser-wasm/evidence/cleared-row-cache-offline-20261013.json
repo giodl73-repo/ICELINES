@@ -1,0 +1,65 @@
+{
+  "started_at": "2026-10-13T19:34:36.634Z",
+  "verified": true,
+  "scope": "Isolated Chromium process close/reopen with offline network control; saved versus unsaved seasons, fresh query and player detail. Not physical-phone, total-memory or remote-rollback proof.",
+  "evidence": {
+    "saved_unfiltered_rows": 933,
+    "cleared_cache": {
+      "spare_count": 28,
+      "cleared": true
+    },
+    "cached_rows_reused": true,
+    "regrown_tail_player_detail": "Jake Livanavage",
+    "browser_process_closed": true,
+    "local_server_stopped": true,
+    "offline": {
+      "online": false,
+      "probe_failed": true
+    },
+    "pending_table": {
+      "visibility": "hidden",
+      "inert": true,
+      "rows": 933
+    },
+    "fresh_filtered_rows": 835,
+    "attached_rows": {
+      "common_rows_unchanged": true,
+      "added": 0,
+      "removed": 98,
+      "rows": 835,
+      "previous_rows": 933
+    },
+    "player_detail": "Connor McDavid",
+    "failed_requests": [
+      {
+        "url": "http://127.0.0.1:62521/ICELINES/workbench/uncached-acceptance-probe-1791920081933",
+        "error": "net::ERR_INTERNET_DISCONNECTED"
+      }
+    ],
+    "failed_query_cleared_rows": true,
+    "retry_query_rows": 835
+  },
+  "retained_artifact": {
+    "commit": "18fcb68a38d9479c2c3036a6ca8c2f7f67b83f62",
+    "shell_build": "1ac56b93c6db24e4e1a3955acc1a1ac9c84124829eff283897c5d875cc048944",
+    "verified_files": 104,
+    "packages": 75
+  },
+  "url": "http://127.0.0.1:62521/ICELINES/workbench/",
+  "browser": "153.0.8010.12",
+  "build": {
+    "schema_version": 1,
+    "commit": "18fcb68a38d9479c2c3036a6ca8c2f7f67b83f62",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee"
+  },
+  "saved_package": "20252026-regular",
+  "unsaved_package": "20242025-regular",
+  "finished_at": "2026-10-13T19:34:44.546Z"
+}

@@ -225,6 +225,37 @@ useful investigation area; this pair does not identify a leak or an exact layout
 cost. Raw diagnostic_table_hidden is inherited phase nomenclature in the idle
 report and does not mean that its table was hidden. The 250 MiB gate stays open.
 
+## Cleared row cache experiment — not adopted (2026-10-13)
+
+Prototype 18fcb68a retained up to 1024 cleared row shells when a large regular
+season was followed by a smaller playoff/filter result. Detached names, IDs and
+callbacks were cleared; unload and column transitions released the pool. This
+tested whether avoiding repeated tail-node creation outweighs bounded retention.
+Control was the existing 653c876b renderer that trims spare entries. Both clean
+Windows artifacts share the same WASM bytes. The normal OS-process sampler ran
+all 75 packages, both archive imports, 20 warm queries and restart, sequentially
+candidate then control, without debugger intervention or forced GC.
+
+| Run | Blank private MiB | Full private peak MiB | Warm median ms (upper middle) | Warm maximum ms |
+|---|---:|---:|---:|---:|
+| Cache prototype | 234.07 | 537.18 | 50.09 | 66.16 |
+| Fresh trimming control | 226.30 | 529.66 | 51.49 | 67.38 |
+
+The total difference is approximately the blank-baseline difference. This pair
+does not establish meaningful peak savings or a speed improvement. No further
+repeat was warranted to promote the cache; it is **not adopted**. The stable
+source and PR #89 still trim spare pool entries. All 147 unit tests pass for the
+prototype. Its separate actual-browser check confirms 28 cleared tail nodes,
+reused nodes after regrowth, correct tail-player detail and full offline,
+pending-query, failure-clearing and retry behavior. Functional correctness does
+not establish a memory benefit. Evidence is prefixed cleared-row-cache.
+
+The next candidate is eliminating the redundant full catalog-package JSON
+decode on the main thread. Catalog context still must be checked before the
+engine replaces or selects active data; removing that guard is not an acceptable
+optimization. This is a hypothesis for the next experiment, not measured savings.
+The 250 MiB target remains exceeded and unchanged.
+
 ## Blank-browser target attribution
 
 `blank-browser-targets-20261012.json` records a fresh isolated Chrome 153 process
