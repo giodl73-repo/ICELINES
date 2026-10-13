@@ -1,0 +1,19 @@
+{
+  "candidate_application_commit": "680a89cb594004c4160e1333928e2a0c5ae05e0b",
+  "scope": "Local actual-browser print and AX inspection; canonical JSON reference comes from the complete shared-engine export. PDF layout/ranks pass; exact extracted accented-name text remains partially verified. No Android/physical-printer/screen-reader/publication claim.",
+  "pdf_sha256": "737acf295ffd5234688cf50f916a026176e5703fe6788fe1f720651a5fd5ae08",
+  "pdf_bytes": 205620,
+  "regression_source_sha256": "fe2af4a4c9312fbf34b4b5ee6b77eee930cde91ca14e8c5dfbe3109b4b29207f",
+  "memory_runner_sha256": "f3fdbd700fa4de81bdae18842e13716a851d3a64c856f8dd8c56a59283a8b0f0",
+  "offline_probe_sha256": "5fd32f4ee4816f81057efc4af059be5c4fc9ee8c5dd6b03b2bd7f6f1dda57381",
+  "pre_fix_inspection_sha256": "ca8d47b1481b6ff55a54787ccfada4412f81b1b8a349acf8c32d88bcf08067e4",
+  "font_probe_sha256": "97312d30406e43fb5469d5141e1c3846e0ac5315f462f1efc2e1c3be98d36fb0",
+  "normal_workload_private_peak_mib": 447.03125,
+  "budget_target_met": false,
+  "physical_phone_deferred": true,
+  "producer_unicode_mapping_cause": "unproven",
+  "ci_runs_observed_live_for_previous_head": [
+    38478985389,
+    38478985414
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "scope": "Fresh sequential owned Chromium processes; unchanged launch flags, OS sampler, no forced GC. Startup only, not memory acceptance; one run per configuration.",
+  "source_script": "target/startup-fixed-cost.mjs",
+  "source_sha256": "157b2824fe9094768aa30279cbf16c310123f3a6b2407edcdd137f89339aefc8",
+  "derived_from": "target/idle-engine-memory.mjs",
+  "sampler_sha256": "fef055f0dbbdaee58013089814436f5cd8c8d231c90e9c3fa40e416d4aaa50bc",
+  "artifact": "target/wasm-validation-e0741daa",
+  "baseline_warning": "Blank baselines differed by 10.43 MiB; raw app-minus-minimal difference cannot all be attributed to application code.",
+  "merged_pr": {
+    "number": 90,
+    "reviewed_head": "1ea62df0bfc1281fd982e08f20878fd4b7c607e5",
+    "merge_commit": "ede05b79502273e29c7b5f1c2a2991cbc7f3bab3",
+    "checks_successful": 29,
+    "checks_skipped": 1
+  },
+  "production_runtime_changed": false
+}

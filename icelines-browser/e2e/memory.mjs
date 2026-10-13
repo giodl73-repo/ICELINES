@@ -74,17 +74,26 @@ try {
   });
   const context = await browser.newContext({ serviceWorkers: 'allow', viewport: { width: 1280, height: 800 } });
   const page = await context.newPage();
+  let viewportRenderer = false;
   const queryCommitted = async expectedRows => {
-    await expect(page.locator('#rows tr')).toHaveCount(expectedRows, { timeout: 60000 });
+    if (viewportRenderer) {
+      // Validate the complete result, not just the currently mounted slice.
+      await expect(page.locator('#rows')).toHaveAttribute('data-result-count', String(expectedRows), { timeout: 60000 });
+      await expect(page.locator('#query-summary')).toContainText(`${expectedRows} skaters`);
+      // 800 CSS pixels / 72-pixel rows, rounded up, plus 16 overscan rows per side.
+      expect(await page.locator('#rows tr[data-result-index]').count()).toBeLessThanOrEqual(44);
+    } else await expect(page.locator('#rows tr')).toHaveCount(expectedRows, { timeout: 60000 });
     // Attached rows retain their count while a request is pending. The form
     // stays enabled too, so neither condition alone proves query completion.
     await expect(page.locator('#rows')).toHaveJSProperty('inert', false, { timeout: 60000 });
   };
-  report.query_completion = 'Expected row count and pending tbody.inert cleared before starting the next query.';
+  report.query_completion = 'Complete result count (and query summary for viewport rendering), then pending tbody.inert cleared before starting the next query.';
   await expect.poll(() => samples.length, { timeout: 15000 }).toBeGreaterThan(3);
   phase = 'startup';
   await page.goto(url);
   await expect(page.locator('#catalog option').first()).toBeAttached({ timeout: 60000 });
+  viewportRenderer = await page.locator('#table-view').count() > 0;
+  report.renderer = viewportRenderer ? 'Viewport rows; complete engine result retained, at most 44 mounted players at 1280x800.' : 'Full table rows.';
   await expect.poll(() => samples.filter(sample => sample.phase === 'startup').length, { timeout: 15000 }).toBeGreaterThanOrEqual(2);
   const catalog = JSON.parse(await readFile(resolve(root, 'catalog.json'), 'utf8'));
   for (const [index, entry] of catalog.packages.entries()) {
@@ -118,12 +127,16 @@ try {
     await queryCommitted(expectedPackage.skaters);
     await expect(page.locator('#status')).toContainText('Imported into memory', { timeout: 60000 });
     await expect(page.locator('#rows tr').first()).toBeAttached();
-    report.imports.push({ season_type: seasonType, import_and_render_ms: performance.now() - before, rows: await page.locator('#rows tr').count() });
+    report.imports.push({ season_type: seasonType, import_and_render_ms: performance.now() - before, rows: viewportRenderer ? Number(await page.locator('#rows').getAttribute('data-result-count')) : await page.locator('#rows tr').count() });
     await pause(1000);
   }
   phase = 'warm_query';
   await page.locator('#filter').fill('p>=1 AND gp>=1');
-  const expectedRows = await page.locator('#rows tr').evaluateAll(rows => rows.filter(row => Number(row.cells[3].textContent) >= 1 && Number(row.cells[6].textContent) >= 1).length);
+  const expectedRows = viewportRenderer
+    // The same fixture expectation as the full-table cell check, independent of
+    // the mounted viewport. This does not truncate or alter the engine query.
+    ? JSON.parse(await readFile(resolve(root, catalog.packages.find(entry => String(entry.season) === archiveSeason && entry.season_type === 'playoff').url), 'utf8')).stats.filter(row => row.gamesPlayed >= 1 && row.points >= 1).length
+    : await page.locator('#rows tr').evaluateAll(rows => rows.filter(row => Number(row.cells[3].textContent) >= 1 && Number(row.cells[6].textContent) >= 1).length);
   if (!expectedRows) throw new Error('Imported playoff fixture needs nonempty warm-query results.');
   for (let index = 0; index < 20; index++) {
     const before = performance.now();

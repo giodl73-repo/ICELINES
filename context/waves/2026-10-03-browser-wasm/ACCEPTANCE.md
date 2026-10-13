@@ -114,3 +114,30 @@ outputs preserve identical inventories of all 95 documentation files. This is
 historical preparation. The authorized public rehearsal and final restore are
 now recorded in `evidence/public-rehearsal-provenance-20261013.json`; approval is
 no longer pending for that completed rehearsal.
+
+## Local viewport candidate — not published (2026-10-13)
+
+83da9b55 retains complete query results/exports while rendering a bounded viewport.
+Actual browser traversal covers all 933 skaters, correct last-player detail, forward
+and reverse keyboard windows/terminal boundaries and 77-goalie fallback/export
+parity. A saved 933-player season survives process close/reopen offline; a fresh
+835-player query and detail pass. Type checking and 149 unit tests pass.
+Matching-control private peak is 547.10 MiB; final candidate runs are
+446.23 / 442.02 MiB on the unchanged full workload and original sampler.
+The 250 MiB requirement remains unmet. Narrow desktop layout is not Android proof.
+Current public e0741daa release and its publication/rollback evidence are unchanged.
+See viewport-provenance-20261013.json and MEMORY-ATTRIBUTION.md for limits and the
+retained failed anchoring/height probes. No claim of full first-release readiness.
+
+### Candidate print/AX follow-up
+
+680a89cb adds actual print preparation/restoration and readable print-only layout.
+All 933 player-button names are exposed in engine order in Chromium's AX tree.
+An actual 24-page A4 PDF contains all 933 ranks and complete columns; sample pages
+are visually reviewed. PDF extraction remains partial for 11 accented names,
+with the cause unproven; its report deliberately remains verified:false.
+The sampled accents render correctly, while JSON and AX retain exact names.
+Physical printer/screen-reader/Android behavior is untested. Updated full-workload
+private peak 447.03 MiB still fails 250 MiB. Actual browser regression,
+149 unit tests, type checking and offline process reopen pass. See the retained
+viewport-print evidence; current public release and full-goal gates are unchanged.

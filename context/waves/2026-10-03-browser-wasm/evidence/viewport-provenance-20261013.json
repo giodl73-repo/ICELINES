@@ -1,0 +1,64 @@
+{
+  "candidate_commit": "83da9b556164c6a4afd468ad529c083acfeab286",
+  "control_commit": "a6dc2462cbe4e5020798c6fd7f8ebd205ed185ee",
+  "candidate_artifact": "target/viewport-artifact-terminal",
+  "control_artifact": "target/viewport-control-a6dc2462",
+  "wasm_sha256": "4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee",
+  "engine_binary_identical": true,
+  "scope": "Local Windows full-workload comparison with unchanged Chromium launch flags, original owned-process sampler and no forced GC or debugger network-buffer changes. Full results retained; only presentation nodes bounded. Not physical RAM, Android, deployment or completed 250 MiB acceptance.",
+  "memory": [
+    {
+      "report": "viewport-pre-scroll-fix-memory-20261013.json",
+      "commit": "9e49e789f028e1431c3a6c354ffd5802942a3966",
+      "peak_private_mib": 443.10546875,
+      "blank_private_mib": 233.69921875
+    },
+    {
+      "report": "viewport-height-fix-memory-20261013.json",
+      "commit": "f34c6696380f6c9ca512cdd628922eb6a83ac8f2",
+      "peak_private_mib": 440.5625,
+      "blank_private_mib": 234.04296875
+    },
+    {
+      "report": "viewport-terminal-memory-20261013.json",
+      "commit": "83da9b556164c6a4afd468ad529c083acfeab286",
+      "peak_private_mib": 446.23046875,
+      "blank_private_mib": 232.40625
+    },
+    {
+      "report": "viewport-official-runner-memory-20261013.json",
+      "commit": "83da9b556164c6a4afd468ad529c083acfeab286",
+      "peak_private_mib": 442.0234375,
+      "blank_private_mib": 222.484375
+    },
+    {
+      "report": "viewport-matching-control-memory-20261013.json",
+      "commit": "a6dc2462cbe4e5020798c6fd7f8ebd205ed185ee",
+      "peak_private_mib": 547.1015625,
+      "blank_private_mib": 233.6796875
+    }
+  ],
+  "latest_visible_savings_mib": [
+    100.87109375,
+    105.078125
+  ],
+  "latest_visible_savings_percent": [
+    18.4373616644533,
+    19.20632880663725
+  ],
+  "source_hashes": {
+    "official_memory_runner": "f3fdbd700fa4de81bdae18842e13716a851d3a64c856f8dd8c56a59283a8b0f0",
+    "sampler": "fef055f0dbbdaee58013089814436f5cd8c8d231c90e9c3fa40e416d4aaa50bc",
+    "viewport_regression": "b28b004893b27924f29839003f1a50ef7af8f307ef5e74399ea214883b326db9",
+    "earlier_candidate_runner": "13317b9184f2c4964088df766014ab34d2371382684dff7fd4362192461fd8e5",
+    "offline_runner": "5fd32f4ee4816f81057efc4af059be5c4fc9ee8c5dd6b03b2bd7f6f1dda57381"
+  },
+  "limitations": [
+    "Early pre-fix memory report is not promotion evidence: later scroll checks found anchoring/height defects.",
+    "Initial short sleeps sampled viewport updates too early; permanent regression waits for exact window start.",
+    "Failed anchoring and focused-height reports are retained separately; DOM/keyboard checks pass after the corresponding fixes.",
+    "Final browser regression verifies terminal Tab/Shift+Tab boundaries, all 933 ranks/names, 77-goalie fallback/export parity, 390px layout and failure/retry. A narrow desktop viewport is not an Android test.",
+    "Offline process-close restoration uses saved 933-player data, fresh 835-player query, bounded mounted rows and correct detail.",
+    "Whole-browser 250 MiB target remains unmet. Candidate is not published or merged."
+  ]
+}

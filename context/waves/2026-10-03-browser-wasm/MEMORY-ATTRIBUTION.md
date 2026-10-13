@@ -367,6 +367,32 @@ rows and retries. Functional correctness does not prove a memory benefit.
 Evidence is prefixed pending-opacity. The stable source and public e0741daa
 release retain visibility:hidden. The 250 MiB target is unchanged and unmet.
 
+## Raw package storage representation sizing (2026-10-13)
+
+The engine retains typed imported DTOs alongside each normalized repository,
+partly to support its existing export binding. Before replacing DTOs with
+serialized canonical export bytes, the diagnostic native example compares their
+storage shapes across all 75 retained CI packages:
+
+```powershell
+cargo +1.95.0 run -p icelines-wasm --example package_storage_sizes --locked --offline -- target/wasm-validation-e0741daa
+```
+
+Canonical JSON totals 34.66 MiB across the corpus; native DTO lower bounds total
+28.68 MiB. Canonical bytes exceed the lower bound in 74 of 75 packages. The first
+933-player package is 771,060 canonical bytes versus a 543,631-byte lower bound.
+This does not establish a saving from serialized JSON storage; no representation
+change is adopted. These are sums over the entire corpus, not simultaneous
+resident allocations. The current eight-window bound remains unchanged.
+
+The lower bound includes native vector capacities/inline structs and UTF-8 value
+string lengths, excluding spare String capacity and allocator bookkeeping.
+Pointer width is eight bytes. Native layouts are not WASM32 layouts, and neither
+number measures browser/private/linear-memory peaks. The diagnostic deliberately
+does not claim budget acceptance or an exact resident-heap comparison. Raw report:
+package-storage-sizes-native-20261013.json. Domain code and export behavior remain
+unchanged; the 250 MiB whole-browser requirement stays open.
+
 ## Blank-browser target attribution
 
 `blank-browser-targets-20261012.json` records a fresh isolated Chrome 153 process
@@ -394,3 +420,106 @@ stopped: saved 933-row season restored, second unsaved season not persisted,
 fresh filter returned 835 rows and player detail opened. See
 `ci-review-offline-reopen-20261012.json`. This confirms that the renderer works
 with the CI-produced WASM binary; it does not add phone, memory or rollback proof.
+
+## Startup controls and full-workload layout isolation (2026-10-13)
+
+PR #90 merged as ede05b79 after 29 successful checks (deployment skipped).
+The public release remains the independently verified e0741daa artifact.
+New diagnostics use those exact retained CI bytes, original Chromium flags and
+OS sampler, fresh owned browser processes, and no forced GC.
+
+Startup-only controls measured minimal HTML at 239.34 MiB and the empty offline-ready
+workbench at 276.95 MiB, both with zero engine workers. Blank-browser baselines
+were 222.72 and 233.15 MiB respectively. One run per configuration cannot assign
+the entire raw difference to app code. These are diagnostics, not workload acceptance.
+See startup-minimal-html, startup-empty-workbench and startup-fixed-cost-provenance
+JSON evidence dated 20261013.
+
+A stronger layout experiment runs the complete 75-package workload, both official
+archive imports (905/332 skaters), 20 committed warm queries and engine restart.
+Every result and DOM row is still created; the sole treatment hides the table
+container with display:none from startup. A visible control is bracketed by two
+hidden runs. Private-byte peaks: visible 550.60 MiB;
+hidden 465.41 / 461.78 MiB.
+All runs complete, sample every required phase and keep at most eight residents.
+The observed 85.19–88.82 MiB difference supports investigating
+viewport rendering. It is not a measured saving from virtual scrolling: DOM creation
+still occurs, and removing all table layout is a different, unusable treatment.
+One visible control and two treatments on one workstation do not establish a
+universal saving. No hidden-table change is adopted or published.
+
+Evidence: full-workload-table-hidden-first, full-workload-table-visible,
+full-workload-table-hidden-repeat and full-workload-layout-provenance JSON files
+dated 20261013. Provenance records runner/sampler hashes and raw baselines.
+The 250 MiB whole-browser requirement remains unmet; Android is deferred at the
+user's request. The next renderer candidate must keep every result accessible,
+correct global ranks, keyboard/detail behavior and complete exports, and must
+be measured with actual visible scrolling before any performance claim.
+
+## Viewport renderer prototype (2026-10-13)
+
+Local candidate 83da9b55 keeps the complete engine result, but mounts at most 44
+player rows at 1280×800. Scrolling covers all ranks. The full-table option supports
+browser Find, printing and assistive technology; exports always use every matching
+player. Presentation ranks retain their global offsets. No hockey rules, inputs,
+eight-window residency, saving policy or Rust engine behavior change.
+
+Type checking and 149 browser unit tests pass. The permanent opt-in regression is:
+
+`node icelines-browser/e2e/viewport.mjs --artifact target/viewport-artifact-terminal`
+
+Its real browser walks all 933 skaters, compares ranks/names with the complete JSON
+export, opens the last player, traverses 120 forward/reverse Tab steps, checks both
+terminal Tab boundaries, exercises the 77-goalie full-table/export path and checks
+failure clearing/retry and a 390px viewport. Offline process-close/reopen restores
+saved 933-player data with 42 mounted rows; offline fresh filtering returns 835,
+all-mode names match the full fixture expectation, and player detail works.
+These do not establish real Android or screen-reader acceptance.
+
+Stronger repeated probes caught page scroll anchoring and focused-node height
+clamping. The prototype disables anchoring while virtual rendering is active and
+preserves container height while recycling rows. Terminal rows stay mounted for
+keyboard entry/exit from adjacent controls. Failed probes are retained; initial
+sleep-based traversal probes were too weak and are not the final regression.
+
+Matching Windows WASM SHA-256 is 4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee. Control peak: 547.10 MiB;
+final candidate runs: 446.23 / 442.02 MiB.
+The observed 100.87–105.08 MiB reduction is about
+18–19%. All runs keep 75 packages, both 905/332-player archive imports, 20 committed
+warm queries, eight resident windows and restart. Browser flags, original sampler
+and network observation remain unchanged, with no forced GC. Baselines and source
+hashes are in viewport-provenance-20261013.json. The final repeat uses the reusable
+memory runner's viewport-aware complete-result checks; it does not replace engine
+query size with the mounted-row count. Warm-query expectations come from the full
+playoff fixture, applying the same GP/points thresholds as the legacy cell check.
+
+This is a measured local candidate, not a publication or full validation pass.
+Both 250 MiB comparisons still fail. Android remains deferred. Raw browser,
+offline, candidate/control memory and failed-probe reports use the viewport- prefix.
+
+## Print/accessibility follow-up (2026-10-13)
+
+Candidate application 680a89cb fixes an actual print defect: the original
+full-table A4 output clipped the pace column and printed faint names. Print CSS
+now fits every column with black text, repeated headers and compact unsplit rows.
+Before printing, the renderer mounts the complete result; after printing it
+restores viewport mode. The permanent browser regression checks those transitions
+and all 933 accessible player-button names in engine order. The actual A4 PDF has
+24 pages and all 933 ranks; first, second and last pages are rendered and reviewed.
+
+Exact PDF text preservation is still only partial: two PDF parsers extract
+replacement characters for 11 accented names, although sampled raster glyphs
+show the accent correctly. A Segoe UI probe reproduces the same mismatch; no font
+change is adopted and the producer/mapping cause is unproven. The PDF report keeps
+verified:false with layout_verified:true. AX names and canonical JSON preserve
+all original names. This is not a physical screen-reader/printer/Android claim.
+Raw failure, layout-partial, browser, offline and memory reports plus the exact PDF
+and source hashes are retained under the viewport-print prefix.
+
+Type checking and 149 unit tests pass. The actual browser regression repeats
+all ranks, last detail, keyboard boundaries, filter/failure/retry and goalie
+fallback checks. Offline process reopening/fresh query/detail passes. Updated
+normal full-workload private peak is 447.03 MiB against the prior matching 547.10 MiB
+control, with all 75 packages/two imports/20 queries/restart and original sampler.
+The 250 MiB requirement and real Android gate remain open. The public release
+remains e0741daa; PR91 is a draft candidate, not deployed readiness.
