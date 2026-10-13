@@ -141,3 +141,14 @@ Physical printer/screen-reader/Android behavior is untested. Updated full-worklo
 private peak 447.03 MiB still fails 250 MiB. Actual browser regression,
 149 unit tests, type checking and offline process reopen pass. See the retained
 viewport-print evidence; current public release and full-goal gates are unchanged.
+
+## Viewport source merged — publication pending
+
+PR91 reviewed head58b6941f merged after 29 successful checks (deploy skipped)
+as master4d1f513e29869bceba4fec9bf08d51511ad74207. Exact retained PR preview
+e21a643e passed actual browser/AX/print preparation/keyboard/detail and offline
+process-close checks; temporary PR artifact is not a master publication.
+Master runs38482496646 (native CI) and38482496664 (browser artifact) are in progress.
+Current public e0741daa release is unchanged. The rejected resident-list runtime
+experiment is excluded; post-merge local runtime matches reviewed/merged source.
+The 250 MiB target, physical Android and qualified PDF extraction gaps remain open.
