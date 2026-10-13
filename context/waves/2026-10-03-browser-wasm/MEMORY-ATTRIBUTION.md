@@ -455,3 +455,44 @@ The 250 MiB whole-browser requirement remains unmet; Android is deferred at the
 user's request. The next renderer candidate must keep every result accessible,
 correct global ranks, keyboard/detail behavior and complete exports, and must
 be measured with actual visible scrolling before any performance claim.
+
+## Viewport renderer prototype (2026-10-13)
+
+Local candidate 83da9b55 keeps the complete engine result, but mounts at most 44
+player rows at 1280×800. Scrolling covers all ranks. The full-table option supports
+browser Find, printing and assistive technology; exports always use every matching
+player. Presentation ranks retain their global offsets. No hockey rules, inputs,
+eight-window residency, saving policy or Rust engine behavior change.
+
+Type checking and 149 browser unit tests pass. The permanent opt-in regression is:
+
+`node icelines-browser/e2e/viewport.mjs --artifact target/viewport-artifact-terminal`
+
+Its real browser walks all 933 skaters, compares ranks/names with the complete JSON
+export, opens the last player, traverses 120 forward/reverse Tab steps, checks both
+terminal Tab boundaries, exercises the 77-goalie full-table/export path and checks
+failure clearing/retry and a 390px viewport. Offline process-close/reopen restores
+saved 933-player data with 42 mounted rows; offline fresh filtering returns 835,
+all-mode names match the full fixture expectation, and player detail works.
+These do not establish real Android or screen-reader acceptance.
+
+Stronger repeated probes caught page scroll anchoring and focused-node height
+clamping. The prototype disables anchoring while virtual rendering is active and
+preserves container height while recycling rows. Terminal rows stay mounted for
+keyboard entry/exit from adjacent controls. Failed probes are retained; initial
+sleep-based traversal probes were too weak and are not the final regression.
+
+Matching Windows WASM SHA-256 is 4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee. Control peak: 547.10 MiB;
+final candidate runs: 446.23 / 442.02 MiB.
+The observed 100.87–105.08 MiB reduction is about
+18–19%. All runs keep 75 packages, both 905/332-player archive imports, 20 committed
+warm queries, eight resident windows and restart. Browser flags, original sampler
+and network observation remain unchanged, with no forced GC. Baselines and source
+hashes are in viewport-provenance-20261013.json. The final repeat uses the reusable
+memory runner's viewport-aware complete-result checks; it does not replace engine
+query size with the mounted-row count. Warm-query expectations come from the full
+playoff fixture, applying the same GP/points thresholds as the legacy cell check.
+
+This is a measured local candidate, not a publication or full validation pass.
+Both 250 MiB comparisons still fail. Android remains deferred. Raw browser,
+offline, candidate/control memory and failed-probe reports use the viewport- prefix.
