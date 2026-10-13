@@ -367,6 +367,32 @@ rows and retries. Functional correctness does not prove a memory benefit.
 Evidence is prefixed pending-opacity. The stable source and public e0741daa
 release retain visibility:hidden. The 250 MiB target is unchanged and unmet.
 
+## Raw package storage representation sizing (2026-10-13)
+
+The engine retains typed imported DTOs alongside each normalized repository,
+partly to support its existing export binding. Before replacing DTOs with
+serialized canonical export bytes, the diagnostic native example compares their
+storage shapes across all 75 retained CI packages:
+
+```powershell
+cargo +1.95.0 run -p icelines-wasm --example package_storage_sizes --locked --offline -- target/wasm-validation-e0741daa
+```
+
+Canonical JSON totals 34.66 MiB across the corpus; native DTO lower bounds total
+28.68 MiB. Canonical bytes exceed the lower bound in 74 of 75 packages. The first
+933-player package is 771,060 canonical bytes versus a 543,631-byte lower bound.
+This does not establish a saving from serialized JSON storage; no representation
+change is adopted. These are sums over the entire corpus, not simultaneous
+resident allocations. The current eight-window bound remains unchanged.
+
+The lower bound includes native vector capacities/inline structs and UTF-8 value
+string lengths, excluding spare String capacity and allocator bookkeeping.
+Pointer width is eight bytes. Native layouts are not WASM32 layouts, and neither
+number measures browser/private/linear-memory peaks. The diagnostic deliberately
+does not claim budget acceptance or an exact resident-heap comparison. Raw report:
+package-storage-sizes-native-20261013.json. Domain code and export behavior remain
+unchanged; the 250 MiB whole-browser requirement stays open.
+
 ## Blank-browser target attribution
 
 `blank-browser-targets-20261012.json` records a fresh isolated Chrome 153 process
