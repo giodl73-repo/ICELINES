@@ -21,6 +21,7 @@ export class ViewportTable {
   private frame = 0;
   private printMode: string | undefined;
   private printScroll = 0;
+  private printInnerScroll = 0;
   private readonly htmlTable: HTMLTableElement;
   private readonly top: HTMLTableRowElement;
   private readonly bottom: HTMLTableRowElement;
@@ -29,19 +30,24 @@ export class ViewportTable {
     private readonly mode: HTMLSelectElement) {
     this.table = new PlayerTable(body, head, open);
     this.htmlTable = body.closest('table')!;
+    this.htmlTable.parentElement!.addEventListener('scroll', () => this.schedule(), { passive: true });
     this.top = this.spacer(); this.bottom = this.spacer();
     window.addEventListener('scroll', () => this.schedule(), { passive: true });
     window.addEventListener('resize', () => this.schedule(), { passive: true });
     window.addEventListener('beforeprint', () => {
       if (this.pending || this.printMode !== undefined) return;
       this.printMode = mode.value; this.printScroll = window.scrollY;
+      this.printInnerScroll = this.htmlTable.parentElement!.scrollTop;
       mode.value = 'all'; this.draw();
     });
     window.addEventListener('afterprint', () => {
       if (this.printMode === undefined) return;
       mode.value = this.printMode; this.printMode = undefined; this.draw();
       const scroll = this.printScroll;
-      requestAnimationFrame(() => { if (!this.pending) window.scrollTo(0, scroll); });
+      const inner = this.printInnerScroll;
+      requestAnimationFrame(() => {
+        if (!this.pending) { window.scrollTo(0, scroll); this.htmlTable.parentElement!.scrollTop = inner; }
+      });
     });
     mode.addEventListener('change', () => {
       if (this.pending) return;
@@ -88,11 +94,10 @@ export class ViewportTable {
   }
 
   render(rows: PlayerRow[], goalie: boolean): void {
-    const tableTop = this.body.getBoundingClientRect().top + window.scrollY;
     this.rows = rows; this.goalie = goalie; this.pending = false; this.mode.disabled = false;
     this.body.dataset.resultCount = String(rows.length);
     // A new sort/filter starts at rank one, including when the old result was long.
-    if (window.scrollY > tableTop + ROW_HEIGHT) window.scrollTo({ top: Math.max(0, tableTop - 160) });
+    this.htmlTable.parentElement!.scrollTop = 0;
     this.draw(0, false);
   }
 
@@ -104,9 +109,13 @@ export class ViewportTable {
   private draw(forcedStart?: number, preserveFocus = true): void {
     if (this.pending) return;
     const virtual = this.mode.value !== 'all';
-    const offset = -this.body.getBoundingClientRect().top;
-    const [start, end] = virtual ? (forcedStart === undefined ? rowWindow(this.rows.length, offset, window.innerHeight)
-      : rowWindow(this.rows.length, (forcedStart + OVERSCAN) * ROW_HEIGHT, window.innerHeight))
+    const container = this.htmlTable.parentElement!;
+    const headerHeight = this.htmlTable.tHead?.getBoundingClientRect().height ?? 0;
+    const viewportHeight = Math.max(1, Math.min(window.innerHeight * .7,
+      container.clientHeight || window.innerHeight * .7) - headerHeight);
+    const offset = container.scrollTop;
+    const [start, end] = virtual ? (forcedStart === undefined ? rowWindow(this.rows.length, offset, viewportHeight)
+      : rowWindow(this.rows.length, (forcedStart + OVERSCAN) * ROW_HEIGHT, viewportHeight))
       : [0, this.rows.length];
     // Scroll events that leave the window unchanged must not allocate or rewrite rows.
     if (forcedStart === undefined && start === this.start && end === this.end
@@ -116,8 +125,7 @@ export class ViewportTable {
     const focusedIndex = preserveFocus && focused && this.body.contains(focused) ? Number(focused.dataset.resultIndex) : undefined;
     // Blurring a recycled focused button can force layout during the update.
     // Keep document height stable while spacers are temporarily detached.
-    const container = this.htmlTable.parentElement!;
-    container.style.minHeight = `${this.htmlTable.getBoundingClientRect().height}px`;
+    container.style.minHeight = `${Math.min(this.htmlTable.getBoundingClientRect().height, window.innerHeight * .7)}px`;
     this.top.remove(); this.bottom.remove();
     this.htmlTable.classList.toggle('viewport-table', virtual);
     this.htmlTable.setAttribute('aria-rowcount', String(this.rows.length + 1));
