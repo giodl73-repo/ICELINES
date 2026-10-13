@@ -78,7 +78,7 @@ export class ViewportTable {
     this.body.dataset.resultCount = String(rows.length);
     // A new sort/filter starts at rank one, including when the old result was long.
     if (window.scrollY > tableTop + ROW_HEIGHT) window.scrollTo({ top: Math.max(0, tableTop - 160) });
-    this.draw(0);
+    this.draw(0, false);
   }
 
   private focus(index: number): void {
@@ -86,7 +86,7 @@ export class ViewportTable {
     button?.focus({ preventScroll: true }); button?.scrollIntoView({ block: 'nearest' });
   }
 
-  private draw(forcedStart?: number): void {
+  private draw(forcedStart?: number, preserveFocus = true): void {
     if (this.pending) return;
     const virtual = this.mode.value !== 'all';
     const offset = -this.body.getBoundingClientRect().top;
@@ -97,6 +97,8 @@ export class ViewportTable {
     if (forcedStart === undefined && start === this.start && end === this.end
       && this.htmlTable.classList.contains('viewport-table') === virtual) return;
     this.start = start; this.end = end;
+    const focused = document.activeElement?.closest<HTMLTableRowElement>('tr[data-result-index]');
+    const focusedIndex = preserveFocus && focused && this.body.contains(focused) ? Number(focused.dataset.resultIndex) : undefined;
     this.top.remove(); this.bottom.remove();
     this.htmlTable.classList.toggle('viewport-table', virtual);
     this.htmlTable.setAttribute('aria-rowcount', String(this.rows.length + 1));
@@ -115,6 +117,11 @@ export class ViewportTable {
       }
       if (start) this.body.prepend(this.top);
       if (end < this.rows.length) this.body.append(this.bottom);
+    }
+    if (focusedIndex !== undefined) {
+      if (focusedIndex >= start && focusedIndex < end) {
+        this.body.querySelector<HTMLButtonElement>(`tr[data-result-index="${focusedIndex}"] button`)?.focus({ preventScroll: true });
+      } else this.htmlTable.parentElement?.focus({ preventScroll: true });
     }
   }
 }
