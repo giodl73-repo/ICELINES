@@ -6,10 +6,10 @@ It does not declare the full plan complete.
 
 ## Current release
 
-- Source: `696c656bead479bde0048059b551c49aa53856eb` (PR #81; includes #79 and #80).
-- Publication: run `37854895167`, attempt 2, successful build and deploy.
-- Shell: `5875fe2396a1a1f19c105355cc597323613e0c10924318b8279b51789d0b445f`.
-- Retained clean artifact verified: 103 files, 75 public packages.
+- Validation source: `0e34ce88fb4c9465d66c40821b94658aa19cf722`; includes the merged renderer and dependency updates. The deferred-engine candidate is not deployed.
+- Retained master build: `38434732162`; publication `38441650974`; final restore `38450322271`, all successful. Deployment used the reviewed retained bytes and the master workflow with PR #88's archive guard.
+- Shell: `058529d3026d453cb2fa8a517f9c2d9e815a4883ca48a7034a22507df6209c02`.
+- Retained clean artifact verified: 104 files, 75 public packages. Static runtime/documentation verification matched 195 files after retrying one transient HTTP 503.
 - Pages source: Actions workflow. `master` and `gh-pages` branch policies exist;
   the existing workflows publish from master and compose documentation from gh-pages.
 - Attempt 1 failed before running deployment steps: master was excluded by the
@@ -32,7 +32,7 @@ It does not declare the full plan complete.
 | Exact release publication and documentation preservation | Retained artifact, deployment run and deployed-release-20261008.json | Static-byte evidence; not browser/offline proof |
 | Application update with saved data | Live two-tab update to 696c656b restored saved season and 49-game schedule; restored p >= 100 returned eight skaters | Selected deployed update passes |
 | Deployed offline reopening and saved query | deployed-offline-reopen-20261012.json: isolated Chromium 153 process closed/reopened offline; saved 933-row season restored, unsaved second season absent, fresh 835-row filter and player detail pass; uncached network probe fails | Selected desktop acceptance passes; physical mobile remains separate |
-| Previous-version rollback and forward restore | Retained artifacts and rollback workflow; local rollback rehearsals | OPEN: remote rehearsal must preserve current documentation and saved bytes; no production rollback performed in this follow-up |
+| Previous-version rollback and forward restore | Public rollback run 38449905372 to 696c656b, forward restore 38450322271 to 0e34ce88; browser/offline reports and exact saved-record hashes | Selected close-and-reopen path passes with saved season/schedule bytes unchanged; in-place update activation remains separately incomplete |
 | Whole-browser staging/resident peak memory | desktop-process-memory-20261012.json: Windows process-tree samples across all 75 packages, eight residents, regular/playoff imports and warm queries; 590.81 MiB sampled private bytes, 900.45 MiB summed working set, 230.92 MiB blank-browser private baseline | OPEN: provisional 250 MiB target is exceeded; investigate allocations and validate representative devices. Sampled private allocations and shared-page working-set sums are not exact concurrent physical-memory peaks |
 | Physical mobile, touch/picker and latency | Desktop browser at narrow viewport | OPEN: real mobile browser/device measurements required |
 | Compare/history/team/cards/fantasy | Plan WP-BW-07 requires separately scoped contracts and parity | Later waves; not implemented or implicitly accepted by the first slice |

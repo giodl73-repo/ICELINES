@@ -97,6 +97,54 @@ passed. Actual WASM distribution verification covered 75 packages and the
 eight-window residency bound. Physical-phone and public rollback gates remain
 open; the public app has not been republished for this experiment.
 
+## Deferred engine startup (2026-10-13)
+
+The page previously created its worker immediately and awaited an unused
+current-season request before opening the library. The candidate creates the
+worker on the first data operation. Explicit restart/recovery still starts it
+immediately; initial creation preserves the caller's selected context generation.
+Saved stats and saved schedules automatically start it when restoration needs Rust.
+
+Control: clean master 405cfe68. Candidate: clean 393b9c2c. Both Windows-built
+artifacts use WASM SHA-256
+`4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee`.
+This is distinct from the retained Linux CI binary; no Rust or dependency changes
+are part of this optimization.
+
+| Settled empty-library run | Blank browser private MiB | Idle private MiB | Idle minus blank, diagnostic only | Engine workers |
+|---|---:|---:|---:|---:|
+| Control 1 | 234.31 | 287.58 | 53.27 | 1 |
+| Candidate 1 | 230.64 | 275.27 | 44.64 | 0 |
+| Candidate 2 | 227.49 | 272.80 | 45.30 | 0 |
+| Control 2 | 230.90 | 290.18 | 59.28 | 1 |
+
+The startup-only probe waits for application readiness, completed offline-shell
+preparation and five idle seconds. Worker inventory is collected afterward, in a
+diagnostic phase. These sequential runs suggest a modest idle saving; neither
+total nor baseline-subtracted numbers redefine the 250 MiB whole-browser target.
+The standard runner's early startup boundary alone was inconclusive because the
+blank-browser baselines varied and it did not wait for full application readiness.
+
+The full workload still fails: control 572.34 MiB private peak and candidate
+566.14 MiB, with blank peaks 245.56/228.30 MiB. The baseline difference exceeds
+the peak difference, so this does not establish a full-workload memory saving.
+Both load all 75 packages, retain at most eight windows, import 905/332 players,
+run 20 warm queries and restart. Warm medians were 68.47/69.41 ms and maxima
+86.76/101.11 ms; no speed improvement is claimed. A separate public browser
+verification overlapped part of the control run, further limiting timing claims.
+
+All 144 browser unit tests and TypeScript checks pass. Candidate offline reopening
+restores the saved season, excludes the unsaved season, runs a fresh filter and
+opens player detail. A second actual-browser test starts with zero engine workers,
+imports/projects a two-game schedule as its first engine operation, observes one
+worker, saves it without a stats dataset and restores it offline after process
+closure. Evidence files are prefixed demand-engine in this directory.
+
+The user explicitly retained the 250 MiB target and deferred physical Android
+testing. This change is an incremental startup optimization, not full resource
+acceptance. No forced GC or debugger-buffer change was used in these candidate
+and control workload measurements.
+
 ## Blank-browser target attribution
 
 `blank-browser-targets-20261012.json` records a fresh isolated Chrome 153 process

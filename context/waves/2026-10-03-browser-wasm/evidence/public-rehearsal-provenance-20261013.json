@@ -1,0 +1,13 @@
+{
+  "publication_run": 38441650974,
+  "artifact_build_run": 38434732162,
+  "published_commit": "0e34ce88fb4c9465d66c40821b94658aa19cf722",
+  "shell_build": "058529d3026d453cb2fa8a517f9c2d9e815a4883ca48a7034a22507df6209c02",
+  "rollback_run": 38449905372,
+  "rollback_commit": "696c656bead479bde0048059b551c49aa53856eb",
+  "restore_run": 38450322271,
+  "browser_update_mode": "close-and-reopen",
+  "saved_data": "One public 933-player season and one two-game repository schedule fixture; exact stored byte hashes, revisions, metadata and settings preserved. Fresh p>=100 query returns eight players and detail opens offline.",
+  "limitations": "In-place consent-driven activation did not complete within 60 seconds in the isolated Chromium harness; kept separate as incomplete evidence. Android deferred; memory target remains failed.",
+  "documentation": "Validated against deployment preservation manifest. Earlier local git archive had Windows CRLF conversion and was not a valid byte baseline."
+}

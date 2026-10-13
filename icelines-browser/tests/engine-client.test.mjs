@@ -48,6 +48,18 @@ test('explicit restart before the first request invalidates the cold context onc
   reply(workers[0],20262027); assert.equal(await request,20262027);
   assert.equal(workers.length,1);
 });
+
+test('deferred constructor failure is reported once and does not retry on ordinary requests', async () => {
+  let attempts=0; const failures=[];
+  const client=new EngineClient(message=>failures.push(message),()=>{attempts++;throw new Error('worker unavailable');},120000,{deferStart:true});
+  assert.equal(attempts,0);
+  await assert.rejects(client.request('load',new ArrayBuffer(0)),EngineStoppedError);
+  assert.equal(attempts,1); assert.equal(failures.length,1); assert.equal(client.available,false);
+  await assert.rejects(client.request('schedule',new ArrayBuffer(0)),EngineStoppedError);
+  assert.equal(attempts,1);
+  client.restart(); await Promise.resolve();
+  assert.equal(attempts,2); assert.equal(failures.length,2);
+});
 test('matching owned response resolves and ordinary query errors leave engine usable', async () => {
   const { client, workers, failures } = setup();
   const first = client.request('currentSeason', null); reply(workers[0], 20252026); assert.equal(await first, 20252026);
