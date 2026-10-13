@@ -1,0 +1,88 @@
+{
+  "started_at": "2026-10-13T22:04:14.191Z",
+  "completed": true,
+  "host": {
+    "platform": "win32",
+    "arch": "x64",
+    "os_release": "10.0.26310",
+    "cpu": "12th Gen Intel(R) Core(TM) i7-12800HX",
+    "logical_cpus": 24,
+    "ram_bytes": 34042929152
+  },
+  "scope": "Single isolated headless Chromium on this Windows workstation. Includes owned browser/renderer/GPU/utility processes; excludes Node runner, local HTTP server and sampler. Working-set sums may count shared pages more than once. Private-byte sums measure private allocations, not just resident RAM. Sample maxima may miss transient spikes; lifetime working-set peaks are per-process, not concurrent group peaks. No physical-phone or remote-rollback claim.",
+  "sampling": {
+    "requested_interval_ms": 100,
+    "tree_discovery_interval_ms": 500,
+    "actual_median_interval_ms": 192,
+    "actual_max_interval_ms": 923
+  },
+  "packages": [],
+  "imports": [],
+  "warm_query_ms": [],
+  "artifact": {
+    "commit": "e0741daad56749cc3a3292e3f054b56d9f2605a2",
+    "shell_build": "273224d69d98ddb8f6d7ea7d6a861b408bc993db807c8c537ec7593133c7e497",
+    "verified_files": 104,
+    "packages": 75
+  },
+  "archive": {
+    "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca",
+    "bytes": 149672
+  },
+  "browser": "153.0.8010.12",
+  "engine_worker_count": 0,
+  "memory": [
+    {
+      "phase": "blank_browser",
+      "samples": 6,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 238051328,
+      "last_private_bytes": 244473856,
+      "peak_private_bytes": 244473856,
+      "peak_working_set_bytes": 519233536,
+      "peak_sum_lifetime_working_set_bytes": 537280512
+    },
+    {
+      "phase": "startup",
+      "samples": 3,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 290070528,
+      "last_private_bytes": 290390016,
+      "peak_private_bytes": 290390016,
+      "peak_working_set_bytes": 594415616,
+      "peak_sum_lifetime_working_set_bytes": 600502272
+    },
+    {
+      "phase": "idle_settled",
+      "samples": 12,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 289914880,
+      "last_private_bytes": 290406400,
+      "peak_private_bytes": 290406400,
+      "peak_working_set_bytes": 596025344,
+      "peak_sum_lifetime_working_set_bytes": 602238976
+    },
+    {
+      "phase": "diagnostic_target_inventory",
+      "samples": 1,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 288579584,
+      "last_private_bytes": 288579584,
+      "peak_private_bytes": 288579584,
+      "peak_working_set_bytes": 594427904,
+      "peak_sum_lifetime_working_set_bytes": 602275840
+    }
+  ],
+  "missing_sampled_phases": [],
+  "target_scope": "Startup-only diagnostic: wait for application readiness and offline preparation, then five seconds idle before any engine operation. Target inventory occurs afterward. Not full-workload memory acceptance.",
+  "sampled_peak_private_bytes": 290406400,
+  "sampled_peak_working_set_bytes": 596025344,
+  "sampled_private_bytes_over_blank_baseline": 45932544,
+  "provisional_250_mib_target": null,
+  "control": "retained empty workbench, offline shell ready",
+  "finished_at": "2026-10-13T22:04:26.911Z"
+}

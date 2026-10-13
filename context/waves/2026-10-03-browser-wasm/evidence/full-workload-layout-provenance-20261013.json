@@ -1,0 +1,33 @@
+{
+  "scope": "Diagnostic only; visible control bracketed by two hidden runs. Identical retained CI bytes, browser flags, sampler and full workload. Hidden table is unusable, not a production candidate or budget acceptance.",
+  "source_script": "target/table-layout-full-workload.mjs",
+  "source_sha256": "81bd4ababf07c2d045f615c1a1641440608f244ffedac373a79fc997ba30c2bf",
+  "base_runner_sha256": "1d1873bd6ecf736e498f71dc2041e5fcf694d70b283eb417818596e97fa15126",
+  "sampler_sha256": "fef055f0dbbdaee58013089814436f5cd8c8d231c90e9c3fa40e416d4aaa50bc",
+  "artifact": "target/wasm-validation-e0741daa",
+  "forced_gc": false,
+  "network_observer_changed": false,
+  "production_runtime_changed": false,
+  "summaries": [
+    {
+      "intervention": "table container display:none from startup",
+      "private_peak_mib": 465.41015625,
+      "blank_private_peak_mib": 231.32421875
+    },
+    {
+      "intervention": "visible table control",
+      "private_peak_mib": 550.6015625,
+      "blank_private_peak_mib": 233.7578125
+    },
+    {
+      "intervention": "table container display:none from startup",
+      "private_peak_mib": 461.78125,
+      "blank_private_peak_mib": 230.74609375
+    }
+  ],
+  "visible_minus_hidden_private_peak_mib": [
+    85.19140625,
+    88.8203125
+  ],
+  "limitations": "Two hidden runs and one visible control on one workstation; not a measured virtual renderer, guarantee of an equivalent saving, physical RAM total, or Android result."
+}

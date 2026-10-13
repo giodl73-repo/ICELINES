@@ -420,3 +420,38 @@ stopped: saved 933-row season restored, second unsaved season not persisted,
 fresh filter returned 835 rows and player detail opened. See
 `ci-review-offline-reopen-20261012.json`. This confirms that the renderer works
 with the CI-produced WASM binary; it does not add phone, memory or rollback proof.
+
+## Startup controls and full-workload layout isolation (2026-10-13)
+
+PR #90 merged as ede05b79 after 29 successful checks (deployment skipped).
+The public release remains the independently verified e0741daa artifact.
+New diagnostics use those exact retained CI bytes, original Chromium flags and
+OS sampler, fresh owned browser processes, and no forced GC.
+
+Startup-only controls measured minimal HTML at 239.34 MiB and the empty offline-ready
+workbench at 276.95 MiB, both with zero engine workers. Blank-browser baselines
+were 222.72 and 233.15 MiB respectively. One run per configuration cannot assign
+the entire raw difference to app code. These are diagnostics, not workload acceptance.
+See startup-minimal-html, startup-empty-workbench and startup-fixed-cost-provenance
+JSON evidence dated 20261013.
+
+A stronger layout experiment runs the complete 75-package workload, both official
+archive imports (905/332 skaters), 20 committed warm queries and engine restart.
+Every result and DOM row is still created; the sole treatment hides the table
+container with display:none from startup. A visible control is bracketed by two
+hidden runs. Private-byte peaks: visible 550.60 MiB;
+hidden 465.41 / 461.78 MiB.
+All runs complete, sample every required phase and keep at most eight residents.
+The observed 85.19–88.82 MiB difference supports investigating
+viewport rendering. It is not a measured saving from virtual scrolling: DOM creation
+still occurs, and removing all table layout is a different, unusable treatment.
+One visible control and two treatments on one workstation do not establish a
+universal saving. No hidden-table change is adopted or published.
+
+Evidence: full-workload-table-hidden-first, full-workload-table-visible,
+full-workload-table-hidden-repeat and full-workload-layout-provenance JSON files
+dated 20261013. Provenance records runner/sampler hashes and raw baselines.
+The 250 MiB whole-browser requirement remains unmet; Android is deferred at the
+user's request. The next renderer candidate must keep every result accessible,
+correct global ranks, keyboard/detail behavior and complete exports, and must
+be measured with actual visible scrolling before any performance claim.
