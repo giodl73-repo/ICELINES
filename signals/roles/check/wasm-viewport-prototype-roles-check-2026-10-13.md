@@ -71,3 +71,11 @@ rollback documentation503 is retained and resolved by one-file hash-checked retr
 This closes the scoped deployment evidence condition, not B1's250 MiB requirement,
 E3's physical Android gate, public two-tab coverage or exact accented PDF extraction.
 Full-goal verdict remains NEEDS-WORK; publication is a validation release.
+
+Verifier correction: E2's claimed11 accented PDF-name extraction errors were false.
+Node's UTF-8 reference was read under Windows CP1252, and the report itself was
+written in CP1252. Explicit strict UTF-8 plus two PDF parsers verifies all933 ranks
+and Unicode names on the original and fresh exact-master PDF. Original bytes and
+superseded report are retained; permanent diagnostic verifier prevents the same
+encoding mistake. No app/font change. Physical reader/printer/device scopes remain
+qualified; B1 memory and E3 Android still prevent full-goal completion.

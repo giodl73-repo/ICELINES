@@ -19,8 +19,9 @@ Exact master browser regression covers all933 ranks/names, full query export,
 preparation/restoration. Offline process-close saved933/fresh835/detail passes.
 The current validation release keeps complete query data while limiting mounted
 presentation rows. Desktop memory remains about447 MiB and physical Android is
-not run. Exact accented-name PDF extraction remains partial despite reviewed
-layout/glyph samples. See evidence/viewport-publication-provenance-20261013.json.
+not run. Exact PDF ranks and accented names now pass both parsers after correcting
+the verifier to read the UTF-8 reference explicitly. The previously reported PDF
+mismatch was a Windows verifier-encoding error, not an app defect. See evidence/viewport-publication-provenance-20261013.json.
 Earlier e0741daa publication evidence remains historical, not current-source proof.
 
 ## Feature and gate disposition
@@ -36,7 +37,7 @@ Android testing remains deferred by the user.
 The subsequent catalog-decoding and cleared-row-cache runtime experiments are
 not adopted. Their functional/native/WASM checks pass, but the normal memory
 comparisons establish no useful saving. They remain separate prototype branches;
-the stable runtime still matches merged PR #89. Their evidence and review are
+those experiments remain unadopted; the current runtime includes merged PR #91. Their evidence and review are
 recorded separately in MEMORY-ATTRIBUTION.md and the catalog-context artifacts.
 
 | Plan requirement | Evidence | Disposition |
@@ -148,3 +149,7 @@ experiment is excluded; post-merge local runtime matches reviewed/merged source.
 The 250 MiB target, physical Android and qualified PDF extraction gaps remain open.
 
 Final publication reconciliation: 4d1f513e is now deployed and restored, superseding earlier publication-pending notes. Resource and physical-device gates remain open; no full first-release readiness claim.
+
+## PDF verification correction
+
+The earlier 11-name PDF extraction gap is closed. Both parsers match all 933 ranks/names on the original PDF and a fresh PDF from exact deployed-source master bytes. Windows CP1252 reference decoding caused the false mismatch. Original failed-report bytes are preserved as .raw.cp1252; its JSON is transcoded to valid UTF-8 and explicitly marked superseded. The permanent verifier uses strict UTF-8 and safe ASCII stdout. Historical partial/gap notes above are superseded by this correction. Remaining full-goal gates are the unmet 250 MiB requirement and deferred physical Android acceptance. Actual screen-reader/physical-printer experience remains outside this machine inspection scope.

@@ -573,3 +573,25 @@ matches the prior retained public engine. This is reviewed PR preview evidence,
 not merged master/publication, Windows memory, physical device or resolution of
 PDF accented-name extraction. Required native CI is still finishing independently.
 See viewport-latest-ci provenance/browser/offline reports.
+
+## Correction: PDF names were preserved
+
+The claimed11 accented-name PDF extraction mismatch was a verifier bug. Windows
+Python's default reference-file encoding is CP1252, while Node emits UTF-8. Reading
+the reference explicitly as UTF-8 makes all933 ranks/names match. Both PyMuPDF and
+pypdf confirm names on the original PDF, and a new PDF from exact deployed-source
+4d1f513e passes. Glyph mappings already included the correct Unicode values.
+No font or app change is needed; the previous Segoe probe was not evidence of a
+producer defect. Earlier partial/mismatch paragraphs are historical and superseded.
+The original CP1252-written failed report is retained byte-for-byte as .raw.cp1252;
+its JSON is now valid UTF-8 with explicit supersession/cause/hash fields.
+
+Permanent command (installed PyMuPDF/pypdf, optional diagnostic dependencies):
+
+`python scripts/verify-browser-print.py evidence.pdf print-reference.json --output result.json`
+
+The script strictly decodes UTF-8, checks all rank/name order with retained accents,
+uses a second extractor, checks page bounds/first pace, emits UTF-8 files and ASCII
+stdout. Corrected raw reports and reference/provenance use viewport-print-utf8 and
+viewport-master-print-utf8. This closes PDF data-text inspection, not the250 MiB
+budget or physical Android. No new browser application runtime is adopted.
