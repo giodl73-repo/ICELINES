@@ -14,7 +14,7 @@ export class PlayerTable {
 
   suspend(): void {
     // Hide stale results from sight and accessibility while preserving layout.
-    this.body.style.visibility = 'hidden'; this.body.inert = true;
+    this.body.style.opacity = '0'; this.body.inert = true;
   }
 
   clear(release = true): void {
@@ -24,7 +24,7 @@ export class PlayerTable {
       for (const text of nodes.values) text.nodeValue = '';
     }
     this.body.replaceChildren();
-    this.body.style.visibility = ''; this.body.inert = false;
+    this.body.style.opacity = ''; this.body.inert = false;
     this.visible = [];
     if (release) { this.pool = []; this.goalie = undefined; this.head.replaceChildren(); }
   }
@@ -81,6 +81,6 @@ export class PlayerTable {
     this.body.append(fragment);
     // A smaller result must release spare nodes from a larger season/filter.
     this.pool.length = Math.min(rows.length, MAX_REUSABLE_ROWS);
-    this.body.style.visibility = ''; this.body.inert = false;
+    this.body.style.opacity = ''; this.body.inert = false;
   }
 }

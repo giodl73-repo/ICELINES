@@ -94,10 +94,10 @@ test('focused reused button keeps focus for the same player and clears it when t
 
 test('pending queries hide and disable stale rows without detaching them; rendering and failure clearing restore the body', () => {
   const { table, body } = fixture(); table.render([row], false); const tr = body.children[0];
-  table.suspend(); assert.equal(body.style.visibility, 'hidden'); assert.equal(body.inert, true);
+  table.suspend(); assert.equal(body.style.opacity, '0'); assert.equal(body.inert, true);
   assert.equal(body.children[0], tr); assert.equal(tr.parent, body);
   table.render([row], false); assert.equal(body.children[0], tr);
-  assert.equal(body.style.visibility, ''); assert.equal(body.inert, false);
+  assert.equal(body.style.opacity, ''); assert.equal(body.inert, false);
   table.suspend(); table.clear(false); assert.equal(body.children.length, 0);
-  assert.equal(body.style.visibility, ''); assert.equal(body.inert, false); assert.equal(tr.textContent, '');
+  assert.equal(body.style.opacity, ''); assert.equal(body.inert, false); assert.equal(tr.textContent, '');
 });
