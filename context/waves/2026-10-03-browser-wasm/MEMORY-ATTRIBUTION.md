@@ -196,6 +196,35 @@ malformed-query clearing and a successful 835-row retry pass. This browser
 inspection is separate from normal memory measurements. The candidate is not
 deployed; physical Android remains deferred by the user.
 
+## Table layout versus idle collection diagnostic (2026-10-13)
+
+An ad-hoc direct-CDP controller ran the corrected 653c876b artifact through all
+75 packages, both archive imports, warm queries and restart in two fresh profiles.
+It uses captured Chromium flags with a fresh profile and loopback-port transport,
+without Playwright's injected script or Network observer. It is a diagnostic
+method, not a substitute normal benchmark; its lower peaks do not revise the
+production-runner results or establish acceptance. No forced GC was requested.
+Sources and capture hashes are recorded in table-layout-diagnostic-provenance.
+
+After normal queries, the treatment collected counters, waited five seconds,
+hid the existing table with display:none for five seconds, then restored it and
+repeated the query. The matched idle control left the table displayed throughout.
+All three snapshots in both runs retain exactly 280 active rows.
+
+| Diagnostic | Initial DOM nodes | Middle-interval DOM nodes | Initial embedder MiB | Middle-interval embedder MiB | Private MiB after first / middle / final interval |
+|---|---:|---:|---:|---:|---|
+| Hide table layout | 20,201 | 6,089 | 61.19 | 3.08 | 435.86 / 367.29 / 363.63 |
+| Leave table displayed | 20,013 | 6,089 | 58.47 | 10.19 | 435.54 / 373.61 / 391.10 |
+
+The idle control also drops approximately 14,000 DOM nodes and substantial
+allocations without hiding the table. The large reduction therefore cannot be
+attributed solely to table layout or used to justify pagination as its solution.
+Natural collection and debugger inspection effects remain possible. Retired
+presentation allocations across repeated large/small season loads are the next
+useful investigation area; this pair does not identify a leak or an exact layout
+cost. Raw diagnostic_table_hidden is inherited phase nomenclature in the idle
+report and does not mean that its table was hidden. The 250 MiB gate stays open.
+
 ## Blank-browser target attribution
 
 `blank-browser-targets-20261012.json` records a fresh isolated Chrome 153 process

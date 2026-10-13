@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "runtime_commit": "653c876b",
+  "runner_sha256": {
+    "table-attribution-memory.mjs": "b7d5ec5b6c279c7dbc56f1cf83eb1df4eff679ea1228a5f707351e7cf0715c12",
+    "table-idle-control-memory.mjs": "79a5b8fed0c494a4317b97bd3526b65b4b10005a8d5474c175e19d10127c84dc",
+    "direct-cdp-controller.mjs": "87a1919906413a4ce8229571331c85f5fcbb233a68b2d8ddf65a0021294274b8",
+    "chromium-launch-arguments.json": "1768f32546900983efd32dfc4e10bfe7fa00487d02004d41c646e9cbca028aed"
+  },
+  "scope": "Two separate fresh owned Chromium profiles. Diagnostic direct-CDP controller using captured Chromium flags with fresh profile and pipe-to-loopback-port transport. No Network observer, no Playwright injected script, no forced GC. Original 75-package workload, both imports, warm queries and restart. Not a replacement for the original normal memory runner.",
+  "treatment": "After normal queries: counters, five seconds visible, five seconds display:none, then restore and repeat query for five seconds.",
+  "idle_control": "Matched sequence except table stays displayed during the middle interval. Raw diagnostic_table_hidden label is inherited phase nomenclature; no hiding occurs in the idle control.",
+  "inference": "Both runs lose approximately 14,000 DOM nodes during the middle interval despite retaining all 280 active rows. The large reduction cannot be attributed solely to hiding table layout. Natural collection and inspection effects remain possible; no exact layout saving or memory-target pass is established.",
+  "incomplete_predecessor": "browser-memory-nZtjL1 failed before diagnostics because the ad-hoc controller lacked newCDPSession. It is not acceptance evidence; the completed runs use page.send on the existing diagnostic session.",
+  "production_change": false,
+  "target_changed": false,
+  "target_mib": 250
+}
