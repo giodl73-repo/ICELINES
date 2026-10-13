@@ -305,6 +305,43 @@ deferred startup and attached-row improvements, not these new prototypes.
 The public site remains the separately verified 0e34ce88 release. The 250 MiB
 whole-browser target remains exceeded; physical Android is still deferred.
 
+## Stable handler experiment and query-completion correction (2026-10-13)
+
+Prototype dc39dd31 gives each attached player button one handler that reads its
+current presentation record. Removed and cleared rows lose both the handler and
+record reference. Pool trimming, full results, focus identity, headers and domain
+projection are unchanged. The hypothesis was lower listener/closure retirement
+across repeated queries. This runtime prototype is **not adopted**.
+
+During verification, the normal runner's row-count/enabled-button barrier was
+found insufficient for attached rows: the old count remains while a request is
+pending, and the submit button stays enabled. The retained correction additionally
+waits for the existing tbody.inert pending marker to clear before proceeding.
+It preserves the original workload, OS sampler, browser flags and 250 MiB target.
+Earlier attached-row report completion/timing claims used the weaker barrier;
+they must not independently establish that every same-count query had committed.
+The corrected pair below explicitly waits for each of the 20 warm queries.
+
+| Corrected run | Blank private MiB | Full private peak MiB |
+|---|---:|---:|
+| Stable-handler prototype | 227.93 | 548.75 |
+| Existing-renderer control | 231.02 | 548.02 |
+
+Both complete all 75 package phases, eight-window residency checks, 905/332-player
+imports and restart without forced GC or debugger intervention. Windows WASM
+bytes match at 4f99584f. There is no useful whole-browser saving established by
+this pair and no general speed claim. The 250 MiB target still fails.
+
+The prototype passes TypeScript and 148 unit tests, including updated-record
+selection and inability of an externally retained handler to open cleared data.
+An actual process-close offline test restores 933 players, filters to 835, changes
+goal sorting while retaining the same handler functions, and opens the correct
+reordered player's detail. Failure clearing and retry also pass. These functional
+results are separate from memory measurements. Evidence is prefixed stable-handler.
+Stable application source remains merged PR #89; only the benchmark completion
+correction is retained. Phone testing and in-place public update activation remain
+separate open checks.
+
 ## Blank-browser target attribution
 
 `blank-browser-targets-20261012.json` records a fresh isolated Chrome 153 process
