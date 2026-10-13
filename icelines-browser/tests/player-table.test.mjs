@@ -42,7 +42,7 @@ test('shorter results erase spare names and callbacks; unload releases the pool'
   const { table, body } = fixture(); table.render([row, { ...row, player_id: 2 }], false);
   const spare = body.children[1], spareButton = spare.children[1].children[0];
   table.render([row], false); assert.equal(spare.textContent, ''); assert.equal(spareButton.onclick, null);
-  table.render([row, row], false); assert.notEqual(body.children[1], spare);
+  table.render([row, row], false); assert.equal(body.children[1], spare);
   const previous = body.children[0]; table.clear(); table.render([row], false);
   assert.notEqual(body.children[0], previous); assert.equal(previous.textContent, '');
 });

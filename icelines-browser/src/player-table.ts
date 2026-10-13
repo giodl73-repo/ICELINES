@@ -21,6 +21,7 @@ export class PlayerTable {
     // Detached buttons must not retain callbacks or names from a previous dataset.
     for (const nodes of this.visible) {
       nodes.button.onclick = null;
+      nodes.playerId = undefined;
       for (const text of nodes.values) text.nodeValue = '';
     }
     this.body.replaceChildren();
@@ -44,6 +45,7 @@ export class PlayerTable {
     const common = Math.min(rows.length, this.visible.length, MAX_REUSABLE_ROWS);
     for (const nodes of this.visible.slice(common)) {
       nodes.button.onclick = null;
+      nodes.playerId = undefined;
       for (const text of nodes.values) text.nodeValue = '';
       nodes.element.remove();
     }
@@ -79,8 +81,9 @@ export class PlayerTable {
       }
     });
     this.body.append(fragment);
-    // A smaller result must release spare nodes from a larger season/filter.
-    this.pool.length = Math.min(rows.length, MAX_REUSABLE_ROWS);
+    // Experimental bounded cache: cleared detached rows carry no player data.
+    // Reuse them when a larger season follows a smaller playoff/filter result.
+    // Unload and column transitions still release the entire pool.
     this.body.style.visibility = ''; this.body.inert = false;
   }
 }
