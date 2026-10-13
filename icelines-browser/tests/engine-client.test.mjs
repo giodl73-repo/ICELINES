@@ -16,6 +16,22 @@ function reply(worker, value, error, overrides = {}) {
     context_generation: request.context_generation, ...(error ? { error } : { value }), ...overrides } });
 }
 
+test('catalog loading transfers only nested staging bytes and keeps context and backup intact', async () => {
+  const { client, workers, failures } = setup();
+  const backup = new Uint8Array([1, 2, 3]), staging = backup.slice().buffer;
+  const context = { season: 20252026, season_type: 'regular', source: 'fixture' };
+  const pending = client.request('loadCatalog', { bytes: staging, context }, [staging]);
+  assert.equal(staging.byteLength, 0); assert.deepEqual([...backup], [1, 2, 3]);
+  const received = workers[0].messages[0];
+  assert.deepEqual([...new Uint8Array(received.payload.bytes)], [1, 2, 3]);
+  assert.deepEqual(received.payload.context, context);
+  const rejection = assert.rejects(pending, /does not match catalog context/);
+  reply(workers[0], undefined, { kind: 'engine_error', message: 'package does not match catalog context' });
+  await rejection; assert.equal(client.available, true); assert.deepEqual(failures, []);
+  const query = client.request('query', {}); reply(workers[0], 'previous dataset');
+  assert.equal(await query, 'previous dataset'); client.changeContext();
+});
+
 test('deferred first load preserves the context chosen before any worker exists', async () => {
   const {client, workers, failures} = setup(120000, {deferStart:true});
   assert.equal(workers.length, 0); assert.equal(client.available, true);
