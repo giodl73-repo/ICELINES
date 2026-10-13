@@ -101,3 +101,13 @@ test('pending queries hide and disable stale rows without detaching them; render
   table.suspend(); table.clear(false); assert.equal(body.children.length, 0);
   assert.equal(body.style.visibility, ''); assert.equal(body.inert, false); assert.equal(tr.textContent, '');
 });
+
+test('one attached handler opens updated records and a retired handler cannot open cleared data', () => {
+  const { table, body, opened } = fixture(); table.render([row], false);
+  const button = body.children[0].children[1].children[0], handler = button.onclick;
+  const next = { ...row, player_id: 2, name: 'Current player' };
+  table.render([next], false); assert.equal(button.onclick, handler);
+  handler(); assert.deepEqual(opened, [next]);
+  table.clear(); assert.equal(button.onclick, null);
+  handler(); assert.deepEqual(opened, [next], 'A retained external handler must not retain cleared player data');
+});

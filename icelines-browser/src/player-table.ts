@@ -3,7 +3,7 @@ import type { PlayerRow } from './types.js';
 // Reuse presentation nodes across queries. This is not a result limit: rows
 // beyond the pool are still displayed, but are not retained for the next query.
 const MAX_REUSABLE_ROWS = 1024;
-type RowNodes = { element: HTMLTableRowElement; values: Text[]; button: HTMLButtonElement; playerId?: number };
+type RowNodes = { element: HTMLTableRowElement; values: Text[]; button: HTMLButtonElement; playerId?: number; currentRow?: PlayerRow };
 
 export class PlayerTable {
   private pool: RowNodes[] = [];
@@ -21,6 +21,7 @@ export class PlayerTable {
     // Detached buttons must not retain callbacks or names from a previous dataset.
     for (const nodes of this.visible) {
       nodes.button.onclick = null;
+      nodes.currentRow = undefined;
       for (const text of nodes.values) text.nodeValue = '';
     }
     this.body.replaceChildren();
@@ -44,6 +45,7 @@ export class PlayerTable {
     const common = Math.min(rows.length, this.visible.length, MAX_REUSABLE_ROWS);
     for (const nodes of this.visible.slice(common)) {
       nodes.button.onclick = null;
+      nodes.currentRow = undefined;
       for (const text of nodes.values) text.nodeValue = '';
       nodes.element.remove();
     }
@@ -72,7 +74,13 @@ export class PlayerTable {
       // keyboard focus on a button that now opens a different player.
       if (nodes.button === document.activeElement && nodes.playerId !== row.player_id) nodes.button.blur();
       nodes.playerId = row.player_id;
-      nodes.button.onclick = () => this.openPlayer(row);
+      nodes.currentRow = row;
+      // Common rows keep one handler rather than retiring a closure/listener
+      // for every query. The handler reads the current presentation record.
+      if (!nodes.button.onclick) nodes.button.onclick = () => {
+        const current = nodes!.currentRow;
+        if (current) this.openPlayer(current);
+      };
       if (index >= common) {
         this.visible.push(nodes);
         fragment.append(nodes.element);
