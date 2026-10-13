@@ -181,16 +181,31 @@ async function activate(bytes: Uint8Array, id: string, policy = false): Promise<
   await runQuery();
   showAnalysis();
 }
+let residentLibraryKey = '';
 function renderResidentLibrary(): void {
+  const entries = [...resident.values()];
+  const blocked = routing || recovering || engineUnavailable;
+  const key = JSON.stringify(entries.map(dataset => [dataset.id, dataset.revision,
+    dataset.metadata.season, dataset.metadata.season_type, dataset.metadata.source,
+    active?.revision === dataset.revision, blocked]));
+  if (key === residentLibraryKey) return;
+  residentLibraryKey = key;
   element('resident-count').textContent = `(${resident.size}/8)`;
   const node = element('resident-library'); node.replaceChildren();
-  for (const dataset of resident.values()) {
+  for (const dataset of entries) {
     const row = document.createElement('li');
     const label = document.createElement('span');
     label.textContent = `${dataset.metadata.season} · ${dataset.metadata.season_type} · ${dataset.metadata.source}${active?.revision === dataset.revision ? ' · selected' : ''}`;
     const button = document.createElement('button'); button.textContent = 'Use in-memory season';
-    button.disabled = active?.revision === dataset.revision || routing || recovering || engineUnavailable;
-    button.onclick = () => { void perform(async () => { await activateResident(dataset); status('Selected in-memory season. Saved copies are unchanged.'); }); };
+    button.disabled = active?.revision === dataset.revision || blocked;
+    // Detached controls must not pin bytes from evicted datasets. Resolve the
+    // current record on activation, including replacement with the same revision.
+    const revision = dataset.revision, id = dataset.id;
+    button.onclick = () => { void perform(async () => {
+      const current = resident.get(revision);
+      if (!current || current.id !== id) throw new Error('missing data: season is no longer in memory');
+      await activateResident(current); status('Selected in-memory season. Saved copies are unchanged.');
+    }); };
     row.append(label,button); node.append(row);
   }
   if (!resident.size) node.textContent = 'No seasons in this tab yet.';
