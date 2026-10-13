@@ -16,6 +16,7 @@ class Node {
   }
   replaceChildren(...nodes) { for (const node of this.children) node.parent = null; this.children = []; this.append(...nodes); }
   remove() { if (this.parent) { this.parent.children.splice(this.parent.children.indexOf(this), 1); this.parent = null; } }
+  blur() { if (document.activeElement === this) document.activeElement = null; }
   set textContent(value) { this.replaceChildren(Object.assign(new Node('text'), { nodeValue: value })); }
   get textContent() { return this.nodeValue ?? this.children.map(node => node.textContent).join(''); }
 }
@@ -82,4 +83,11 @@ test('repeat queries keep common rows attached and only append growth', () => {
   assert.equal(body.children.length, 1); assert.equal(removed.textContent, '');
   assert.equal(second.parent, null); assert.equal(second.children[1].children[0].onclick, null);
   table.render([], false); assert.equal(body.children.length, 0); assert.equal(first.textContent, '');
+});
+
+test('focused reused button keeps focus for the same player and clears it when the rank changes identity', () => {
+  const { table, body } = fixture(); table.render([row], false);
+  const button = body.children[0].children[1].children[0]; document.activeElement = button;
+  table.render([{ ...row, points: 3 }], false); assert.equal(document.activeElement, button);
+  table.render([{ ...row, player_id: 2 }], false); assert.equal(document.activeElement, null);
 });

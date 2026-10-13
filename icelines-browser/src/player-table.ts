@@ -3,7 +3,7 @@ import type { PlayerRow } from './types.js';
 // Reuse presentation nodes across queries. This is not a result limit: rows
 // beyond the pool are still displayed, but are not retained for the next query.
 const MAX_REUSABLE_ROWS = 1024;
-type RowNodes = { element: HTMLTableRowElement; values: Text[]; button: HTMLButtonElement };
+type RowNodes = { element: HTMLTableRowElement; values: Text[]; button: HTMLButtonElement; playerId?: number };
 
 export class PlayerTable {
   private pool: RowNodes[] = [];
@@ -62,6 +62,10 @@ export class PlayerTable {
         const text = value == null ? '—' : String(value);
         if (nodes!.values[column].nodeValue !== text) nodes!.values[column].nodeValue = text;
       });
+      // A background refresh may change who occupies this rank. Do not leave
+      // keyboard focus on a button that now opens a different player.
+      if (nodes.button === document.activeElement && nodes.playerId !== row.player_id) nodes.button.blur();
+      nodes.playerId = row.player_id;
       nodes.button.onclick = () => this.openPlayer(row);
       if (index >= common) {
         this.visible.push(nodes);
