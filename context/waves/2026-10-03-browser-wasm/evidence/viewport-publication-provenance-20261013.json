@@ -1,0 +1,48 @@
+{
+  "source_commit": "4d1f513e29869bceba4fec9bf08d51511ad74207",
+  "reviewed_pr": 91,
+  "master_build_run": 38482496664,
+  "native_ci_run": 38482496646,
+  "native_ci_conclusion": "success",
+  "master_browser_conclusion": "success",
+  "artifact_id": 11858662382,
+  "shell_build": "50ee682fbf9a9e2f9678cec47d9b128622f4e348a3ad5a2226d2d5a69b80ea61",
+  "wasm_sha256": "2e4c853309a32d8366c282afe113626fde5c25b26349bd9194ceafe59123f57b",
+  "publication_run": 38483768408,
+  "rollback_run": 38484333024,
+  "final_restore_run": 38484778860,
+  "deployment_conclusions": [
+    "success",
+    "success",
+    "success"
+  ],
+  "previous_good": {
+    "commit": "e0741daad56749cc3a3292e3f054b56d9f2605a2",
+    "run": 38457012844,
+    "shell": "273224d69d98ddb8f6d7ea7d6a861b408bc993db807c8c537ec7593133c7e497"
+  },
+  "scope": "Exact retained master bytes, complete upload guard, static transport verification, public one-tab in-place consent/rollback/restore and owned-profile saved season/schedule/settings equality; no live NHL, arbitrary user-data, physical-phone or whole-browser resource acceptance claim.",
+  "local_update_probe_sha256": "5d298f4fa1d3454fad2a8acc94efd996cb56ff722318ab801c2165ace8847fd7",
+  "public_probe_sha256": "9920c579064e99340bbcf6920bfdcddbb87d8c237e0aee58595f82589f1ed6e2",
+  "offline_probe_sha256": "5fd32f4ee4816f81057efc4af059be5c4fc9ee8c5dd6b03b2bd7f6f1dda57381",
+  "static_verifier_sha256": "bba9ce79836f3e07250bf6c4ca41ee322d00a97ca62e3a8a51945155f162a20e",
+  "composition_manifest_sha256": "cd833d53f1bfd30961f419a89517e245f0c2bfa7db82d8d4bbeaaeca6334123c",
+  "retained_files": 105,
+  "public_packages": 75,
+  "matched_served_files": 196,
+  "public_update_mode": "inplace",
+  "mounted_players": 42,
+  "saved_test_data": {
+    "datasets": 1,
+    "schedules": 1,
+    "schedule_games": 2,
+    "stats_players": 933,
+    "comparison": "exact bytes/digests/revisions/metadata/settings"
+  },
+  "rollback_transport_exception": "One documentation JS returned503 initially; one-file retry matches same preservation hash, aggregated195 pass, original failed report retained.",
+  "remaining": [
+    "250 MiB whole-browser target unmet",
+    "Physical Android acceptance deferred",
+    "Exact PDF accented-name text extraction remains partial"
+  ]
+}

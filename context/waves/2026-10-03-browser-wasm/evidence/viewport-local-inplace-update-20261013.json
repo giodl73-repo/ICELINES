@@ -1,0 +1,119 @@
+{
+  "verified": true,
+  "scope": "Owned localhost profile, two exact retained CI artifacts, one application tab. In-place consent/activation/reload, unchanged saved bytes and actual new renderer behavior. Not deployed-origin, phone or memory proof.",
+  "commits": [
+    "e0741daad56749cc3a3292e3f054b56d9f2605a2",
+    "4d1f513e29869bceba4fec9bf08d51511ad74207"
+  ],
+  "events": [
+    {
+      "type": "navigation",
+      "url": "http://127.0.0.1:62927/ICELINES/workbench/",
+      "at": 1791933637884
+    },
+    {
+      "type": "navigation",
+      "url": "http://127.0.0.1:62927/ICELINES/workbench/#/leaders?season=20252026&type=regular&kind=skaters&sort=points&gp=",
+      "at": 1791933638273
+    },
+    {
+      "type": "navigation",
+      "url": "http://127.0.0.1:62927/ICELINES/workbench/#/leaders?season=20252026&type=regular&kind=skaters&sort=points&gp=",
+      "at": 1791933644361
+    },
+    {
+      "type": "navigation",
+      "url": "http://127.0.0.1:62927/ICELINES/workbench/#/leaders?season=20252026&type=regular&kind=skaters&sort=points&gp=",
+      "at": 1791933644631
+    },
+    {
+      "type": "navigation",
+      "url": "http://127.0.0.1:62927/ICELINES/workbench/#/leaders?season=20252026&type=regular&kind=skaters&sort=points&gp=",
+      "at": 1791933644635
+    },
+    {
+      "type": "navigation",
+      "url": "http://127.0.0.1:62927/ICELINES/workbench/#/leaders?season=20252026&type=regular&kind=skaters&sort=points&gp=",
+      "at": 1791933644704
+    }
+  ],
+  "states": {
+    "before": {
+      "controller": "activated",
+      "active": "activated",
+      "scope": "http://127.0.0.1:62927/ICELINES/workbench/",
+      "notice_hidden": true,
+      "offline": "Application shell available offline. Saved datasets stay in your local library.",
+      "build": "e0741daad56749cc3a3292e3f054b56d9f2605a2"
+    },
+    "waiting": {
+      "controller": "activated",
+      "active": "activated",
+      "waiting": "installed",
+      "scope": "http://127.0.0.1:62927/ICELINES/workbench/",
+      "notice_hidden": false,
+      "offline": "Application shell available offline. Saved datasets stay in your local library.",
+      "build": "e0741daad56749cc3a3292e3f054b56d9f2605a2"
+    },
+    "after": {
+      "controller": "activated",
+      "active": "activated",
+      "scope": "http://127.0.0.1:62927/ICELINES/workbench/",
+      "notice_hidden": true,
+      "offline": "Checking the cached application shell…",
+      "build": "4d1f513e29869bceba4fec9bf08d51511ad74207"
+    }
+  },
+  "before": {
+    "datasets": [
+      {
+        "id": "20252026-regular",
+        "revision": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+        "bytes": 926515,
+        "metadata": {
+          "schema_version": 1,
+          "season": 20252026,
+          "season_type": "regular",
+          "source": "repository:20252026",
+          "observed_at": null,
+          "fetched_at": null
+        },
+        "keepUpdated": false,
+        "sha256": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44"
+      }
+    ],
+    "schedules": [],
+    "settings": [
+      "20252026-regular"
+    ]
+  },
+  "mounted_rows": 42,
+  "after": {
+    "datasets": [
+      {
+        "id": "20252026-regular",
+        "revision": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+        "bytes": 926515,
+        "metadata": {
+          "schema_version": 1,
+          "season": 20252026,
+          "season_type": "regular",
+          "source": "repository:20252026",
+          "observed_at": null,
+          "fetched_at": null
+        },
+        "keepUpdated": false,
+        "sha256": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44"
+      }
+    ],
+    "schedules": [],
+    "settings": [
+      "20252026-regular"
+    ]
+  },
+  "pending": {
+    "inert": true,
+    "visibility": "hidden"
+  },
+  "detail": "Connor McDavid"
+}

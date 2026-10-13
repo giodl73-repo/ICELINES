@@ -62,3 +62,12 @@ still substitutes 11 accented names; a second font reproduces it, cause unproven
 The partial report stays verified:false, so screen-reader/print text acceptance
 is not upgraded to complete. Updated normal workload peaks at 447.03 MiB; B1 and E3
 remain open. Draft/CI/public-source boundaries remain unchanged.
+
+Publication reconciliation: PR91/master4d1f513e now has successful native/browser
+CI, exact master artifact verification and actual public one-tab consent/update,
+rollback to e0741daa and forward restore. One saved season and frozen schedule's
+bytes/metadata/settings stay equal. Final196 served files match. An initial old
+rollback documentation503 is retained and resolved by one-file hash-checked retry.
+This closes the scoped deployment evidence condition, not B1's250 MiB requirement,
+E3's physical Android gate, public two-tab coverage or exact accented PDF extraction.
+Full-goal verdict remains NEEDS-WORK; publication is a validation release.

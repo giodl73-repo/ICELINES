@@ -6,28 +6,22 @@ It does not declare the full plan complete.
 
 ## Current release
 
-- Validation source: `e0741daad56749cc3a3292e3f054b56d9f2605a2`; merged PR #89's deferred engine and attached-row renderer. This is a validation build, not full resource/mobile acceptance.
-- Retained master build: `38457012844`; publication `38467985652`; rollback `38469050130` to previous 0e34ce88; final restore `38469247324`, all successful. Deployments reused exact reviewed bytes with the complete upload-tar guard.
-- Shell: `273224d69d98ddb8f6d7ea7d6a861b408bc993db807c8c537ec7593133c7e497`.
-- Retained clean artifact verified: 104 files, 75 public packages. Final static runtime/documentation verification matched 195 served files, including 94 documentation files, with no failures.
-- Pages source: Actions workflow. `master` and `gh-pages` branch policies exist;
-  the existing workflows publish from master and compose documentation from gh-pages.
-- The earlier 696c656b publication's first attempt failed before deployment: master was excluded by the
-  old gh-pages-only environment rule. Switching Pages to workflow mode added
-  the master rule; retrying only the failed job succeeded.
+- Validation source: `4d1f513e29869bceba4fec9bf08d51511ad74207`, merged PR91's viewport renderer and complete-result print path. Full resource/mobile acceptance is still incomplete.
+- Retained master build38482496664/artifact11858662382 succeeds; native CI38482496646 also succeeds. The artifact verifies105 files and75 public packages.
+- Shell: `50ee682fbf9a9e2f9678cec47d9b128622f4e348a3ad5a2226d2d5a69b80ea61`. Linux WASM remains `2e4c853309a32d8366c282afe113626fde5c25b26349bd9194ceafe59123f57b`.
+- Publication38483768408, rollback38484333024 to previous-good e0741daa, and final restore38484778860 all succeed with exact retained bytes and the complete upload-tar guard.
+- Final live verification matches196 served files (102 runtime +94 preserved documentation), with no failures. Rollback's initial one-file documentation503 is retained; a focused retry against the same composition hash completes195-file verification.
+- Public one-tab in-place update, rollback and forward restore preserve the owned test season/schedule bytes, revisions, metadata and settings. Executing UI is distinguished as viewport (42 mounted of933 complete players) versus classic full table. Offline reopening, fresh eight-player filtering and correct detail pass after each transition.
+- This profile contains one saved933-player public season and one frozen two-game schedule fixture. It is not arbitrary saved-data, live-NHL, physical-device or whole-browser budget proof. Local one-tab consent passes separately; earlier local two-tab evidence is not a new public two-tab claim.
 
-The current release uses retained artifact `11845381015`. Linux WASM SHA-256 remains
-`2e4c853309a32d8366c282afe113626fde5c25b26349bd9194ceafe59123f57b`.
-Its actual-browser offline process-close check passes, including pending rows,
-zero common-row reinsertions, detail, failed-query clearing and retry. See
-`evidence/merged-optimization-ci-artifact-20261013.json` and its offline report.
-The initial master build skipped deployment; publication and the final restore
-are now independently verified on Pages. Public in-place update, rollback and
-forward restore preserve saved season/schedule bytes, metadata, revisions and
-settings. New/legacy renderer behavior is checked in addition to cached build-info
-identity. An initial final-restore notice timeout is retained separately; the
-same deployment passes the repeated in-place and offline checks. Cause is unproven.
-See `evidence/public-optimization-publication-provenance-20261013.json`.
+Exact master browser regression covers all933 ranks/names, full query export,
+77-goalie parity, keyboard windows/terminal boundaries, AX names and complete print
+preparation/restoration. Offline process-close saved933/fresh835/detail passes.
+The current validation release keeps complete query data while limiting mounted
+presentation rows. Desktop memory remains about447 MiB and physical Android is
+not run. Exact accented-name PDF extraction remains partial despite reviewed
+layout/glyph samples. See evidence/viewport-publication-provenance-20261013.json.
+Earlier e0741daa publication evidence remains historical, not current-source proof.
 
 ## Feature and gate disposition
 
@@ -152,3 +146,5 @@ Master runs38482496646 (native CI) and38482496664 (browser artifact) are in prog
 Current public e0741daa release is unchanged. The rejected resident-list runtime
 experiment is excluded; post-merge local runtime matches reviewed/merged source.
 The 250 MiB target, physical Android and qualified PDF extraction gaps remain open.
+
+Final publication reconciliation: 4d1f513e is now deployed and restored, superseding earlier publication-pending notes. Resource and physical-device gates remain open; no full first-release readiness claim.

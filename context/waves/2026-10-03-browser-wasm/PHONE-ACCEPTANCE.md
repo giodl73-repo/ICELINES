@@ -12,7 +12,10 @@ orientation and whether a debugger was attached.
 ## Touch and display
 
 1. In portrait, load the test season from **Data library**. Record its season/type
-   and row count. Verify that loading ends, the active context stays visible,
+   and the full result count in the query summary. The viewport renderer mounts
+   only nearby rows; record mounted rows separately from complete results. Scroll
+   through to the final rank and use **Show all players** to compare every name
+   with the complete JSON export. Verify that loading ends, the active context stays visible,
    and the library collapses to show analysis.
 2. Try Night Game, Fresh Ice and Hockey Club. Read player names, numeric columns,
    selected controls and source/status text in each. Reload online and check that
