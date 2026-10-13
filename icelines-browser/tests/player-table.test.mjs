@@ -55,6 +55,15 @@ test('goalie transitions rebuild column shape and retain null, zero and display 
   assert.equal(goalie.children[4].textContent, '0'); assert.equal(goalie.children[5].textContent, '0.912'); assert.equal(goalie.children[6].textContent, '—');
 });
 
+test('viewport slices retain global ranks for skaters and goalies', () => {
+  const { table, body } = fixture();
+  table.render([row, row], false, 800);
+  assert.equal(body.children[0].children[0].textContent, '801');
+  assert.equal(body.children[1].children[0].textContent, '802');
+  table.render([row], true, 120);
+  assert.equal(body.children[0].children[0].textContent, '121');
+});
+
 test('pool is bounded without limiting results', () => {
   const { table, body } = fixture(); const rows = Array.from({ length: 1030 }, (_, i) => ({ ...row, player_id: i }));
   table.render(rows, false); const retained = body.children[1023], beyondPool = body.children[1024];

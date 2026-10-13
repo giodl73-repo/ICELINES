@@ -1,4 +1,4 @@
-import { PlayerTable } from './player-table.js';
+import { ViewportTable } from './viewport-table.js';
 import { initializeAppearance } from './appearance.js';
 import { EngineClient, EngineStoppedError } from './engine-client.js';
 import { registerOfflineShell } from './offline.js';
@@ -17,7 +17,7 @@ import type { ViewState } from './view-state.js';
 import type { CatalogEntry, Dataset, PackageData, PackageMetadata, PlayerRow, QueryRequest, QueryResult, SavedDatasetEntry, ScheduledGame } from './types.js';
 
 initializeAppearance();
-const playerTable = new PlayerTable(element('rows'), element('head'), row => { void perform(() => player(row)); });
+const playerTable = new ViewportTable(element('rows'), element('head'), row => { void perform(() => player(row)); }, element<HTMLSelectElement>('table-view'));
 
 function element<T extends HTMLElement>(id: string): T { const value = document.getElementById(id); if (!value) throw new Error(`Missing control ${id}`); return value as T; }
 const catalogSelect = element<HTMLSelectElement>('catalog');

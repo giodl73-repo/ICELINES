@@ -29,7 +29,7 @@ export class PlayerTable {
     if (release) { this.pool = []; this.goalie = undefined; this.head.replaceChildren(); }
   }
 
-  render(rows: PlayerRow[], goalie: boolean): void {
+  render(rows: PlayerRow[], goalie: boolean, rankOffset = 0): void {
     if (this.goalie !== goalie) {
       this.clear(); this.goalie = goalie;
       const header = document.createElement('tr');
@@ -50,7 +50,7 @@ export class PlayerTable {
     this.visible.length = common;
     const fragment = document.createDocumentFragment();
     rows.forEach((row, index) => {
-      const values = goalie ? [index + 1, row.name, row.team, row.gp, row.wins, row.save_pct?.toFixed(3), row.gaa?.toFixed(2)] : [index + 1, row.name, row.team, row.gp, row.goals, row.assists, row.points, row.pace_82?.toFixed(1)];
+      const values = goalie ? [rankOffset + index + 1, row.name, row.team, row.gp, row.wins, row.save_pct?.toFixed(3), row.gaa?.toFixed(2)] : [rankOffset + index + 1, row.name, row.team, row.gp, row.goals, row.assists, row.points, row.pace_82?.toFixed(1)];
       let nodes = this.pool[index];
       if (!nodes) {
         nodes = { element: document.createElement('tr'), values: [], button: document.createElement('button') };
