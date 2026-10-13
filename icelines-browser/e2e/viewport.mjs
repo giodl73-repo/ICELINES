@@ -58,6 +58,7 @@ try {
     await axSession.detach();
     await page.locator('#table-view').selectOption('scroll');
     await page.evaluate(()=>window.addEventListener('beforeprint',()=>{window.__printedRows=document.querySelectorAll('#rows tr[data-result-index]').length;}));
+    await writeFile(resolve(out,'print-reference.json'),JSON.stringify(exported.rows.map((row,index)=>({rank:index+1,name:row.name,pace:row.pace_82==null?'—':row.pace_82.toFixed(1)})))+'\n');
     await page.pdf({path:resolve(out,'all-players.pdf'),format:'A4',printBackground:false,margin:{top:'12mm',bottom:'12mm',left:'12mm',right:'12mm'}});
     assert.equal(await page.evaluate(()=>window.__printedRows),933);
     await expect(page.locator('#table-view')).toHaveValue('scroll');

@@ -54,3 +54,11 @@ Amendments applied:
 Before promotion: required CI and review of the new interaction behavior; keep
 resource/device gates explicitly open. The Show all option is a fallback whose
 actual screen-reader/print experience still needs user-facing validation.
+
+Print/AX amendment (application 680a89cb): EDGE E2 now has an actual complete AX
+name/order check and PDF print preparation/restoration, with fixed clipping and
+contrast. Printed ranks/columns and reviewed layout pass. Exact PDF extraction
+still substitutes 11 accented names; a second font reproduces it, cause unproven.
+The partial report stays verified:false, so screen-reader/print text acceptance
+is not upgraded to complete. Updated normal workload peaks at 447.03 MiB; B1 and E3
+remain open. Draft/CI/public-source boundaries remain unchanged.

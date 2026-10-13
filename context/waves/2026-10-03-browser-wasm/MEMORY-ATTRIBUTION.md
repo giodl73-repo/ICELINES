@@ -496,3 +496,30 @@ playoff fixture, applying the same GP/points thresholds as the legacy cell check
 This is a measured local candidate, not a publication or full validation pass.
 Both 250 MiB comparisons still fail. Android remains deferred. Raw browser,
 offline, candidate/control memory and failed-probe reports use the viewport- prefix.
+
+## Print/accessibility follow-up (2026-10-13)
+
+Candidate application 680a89cb fixes an actual print defect: the original
+full-table A4 output clipped the pace column and printed faint names. Print CSS
+now fits every column with black text, repeated headers and compact unsplit rows.
+Before printing, the renderer mounts the complete result; after printing it
+restores viewport mode. The permanent browser regression checks those transitions
+and all 933 accessible player-button names in engine order. The actual A4 PDF has
+24 pages and all 933 ranks; first, second and last pages are rendered and reviewed.
+
+Exact PDF text preservation is still only partial: two PDF parsers extract
+replacement characters for 11 accented names, although sampled raster glyphs
+show the accent correctly. A Segoe UI probe reproduces the same mismatch; no font
+change is adopted and the producer/mapping cause is unproven. The PDF report keeps
+verified:false with layout_verified:true. AX names and canonical JSON preserve
+all original names. This is not a physical screen-reader/printer/Android claim.
+Raw failure, layout-partial, browser, offline and memory reports plus the exact PDF
+and source hashes are retained under the viewport-print prefix.
+
+Type checking and 149 unit tests pass. The actual browser regression repeats
+all ranks, last detail, keyboard boundaries, filter/failure/retry and goalie
+fallback checks. Offline process reopening/fresh query/detail passes. Updated
+normal full-workload private peak is 447.03 MiB against the prior matching 547.10 MiB
+control, with all 75 packages/two imports/20 queries/restart and original sampler.
+The 250 MiB requirement and real Android gate remain open. The public release
+remains e0741daa; PR91 is a draft candidate, not deployed readiness.

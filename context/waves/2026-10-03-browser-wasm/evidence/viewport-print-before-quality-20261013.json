@@ -1,0 +1,12 @@
+{
+  "verified": false,
+  "scope": "Actual pre-fix A4 print from full table; accessibility tree result is separate. PDF image inspection finds clipped pace column and faint names.",
+  "pages": 74,
+  "first_pace_complete": false,
+  "player_name_color_rgb_hex": "9ea5a6",
+  "quality_issues": [
+    "Rightmost pace values are clipped",
+    "Name text is faint on white paper"
+  ],
+  "artifact_commit": "83da9b556164c6a4afd468ad529c083acfeab286"
+}
