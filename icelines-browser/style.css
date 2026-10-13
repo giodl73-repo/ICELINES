@@ -12,3 +12,17 @@ table{border-collapse:collapse;width:100%;background:var(--surface);color:var(--
 /* Viewport prototype: fixed row geometry preserves continuous page scrolling. */
 .viewport-table{table-layout:fixed;min-width:900px}.viewport-table th:first-child{width:7%}.viewport-table th:nth-child(2){width:30%}.viewport-table th:nth-child(3){width:9%}.viewport-table #rows tr:not(.row-spacer){height:72px}.viewport-table #rows td:nth-child(2){overflow:hidden;text-overflow:ellipsis}.viewport-table #rows .row-spacer,.viewport-table #rows .row-spacer:hover{background:transparent}.viewport-table #rows .row-spacer td{padding:0;border:0;line-height:0}.viewport-table #rows tr:not(.row-spacer){background:var(--surface)}.viewport-table #rows tr.even-rank{background:var(--row)}.viewport-table #rows tr:not(.row-spacer):hover{background:var(--hover)}#rows tr[data-rank="1"] td:first-child{color:var(--accent)}.table-view-control{margin:12px 0;max-width:260px}
 :root:has(.viewport-table){overflow-anchor:none}
+
+@media print {
+  :root,:root[data-theme]{--fg:#000;--muted:#333;--surface:#fff;--bg:#fff;--row:#fff;--hover:#fff;--border:#bbb;--accent:#000;color-scheme:light;font:10pt/1.25 Arial,sans-serif}
+  header,.skip,.workbench-hero,.session-summary,#data-library,main>aside,#analysis form,#analysis details,#analysis .actions,.table-view-control,.table-help,main>section:not(#analysis),#empty{display:none!important}
+  body{background:#fff;color:#000}main{padding:0;max-width:none}#analysis{margin:0!important;padding:0!important;background:#fff!important}
+  #analysis h1{font:700 18pt/1.25 Arial,sans-serif}#query-summary{font-size:9pt}
+  .table-scroll{overflow:visible!important;max-width:none}
+  #analysis table{table-layout:fixed;min-width:0!important;width:100%;color:#000;background:#fff}
+  #analysis th:first-child{width:6%}#analysis th:nth-child(2){width:30%}#analysis th:nth-child(3){width:10%}
+  #analysis th,#analysis td{font-size:8pt;padding:3pt;white-space:normal;overflow-wrap:anywhere;color:#000}
+  #analysis td button{font:700 8pt/1.25 Arial,sans-serif;min-height:0;padding:0;color:#000;background:transparent}
+  #rows td:first-child{font:10pt/1.25 Arial,sans-serif;color:#000}#rows tr:first-child td:first-child{color:#000}
+  #rows tr{break-inside:avoid;background:#fff}thead{display:table-header-group}
+}

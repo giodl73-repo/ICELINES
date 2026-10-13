@@ -50,7 +50,18 @@ try {
     await expect(page.locator('#rows tr[data-result-index]')).toHaveCount(933);
     const allNames = await page.locator('#rows td:nth-child(2) button').allTextContents();
     assert.deepEqual(allNames, exported.rows.map(r => r.name));
+    const axSession=await page.context().newCDPSession(page);
+    const axTree=await axSession.send('Accessibility.getFullAXTree');
+    const nameSet=new Set(exported.rows.map(r=>r.name));
+    const axNames=axTree.nodes.filter(n=>n.role?.value==='button' && nameSet.has(n.name?.value)).map(n=>n.name.value);
+    assert.deepEqual(axNames,exported.rows.map(r=>r.name));
+    await axSession.detach();
     await page.locator('#table-view').selectOption('scroll');
+    await page.evaluate(()=>window.addEventListener('beforeprint',()=>{window.__printedRows=document.querySelectorAll('#rows tr[data-result-index]').length;}));
+    await page.pdf({path:resolve(out,'all-players.pdf'),format:'A4',printBackground:false,margin:{top:'12mm',bottom:'12mm',left:'12mm',right:'12mm'}});
+    assert.equal(await page.evaluate(()=>window.__printedRows),933);
+    await expect(page.locator('#table-view')).toHaveValue('scroll');
+    assert.ok(await page.locator('#rows tr[data-result-index]').count()<=44);
     const top = await page.locator('#rows').evaluate(e => e.getBoundingClientRect().top + scrollY);
     const seen = new Set();
     let maxMounted = 0;
@@ -131,7 +142,7 @@ try {
     await page.waitForTimeout(50);
     await page.screenshot({ path: resolve(out, 'narrow.png'), fullPage: false });
     report.verified = true;
-    report.evidence = { exported_rows: 933, all_table_names_match: true, all_ranks_scrolled: seen.size, max_mounted: maxMounted, exact_row_height: 72, last_player_detail: true, tab_steps: 120, reverse_tab_steps: 120, filtered_result_count: 835, failure_clear_retry: true, narrow_width: 390, terminal_tab_boundaries: true, goalie_export_full_table_parity: goalies.rows.length };
+    report.evidence = { exported_rows: 933, all_table_names_match: true, all_ranks_scrolled: seen.size, max_mounted: maxMounted, exact_row_height: 72, last_player_detail: true, tab_steps: 120, reverse_tab_steps: 120, filtered_result_count: 835, failure_clear_retry: true, narrow_width: 390, terminal_tab_boundaries: true, ax_all_player_names: axNames.length, print_source_rows: 933, print_restores_scroll_mode: true, goalie_export_full_table_parity: goalies.rows.length };
 }
 catch (e) {
     failure = e;

@@ -19,6 +19,8 @@ export class ViewportTable {
   private start = 0;
   private end = 0;
   private frame = 0;
+  private printMode: string | undefined;
+  private printScroll = 0;
   private readonly htmlTable: HTMLTableElement;
   private readonly top: HTMLTableRowElement;
   private readonly bottom: HTMLTableRowElement;
@@ -30,6 +32,17 @@ export class ViewportTable {
     this.top = this.spacer(); this.bottom = this.spacer();
     window.addEventListener('scroll', () => this.schedule(), { passive: true });
     window.addEventListener('resize', () => this.schedule(), { passive: true });
+    window.addEventListener('beforeprint', () => {
+      if (this.pending || this.printMode !== undefined) return;
+      this.printMode = mode.value; this.printScroll = window.scrollY;
+      mode.value = 'all'; this.draw();
+    });
+    window.addEventListener('afterprint', () => {
+      if (this.printMode === undefined) return;
+      mode.value = this.printMode; this.printMode = undefined; this.draw();
+      const scroll = this.printScroll;
+      requestAnimationFrame(() => { if (!this.pending) window.scrollTo(0, scroll); });
+    });
     mode.addEventListener('change', () => {
       if (this.pending) return;
       const active = document.activeElement?.closest<HTMLTableRowElement>('tr[data-result-index]');
