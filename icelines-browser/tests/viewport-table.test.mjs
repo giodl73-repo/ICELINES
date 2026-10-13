@@ -15,4 +15,5 @@ test('viewport windows are bounded and cover every visible rank through the last
   }
   assert.deepEqual(rowWindow(0, 100, 800), [0, 0]);
   assert.deepEqual(rowWindow(8, 0, 800), [0, 8]);
+  assert.deepEqual(rowWindow(933, 100000, 800), [889, 933]);
 });

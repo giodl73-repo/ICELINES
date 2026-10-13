@@ -5,8 +5,10 @@ import type { PlayerRow } from './types.js';
 const ROW_HEIGHT = 72;
 const OVERSCAN = 16;
 export function rowWindow(count: number, scrollOffset: number, viewportHeight: number): [number, number] {
-  const start = Math.max(0, Math.min(count, Math.floor(Math.max(0, scrollOffset) / ROW_HEIGHT) - OVERSCAN));
-  return [start, Math.min(count, start + Math.ceil(viewportHeight / ROW_HEIGHT) + 2 * OVERSCAN)];
+  const size = Math.ceil(viewportHeight / ROW_HEIGHT) + 2 * OVERSCAN;
+  // Keep terminal rows mounted when focus enters/leaves the table from outside.
+  const start = Math.max(0, Math.min(Math.max(0, count - size), Math.floor(Math.max(0, scrollOffset) / ROW_HEIGHT) - OVERSCAN));
+  return [start, Math.min(count, start + size)];
 }
 
 export class ViewportTable {
@@ -91,7 +93,7 @@ export class ViewportTable {
     const virtual = this.mode.value !== 'all';
     const offset = -this.body.getBoundingClientRect().top;
     const [start, end] = virtual ? (forcedStart === undefined ? rowWindow(this.rows.length, offset, window.innerHeight)
-      : [forcedStart, Math.min(this.rows.length, forcedStart + Math.ceil(window.innerHeight / ROW_HEIGHT) + 2 * OVERSCAN)])
+      : rowWindow(this.rows.length, (forcedStart + OVERSCAN) * ROW_HEIGHT, window.innerHeight))
       : [0, this.rows.length];
     // Scroll events that leave the window unchanged must not allocate or rewrite rows.
     if (forcedStart === undefined && start === this.start && end === this.end
