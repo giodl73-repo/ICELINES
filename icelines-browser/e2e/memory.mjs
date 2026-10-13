@@ -74,6 +74,13 @@ try {
   });
   const context = await browser.newContext({ serviceWorkers: 'allow', viewport: { width: 1280, height: 800 } });
   const page = await context.newPage();
+  const queryCommitted = async expectedRows => {
+    await expect(page.locator('#rows tr')).toHaveCount(expectedRows, { timeout: 60000 });
+    // Attached rows retain their count while a request is pending. The form
+    // stays enabled too, so neither condition alone proves query completion.
+    await expect(page.locator('#rows')).toHaveJSProperty('inert', false, { timeout: 60000 });
+  };
+  report.query_completion = 'Expected row count and pending tbody.inert cleared before starting the next query.';
   await expect.poll(() => samples.length, { timeout: 15000 }).toBeGreaterThan(3);
   phase = 'startup';
   await page.goto(url);
@@ -90,7 +97,7 @@ try {
     await expect(page.locator('#context')).toContainText(String(entry.season));
     await expect(page.locator('#context')).toContainText(entry.season_type);
     await expect(page.locator('#query-summary')).toContainText('skaters', { timeout: 60000 });
-    await expect(page.locator('#rows tr')).toHaveCount(entry.skaters, { timeout: 60000 });
+    await queryCommitted(entry.skaters);
     await expect(page.locator('#load')).toBeEnabled();
     const residents = await page.locator('#resident-library > li').count();
     expect(residents).toBeLessThanOrEqual(8);
@@ -108,7 +115,7 @@ try {
     await expect(page.locator('#context')).toContainText(seasonType, { timeout: 60000 });
     const expectedPackage = catalog.packages.find(entry => String(entry.season) === archiveSeason && entry.season_type === seasonType);
     if (!expectedPackage) throw new Error('Archive context must exist in the verified artifact catalog.');
-    await expect(page.locator('#rows tr')).toHaveCount(expectedPackage.skaters, { timeout: 60000 });
+    await queryCommitted(expectedPackage.skaters);
     await expect(page.locator('#status')).toContainText('Imported into memory', { timeout: 60000 });
     await expect(page.locator('#rows tr').first()).toBeAttached();
     report.imports.push({ season_type: seasonType, import_and_render_ms: performance.now() - before, rows: await page.locator('#rows tr').count() });
@@ -121,7 +128,7 @@ try {
   for (let index = 0; index < 20; index++) {
     const before = performance.now();
     await page.locator('#query button[type="submit"]').click();
-    await expect(page.locator('#rows tr')).toHaveCount(expectedRows);
+    await queryCommitted(expectedRows);
     await expect(page.locator('#query button[type="submit"]')).toBeEnabled();
     report.warm_query_ms.push(performance.now() - before);
   }

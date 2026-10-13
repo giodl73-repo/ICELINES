@@ -6,23 +6,44 @@ It does not declare the full plan complete.
 
 ## Current release
 
-- Validation source: `0e34ce88fb4c9465d66c40821b94658aa19cf722`; includes the merged renderer and dependency updates. The deferred-engine candidate is not deployed.
-- Retained master build: `38434732162`; publication `38441650974`; final restore `38450322271`, all successful. Deployment used the reviewed retained bytes and the master workflow with PR #88's archive guard.
-- Shell: `058529d3026d453cb2fa8a517f9c2d9e815a4883ca48a7034a22507df6209c02`.
-- Retained clean artifact verified: 104 files, 75 public packages. Static runtime/documentation verification matched 195 files after retrying one transient HTTP 503.
+- Validation source: `e0741daad56749cc3a3292e3f054b56d9f2605a2`; merged PR #89's deferred engine and attached-row renderer. This is a validation build, not full resource/mobile acceptance.
+- Retained master build: `38457012844`; publication `38467985652`; rollback `38469050130` to previous 0e34ce88; final restore `38469247324`, all successful. Deployments reused exact reviewed bytes with the complete upload-tar guard.
+- Shell: `273224d69d98ddb8f6d7ea7d6a861b408bc993db807c8c537ec7593133c7e497`.
+- Retained clean artifact verified: 104 files, 75 public packages. Final static runtime/documentation verification matched 195 served files, including 94 documentation files, with no failures.
 - Pages source: Actions workflow. `master` and `gh-pages` branch policies exist;
   the existing workflows publish from master and compose documentation from gh-pages.
 - The earlier 696c656b publication's first attempt failed before deployment: master was excluded by the
   old gh-pages-only environment rule. Switching Pages to workflow mode added
   the master rule; retrying only the failed job succeeded.
 
+The current release uses retained artifact `11845381015`. Linux WASM SHA-256 remains
+`2e4c853309a32d8366c282afe113626fde5c25b26349bd9194ceafe59123f57b`.
+Its actual-browser offline process-close check passes, including pending rows,
+zero common-row reinsertions, detail, failed-query clearing and retry. See
+`evidence/merged-optimization-ci-artifact-20261013.json` and its offline report.
+The initial master build skipped deployment; publication and the final restore
+are now independently verified on Pages. Public in-place update, rollback and
+forward restore preserve saved season/schedule bytes, metadata, revisions and
+settings. New/legacy renderer behavior is checked in addition to cached build-info
+identity. An initial final-restore notice timeout is retained separately; the
+same deployment passes the repeated in-place and offline checks. Cause is unproven.
+See `evidence/public-optimization-publication-provenance-20261013.json`.
+
 ## Feature and gate disposition
 
-The attached-row optimization is a local candidate, separate from the current
-public release. Two corrected candidate memory runs peak at 541.93/539.78 MiB;
+The attached-row optimization is merged and published. Two early candidate
+memory runs peak at 541.93/539.78 MiB; the strengthened query-commit runner's
+existing-renderer control peaks at 548.02 MiB. The early readiness barrier alone
+does not independently prove completion of every same-count warm query;
 the 250 MiB gate remains open. See MEMORY-ATTRIBUTION.md and attached-rows evidence
 for matching controls and the real-browser offline/pending/error checks. Physical
 Android testing remains deferred by the user.
+
+The subsequent catalog-decoding and cleared-row-cache runtime experiments are
+not adopted. Their functional/native/WASM checks pass, but the normal memory
+comparisons establish no useful saving. They remain separate prototype branches;
+the stable runtime still matches merged PR #89. Their evidence and review are
+recorded separately in MEMORY-ATTRIBUTION.md and the catalog-context artifacts.
 
 | Plan requirement | Evidence | Disposition |
 |---|---|---|
@@ -35,35 +56,36 @@ Android testing remains deferred by the user.
 | Polling, cancellation, previous-good preservation | Polling/acquisition tests and deployed cancellation evidence | Implemented |
 | Responsive UI, keyboard, share routes and source disclosures | Selected 360px/desktop tests and deployed export/view checks | Partial acceptance; not a physical-phone or full assistive-technology claim |
 | Appearance choices | Night Game, Fresh Ice, Hockey Club; live switching, preference reload and cross-tab observations | Implemented |
-| Exact release publication and documentation preservation | Retained artifact, deployment run and deployed-release-20261008.json | Static-byte evidence; not browser/offline proof |
-| Application update with saved data | Live two-tab update to 696c656b restored saved season and 49-game schedule; restored p >= 100 returned eight skaters | Selected deployed update passes |
-| Deployed offline reopening and saved query | deployed-offline-reopen-20261012.json: isolated Chromium 153 process closed/reopened offline; saved 933-row season restored, unsaved second season absent, fresh 835-row filter and player detail pass; uncached network probe fails | Selected desktop acceptance passes; physical mobile remains separate |
-| Previous-version rollback and forward restore | Public rollback run 38449905372 to 696c656b, forward restore 38450322271 to 0e34ce88; browser/offline reports and exact saved-record hashes | Selected close-and-reopen path passes with saved season/schedule bytes unchanged; in-place update activation remains separately incomplete |
-| Whole-browser staging/resident peak memory | desktop-process-memory-20261012.json: Windows process-tree samples across all 75 packages, eight residents, regular/playoff imports and warm queries; 590.81 MiB sampled private bytes, 900.45 MiB summed working set, 230.92 MiB blank-browser private baseline | OPEN: provisional 250 MiB target is exceeded; investigate allocations and validate representative devices. Sampled private allocations and shared-page working-set sums are not exact concurrent physical-memory peaks |
+| Exact release publication and documentation preservation | Build 38457012844, publication 38467985652, restore 38469247324; deployed-optimization-release-20261013.json matches 195 served files | Selected current-release bytes/documentation verified; upload tar guard covers staged hidden files |
+| Application update with saved data | Public one-tab consent-driven 0e34ce88 to e0741daa update; saved 933-player season plus two-game schedule fixture preserved; pending/render behavior proves new application code | Selected current public in-place update passes; two-tab consent passes separately on localhost |
+| Deployed offline reopening and saved query | public-optimization-restore-offline-20261013.json: process closed/reopened offline; saved season/schedule restored, uncached probe fails, fresh eight-player filter/detail and new renderer behavior pass | Selected current desktop acceptance passes; earlier CI profile also verifies unsaved discard and 835-row filter; physical mobile remains separate |
+| Previous-version rollback and forward restore | Rollback 38469050130 to 0e34ce88, restore 38469247324 to e0741daa; public browser/offline reports and exact stored hashes | Selected current in-place path passes both directions with saved bytes unchanged; earlier notice timeout retained, cause unproven |
+| Whole-browser staging/resident peak memory | stable-handler-control-memory-20261013.json: existing renderer, all 75 packages, eight residents, 905/332-player imports, 20 queries with explicit commit barrier and restart; private peak 548.02 MiB | OPEN: retained 250 MiB target is exceeded; continue allocation investigation. Sampled private allocations and shared-page working-set sums are not exact concurrent physical-memory peaks |
 | Physical mobile, touch/picker and latency | Desktop browser at narrow viewport | OPEN: real mobile browser/device measurements required |
 | Compare/history/team/cards/fantasy | Plan WP-BW-07 requires separately scoped contracts and parity | Later waves; not implemented or implicitly accepted by the first slice |
 
-## Next acceptance actions
+## Completed checks and remaining acceptance actions
 
 1. Desktop deployed offline reopening completed on 2026-10-12 using the opt-in
    `icelines-browser/e2e/offline-reopen.mjs` Playwright runner. The same check also
    passed against retained artifact 6016f77b with its local HTTP server stopped.
    This is desktop Chromium evidence, not physical-phone acceptance.
-2. Rehearse a retained previous-good release through `browser-rollback.yml`, then
-   restore this exact release using its retained artifact. Compare saved-package
-   fingerprints and current documentation before/after. This temporarily changes
-   the public site and is not inferred from a local preview rehearsal.
-3. Measure browser-process/staging peak separately from WASM memory, with an
-   isolated profile and attributed processes. Run the all-package/resident/import
-   cases and warm-query measurements; disclose baseline and instrument limitations.
-   The 2026-10-12 Windows headless Chromium run now supplies process counters:
-   all 75 package phases have samples, median sampling interval 185 ms and maximum
-   interval 755 ms. Regular/playoff imports returned 905/332 players; the slowest
-   of 20 warm query/render samples was 130.77 ms. The private-allocation peak was
-   359.89 MiB above the blank-browser peak. These observations exceed the current
-   total-memory target. Do not reinterpret the baseline-subtracted number as a
-   passing total-memory budget or claim a leak without allocation evidence.
-4. Run the responsive/picker/keyboard flows on a physical phone. Record mobile
+2. Public previous-version rollback and forward restore completed on 2026-10-13:
+   current-release rollback 38469050130 and restore 38469247324 preserve exact
+   saved season and schedule fixture bytes on the selected public in-place path.
+   Final browser, offline and documentation verification pass. Local one/two-tab
+   update checks also pass. Earlier incomplete notice probes remain recorded;
+   the repeated final-restore check passes without a new deployment or code fix.
+3. Continue whole-browser allocation optimization. The original isolated Windows
+   process sampler covers every package phase, both 905/332-player archive imports,
+   20 warm queries and restart. The corrected attached-row candidate shows repeated
+   private peaks near 540–542 MiB versus controls near 570–571 MiB. A corrected
+   readiness barrier now proves commit of each warm query and measures the
+   existing renderer at 548.02 MiB. The original
+   total 250 MiB target is retained. Baseline-subtracted or forced-GC measurements
+   cannot establish acceptance, and memory growth alone does not establish a leak.
+4. Physical Android testing is deferred by the user until the phone is connected.
+   Then run the responsive/picker/keyboard flows and record mobile
    engine, device and timing; do not substitute a desktop viewport capture.
    The executable manual sequence and instrument options are in
    `PHONE-ACCEPTANCE.md`; its status is not run until real-device evidence exists.
@@ -80,12 +102,15 @@ The allocation follow-up is recorded in `MEMORY-ATTRIBUTION.md` with separate
 control, prototype and corrected-renderer evidence. WASM linear memory was
 23.88 MiB; forced page GC exposed collectable renderer allocations. The first
 row-reuse prototype retained spare DOM rows and was corrected to release them
-when results shrink. The corrected pool returns to approximately the control's
-post-GC node count. Forced collection and the modest single-run differences do
-not close the whole-browser memory gate or substitute for phone measurements.
+when results shrink. The latest attached-row candidate avoids common-row
+detach/reinsert operations and records reverse-order repeated measurements.
+Forced collection and the observed savings do not close the whole-browser memory
+gate or substitute for phone measurements.
 
 Prepared rollback selection is recorded in
 `evidence/prepared-rollback-20261008.json`: previous artifact 0caaeaeb and current
 artifact 696c656b both pass the retained-artifact verifier. Their local composed
 outputs preserve identical inventories of all 95 documentation files. This is
-preparation, not a remote rehearsal; public rollback approval remains pending.
+historical preparation. The authorized public rehearsal and final restore are
+now recorded in `evidence/public-rehearsal-provenance-20261013.json`; approval is
+no longer pending for that completed rehearsal.

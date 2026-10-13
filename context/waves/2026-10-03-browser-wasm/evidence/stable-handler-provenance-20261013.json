@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "prototype_commit": "dc39dd312bb01e8cb511c14131ca5fb809b9baa8",
+  "control_commit": "653c876b",
+  "wasm_sha256": "4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee",
+  "prototype": "One attached handler reads the current row; removed/cleared rows lose both handler and current-record reference. All results and original pool trimming retained.",
+  "unit_tests": 148,
+  "browser": "Owned process-close offline profile, fresh filtering, stable handler identity across changed goal sorting, correct reordered player detail, current failure clearing and retry.",
+  "decision": "Prototype not adopted. Strengthened completion-barrier runs show private peaks 548.75 versus 548.02 MiB, blank peaks 227.93 versus 231.02 MiB. No useful saving or general speed claim established.",
+  "benchmark_fix": "Row count and enabled form alone can describe a previous result while attached rows remain. Wait for tbody.inert to clear as well before proceeding to the next query. Inputs, original OS sampler, all 75 packages, both imports, 20 warm queries, restart, and 250 MiB target unchanged.",
+  "runner_sha256": "1d1873bd6ecf736e498f71dc2041e5fcf694d70b283eb417818596e97fa15126",
+  "preliminary_runs": [
+    "browser-memory-NJg67f",
+    "browser-memory-za2Adl"
+  ],
+  "preliminary_scope": "Earlier row-count/enabled-button barrier; not used as stronger per-query completion or timing evidence. Replaced by corrected pair above.",
+  "target_mib": 250,
+  "target_changed": false,
+  "publication": "No new deployment",
+  "android": "Deferred by user"
+}

@@ -1,0 +1,14 @@
+{
+  "scope": "Exact merged-master CI artifact, independently byte-verified and exercised offline in an owned desktop browser profile. Not publication, phone or resource-budget acceptance.",
+  "workflow_run": 38457012844,
+  "artifact_id": 11845381015,
+  "artifact_name": "icelines-browser-e0741daad56749cc3a3292e3f054b56d9f2605a2",
+  "commit": "e0741daad56749cc3a3292e3f054b56d9f2605a2",
+  "shell_build": "273224d69d98ddb8f6d7ea7d6a861b408bc993db807c8c537ec7593133c7e497",
+  "wasm_sha256": "2e4c853309a32d8366c282afe113626fde5c25b26349bd9194ceafe59123f57b",
+  "verified_files": 104,
+  "packages": 75,
+  "acceptance_evidence": "merged-optimization-ci-offline-20261013.json",
+  "publication": "Deployment skipped; cache-busted public build-info check still returns 0e34ce88fb4c9465d66c40821b94658aa19cf722.",
+  "checked_at": "2026-10-13T20:08:36.459Z"
+}

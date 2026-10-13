@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "published_commit": "e0741daad56749cc3a3292e3f054b56d9f2605a2",
+  "shell_build": "273224d69d98ddb8f6d7ea7d6a861b408bc993db807c8c537ec7593133c7e497",
+  "artifact_build_run": 38457012844,
+  "artifact_id": 11845381015,
+  "publication_run": 38467985652,
+  "rollback_run": 38469050130,
+  "final_restore_run": 38469247324,
+  "rollback_commit": "0e34ce88fb4c9465d66c40821b94658aa19cf722",
+  "rollback_artifact_run": 38434732162,
+  "update_mode": "inplace with explicit consent; selected one-tab public profile in both directions",
+  "data": "Saved 933-player season and two-game repository schedule fixture; all stored byte hashes, revisions, metadata and settings unchanged across publication, rollback and final restore.",
+  "executing_code": "New release pending table is hidden/inert; 933-to-eight filter adds zero rows and removes 925. Rolled-back legacy release has no pending inert/visibility override, removes 933 and adds eight. This behavior check supplements cached build-info identity.",
+  "local_two_tabs": "First consent preserves old build; second consent allows both tabs to update. Localhost evidence, not a public-origin two-tab claim.",
+  "incomplete_probe": "Initial final-restore notice wait timed out. Kept separately; same deployment passed the repeated in-place browser and final offline checks. Cause unproven; no service-worker implementation fix claimed.",
+  "static": "Final restore matches 195 served files including 94 documentation files against actual workflow preservation manifest; uploader tar guard verifies complete staged inventory including hidden files.",
+  "runner_sha256": {
+    "local-inplace-update.mjs": "8a94fb289175e67c9eee1e281c3d669ccbe117d4daca6d37305cb8c31baa5b08",
+    "local-two-tab-update.mjs": "6117ff701194ae951c8cf65458671ea8dbf094054339913a97c4373ebd3c7bc0",
+    "public-release-rehearsal.mjs": "653cc6abdd952682008e8b09a32e37342d5083d2fa1a073c1d12eec17fec5913"
+  },
+  "target_mib": 250,
+  "target_achieved": false,
+  "android": "Deferred by user"
+}

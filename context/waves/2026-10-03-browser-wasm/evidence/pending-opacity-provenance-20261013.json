@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "prototype_commit": "8fc3ee9a1ae66523b4143801f1274630a18a59cb",
+  "control_commit": "653c876b",
+  "hypothesis": "Non-inherited opacity may avoid descendant visibility restyling while keeping pending rows visually absent, inert and laid out.",
+  "sources": [
+    "https://www.w3.org/TR/css-color-4/#transparency",
+    "https://www.w3.org/TR/css-display-3/#visibility"
+  ],
+  "test_scope": "Original whole-browser process sampler, strengthened query completion, 75 packages, eight resident windows, 905/332-player imports, 20 warm queries and restart. No forced GC or debugger intervention.",
+  "unit_tests": 147,
+  "browser": "Saved 933-player season restored after process closure offline. Pending computed opacity zero and inert true while rows stay attached. Fresh 835-row filter, zero common-row reinsertions, detail, failure clearing and retry pass.",
+  "decision": "Not adopted. Observed private peaks 545.82 versus 544.31 MiB, blank peaks 227.37 versus 230.95 MiB; no useful saving established. Stable source retains visibility:hidden with inert.",
+  "wasm_sha256": "4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee",
+  "target_mib": 250,
+  "target_changed": false,
+  "publication": "Public release remains e0741daa; prototype not deployed"
+}

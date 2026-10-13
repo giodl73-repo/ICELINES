@@ -196,6 +196,177 @@ malformed-query clearing and a successful 835-row retry pass. This browser
 inspection is separate from normal memory measurements. The candidate is not
 deployed; physical Android remains deferred by the user.
 
+## Table layout versus idle collection diagnostic (2026-10-13)
+
+An ad-hoc direct-CDP controller ran the corrected 653c876b artifact through all
+75 packages, both archive imports, warm queries and restart in two fresh profiles.
+It uses captured Chromium flags with a fresh profile and loopback-port transport,
+without Playwright's injected script or Network observer. It is a diagnostic
+method, not a substitute normal benchmark; its lower peaks do not revise the
+production-runner results or establish acceptance. No forced GC was requested.
+Sources and capture hashes are recorded in table-layout-diagnostic-provenance.
+
+After normal queries, the treatment collected counters, waited five seconds,
+hid the existing table with display:none for five seconds, then restored it and
+repeated the query. The matched idle control left the table displayed throughout.
+All three snapshots in both runs retain exactly 280 active rows.
+
+| Diagnostic | Initial DOM nodes | Middle-interval DOM nodes | Initial embedder MiB | Middle-interval embedder MiB | Private MiB after first / middle / final interval |
+|---|---:|---:|---:|---:|---|
+| Hide table layout | 20,201 | 6,089 | 61.19 | 3.08 | 435.86 / 367.29 / 363.63 |
+| Leave table displayed | 20,013 | 6,089 | 58.47 | 10.19 | 435.54 / 373.61 / 391.10 |
+
+The idle control also drops approximately 14,000 DOM nodes and substantial
+allocations without hiding the table. The large reduction therefore cannot be
+attributed solely to table layout or used to justify pagination as its solution.
+Natural collection and debugger inspection effects remain possible. Retired
+presentation allocations across repeated large/small season loads are the next
+useful investigation area; this pair does not identify a leak or an exact layout
+cost. Raw diagnostic_table_hidden is inherited phase nomenclature in the idle
+report and does not mean that its table was hidden. The 250 MiB gate stays open.
+
+## Cleared row cache experiment — not adopted (2026-10-13)
+
+Prototype 18fcb68a retained up to 1024 cleared row shells when a large regular
+season was followed by a smaller playoff/filter result. Detached names, IDs and
+callbacks were cleared; unload and column transitions released the pool. This
+tested whether avoiding repeated tail-node creation outweighs bounded retention.
+Control was the existing 653c876b renderer that trims spare entries. Both clean
+Windows artifacts share the same WASM bytes. The normal OS-process sampler ran
+all 75 packages, both archive imports, 20 warm queries and restart, sequentially
+candidate then control, without debugger intervention or forced GC.
+
+| Run | Blank private MiB | Full private peak MiB | Warm median ms (upper middle) | Warm maximum ms |
+|---|---:|---:|---:|---:|
+| Cache prototype | 234.07 | 537.18 | 50.09 | 66.16 |
+| Fresh trimming control | 226.30 | 529.66 | 51.49 | 67.38 |
+
+The total difference is approximately the blank-baseline difference. This pair
+does not establish meaningful peak savings or a speed improvement. No further
+repeat was warranted to promote the cache; it is **not adopted**. The stable
+source and PR #89 still trim spare pool entries. All 147 unit tests pass for the
+prototype. Its separate actual-browser check confirms 28 cleared tail nodes,
+reused nodes after regrowth, correct tail-player detail and full offline,
+pending-query, failure-clearing and retry behavior. Functional correctness does
+not establish a memory benefit. Evidence is prefixed cleared-row-cache.
+
+The next candidate is eliminating the redundant full catalog-package JSON
+decode on the main thread. Catalog context still must be checked before the
+engine replaces or selects active data; removing that guard is not an acceptable
+optimization. This is a hypothesis for the next experiment, not measured savings.
+The 250 MiB target remains exceeded and unchanged.
+
+## Catalog decoding and interaction experiment — not adopted (2026-10-13)
+
+Prototype 7e069abe replaces the page's full catalog-package JSON decode with a
+small expected-context payload. Rust validates season/type/source before any
+fresh replacement or cached selection, then returns its validated metadata.
+Generic imports remain supported. The page's cached shortcut also checks its
+already validated metadata. Combined prototype 47e7ab29 adds the cleared-row
+cache described above. Neither runtime experiment is adopted into stable code.
+
+| Run (sequential) | Blank private MiB | Full private peak MiB | Warm median ms (upper middle) | Warm maximum ms |
+|---|---:|---:|---:|---:|
+| Catalog prototype | 229.72 | 568.04 | 50.54 | 62.86 |
+| Fresh existing-renderer control | 235.50 | 551.60 | 50.98 | 62.68 |
+| Catalog plus cleared-row cache | 225.86 | 549.45 | 51.48 | 66.95 |
+
+The original process sampler covers all 75 packages, eight residents, both
+905/332-player archive imports, 20 warm queries and engine restart. No debugger
+intervention, browser-flag change or forced GC was used. One 120 ms targeted
+unit-test invocation overlapped an early standalone package phase; timing
+claims are not made. The combined run's blank baseline is substantially lower
+than the control's, so its slightly lower total is not evidence of a useful
+saving. The standalone does not improve the observed peak. This set supplies no
+basis for promoting either prototype or claiming a general speed improvement.
+
+Candidate/combined Windows WASM SHA-256 is
+`d91f75da1725094ead601aa1024caecf83a7da737c18251e0e9d9996e6356d58`,
+different from the existing-renderer control's
+`4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee`.
+The new context-validation binding intentionally changes the Rust/WASM adapter;
+these are not identical-binary comparisons. Domain projection code, data and
+dependencies are unchanged. The standalone starter gzip sum is 413,337 bytes
+versus the prior 410,619-byte local control, still within the separate 10 MiB gate.
+
+All 20 native Rust tests and 148 browser unit tests pass for the prototypes.
+Actual-WASM distribution verification loads all 75 packages through the new
+binding, checks generic-import revision parity and rejects a mismatched resident
+context without reordering or changing active selection. The actual browser
+fault injection rejects a wrong source while retaining the saved 933-player
+table and one resident window; a subsequent 835-player query and detail pass.
+Separate offline process-close, pending/error/retry and combined tail-row reuse
+checks pass. These functional checks do not establish a memory saving. Raw
+evidence is prefixed catalog-context; prototype source branches remain separate.
+
+PR #89's reviewed head a7a57dc4 passed 29 CI checks, with deployment skipped,
+and was squash-merged as e0741daa. That merge contains the previously measured
+deferred startup and attached-row improvements, not these new prototypes.
+At that capture, the public site was the separately verified 0e34ce88 release;
+the later publication/rollback/restore evidence verifies current e0741daa. The 250 MiB
+whole-browser target remains exceeded; physical Android is still deferred.
+
+## Stable handler experiment and query-completion correction (2026-10-13)
+
+Prototype dc39dd31 gives each attached player button one handler that reads its
+current presentation record. Removed and cleared rows lose both the handler and
+record reference. Pool trimming, full results, focus identity, headers and domain
+projection are unchanged. The hypothesis was lower listener/closure retirement
+across repeated queries. This runtime prototype is **not adopted**.
+
+During verification, the normal runner's row-count/enabled-button barrier was
+found insufficient for attached rows: the old count remains while a request is
+pending, and the submit button stays enabled. The retained correction additionally
+waits for the existing tbody.inert pending marker to clear before proceeding.
+It preserves the original workload, OS sampler, browser flags and 250 MiB target.
+Earlier attached-row report completion/timing claims used the weaker barrier;
+they must not independently establish that every same-count query had committed.
+The corrected pair below explicitly waits for each of the 20 warm queries.
+
+| Corrected run | Blank private MiB | Full private peak MiB |
+|---|---:|---:|
+| Stable-handler prototype | 227.93 | 548.75 |
+| Existing-renderer control | 231.02 | 548.02 |
+
+Both complete all 75 package phases, eight-window residency checks, 905/332-player
+imports and restart without forced GC or debugger intervention. Windows WASM
+bytes match at 4f99584f. There is no useful whole-browser saving established by
+this pair and no general speed claim. The 250 MiB target still fails.
+
+The prototype passes TypeScript and 148 unit tests, including updated-record
+selection and inability of an externally retained handler to open cleared data.
+An actual process-close offline test restores 933 players, filters to 835, changes
+goal sorting while retaining the same handler functions, and opens the correct
+reordered player's detail. Failure clearing and retry also pass. These functional
+results are separate from memory measurements. Evidence is prefixed stable-handler.
+Stable application source remains merged PR #89; only the benchmark completion
+correction is retained. Phone testing remains open. A later current-release
+public in-place update, rollback and forward restore pass with unchanged saved
+bytes; see public-optimization-publication-provenance-20261013.json. Earlier
+incomplete notice waits remain separately recorded and their cause is unproven.
+
+## Pending opacity experiment — not adopted (2026-10-13)
+
+Prototype 8fc3ee9a tests opacity:0 plus inert during pending queries instead of
+visibility:hidden plus inert. CSS defines opacity as non-inherited and visibility
+as inherited ([CSS Color](https://www.w3.org/TR/css-color-4/#transparency),
+[CSS Display](https://www.w3.org/TR/css-display-3/#visibility)). Avoiding descendant
+restyling was a hypothesis, not an established performance property.
+
+The original process sampler and strengthened commit barrier complete all 75
+packages, eight-window residency, both 905/332-player imports, 20 warm queries and
+restart. Matching Windows WASM bytes remain 4f99584f; no forced GC or debugger
+intervention. Candidate private peak is 545.82 MiB with 227.37 MiB blank peak;
+fresh existing-renderer control is 544.31 MiB with 230.95 MiB blank peak. This
+pair establishes no useful total-memory saving. The prototype is **not adopted**.
+
+TypeScript and 147 unit tests pass. A separate actual-browser offline check
+restores 933 players, verifies pending computed opacity zero and inert true,
+filters to 835 without readding common rows, opens detail, clears failed-query
+rows and retries. Functional correctness does not prove a memory benefit.
+Evidence is prefixed pending-opacity. The stable source and public e0741daa
+release retain visibility:hidden. The 250 MiB target is unchanged and unmet.
+
 ## Blank-browser target attribution
 
 `blank-browser-targets-20261012.json` records a fresh isolated Chrome 153 process
