@@ -1,0 +1,25 @@
+{
+  "verified": true,
+  "artifact": {
+    "commit": "32e6b8b213f2368daf0fd3e94f0d29df7ab6e250",
+    "shell_build": "448591c9708ab6339cc1cebab06f0d2cd5176d01fd617a051ae2bfc946b8386f",
+    "verified_files": 105,
+    "packages": 75
+  },
+  "scope": "Local owned browser; complete result/export parity, continuous scrolling, keyboard, detail and failure/retry. Not phone or memory acceptance.",
+  "evidence": {
+    "exported_rows": 933,
+    "all_table_names_match": true,
+    "all_ranks_scrolled": 933,
+    "max_mounted": 44,
+    "exact_row_height": 72,
+    "last_player_detail": true,
+    "tab_steps": 120,
+    "reverse_tab_steps": 120,
+    "filtered_result_count": 835,
+    "failure_clear_retry": true,
+    "narrow_width": 390,
+    "terminal_tab_boundaries": true,
+    "goalie_export_full_table_parity": 77
+  }
+}

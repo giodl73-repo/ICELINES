@@ -1,0 +1,24 @@
+{
+  "run_id": 38478985389,
+  "run_conclusion": "success",
+  "artifact_id": 11855943537,
+  "artifact_name": "icelines-browser-32e6b8b213f2368daf0fd3e94f0d29df7ab6e250",
+  "artifact_commit": "32e6b8b213f2368daf0fd3e94f0d29df7ab6e250",
+  "parents": [
+    "ede05b79502273e29c7b5f1c2a2991cbc7f3bab3",
+    "3a393d7a73474a9af4cadfe2cc38a9181c52f1b4"
+  ],
+  "reviewed_head": "3a393d7a73474a9af4cadfe2cc38a9181c52f1b4",
+  "shell_build": "448591c9708ab6339cc1cebab06f0d2cd5176d01fd617a051ae2bfc946b8386f",
+  "wasm_sha256": "2e4c853309a32d8366c282afe113626fde5c25b26349bd9194ceafe59123f57b",
+  "verified_files": 105,
+  "packages": 75,
+  "scope": "Exact retained pre-print PR CI bytes tested in owned Chromium: full viewport regression and process-close offline restore/fresh query/detail. Not latest print behavior, performance comparison, Android, merged master, publication or rollback.",
+  "regression_source_commit": "3a393d7a",
+  "regression_probe_sha256": "3b9a9e73681f07751bb4f3c12b6e7cc312a4fd2d9a82cb6cdfff1da7d3e4e27b",
+  "latest_head": "58b6941fdb5a85b867fc1202454d23ba27ba3bbd",
+  "latest_runs_observed_in_progress": [
+    38480364633,
+    38480364686
+  ]
+}

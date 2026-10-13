@@ -523,3 +523,13 @@ normal full-workload private peak is 447.03 MiB against the prior matching 547.1
 control, with all 75 packages/two imports/20 queries/restart and original sampler.
 The 250 MiB requirement and real Android gate remain open. The public release
 remains e0741daa; PR91 is a draft candidate, not deployed readiness.
+
+Exact pre-print PR CI artifact 11855943537/run38478985389 is independently
+verified at temporary merge 32e6b8b2 (parents ede05b79 and reviewed3a393d7a).
+Its 105 files/75 packages and Linux WASM 2e4c853309a32d8366c282afe113626fde5c25b26349bd9194ceafe59123f57b pass actual browser viewport
+traversal, full-result/goalie parity, keyboard/detail/failure checks and process-close
+offline saved933/fresh835/detail. This does not establish latest680a89cb print
+behavior, Windows memory savings or public publication. Latest58b6941f runs
+38480364633 and38480364686 remain in progress. Provenance/raw reports use the
+viewport-preprint-ci prefix. This evidence is retained locally while the latest
+head's CI runs; no extra runtime mutation or workflow restart was needed.
