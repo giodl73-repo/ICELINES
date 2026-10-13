@@ -32,7 +32,16 @@ export class PlayerTable {
         const cell = document.createElement('th'); cell.scope = 'col'; cell.textContent = title; header.append(cell);
       }
       this.head.replaceChildren(header);
-    } else this.clear(false);
+    }
+    // Keep common rows attached: moving them through a fragment discards their
+    // browser layout objects even when the presentation nodes are reused.
+    const common = Math.min(rows.length, this.visible.length, MAX_REUSABLE_ROWS);
+    for (const nodes of this.visible.slice(common)) {
+      nodes.button.onclick = null;
+      for (const text of nodes.values) text.nodeValue = '';
+      nodes.element.remove();
+    }
+    this.visible.length = common;
     const fragment = document.createDocumentFragment();
     rows.forEach((row, index) => {
       const values = goalie ? [index + 1, row.name, row.team, row.gp, row.wins, row.save_pct?.toFixed(3), row.gaa?.toFixed(2)] : [index + 1, row.name, row.team, row.gp, row.goals, row.assists, row.points, row.pace_82?.toFixed(1)];
@@ -49,10 +58,15 @@ export class PlayerTable {
         });
         if (index < MAX_REUSABLE_ROWS) this.pool[index] = nodes;
       }
-      values.forEach((value, column) => { nodes!.values[column].nodeValue = value == null ? '—' : String(value); });
+      values.forEach((value, column) => {
+        const text = value == null ? '—' : String(value);
+        if (nodes!.values[column].nodeValue !== text) nodes!.values[column].nodeValue = text;
+      });
       nodes.button.onclick = () => this.openPlayer(row);
-      this.visible.push(nodes);
-      fragment.append(nodes.element);
+      if (index >= common) {
+        this.visible.push(nodes);
+        fragment.append(nodes.element);
+      }
     });
     this.body.append(fragment);
     // A smaller result must release spare nodes from a larger season/filter.
