@@ -533,3 +533,43 @@ behavior, Windows memory savings or public publication. Latest58b6941f runs
 38480364633 and38480364686 remain in progress. Provenance/raw reports use the
 viewport-preprint-ci prefix. This evidence is retained locally while the latest
 head's CI runs; no extra runtime mutation or workflow restart was needed.
+
+## Post-viewport runtime attribution and resident-list experiment
+
+The original full workload with read-only inspector snapshots completes at
+465,707,008 private bytes. This diagnostic has no budget pass/fail declaration.
+No forced GC or altered browser flags/buffers are used. At the warm-query snapshot,
+all owned renderers total about259 MiB versus84 MiB blank; GPU about101 MiB,
+browser47 MiB and network/storage27 MiB. Renderer totals include other renderer
+processes and cannot be attributed wholly to the app. Main JS used heap is about
+8 MiB, embedder14.8 MiB, worker JS1.27 MiB and WASM linear23.88 MiB; these are
+separate overlapping accounting views, not additive components of private bytes.
+After restart WASM linear drops to1.19 MiB while renderer private remains235.5 MiB.
+OS and heap snapshots are sequential; some nearest OS samples are from a prior
+phase, and inspection may change collection timing. No exact PID-to-app mapping
+or causally proven allocation source is claimed.
+
+Main DOM/listener counts grow across repeated queries. Inspection finds the
+resident list rebuilding on every updateState. Isolated a971155c experiments with
+a signature guard and late dataset lookup. Type checking/149 unit tests and actual
+full viewport regression pass; a focused browser probe verifies five queries keep
+list nodes/handlers, switches seasons, saves, imports the same revision under a new
+ID, selects the replacement and unloads without deleting the saved record.
+Normal full workload peaks444.49 MiB versus control447.03 MiB; blank baselines are
+232.47 versus234.61 MiB. The small total difference is close to baseline variation,
+so no useful saving is established and the runtime experiment is not adopted.
+The prototype branch is retained; reviewed source and generated stable artifact
+are restored. Raw reports/provenance use viewport-runtime-attribution and
+resident-render-experiment prefixes. The 250 MiB target remains unmet.
+
+## Latest exact PR CI artifact
+
+Run38480364686/artifact11856449383 succeeds at temporary merge e21a643e, parents
+ede05b79 and reviewed58b6941f. Exact105 files/75 packages are verified. The actual
+browser regression passes all933 ranks/names, AX names, full print preparation and
+viewport restoration, terminal keyboard boundaries, detail/failure/retry and77
+goalies. Process-close offline saved933/fresh835/detail passes. Its Linux WASM hash
+matches the prior retained public engine. This is reviewed PR preview evidence,
+not merged master/publication, Windows memory, physical device or resolution of
+PDF accented-name extraction. Required native CI is still finishing independently.
+See viewport-latest-ci provenance/browser/offline reports.
