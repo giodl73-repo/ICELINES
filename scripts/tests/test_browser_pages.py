@@ -32,14 +32,17 @@ class BrowserPagesTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def test_preserves_docs_and_replaces_only_workbench(self):
+        (self.baseline / ".well-known").mkdir()
+        (self.baseline / ".well-known/security.txt").write_bytes(b"existing public contact")
         (self.baseline / "workbench").mkdir()
         (self.baseline / "workbench/obsolete.js").write_bytes(b"old build")
         (self.baseline / ".git").mkdir()
         (self.baseline / ".git/config").write_bytes(b"repository metadata")
         result = pages.stage(self.baseline, self.browser, self.output)
-        self.assertEqual(result["preserved_files"], 2)
+        self.assertEqual(result["preserved_files"], 3)
         self.assertEqual((self.output / "index.html").read_bytes(), b"existing docs")
         self.assertEqual((self.output / "assets/site.css").read_bytes(), b"docs style")
+        self.assertEqual((self.output / ".well-known/security.txt").read_bytes(), b"existing public contact")
         self.assertEqual((self.output / "workbench/index.html").read_bytes(), b"browser")
         self.assertFalse((self.output / "workbench/obsolete.js").exists())
         self.assertFalse((self.output / ".git").exists())
