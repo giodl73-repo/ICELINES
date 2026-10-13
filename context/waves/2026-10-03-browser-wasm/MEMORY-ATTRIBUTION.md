@@ -145,6 +145,57 @@ testing. This change is an incremental startup optimization, not full resource
 acceptance. No forced GC or debugger-buffer change was used in these candidate
 and control workload measurements.
 
+## Attached rows across queries (2026-10-13)
+
+The deferred-engine build 393b9c2c is the control for this next experiment.
+Corrected candidate 653c876b retains common table rows in the document, updates
+changed text in place and only appends/removes the changed tail. During pending
+queries, visibility:hidden and inert hide stale results without discarding their
+layout. Current query failures still clear the table. Reused focused buttons blur
+when their player identity changes. All rows remain available, including results
+beyond the 1024-node reuse pool; query/export/domain semantics are unchanged.
+
+The first implementation was ineffective because runQuery still called
+clear(false). The actual offline MutationObserver caught 835 added and 933 removed
+rows despite reused node identities. Those early memory runs do not exercise the
+intended intervention. The caller was corrected before the measurements below.
+See attached-rows-provenance-20261013.json for the rejected candidate boundary.
+
+Both clean artifacts share Windows WASM SHA-256
+`4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee`.
+The original OS sampler covers all 75 packages, eight resident windows, imports
+of 905/332 players, 20 warm queries and engine restart. There is no forced GC,
+debugger intervention or browser-flag change. Runs are sequential; the repeat
+pair reverses candidate/control order.
+
+| Run | Blank private MiB | Full private peak MiB | Warm median ms (upper middle) | Warm maximum ms |
+|---|---:|---:|---:|---:|
+| Control 1 | 233.22 | 570.14 | 67.93 | 87.65 |
+| Candidate 1 | 228.76 | 541.93 | 56.98 | 122.28 |
+| Candidate 2 | 230.23 | 539.78 | 50.35 | 60.67 |
+| Control 2 | 232.91 | 570.70 | 68.04 | 87.62 |
+
+The two comparisons observe approximately 28–31 MiB lower private peaks. Blank
+baselines differ by approximately 3–4 MiB, smaller than the observed savings.
+These are observed Windows process-counter results, not a general speed claim.
+Candidate 1's maximum query time is worse than the control. The 250 MiB total
+limit still fails; baseline subtraction does not redefine it. Evidence files
+are prefixed attached-rows in this directory's evidence/ folder.
+
+TypeScript and all 147 browser unit tests pass. The committed opt-in browser
+check can be reproduced with:
+
+```powershell
+node icelines-browser/e2e/offline-reopen.mjs --artifact target/wasm-attached-rows-corrected --verify-attached-rows
+```
+
+It closes the process and stops the server, restores a saved 933-player season
+offline, verifies pending rows are hidden/inert and still attached, then filters
+to 835 rows with zero added rows and exactly 98 removed rows. Player detail,
+malformed-query clearing and a successful 835-row retry pass. This browser
+inspection is separate from normal memory measurements. The candidate is not
+deployed; physical Android remains deferred by the user.
+
 ## Blank-browser target attribution
 
 `blank-browser-targets-20261012.json` records a fresh isolated Chrome 153 process

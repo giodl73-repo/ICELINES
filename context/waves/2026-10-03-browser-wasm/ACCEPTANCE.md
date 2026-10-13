@@ -1,6 +1,6 @@
 # Browser WASM acceptance ledger
 
-Updated: 2026-10-12. Requirement: REQ-BROWSER-001; work packages WP-BW-01..06.
+Updated: 2026-10-13. Requirement: REQ-BROWSER-001; work packages WP-BW-01..06.
 This reconciles implemented features with the plan's remaining acceptance gates.
 It does not declare the full plan complete.
 
@@ -12,11 +12,17 @@ It does not declare the full plan complete.
 - Retained clean artifact verified: 104 files, 75 public packages. Static runtime/documentation verification matched 195 files after retrying one transient HTTP 503.
 - Pages source: Actions workflow. `master` and `gh-pages` branch policies exist;
   the existing workflows publish from master and compose documentation from gh-pages.
-- Attempt 1 failed before running deployment steps: master was excluded by the
+- The earlier 696c656b publication's first attempt failed before deployment: master was excluded by the
   old gh-pages-only environment rule. Switching Pages to workflow mode added
   the master rule; retrying only the failed job succeeded.
 
 ## Feature and gate disposition
+
+The attached-row optimization is a local candidate, separate from the current
+public release. Two corrected candidate memory runs peak at 541.93/539.78 MiB;
+the 250 MiB gate remains open. See MEMORY-ATTRIBUTION.md and attached-rows evidence
+for matching controls and the real-browser offline/pending/error checks. Physical
+Android testing remains deferred by the user.
 
 | Plan requirement | Evidence | Disposition |
 |---|---|---|

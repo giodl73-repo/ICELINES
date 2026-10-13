@@ -12,6 +12,7 @@ const args = process.argv.slice(2);
 const option = name => { const index = args.indexOf(name); return index < 0 ? undefined : args[index + 1]; };
 const artifact = option('--artifact');
 const remote = option('--url');
+const verifyAttachedRows = args.includes('--verify-attached-rows');
 if (Boolean(artifact) === Boolean(remote)) throw new Error('Provide exactly one of --artifact <retained distribution> or --url <HTTPS workbench URL>.');
 const output = await mkdtemp(resolve(repository, 'target/browser-acceptance-'));
 const profile = await mkdtemp(resolve(tmpdir(), 'icelines-acceptance-'));
@@ -93,19 +94,56 @@ try {
   await expect(reopened.locator('#rows tr')).toHaveCount(baseline.length);
   report.evidence.offline = await reopened.evaluate(async () => ({ online: navigator.onLine, probe_failed: await fetch(`./uncached-acceptance-probe-${Date.now()}`, { cache: 'no-store' }).then(() => false, () => true) }));
   expect(report.evidence.offline).toEqual({ online: false, probe_failed: true });
+  if (verifyAttachedRows) await reopened.evaluate(() => {
+    window.__attachedRows = [...document.querySelectorAll('#rows tr')];
+    window.__rowMutations = [];
+    window.__rowObserver = new MutationObserver(records => window.__rowMutations.push(...records.map(record => ({ added: record.addedNodes.length, removed: record.removedNodes.length }))));
+    window.__rowObserver.observe(document.querySelector('#rows'), { childList: true });
+  });
   await reopened.locator('#filter').fill('p>=1 AND gp>=1');
-  await reopened.locator('#query button[type="submit"]').click();
+  if (verifyAttachedRows) {
+    report.evidence.pending_table = await reopened.evaluate(() => {
+      document.querySelector('#query').requestSubmit();
+      const body = document.querySelector('#rows');
+      return { visibility: body.style.visibility, inert: body.inert, rows: body.children.length };
+    });
+    expect(report.evidence.pending_table).toEqual({ visibility: 'hidden', inert: true, rows: baseline.length });
+  } else await reopened.locator('#query button[type="submit"]').click();
   const expected = baseline.filter(row => row.points >= 1 && row.games >= 1).map(row => row.name);
   if (!expected.length || expected.length === baseline.length) throw new Error('Fixture must distinguish the fresh query from the restored initial view.');
   await expect(reopened.locator('#rows tr')).toHaveCount(expected.length);
   expect(await reopened.locator('#rows tr td:nth-child(2)').allTextContents()).toEqual(expected);
   report.evidence.fresh_filtered_rows = expected.length;
+  if (verifyAttachedRows) {
+    report.evidence.attached_rows = await reopened.evaluate(() => {
+      const current = [...document.querySelectorAll('#rows tr')];
+      window.__rowObserver.disconnect();
+      const mutations = window.__rowMutations;
+      return { common_rows_unchanged: current.every((row, index) => row === window.__attachedRows[index]),
+        added: mutations.reduce((sum, value) => sum + value.added, 0),
+        removed: mutations.reduce((sum, value) => sum + value.removed, 0), rows: current.length, previous_rows: window.__attachedRows.length };
+    });
+    expect(report.evidence.attached_rows).toEqual({ common_rows_unchanged: true, added: 0,
+      removed: baseline.length - expected.length, rows: expected.length, previous_rows: baseline.length });
+  }
   await reopened.locator('#rows button').first().click();
   await expect(reopened.locator('#player-dialog')).toBeVisible();
   await expect(reopened.locator('#player-name')).toHaveText(expected[0]);
   report.evidence.player_detail = expected[0];
   report.evidence.failed_requests = failedRequests;
   await reopened.screenshot({ path: resolve(output, 'offline-player.png'), fullPage: true });
+  if (verifyAttachedRows) {
+    await reopened.locator('#player-dialog button').click();
+    await reopened.locator('#filter').fill('p>>');
+    await reopened.locator('#query button[type="submit"]').click();
+    await expect(reopened.locator('#empty')).toContainText('Query unavailable');
+    await expect(reopened.locator('#rows tr')).toHaveCount(0);
+    report.evidence.failed_query_cleared_rows = true;
+    await reopened.locator('#filter').fill('p>=1 AND gp>=1');
+    await reopened.locator('#query button[type="submit"]').click();
+    await expect(reopened.locator('#rows tr')).toHaveCount(expected.length);
+    report.evidence.retry_query_rows = expected.length;
+  }
   report.verified = true;
 } catch (error) {
   failure = error;
