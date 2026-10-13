@@ -302,7 +302,8 @@ evidence is prefixed catalog-context; prototype source branches remain separate.
 PR #89's reviewed head a7a57dc4 passed 29 CI checks, with deployment skipped,
 and was squash-merged as e0741daa. That merge contains the previously measured
 deferred startup and attached-row improvements, not these new prototypes.
-The public site remains the separately verified 0e34ce88 release. The 250 MiB
+At that capture, the public site was the separately verified 0e34ce88 release;
+the later publication/rollback/restore evidence verifies current e0741daa. The 250 MiB
 whole-browser target remains exceeded; physical Android is still deferred.
 
 ## Stable handler experiment and query-completion correction (2026-10-13)
@@ -339,8 +340,10 @@ goal sorting while retaining the same handler functions, and opens the correct
 reordered player's detail. Failure clearing and retry also pass. These functional
 results are separate from memory measurements. Evidence is prefixed stable-handler.
 Stable application source remains merged PR #89; only the benchmark completion
-correction is retained. Phone testing and in-place public update activation remain
-separate open checks.
+correction is retained. Phone testing remains open. A later current-release
+public in-place update, rollback and forward restore pass with unchanged saved
+bytes; see public-optimization-publication-provenance-20261013.json. Earlier
+incomplete notice waits remain separately recorded and their cause is unproven.
 
 ## Blank-browser target attribution
 

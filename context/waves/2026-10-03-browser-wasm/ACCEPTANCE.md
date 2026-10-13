@@ -6,32 +6,35 @@ It does not declare the full plan complete.
 
 ## Current release
 
-- Validation source: `0e34ce88fb4c9465d66c40821b94658aa19cf722`; includes the merged renderer and dependency updates. The deferred-engine candidate is not deployed.
-- Retained master build: `38434732162`; publication `38441650974`; final restore `38450322271`, all successful. Deployment used the reviewed retained bytes and the master workflow with PR #88's archive guard.
-- Shell: `058529d3026d453cb2fa8a517f9c2d9e815a4883ca48a7034a22507df6209c02`.
-- Retained clean artifact verified: 104 files, 75 public packages. Static runtime/documentation verification matched 195 files after retrying one transient HTTP 503.
+- Validation source: `e0741daad56749cc3a3292e3f054b56d9f2605a2`; merged PR #89's deferred engine and attached-row renderer. This is a validation build, not full resource/mobile acceptance.
+- Retained master build: `38457012844`; publication `38467985652`; rollback `38469050130` to previous 0e34ce88; final restore `38469247324`, all successful. Deployments reused exact reviewed bytes with the complete upload-tar guard.
+- Shell: `273224d69d98ddb8f6d7ea7d6a861b408bc993db807c8c537ec7593133c7e497`.
+- Retained clean artifact verified: 104 files, 75 public packages. Final static runtime/documentation verification matched 195 served files, including 94 documentation files, with no failures.
 - Pages source: Actions workflow. `master` and `gh-pages` branch policies exist;
   the existing workflows publish from master and compose documentation from gh-pages.
 - The earlier 696c656b publication's first attempt failed before deployment: master was excluded by the
   old gh-pages-only environment rule. Switching Pages to workflow mode added
   the master rule; retrying only the failed job succeeded.
 
-The next reviewed publication candidate is merged master `e0741daa` (PR #89).
-Its exact retained CI artifact from run `38457012844`, artifact `11845381015`,
-verifies 104 files and 75 packages. Shell:
-`273224d69d98ddb8f6d7ea7d6a861b408bc993db807c8c537ec7593133c7e497`;
-Linux WASM SHA-256 remains
+The current release uses retained artifact `11845381015`. Linux WASM SHA-256 remains
 `2e4c853309a32d8366c282afe113626fde5c25b26349bd9194ceafe59123f57b`.
 Its actual-browser offline process-close check passes, including pending rows,
 zero common-row reinsertions, detail, failed-query clearing and retry. See
 `evidence/merged-optimization-ci-artifact-20261013.json` and its offline report.
-Deployment was skipped; a cache-busted public identity check still returns
-0e34ce88. This is publication preparation, not a claim of deployed acceptance.
+The initial master build skipped deployment; publication and the final restore
+are now independently verified on Pages. Public in-place update, rollback and
+forward restore preserve saved season/schedule bytes, metadata, revisions and
+settings. New/legacy renderer behavior is checked in addition to cached build-info
+identity. An initial final-restore notice timeout is retained separately; the
+same deployment passes the repeated in-place and offline checks. Cause is unproven.
+See `evidence/public-optimization-publication-provenance-20261013.json`.
 
 ## Feature and gate disposition
 
-The attached-row optimization is merged in master, separate from the current
-public release. Two corrected candidate memory runs peak at 541.93/539.78 MiB;
+The attached-row optimization is merged and published. Two early candidate
+memory runs peak at 541.93/539.78 MiB; the strengthened query-commit runner's
+existing-renderer control peaks at 548.02 MiB. The early readiness barrier alone
+does not independently prove completion of every same-count warm query;
 the 250 MiB gate remains open. See MEMORY-ATTRIBUTION.md and attached-rows evidence
 for matching controls and the real-browser offline/pending/error checks. Physical
 Android testing remains deferred by the user.
@@ -53,11 +56,11 @@ recorded separately in MEMORY-ATTRIBUTION.md and the catalog-context artifacts.
 | Polling, cancellation, previous-good preservation | Polling/acquisition tests and deployed cancellation evidence | Implemented |
 | Responsive UI, keyboard, share routes and source disclosures | Selected 360px/desktop tests and deployed export/view checks | Partial acceptance; not a physical-phone or full assistive-technology claim |
 | Appearance choices | Night Game, Fresh Ice, Hockey Club; live switching, preference reload and cross-tab observations | Implemented |
-| Exact release publication and documentation preservation | Master artifact build 38434732162, publication 38441650974 and final restore 38450322271; deployed-validation-release-20261013.json matches 195 files | Selected release bytes and documentation verified; browser/offline proof recorded separately |
-| Application update with saved data | Live two-tab update to 696c656b restored saved season and 49-game schedule; restored p >= 100 returned eight skaters | Selected deployed update passes |
-| Deployed offline reopening and saved query | deployed-offline-reopen-20261012.json: isolated Chromium 153 process closed/reopened offline; saved 933-row season restored, unsaved second season absent, fresh 835-row filter and player detail pass; uncached network probe fails | Selected desktop acceptance passes; physical mobile remains separate |
-| Previous-version rollback and forward restore | Public rollback run 38449905372 to 696c656b, forward restore 38450322271 to 0e34ce88; browser/offline reports and exact saved-record hashes | Selected close-and-reopen path passes with saved season/schedule bytes unchanged; in-place update activation remains separately incomplete |
-| Whole-browser staging/resident peak memory | attached-rows candidate/control and repeat memory reports: all 75 packages, eight residents, regular/playoff imports, 20 queries and restart; candidate peaks 541.93/539.78 MiB, controls 570.14/570.70 MiB | OPEN: retained 250 MiB target is exceeded; continue allocation investigation. Sampled private allocations and shared-page working-set sums are not exact concurrent physical-memory peaks |
+| Exact release publication and documentation preservation | Build 38457012844, publication 38467985652, restore 38469247324; deployed-optimization-release-20261013.json matches 195 served files | Selected current-release bytes/documentation verified; upload tar guard covers staged hidden files |
+| Application update with saved data | Public one-tab consent-driven 0e34ce88 to e0741daa update; saved 933-player season plus two-game schedule fixture preserved; pending/render behavior proves new application code | Selected current public in-place update passes; two-tab consent passes separately on localhost |
+| Deployed offline reopening and saved query | public-optimization-restore-offline-20261013.json: process closed/reopened offline; saved season/schedule restored, uncached probe fails, fresh eight-player filter/detail and new renderer behavior pass | Selected current desktop acceptance passes; earlier CI profile also verifies unsaved discard and 835-row filter; physical mobile remains separate |
+| Previous-version rollback and forward restore | Rollback 38469050130 to 0e34ce88, restore 38469247324 to e0741daa; public browser/offline reports and exact stored hashes | Selected current in-place path passes both directions with saved bytes unchanged; earlier notice timeout retained, cause unproven |
+| Whole-browser staging/resident peak memory | stable-handler-control-memory-20261013.json: existing renderer, all 75 packages, eight residents, 905/332-player imports, 20 queries with explicit commit barrier and restart; private peak 548.02 MiB | OPEN: retained 250 MiB target is exceeded; continue allocation investigation. Sampled private allocations and shared-page working-set sums are not exact concurrent physical-memory peaks |
 | Physical mobile, touch/picker and latency | Desktop browser at narrow viewport | OPEN: real mobile browser/device measurements required |
 | Compare/history/team/cards/fantasy | Plan WP-BW-07 requires separately scoped contracts and parity | Later waves; not implemented or implicitly accepted by the first slice |
 
@@ -68,15 +71,17 @@ recorded separately in MEMORY-ATTRIBUTION.md and the catalog-context artifacts.
    passed against retained artifact 6016f77b with its local HTTP server stopped.
    This is desktop Chromium evidence, not physical-phone acceptance.
 2. Public previous-version rollback and forward restore completed on 2026-10-13:
-   rollback 38449905372 and restore 38450322271 preserve exact saved season and
-   schedule fixture bytes on the selected close-and-reopen path. Final browser,
-   offline and documentation verification pass. In-place activation remains
-   separately incomplete and needs investigation; no second public rollback is
-   required merely to repeat the already verified close-and-reopen path.
+   current-release rollback 38469050130 and restore 38469247324 preserve exact
+   saved season and schedule fixture bytes on the selected public in-place path.
+   Final browser, offline and documentation verification pass. Local one/two-tab
+   update checks also pass. Earlier incomplete notice probes remain recorded;
+   the repeated final-restore check passes without a new deployment or code fix.
 3. Continue whole-browser allocation optimization. The original isolated Windows
    process sampler covers every package phase, both 905/332-player archive imports,
    20 warm queries and restart. The corrected attached-row candidate shows repeated
-   private peaks near 540–542 MiB versus controls near 570–571 MiB. The original
+   private peaks near 540–542 MiB versus controls near 570–571 MiB. A corrected
+   readiness barrier now proves commit of each warm query and measures the
+   existing renderer at 548.02 MiB. The original
    total 250 MiB target is retained. Baseline-subtracted or forced-GC measurements
    cannot establish acceptance, and memory growth alone does not establish a leak.
 4. Physical Android testing is deferred by the user until the phone is connected.
