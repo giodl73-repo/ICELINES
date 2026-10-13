@@ -12,6 +12,11 @@ export class PlayerTable {
   constructor(private readonly body: HTMLElement, private readonly head: HTMLElement,
     private readonly openPlayer: (row: PlayerRow) => void) {}
 
+  suspend(): void {
+    // Hide stale results from sight and accessibility while preserving layout.
+    this.body.style.visibility = 'hidden'; this.body.inert = true;
+  }
+
   clear(release = true): void {
     // Detached buttons must not retain callbacks or names from a previous dataset.
     for (const nodes of this.visible) {
@@ -19,6 +24,7 @@ export class PlayerTable {
       for (const text of nodes.values) text.nodeValue = '';
     }
     this.body.replaceChildren();
+    this.body.style.visibility = ''; this.body.inert = false;
     this.visible = [];
     if (release) { this.pool = []; this.goalie = undefined; this.head.replaceChildren(); }
   }
@@ -75,5 +81,6 @@ export class PlayerTable {
     this.body.append(fragment);
     // A smaller result must release spare nodes from a larger season/filter.
     this.pool.length = Math.min(rows.length, MAX_REUSABLE_ROWS);
+    this.body.style.visibility = ''; this.body.inert = false;
   }
 }

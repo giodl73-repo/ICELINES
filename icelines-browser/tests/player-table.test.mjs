@@ -5,7 +5,7 @@ import { PlayerTable } from '../dist/src/player-table.js';
 // Small DOM double checks ownership and identity; browser acceptance exercises
 // the actual DOM, worker queries and dialog interaction.
 class Node {
-  children = []; parent = null; onclick = null; nodeValue = null;
+  children = []; parent = null; onclick = null; nodeValue = null; style = {};
   constructor(tag) { this.tag = tag; }
   append(...nodes) {
     for (const node of nodes) {
@@ -90,4 +90,14 @@ test('focused reused button keeps focus for the same player and clears it when t
   const button = body.children[0].children[1].children[0]; document.activeElement = button;
   table.render([{ ...row, points: 3 }], false); assert.equal(document.activeElement, button);
   table.render([{ ...row, player_id: 2 }], false); assert.equal(document.activeElement, null);
+});
+
+test('pending queries hide and disable stale rows without detaching them; rendering and failure clearing restore the body', () => {
+  const { table, body } = fixture(); table.render([row], false); const tr = body.children[0];
+  table.suspend(); assert.equal(body.style.visibility, 'hidden'); assert.equal(body.inert, true);
+  assert.equal(body.children[0], tr); assert.equal(tr.parent, body);
+  table.render([row], false); assert.equal(body.children[0], tr);
+  assert.equal(body.style.visibility, ''); assert.equal(body.inert, false);
+  table.suspend(); table.clear(false); assert.equal(body.children.length, 0);
+  assert.equal(body.style.visibility, ''); assert.equal(body.inert, false); assert.equal(tr.textContent, '');
 });
