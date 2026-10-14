@@ -14,7 +14,14 @@ export async function expandPackage(bytes: Uint8Array, maximum: number, options:
   // decoded chunk into the bounded destination instead of retaining all chunks
   // alongside a second complete copy at the end.
   const input = bytes.buffer instanceof ArrayBuffer ? new Uint8Array(bytes.buffer,bytes.byteOffset,bytes.byteLength) : Uint8Array.from(bytes);
-  const stream = new ReadableStream<BufferSource>({ start(controller) { controller.enqueue(input); controller.close(); } })
+  let offset = 0;
+  const stream = new ReadableStream<BufferSource>({ pull(controller) {
+    check();
+    if (offset === input.length) { controller.close(); return; }
+    // Bound individual decoder writes; views retain the authenticated input.
+    const end = Math.min(input.length, offset + 8 * 1024);
+    controller.enqueue(input.subarray(offset, end)); offset = end;
+  } })
     .pipeThrough(new DecompressionStream('gzip'));
   const reader = stream.getReader();
   const expanded = new Uint8Array(maximum); let length = 0;
