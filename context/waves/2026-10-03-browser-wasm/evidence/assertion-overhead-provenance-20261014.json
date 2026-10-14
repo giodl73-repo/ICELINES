@@ -1,0 +1,41 @@
+{
+  "scope": "One sequential batched-first/control-second diagnostic pair on unchanged published75e6ba97 artifact. Same75/eight/two905/332/20/restart and trusted UI actions, original flags/OS sampler/network observer, no forced GC. Changed DOM assertion/poll timing can change load/GC timing; not official acceptance, a causal memory partition, or an optimization release. Both comparison flags null.",
+  "evidence": {
+    "batched": {
+      "file": "assertion-overhead-batched-20261014.json",
+      "sha256": "f79b4b6330f7b3cdd2b40259e3530456adbb7993dab7754a7e10714318138659"
+    },
+    "control": {
+      "file": "assertion-overhead-control-20261014.json",
+      "sha256": "9cc4d47a556f11e6021af946de63a0f9009d95dadfeb6efe62ddbb133f6280a5"
+    },
+    "recipe": {
+      "file": "assertion-overhead-recipe-20261014.py",
+      "sha256": "06322d52ffe23f5fe11f8b1760940038f22b8714f374dfa2a8aa2f58b7d82706"
+    }
+  },
+  "measurements": [
+    {
+      "driver": "batched query/context/commit/residency checks",
+      "peak_private_mib": 395.05859375,
+      "blank_private_mib": 228.06640625,
+      "warm_median_ms": 71.12425000000076,
+      "warm_max_ms": 80.98019999999087
+    },
+    {
+      "driver": "original separate locator assertions",
+      "peak_private_mib": 393.29296875,
+      "blank_private_mib": 230.89453125,
+      "warm_median_ms": 72.78729999999632,
+      "warm_max_ms": 98.16130000000703
+    }
+  ],
+  "decision": "Do not alter official runner based on this comparison. Batched395.06 MiB/control393.29 MiB gives no lower peak; baseline228.07/230.89 differs. No universal regression claim. Automation cumulative churn cannot be equated to removable live/private memory. No reverse pair, app changes, CI/PR/publication or latency promotion.",
+  "checks": "Batched waits retain complete result count/query summary and inert=false; catalog season/type/load enabled, mounted<=44, residents<=8. Original clicks/selects/imports, startup/archive/restart assertions and two samples per package are preserved. Warm submit enabled is included in the batched predicate. Official memory.mjs Git diff against origin/master is empty.",
+  "source_runner_sha256": "f3fdbd700fa4de81bdae18842e13716a851d3a64c856f8dd8c56a59283a8b0f0",
+  "remaining": [
+    "250 MiB whole-browser target unmet",
+    "Physical Android deferred by user"
+  ],
+  "production_unchanged": true
+}
