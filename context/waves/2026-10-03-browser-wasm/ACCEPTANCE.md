@@ -268,10 +268,26 @@ recorded separately in MEMORY-ATTRIBUTION.md and the catalog-context artifacts.
 ## Remaining acceptance actions
 
 1. Continue allocation optimization until the original250 MiB whole-browser
-   target passes the complete workload. Current exact-master result388.74 MiB
-   is failed acceptance, not a budget waiver.
+   target passes the complete workload. Current exact-master results387.24 and
+   389.67 MiB fail acceptance; neither is a budget waiver. The earlier388.74 MiB
+   value belongs to the historical2e265236 release.
 2. Complete physical Android when the user connects the phone. Keep picker,
    touch, TalkBack, latency and device/resource scope separate from desktop proof.
+
+### Warm-filter threshold audit (2026-10-14)
+
+The governing plan section11.C specifies **500 ms** warm single-season filter
+latency, separately from250 MiB desktop peak memory and10 MiB compressed starter
+size. The recent100 ms comparisons are a stricter observation, not the plan's
+acceptance threshold. No requirement is relaxed by this correction.
+Exact published-master normal runs retain all20 samples: first maximum101.0567 ms
+and repeat93.8081 ms. Both maxima are below the plan's500 ms target on this
+workstation and workload. The original101.0567 ms observation remains above100 ms;
+it is not deleted or relabeled. This supplies scoped desktop timing evidence,
+not universal timing, device acceptance or a memory pass.
+Sources: `design/plans/2026-10-03-browser-wasm-workbench.md` section11.C and
+`evidence/chunked-decoder-input-master-memory-first-20261014.json` /
+`evidence/chunked-decoder-input-master-memory-repeat-20261014.json`.
 
 ## Historical completed checks and earlier measurements
 

@@ -1,11 +1,13 @@
 # Physical phone acceptance
 
-Status: **not run**. This is a procedure, not device evidence. Desktop viewport
+Status: **not run; deferred by user until the phone is connected**. This is a procedure, not device evidence. Desktop viewport
 emulation and the Windows process-memory results cannot close this gate.
 
 Open https://giodl73-repo.github.io/ICELINES/workbench/ in the phone's normal
-browser. Record the actual deployed build; PR #85 is not automatically published
-by a merge. Use a public test season that is not already in your Saved library.
+browser. Record the actual deployed build from `build-info.json` and
+`shell-manifest.json`; the 2026-10-14 public identity check matched source
+75e6ba9709e31e2cdeed633958f923f0ae36c01d. Check again at test time, since a
+later merge or publication may change it. Use a public test season that is not already in your Saved library.
 Keep existing saved data intact. Record phone model, OS/browser versions, date,
 orientation and whether a debugger was attached.
 
@@ -97,5 +99,6 @@ unrelated browsing data and account tokens out of the public record. Screenshots
 or screen recordings may support interaction findings but do not prove memory.
 
 Full phone acceptance remains open until these results are obtained on the real
-device and reviewed against the plan. The public rollback rehearsal remains a
-separate pending action; this procedure does not publish anything.
+device and reviewed against the plan. Scoped public rollback/restore checks have
+completed; their evidence and limits are in `ACCEPTANCE.md`. They do not replace
+phone testing. This procedure does not publish anything.
