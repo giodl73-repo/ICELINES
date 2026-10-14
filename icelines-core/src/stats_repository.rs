@@ -273,7 +273,7 @@ impl StatsRepository {
             .stats
             .iter()
             .filter(|(&(pid, _, t), _)| pid == id && filter.is_none_or(|ft| t == ft))
-            .map(|(_, s)| s.borrow())
+            .map(|(_, s)| Borrow::<SeasonStats>::borrow(s))
             .collect();
         rows.sort_by(|a, b| {
             a.season
