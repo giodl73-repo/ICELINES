@@ -57,6 +57,14 @@
       "file": "frontend-bundle-print-20261014.json",
       "sha256": "00adb859750ed2c0d6f6cfd9f51df7fb8a74c3ee7656906f17949c2b750c9cd5"
     },
+    "pdf": {
+      "file": "frontend-bundle-pdf-20261014.pdf",
+      "sha256": "f8d1869593bbd9c5a89602d531eda634f3cad6e79cbe2df9b530f14353b61d75"
+    },
+    "print-reference": {
+      "file": "frontend-bundle-print-reference-20261014.json",
+      "sha256": "11040639dcccbf5a7aaa565b03a4346c419b64c4f7728feefac605c040a1140e"
+    },
     "recipe": {
       "file": "frontend-bundle-recipe-20261014.mjs",
       "sha256": "84e8ea4a671c657e3480b42779da16ccf8e862136de93a4a9330e3d8a11b6a9b"
