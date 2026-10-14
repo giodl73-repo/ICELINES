@@ -1,0 +1,168 @@
+{
+  "status": "Supplemental PID attribution, not production change or acceptance",
+  "published_source_unchanged": "5ef015c4d47ebbcee8234eb92f1fe83716b45054",
+  "reports": {
+    "startup-report.json": {
+      "file": "target-process-startup-report-20261014.json",
+      "sha256": "a1463af692f00ffd3fc8d719c8ea46b73f45a4a9e5ef30b0c57c3bb493938766"
+    },
+    "startup-target-process-markers-trace.json": {
+      "file": "target-process-startup-target-process-markers-trace-20261014.json",
+      "sha256": "7d584928a516b9c25e7a7a94295fd61ebdc5ed3e01ab8b4217f494831acf090b"
+    },
+    "full-report.json": {
+      "file": "target-process-full-report-20261014.json",
+      "sha256": "284be33fdb473b493e3c778ac750488dcca1e10ecdc549fde1a562c51f9d28d9"
+    },
+    "full-target-process-markers-trace.json": {
+      "file": "target-process-full-target-process-markers-trace-20261014.json",
+      "sha256": "3069f31ede13bf11e40decca0147a3d229e302244b5094dc67c9c778f216a810"
+    }
+  },
+  "summary": {
+    "startup": {
+      "peak_phase": "idle_settled",
+      "peak_elapsed_ms": 4794,
+      "private_peak_mib": 274.21484375,
+      "processes": [
+        {
+          "pid": 51560,
+          "type": "storage.mojom.StorageService",
+          "targets": [],
+          "private_mib": 9.859375
+        },
+        {
+          "pid": 7704,
+          "type": "renderer",
+          "targets": [
+            "browser_ui:chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html",
+            "browser_ui:chrome://omnibox-popup.top-chrome/"
+          ],
+          "private_mib": 44.6484375
+        },
+        {
+          "pid": 68180,
+          "type": "unmapped owned child",
+          "targets": [],
+          "private_mib": 2.90625
+        },
+        {
+          "pid": 9648,
+          "type": "renderer",
+          "targets": [
+            "service_worker:http://127.0.0.1:62561/ICELINES/workbench/sw.js",
+            "page:http://127.0.0.1:62561/ICELINES/workbench/"
+          ],
+          "private_mib": 46.16796875
+        },
+        {
+          "pid": 18656,
+          "type": "GPU",
+          "targets": [],
+          "private_mib": 90.11328125
+        },
+        {
+          "pid": 28784,
+          "type": "renderer",
+          "targets": [],
+          "private_mib": 16.78125
+        },
+        {
+          "pid": 61136,
+          "type": "network.mojom.NetworkService",
+          "targets": [],
+          "private_mib": 16.9609375
+        },
+        {
+          "pid": 58432,
+          "type": "browser",
+          "targets": [],
+          "private_mib": 46.77734375
+        }
+      ],
+      "samples_sha256": "2cf2324970383763ccbc108142762abd2b57b9132bdf5e719bd260197817ea0e",
+      "retained_output": "target\\startup-target-mapping-YERVTP"
+    },
+    "full": {
+      "peak_phase": "package_20202021-regular",
+      "peak_elapsed_ms": 11885,
+      "private_peak_mib": 399.05078125,
+      "processes": [
+        {
+          "pid": 66568,
+          "type": "GPU",
+          "targets": [],
+          "private_mib": 104.6953125
+        },
+        {
+          "pid": 54180,
+          "type": "renderer",
+          "targets": [
+            "browser_ui:chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html",
+            "browser_ui:chrome://omnibox-popup.top-chrome/"
+          ],
+          "private_mib": 42.4921875
+        },
+        {
+          "pid": 27992,
+          "type": "renderer",
+          "targets": [
+            "service_worker:http://127.0.0.1:57149/ICELINES/workbench/sw.js",
+            "worker:http://127.0.0.1:57149/ICELINES/workbench/src/worker.js",
+            "page:http://127.0.0.1:57149/ICELINES/workbench/#/leaders?season=20242025&type=playoff&kind=skaters&sort=points&gp=&data=local"
+          ],
+          "private_mib": 155.4140625
+        },
+        {
+          "pid": 62024,
+          "type": "renderer",
+          "targets": [],
+          "private_mib": 16.4921875
+        },
+        {
+          "pid": 62500,
+          "type": "network.mojom.NetworkService",
+          "targets": [],
+          "private_mib": 17.19921875
+        },
+        {
+          "pid": 30132,
+          "type": "unmapped owned child",
+          "targets": [],
+          "private_mib": 2.91015625
+        },
+        {
+          "pid": 5628,
+          "type": "storage.mojom.StorageService",
+          "targets": [],
+          "private_mib": 9.90625
+        },
+        {
+          "pid": 7956,
+          "type": "browser",
+          "targets": [],
+          "private_mib": 49.94140625
+        }
+      ],
+      "samples_sha256": "d98914f16eb2a5bb7a219fd9e40872a797b5a532f997934b28ae12f9565022b9",
+      "retained_output": "target\\full-target-mapping-68dDlG",
+      "warm_max_ms": 90.46429999999236
+    }
+  },
+  "scope": "Trace timestamps evaluated separately in each owned target after normal measurement; exact trace PID and OS counter PID matched. No forced GC or acceptance flag changes. All browser processes retained. Full diagnostic executes75/eight/two imports/20 queries/restart, but tracing before restart invalidates subsequent counters as normal controls. Both target flags explicitly null.",
+  "interpretation": "Page, service worker and engine worker share one renderer; two Chromium omnibox UI targets share another renderer. Do not sum per-target copies of the same PID, attribute all application-renderer bytes to WASM, exclude browser UI/GPU/unmapped processes or equate process private allocation to resident RAM.",
+  "helper_sha256": {
+    "target/target-process-markers.mjs": "2209693546b7539d0ac9a3867169d3c107e4a47e30d858579176ef0c740c3927",
+    "target/target-process-markers-startup-predecessor.mjs": "00553e5a336c1519c68f034377ff4252e133d1fe02ab6de15401779bc236c010",
+    "target/prepare-startup-target-mapping.py": "e76c3c45b889a932407d6f02b42c7fa4720c61fb60a37f269ab83b4769562b89",
+    "target/startup-target-mapping.mjs": "ea4e7befe291d8c114adc9224cc403ff779a7cab706c96e01a28ce35dc85bdb2",
+    "target/prepare-full-target-mapping.py": "43bc848c51bf8124e17f39941819fb8b902f44127f87ef546ff56d53b939af4a",
+    "target/full-target-mapping.mjs": "4843a371d3700d515fdeaf93764fd2141482ecc5c7c4e6c77ce5483b00f2ae77"
+  },
+  "startup_helper_note": "Startup executed the predecessor target filter without worker type. Byte reconstruction differs solely in that known filter addition; saved and separately hashed. Full workload executed current helper including worker type.",
+  "next_action": "Attribute the155 MiB application renderer to JS heap, ArrayBuffer/external backing, WASM and native renderer allocations at peak packages; process mapping establishes where, not removable bytes.",
+  "open_gates": [
+    "250 MiB full whole-browser gate FAILED",
+    "Physical Android explicitly deferred"
+  ]
+}
