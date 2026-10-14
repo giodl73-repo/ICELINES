@@ -557,3 +557,34 @@ normal full-workload private peak is 447.03 MiB against the prior matching 547.1
 control, with all 75 packages/two imports/20 queries/restart and original sampler.
 The 250 MiB requirement and real Android gate remain open. The public release
 remains e0741daa; PR91 is a draft candidate, not deployed readiness.
+
+## Current gzip release reconciliation (supersedes earlier current-state notes)
+
+PR91 and PR92 are merged. The public validation release is2e265236. Exact master
+artifact181 files/75 packages passes actual-WASM, full viewport/keyboard/AX/print,
+offline, corrupt-transfer and saved-data update checks. Historical references to
+unpublished PR91/e0741daa are scoped to their earlier investigation dates.
+
+Gzip catalog transfers retain canonical raw files/revisions/exports and validate
+compressed and expanded byte counts/SHA before activation. All75 transfers fall
+from41006884 to4960231 bytes (87.9%). Two opposite-order prototypes peak405.8/389.5
+versus controls449.6/434.6 MiB. Exact final Linux-built master on this Windows
+workstation peaks388.742 MiB private (blank227.957), with all75 packages,8 windows,
+two905/332 imports,20 queries and restart under original flags/sampler, no forced
+GC. Warm median70.454/max83.920 ms; no mobile inference.250 MiB still fails.
+
+Public first publication, rollback and final restore succeed; final272-file
+verification preserves the original documentation503 and targeted recovery.
+Owned saved season/schedule byte hashes and metadata/settings survive. Reused
+Chromium153 automation crashes during package export match reported upstream
+issue https://github.com/microsoft/playwright/issues/42506. A reversible backup
+and removal of three owned-test download-history tables resolves the repeated
+crash without changing app IndexedDB/cookies/preferences or benchmark settings.
+Final executing main-module SHA, byte-exact export and offline probes pass.
+Initial failed transition/export attempts remain; final successful check starts
+from already-restored2e265236. This is not a new uninterrupted transition claim.
+
+The earlier accented PDF-name discrepancy is a verifier CP1252/UTF-8 error.
+Original raw failure bytes and corrected provenance are retained; current exact
+master PDF passes all933 ranks/names with both parsers. The application font/data
+needed no correction. Physical printer, screen reader and Android remain unproved.
