@@ -3,6 +3,7 @@
 #![deny(unsafe_code)]
 
 use std::collections::{HashMap, HashSet, VecDeque};
+use std::io::Read;
 
 use chrono::NaiveDate;
 use icelines_core::identity::PlayerId;
@@ -120,8 +121,18 @@ impl DataProvider for PreparedProvider {
     }
 }
 
+struct StoredPackage {
+    schema_version: u32,
+    season: u32,
+    season_type: SeasonType,
+    source: String,
+    observed_at: Option<String>,
+    fetched_at: Option<String>,
+    canonical_gzip: Vec<u8>,
+}
+
 struct ActivePackage {
-    package: SeasonPackage,
+    package: StoredPackage,
     repository: StatsRepository,
     revision: String,
     input_bytes: usize,
@@ -177,7 +188,11 @@ impl BrowserEngine {
             .active
             .as_ref()
             .ok_or_else(|| JsValue::from_str("missing data: load a package"))?;
-        serde_json::to_vec(&active.package).map_err(|e| JsValue::from_str(&e.to_string()))
+        let mut bytes = Vec::new();
+        flate2::read::GzDecoder::new(active.package.canonical_gzip.as_slice())
+            .read_to_end(&mut bytes)
+            .map_err(|e| JsValue::from_str(&e.to_string()))?;
+        Ok(bytes)
     }
 
     pub fn current_season(&self) -> u32 {
@@ -343,8 +358,38 @@ impl BrowserEngine {
                 goalie,
             )?)?;
         }
+        // Keep every canonical export value, without retaining a second parsed
+        // season DTO alongside the normalized repository. Stage compression
+        // before changing active state so failures preserve the previous window.
+        drop(stats);
+        let mut encoder = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::fast());
+        serde_json::to_writer(&mut encoder, &package)
+            .map_err(|e| EngineError::InvalidPackage(e.to_string()))?;
+        let canonical_gzip = encoder
+            .finish()
+            .map_err(|e| EngineError::InvalidPackage(e.to_string()))?;
+        let SeasonPackage {
+            schema_version,
+            season,
+            season_type,
+            source,
+            observed_at,
+            fetched_at,
+            bios,
+            stats,
+            goalies,
+        } = package;
+        drop((bios, stats, goalies));
         let next = ActivePackage {
-            package,
+            package: StoredPackage {
+                schema_version,
+                season,
+                season_type,
+                source,
+                observed_at,
+                fetched_at,
+                canonical_gzip,
+            },
             repository: repo,
             revision: revision.clone(),
             input_bytes: bytes.len(),
@@ -553,6 +598,24 @@ mod tests {
         value["season"] = season.into();
         value["stats"][0]["seasonId"] = season.into();
         value
+    }
+
+    #[test]
+    fn compressed_exports_preserve_all_canonical_values_through_selection_and_failure() {
+        let mut engine = BrowserEngine::new();
+        let original = package();
+        let parsed: SeasonPackage = serde_json::from_value(original.clone()).unwrap();
+        let expected = serde_json::to_vec(&parsed).unwrap();
+        let first = load(&mut engine, &original).unwrap();
+        assert_eq!(engine.export_package().unwrap(), expected);
+        load(&mut engine, &season_package(20242025)).unwrap();
+        engine.select_revision(&first).unwrap();
+        assert_eq!(engine.export_package().unwrap(), expected);
+        let mut invalid = original;
+        invalid["source"] = "".into();
+        assert!(load(&mut engine, &invalid).is_err());
+        assert_eq!(engine.export_package().unwrap(), expected);
+        assert_eq!(engine.active.as_ref().unwrap().revision, first);
     }
 
     #[test]
