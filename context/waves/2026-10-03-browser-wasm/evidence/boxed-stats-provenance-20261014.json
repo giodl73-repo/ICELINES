@@ -1,0 +1,112 @@
+{
+  "status": "Measured local incremental candidate; CI/public validation pending;250 MiB remains failed",
+  "source": "d825f9d01d937c8878b961528346486238bd8885",
+  "initial_checked_source": "f30fe205371543651b1b3d0ecd2408ad28f67c47",
+  "treatment": "wasm32-only unique Box<SeasonStats> behind repository stats hash slots; native rows remain inline. Public borrowed types/keys/normalization/residency/exports unchanged.",
+  "scope": "Two opposite-order full75/eight residents/two905/332 archive imports/20 committed warm queries/restart pairs. Original flags/sampler/network observer; no forced GC or baseline-subtracted acceptance.",
+  "reports": {
+    "candidate-first": {
+      "file": "boxed-stats-candidate-first-20261014.json",
+      "sha256": "06952bda05c1b5bd951bf9535b4f88cdec6a3f789cc6de70cb41cb0bd91297f6"
+    },
+    "control-second": {
+      "file": "boxed-stats-control-second-20261014.json",
+      "sha256": "823723baa326b2af69c04cca9f95e5f6c7a9979f54a7f754503c113cf04d7098"
+    },
+    "control-first": {
+      "file": "boxed-stats-control-first-20261014.json",
+      "sha256": "60117c12cb42d9ffd1f12d046d8e630cccdc9b02385885f3f66f8682886e0d5e"
+    },
+    "candidate-second": {
+      "file": "boxed-stats-candidate-second-20261014.json",
+      "sha256": "2af851ffd681f78fa52e23801c6f9802b36cf9c1e5806b5cda05622b7282ad5f"
+    }
+  },
+  "measurements": {
+    "candidate-first": {
+      "private_mib": 384.48828125,
+      "blank_mib": 228.171875,
+      "warm_max_ms": 94.91879999999946
+    },
+    "control-second": {
+      "private_mib": 400.40234375,
+      "blank_mib": 231.40625,
+      "warm_max_ms": 95.83920000000217
+    },
+    "control-first": {
+      "private_mib": 393.94921875,
+      "blank_mib": 226.78515625,
+      "warm_max_ms": 95.32390000000305
+    },
+    "candidate-second": {
+      "private_mib": 388.53515625,
+      "blank_mib": 233.0625,
+      "warm_max_ms": 95.53259999999136
+    }
+  },
+  "verification": {
+    "viewport": {
+      "file": "boxed-stats-viewport-20261014.json",
+      "sha256": "704db6877372b37d3dbc08aca160cb5a32cc02a93371adbe91573e2a7544651a"
+    },
+    "refusal": {
+      "file": "boxed-stats-refusal-20261014.json",
+      "sha256": "824be983466deea8721f33e0a51e6aa7f70310032181e67a7fa77b76dffd0ab5"
+    },
+    "offline": {
+      "file": "boxed-stats-offline-20261014.json",
+      "sha256": "e60bcc6de32ff0df47fd47e03d83909e39a3fde5723de315b304e30822e130f0"
+    },
+    "context": {
+      "file": "boxed-stats-context-20261014.json",
+      "sha256": "110f5a463ed054971007c864fa25f38aebaeb9c6d9c9bba09a9d87899622d50b"
+    }
+  },
+  "artifact": {
+    "build_info": {
+      "schema_version": 1,
+      "commit": "d825f9d01d937c8878b961528346486238bd8885",
+      "working_tree_dirty": false,
+      "tools": {
+        "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+        "node": "v22.22.3",
+        "python": "Python 3.14.2",
+        "wasm_bindgen": "wasm-bindgen 0.2.118"
+      },
+      "wasm_sha256": "782009af96f7a4c5fbd17a46e0716d4b6a300d4e85286a65c2b92e5cdd7f12ed"
+    },
+    "shell": "61597c6007baba69ab94969b448d580f2ac5c86e0a91d6a2c476a89f9690c54e",
+    "local_path": "target\\boxed-stats-artifact"
+  },
+  "wasm_identical_after_native_warning_fix": true,
+  "frontend_and_catalog_identical_to_control": true,
+  "initial_checked_build": "Passed:75 actual WASM loads,270 native-loader/WASM parity cases /33613 full rows /90 empty results, portable/source/query/schedule/native-web checks and160 browser units.",
+  "final_core_tests": 1182,
+  "logs": {
+    "boxed-stats-build-check.log": "eb62ae34162b859fe414f50b3df31a1ac61ebcea14c290c8c3ecb33ddcc9b911",
+    "boxed-stats-final-build.log": "6b76f996c75d089fae652bd4d4eb362ff9ebee20b01e9c76eddccd79686b7dfd",
+    "boxed-stats-final-clippy.log": "75c332ca046b30f57f71795fb0460a86425fcc7a8fca09f8f2ffe0fa5b49d129",
+    "boxed-stats-final-core-tests.log": "8380d263cbaf3c58fa59c18d88c3dfb37dd91bd8cf5b164f7c442504204093e4",
+    "boxed-stats-wasm-clippy.log": "c934c62c3961c9a4141b2f77711011a6ac6363c1c933f56f1c631cf55b7876b7",
+    "boxed-stats-doc-tests.log": "4c9d445377f0b72cac17928af2248f4c5d401267a6a089f9214d6242a8d94a60"
+  },
+  "final_wasm_clippy": "Passed with -D warnings",
+  "repo_swap_compile_fail": "Passed native compile-fail doctest; public borrow lifetime remains enforced",
+  "native_warning": "Initial checked source emitted noop_method_call in native career iterator; explicit Borrow<SeasonStats> UFCS fixes it. Final strict core Clippy/core tests pass and final WASM is byte-identical to checked initial engine.",
+  "layout_probe": {
+    "scope": "Compiled wasm32 type sizes, not actual allocator/whole-browser memory or predicted saving.",
+    "stats_size": 696,
+    "identity_size": 152,
+    "stats_slot_size": 712,
+    "boxed_stats_slot_size": 16
+  },
+  "raw_private_peak_savings_mib": [
+    15.9140625,
+    5.4140625
+  ],
+  "open_gates": [
+    "250 MiB whole-browser acceptance",
+    "Physical Android deferred",
+    "Exact CI/master/publication/recovery validation for adoption"
+  ]
+}
