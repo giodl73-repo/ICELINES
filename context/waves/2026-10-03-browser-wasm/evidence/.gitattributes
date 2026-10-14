@@ -2,3 +2,4 @@
 # Some original reporters emit LF and others CRLF. Preserve both exactly.
 *.json -text whitespace=cr-at-eol
 frontend-bundle-recipe-20261014.mjs -text
+frontend-bundle-build-build-check-log-20261014.log -text whitespace=cr-at-eol
