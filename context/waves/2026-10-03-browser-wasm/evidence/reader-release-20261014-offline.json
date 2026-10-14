@@ -1,0 +1,52 @@
+{
+  "started_at": "2026-10-14T19:21:02.752Z",
+  "verified": true,
+  "scope": "Isolated Chromium process close/reopen with offline network control; saved versus unsaved seasons, fresh query and player detail. Not physical-phone, total-memory or remote-rollback proof.",
+  "evidence": {
+    "saved_unfiltered_rows": 933,
+    "browser_process_closed": true,
+    "local_server_stopped": true,
+    "offline_viewport_rows": 42,
+    "offline": {
+      "online": false,
+      "probe_failed": true
+    },
+    "fresh_filtered_rows": 835,
+    "player_detail": "Connor McDavid",
+    "failed_requests": [
+      {
+        "url": "http://127.0.0.1:57857/ICELINES/workbench/uncached-acceptance-probe-1792005668208",
+        "error": "net::ERR_INTERNET_DISCONNECTED"
+      }
+    ]
+  },
+  "profile_retained": "C:\\Users\\giodl\\AppData\\Local\\Temp\\icelines-acceptance-bjjqPA",
+  "retained_artifact": {
+    "commit": "a7a3d86fe6fbeb06dc3510568ac5f2a9d0e91da3",
+    "shell_build": "ee9d51518df31b846c29e3b67d315f2c3a26895e91d7dd42f3003e41e37fe655",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "url": "http://127.0.0.1:57857/ICELINES/workbench/",
+  "browser": "153.0.8010.12",
+  "build": {
+    "schema_version": 1,
+    "commit": "a7a3d86fe6fbeb06dc3510568ac5f2a9d0e91da3",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "782009af96f7a4c5fbd17a46e0716d4b6a300d4e85286a65c2b92e5cdd7f12ed",
+    "reused_engine": {
+      "source_commit": "807e2adcd31cdd8cd31a74f87fdeec05247b7ef0",
+      "wasm_sha256": "782009af96f7a4c5fbd17a46e0716d4b6a300d4e85286a65c2b92e5cdd7f12ed",
+      "scope": "Controlled frontend-only local experiment. Exact verified retained engine; Rust source subtrees/workspace manifest match. No claim Rust was recompiled for this frontend candidate; normal CI build required before adoption."
+    }
+  },
+  "saved_package": "20252026-regular",
+  "unsaved_package": "20242025-regular",
+  "finished_at": "2026-10-14T19:21:08.747Z"
+}

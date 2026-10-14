@@ -1,0 +1,81 @@
+TAP version 13
+# Subtest: compressed and legacy download preserve exact Unicode package bytes
+ok 1 - compressed and legacy download preserve exact Unicode package bytes
+  ---
+  duration_ms: 34.6068
+  type: 'test'
+  ...
+# Subtest: wrong compressed digest, expanded digest, size and broken gzip are refused
+ok 2 - wrong compressed digest, expanded digest, size and broken gzip are refused
+  ---
+  duration_ms: 9.7964
+  type: 'test'
+  ...
+# Subtest: browser without gzip support uses the authenticated raw package
+ok 3 - browser without gzip support uses the authenticated raw package
+  ---
+  duration_ms: 4.5286
+  type: 'test'
+  ...
+# Subtest: expansion bomb is bounded and cancellation/deadline remain errors
+ok 4 - expansion bomb is bounded and cancellation/deadline remain errors
+  ---
+  duration_ms: 4.8519
+  type: 'test'
+  ...
+# Subtest: multi-chunk expansion preserves an offset input view and the exact output limit
+ok 5 - multi-chunk expansion preserves an offset input view and the exact output limit
+  ---
+  duration_ms: 17.8599
+  type: 'test'
+  ...
+# Subtest: decoder input writes preserve offset views and remain bounded without copying
+ok 6 - decoder input writes preserve offset views and remain bounded without copying
+  ---
+  duration_ms: 3.5794
+  type: 'test'
+  ...
+# Subtest: native gzip expansion preserves incompressible data across decoder input boundaries
+ok 7 - native gzip expansion preserves incompressible data across decoder input boundaries
+  ---
+  duration_ms: 36.3555
+  type: 'test'
+  ...
+# Subtest: cancellation stops decoder input before forwarding the whole payload
+ok 8 - cancellation stops decoder input before forwarding the whole payload
+  ---
+  duration_ms: 1.8393
+  type: 'test'
+  ...
+# Subtest: decoder output releases its reader lock after success, limit failure and abort
+not ok 9 - decoder output releases its reader lock after success, limit failure and abort
+  ---
+  duration_ms: 1.4804
+  type: 'test'
+  location: 'C:\\Users\\giodl\\.codex\\worktrees\\browser-wasm\\icelines\\icelines-browser\\tests\\package-download.test.mjs:88:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    success must detach the output reader
+    
+    true !== false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/giodl/.codex/worktrees/browser-wasm/icelines/icelines-browser/tests/package-download.test.mjs:106:14)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 8
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 246.8869

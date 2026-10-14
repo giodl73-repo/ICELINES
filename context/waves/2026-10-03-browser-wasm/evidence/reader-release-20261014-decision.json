@@ -1,0 +1,74 @@
+{
+  "candidate_commit": "a7a3d86fe6fbeb06dc3510568ac5f2a9d0e91da3",
+  "scope": "Normal original full75/eight/two/20/restart workload, original channel/flags/sampler/network observer, no additional observer or forced GC. One sequential candidate/control pair.",
+  "build_scope": "Controlled frontend-only build reuses exact retained Windows engine SHA782009af96f7a4c5fbd17a46e0716d4b6a300d4e85286a65c2b92e5cdd7f12ed; all artifact files match control except package-download.js and three identity files. No fresh Rust or CI build claim.",
+  "decision": "Do not adopt: candidate private peak is 10.35546875 MiB higher with similar blank baseline. No useful saving established; no reverse pair, PR, CI or publication. This does not establish a universal causal regression or leak.",
+  "desktop_acceptance": false,
+  "physical_android": "Deferred by user; untested",
+  "unit_tests": 164,
+  "original_regression": "New cleanup regression fails original compiled implementation; eight other targeted tests pass. Candidate passes all success/output-limit/abort cleanup cases.",
+  "runs": [
+    {
+      "label": "candidate",
+      "peak_private_mib": 402.140625,
+      "blank_private_mib": 235.203125,
+      "warm_median_ms": 64.5679500000042,
+      "warm_max_ms": 99.39199999999255
+    },
+    {
+      "label": "control",
+      "peak_private_mib": 391.78515625,
+      "blank_private_mib": 235.88671875,
+      "warm_median_ms": 63.872749999994994,
+      "warm_max_ms": 96.54119999999239
+    }
+  ],
+  "evidence": {
+    "memory-candidate": {
+      "file": "reader-release-20261014-memory-candidate.json",
+      "sha256": "07cd11508786be83a71ce155016749d7726196af76749a361f5b8e6e7f4804b0"
+    },
+    "candidate-samples": {
+      "file": "reader-release-20261014-candidate-samples.json.gz",
+      "sha256": "3e9e76ce28e15dd25554ba4dfbe5276455226dd0f7a734ecb011b783d6a3a842",
+      "expanded_sha256": "2f882fbce5ea1114bd20f954e1b0571c8fe7512766b5771745c2c79756ce6b30"
+    },
+    "memory-control": {
+      "file": "reader-release-20261014-memory-control.json",
+      "sha256": "47912ca833e4e6bd15ab25dc2c0e73dc352d246b7c67a1e1a8639de0c1934dbc"
+    },
+    "control-samples": {
+      "file": "reader-release-20261014-control-samples.json.gz",
+      "sha256": "8fd7c4918e9fd027a113ffe2097efd327ae96697e8eb916ef37ff801f3c45157",
+      "expanded_sha256": "dff0022e69d989eeb030dd29ee7bda741ee6d54d9423f0c367d8d83bf6ed3e61"
+    },
+    "refusal": {
+      "file": "reader-release-20261014-refusal.json",
+      "sha256": "38790c85c9a833fc99a1858adad76f42ef6e8998ca0ca7456c74b80f25c32cc4"
+    },
+    "offline": {
+      "file": "reader-release-20261014-offline.json",
+      "sha256": "9d3faade4a967845e3bd85a5585a2ae47e599648ba3dc1ee6f71aed83535dbbc"
+    },
+    "original-regression": {
+      "file": "reader-release-20261014-original-regression.log",
+      "sha256": "57f127deb96d9b61a3405c5fd2fc0df841c60d1fdece5dba88caebda120784a8"
+    },
+    "units": {
+      "file": "reader-release-20261014-units.log",
+      "sha256": "634b9258a08277b49031bfc80b6c8cdf9d3e238d2bb1325faa3b2fca8fb103c7"
+    },
+    "build-recipe": {
+      "file": "reader-release-20261014-build-recipe.mjs",
+      "sha256": "85b882b26eb39838839d3070901cedf7da0a357bfb27832b21710342c42c1b5d"
+    },
+    "build-log": {
+      "file": "reader-release-20261014-build-log.log",
+      "sha256": "1e73cedb4b8af1888784201f8539bae74a16ec0a42144b2ad7e61fa4283a1d99"
+    },
+    "build-info": {
+      "file": "reader-release-20261014-build-info.json",
+      "sha256": "f78cdb9a05a406a8eb1b884766b075c3ccc82a4670412f053c6a4171074a689b"
+    }
+  }
+}
