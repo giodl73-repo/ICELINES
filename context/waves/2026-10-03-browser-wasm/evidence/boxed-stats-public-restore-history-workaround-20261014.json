@@ -1,0 +1,14 @@
+{
+  "profile": "owned public-rehearsal-wLiGtK only",
+  "backup": "target\\public-rehearsal-wLiGtK\\archive\\history-before-boxed-restore.sqlite",
+  "backup_sha256": "250107bac4b179a9e2f435162aa449b4e5159196f4a753a6f0a22fe67a46be1e",
+  "removed_test_download_rows": {
+    "downloads_url_chains": 16,
+    "downloads_slices": 0,
+    "downloads": 16
+  },
+  "all_other_history_tables_unchanged": true,
+  "indexeddb_cookies_preferences_modified": false,
+  "upstream": "https://github.com/microsoft/playwright/issues/42506",
+  "scope": "Reversible owned test-download history workaround only. No application, data, flags or sampler changes."
+}

@@ -1,0 +1,28 @@
+{
+  "verified": true,
+  "artifact": {
+    "commit": "5ef015c4d47ebbcee8234eb92f1fe83716b45054",
+    "shell_build": "2cd7ec75fbdada2e037c0538b702286dff4a31419f383081bd29d82dc1efb02b",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "scope": "Local owned browser; complete result/export parity, continuous scrolling, keyboard, detail and failure/retry. Not phone or memory acceptance.",
+  "evidence": {
+    "exported_rows": 933,
+    "all_table_names_match": true,
+    "all_ranks_scrolled": 933,
+    "max_mounted": 44,
+    "exact_row_height": 72,
+    "last_player_detail": true,
+    "tab_steps": 120,
+    "reverse_tab_steps": 120,
+    "filtered_result_count": 835,
+    "failure_clear_retry": true,
+    "narrow_width": 390,
+    "terminal_tab_boundaries": true,
+    "ax_all_player_names": 933,
+    "print_source_rows": 933,
+    "print_restores_scroll_mode": true,
+    "goalie_export_full_table_parity": 77
+  }
+}

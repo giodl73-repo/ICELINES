@@ -1,6 +1,40 @@
 # Desktop allocation investigation — 2026-10-12
 
-## Current published metadata projection (2026-10-14)
+## Current published wasm32 stats allocation (2026-10-14)
+
+PR99 is merged and published as5ef015c4. wasm32 repository stats hash slots hold
+unique Box pointers; native rows remain inline, with the same public borrowed
+types, keys, normalization and residency. Compiled layout constants are696 bytes
+for SeasonStats and712/16 for inline/boxed key-value tuples. They are type sizes,
+not actual allocator or physical-memory measurements.
+
+Two independent opposite-order Windows-built pairs peak384.49/400.40 and
+388.54/393.95 MiB candidate/control. Blank baselines are228.17/231.41 and
+233.06/226.79. Raw15.91/5.41 MiB savings repeat despite baseline variation; no
+universal reduction or baseline-subtracted acceptance is claimed. Warm maxima
+for all four runs remain below96 ms.
+
+Exact Linux-built reviewed CI artifact peaks392.33/390.05 MiB against one shared
+392.86 control (baselines230.86/234.72/229.86). These are not independent pairs.
+The original100.81 ms warm maximum is retained; repeat99.40 ms is a later
+observation without deleting or relabeling the first report. Exact master peaks
+395.54 MiB, baseline237.10, warm max97.05 ms. It is byte-identical to reviewed CI
+for frontend modules, engine and catalog. Historical38d2a053 reaches390.42 MiB
+with a different226.52 baseline; do not present that unpaired comparison as an
+absolute release-to-release reduction.
+
+Every normal workload retains75 packages/eight residents/two905/332 imports/20
+queries/restart, original flags/sampler/network observer, no forced GC and every
+sampled phase.250 MiB remains FAILED. Physical Android remains deferred.
+
+Exact master checks, publication, same-profile rollback/restore, static273-file
+verification in every phase, identical95 documentation hashes, byte-exact gzip
+export and offline fresh queries pass. Executing WASM fingerprints come from
+Debugger bytecode in the owned engine worker; supplemental inspector probes do
+not establish memory performance. See boxed-stats-* provenance. Earlier sections
+describe their own sources/dates, not current full acceptance.
+
+## Historical published metadata projection (2026-10-14)
 
 PR96 is merged/published as38d2a053. Known authenticated package digests use
 build-derived headers; unknown packages keep full UTF-8/JSON parsing. No WASM

@@ -6,6 +6,47 @@ It does not declare the full plan complete.
 
 ## Current release
 
+Public source is5ef015c4d47ebbcee8234eb92f1fe83716b45054, merged PR99's wasm32-only
+repository stats allocation change. Large SeasonStats rows use unique Box
+ownership behind smaller hash slots; native rows remain inline. Public borrowed
+types, key shape, normalization, exports, saving policy and residency are unchanged.
+
+PR/master each pass29 checks. Exact retained master artifact11885734369 from
+browser38549103604/native38549103699 verifies182 files/75 packages/27 assets.
+Shell is2cd7ec75fbdada2e037c0538b702286dff4a31419f383081bd29d82dc1efb02b;
+WASM is8482c9fd825f773eb3fc0956e42f67f0931caf871d2bab89c76b01a4738aab3a.
+Master modules/engine/catalog match the reviewed CI preview. Core1,182 tests,
+native/wasm32 strict Clippy, repo-swap compile-fail,270 native/WASM parity cases
+(33,613 rows),160 browser units, full viewport/keyboard/AX/print transitions,
+corruption/exact export, catalog-context and process-close offline checks pass.
+Actual24-page PDF preserves all933 names/ranks with two parsers and no clipping.
+
+Local Windows-built opposite-order pairs save15.91/5.41 MiB raw private peak;
+baselines remain explicit and do not establish universal savings. Linux-built CI
+artifact peaks392.33/390.05 MiB against one shared392.86 control, not independent
+opposite-order pairs. First CI warm maximum100.81 ms remains in evidence; repeat
+is99.40 ms. Exact master full workload peaks395.54 MiB, blank237.10, warm max97.05
+ms. All75/eight residents/two905/332 imports/20 queries/restart preserve original
+flags/sampler/network observer, no forced GC and every sampled phase.250 MiB still
+FAILS; no baseline subtraction or latency/budget waiver declares full acceptance.
+
+Retained-byte publication38551551343, rollback38552043788 to38d2a053 and final
+restore38552342417 succeed without rebuild. Each phase matches273 served files
+with no failures; all95 staged documentation hashes match across phases. The same
+original owned profile completes direct consent-driven38->5ef->38->5ef transitions
+with saved season/schedule bytes, metadata/revisions/settings preserved. Gzip
+acquisition exports exact905-player raw JSON; offline reopening runs fresh queries
+and detail with uncached probes blocked, including after debugger attachment.
+Debugger bytecode fingerprints prove the executing engine matches the retained
+8482c9fd/2e4c8533 binaries on every online/offline phase. Additional inspector
+observations are identity evidence, not normal memory acceptance.
+
+Evidence: boxed-stats-ci/master/publication-* dated20261014. This is an incremental
+validation release. Whole-browser250 MiB and physical Android gates remain open;
+Android remains deferred by the user. Earlier sections are historical evidence.
+
+## Historical38d2a053 release
+
 Public source is38d2a053b0abc6b139b8f20718377c4df8a57a11, merged PR96's
 digest-keyed catalog metadata projection. Whole JSON is authenticated and parsed
 during build; known verified digests avoid reparsing player records on the UI
