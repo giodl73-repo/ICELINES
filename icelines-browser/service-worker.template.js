@@ -11,10 +11,15 @@ async function acquireShell(cache, signal) {
   for (const [url, asset] of assets) {
     const response = await fetch(url, { cache: 'no-store', credentials: 'omit', redirect: 'error', signal });
     if (!response.ok) throw new Error('Offline asset unavailable: ' + asset.path);
-    const bytes = await response.clone().arrayBuffer();
+    const bytes = await response.arrayBuffer();
     const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), value => value.toString(16).padStart(2, '0')).join('');
     if (bytes.byteLength !== asset.bytes || hash !== asset.sha256) throw new Error('Offline asset changed during install: ' + asset.path);
-    await cache.put(url, response);
+    // Fetch has decoded the wire body. Cache those authenticated bytes directly
+    // instead of retaining a tee branch while hashing its complete copy.
+    const headers = new Headers(response.headers);
+    headers.delete('content-encoding');
+    headers.set('content-length', String(bytes.byteLength));
+    await cache.put(url, new Response(bytes, { status: response.status, statusText: response.statusText, headers }));
   }
 }
 
