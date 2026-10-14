@@ -1,0 +1,14 @@
+{
+  "profile": "owned public-rehearsal-wLiGtK only",
+  "backup": "target\\public-rehearsal-wLiGtK\\archive\\history-before-stream-update.sqlite",
+  "backup_sha256": "07488f84a399e25e15d0448dcc93c51472c638550502ed3ab76766a46a3dbb4b",
+  "removed_test_download_rows": {
+    "downloads_url_chains": 8,
+    "downloads_slices": 0,
+    "downloads": 8
+  },
+  "all_other_history_tables_unchanged": true,
+  "indexeddb_cookies_preferences_modified": false,
+  "upstream": "https://github.com/microsoft/playwright/issues/42506",
+  "scope": "Same reversible workaround for Chromium153 automated persistent-download crash. No app/schema/sampler change or user-profile modification."
+}

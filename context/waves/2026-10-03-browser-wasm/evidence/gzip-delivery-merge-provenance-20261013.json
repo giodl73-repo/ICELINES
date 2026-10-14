@@ -1,0 +1,19 @@
+{
+  "pr": 92,
+  "state": "MERGED",
+  "reviewed_head": "205819af36de2906a3fad1ce2d9f75a69c9867ae",
+  "master_commit": "2e265236f3e71fd2dbe6ecab74e64b296a553465",
+  "merged_at": "2026-10-14T01:21:42Z",
+  "pr_browser_ci": 38493381258,
+  "pr_native_ci": 38493381284,
+  "successful_checks": 29,
+  "ci_merge": "a59e410c1140ac7838d9e5e3abe39200b146046e",
+  "artifact_id": 11862962493,
+  "master_browser_run": 38495299888,
+  "master_native_run": 38495299823,
+  "master_validation_pending": true,
+  "publication_pending": true,
+  "baseline_directory": "target/public-rehearsal-wLiGtK",
+  "public_probe_sha256": "18772bdcc827aa726b44191685f2822bbae31427ccf31cf497d80216e1aa3529",
+  "limits": "Exact preview and owned localhost saved-data update pass. Not final-master/public-origin/mobile or250 MiB proof."
+}

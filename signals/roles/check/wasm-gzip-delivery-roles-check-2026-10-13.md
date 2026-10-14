@@ -51,3 +51,20 @@ Amendments:
    master artifact and public gzip bytes/execution/update/rollback.
 3. Keep resource and physical-device gates explicitly open until actual evidence
    satisfies their original scope. Do not label bandwidth saving full acceptance.
+
+## Adoption/validation update
+
+PR92 merged as2e265236 with29 successful PR checks and29 successful master checks.
+BENCH B3 and WIRE W1 are closed within the measured delivery scope: retained
+master actual-WASM/browser/offline/print/corruption/update checks pass; public
+272-file byte/MIME verification, gzip acquisition, exact package export, saved
+fixture preservation, rollback/executing-source SHA and final offline checks pass.
+The original503 and repeated export-time automation closures remain recorded.
+The backed-up owned-test download-history workaround matches the upstream
+Chromium153 report; it does not change app data or memory-test parameters.
+Final verification starts from already-restored2e265236 after failed export attempts.
+
+Incremental delivery scope: approved with measured-scope conditions documented.
+Full validation remains NEEDS-WORK: B1 resource gate fails at388.74 MiB against250;
+B2 physical Android remains deferred. No new waiver, budget change or independent
+multi-agent review is claimed. Evidence: gzip-delivery-publication-provenance.

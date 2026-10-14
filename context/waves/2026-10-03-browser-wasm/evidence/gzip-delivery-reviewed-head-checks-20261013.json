@@ -1,0 +1,307 @@
+{
+  "headRefOid": "205819af36de2906a3fad1ce2d9f75a69c9867ae",
+  "isDraft": true,
+  "state": "OPEN",
+  "statusCheckRollup": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:13:13Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381258/job/115623534550",
+      "name": "build",
+      "startedAt": "2026-10-14T01:00:58Z",
+      "status": "COMPLETED",
+      "workflowName": "Browser WASM / Pages"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:01:57Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623534543",
+      "name": "Quality / fmt",
+      "startedAt": "2026-10-14T01:00:59Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:05:07Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623536189",
+      "name": "Quality / clippy",
+      "startedAt": "2026-10-14T01:00:59Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:02:05Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623534708",
+      "name": "Quality / audit",
+      "startedAt": "2026-10-14T01:00:58Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:13:14Z",
+      "conclusion": "SKIPPED",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381258/job/115627103928",
+      "name": "deploy",
+      "startedAt": "2026-10-14T01:13:14Z",
+      "status": "COMPLETED",
+      "workflowName": "Browser WASM / Pages"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:04:38Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623535013",
+      "name": "Tests / core-lib",
+      "startedAt": "2026-10-14T01:00:58Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:06:22Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623535000",
+      "name": "Tests / core-integration",
+      "startedAt": "2026-10-14T01:00:58Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:03:54Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623535011",
+      "name": "Tests / query",
+      "startedAt": "2026-10-14T01:00:58Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:07:44Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623534810",
+      "name": "Tests / fetch",
+      "startedAt": "2026-10-14T01:00:58Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:09:43Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623534835",
+      "name": "Tests / web",
+      "startedAt": "2026-10-14T01:00:59Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:04:52Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623534936",
+      "name": "Tests / site",
+      "startedAt": "2026-10-14T01:00:58Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:05:58Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623535036",
+      "name": "Tests / cli-lib",
+      "startedAt": "2026-10-14T01:00:58Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:07:54Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623535084",
+      "name": "Tests / cli-tui-bin",
+      "startedAt": "2026-10-14T01:00:58Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:12:48Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623535061",
+      "name": "Tests / cli-art-ross",
+      "startedAt": "2026-10-14T01:00:58Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:07:29Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623535058",
+      "name": "Tests / cli-lindsay",
+      "startedAt": "2026-10-14T01:00:58Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:08:06Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623534726",
+      "name": "Tests / cli-persona",
+      "startedAt": "2026-10-14T01:00:58Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:07:40Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623534919",
+      "name": "Tests / cli-system",
+      "startedAt": "2026-10-14T01:00:58Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:07:53Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623535004",
+      "name": "Tests / cli-smoke",
+      "startedAt": "2026-10-14T01:00:58Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:05:02Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623535030",
+      "name": "Tests / doc-tests",
+      "startedAt": "2026-10-14T01:00:58Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:19:13Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623534913",
+      "name": "Build / release CLI",
+      "startedAt": "2026-10-14T01:00:58Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:03:51Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623534787",
+      "name": "Window fingerprint / windows-latest",
+      "startedAt": "2026-10-14T01:00:58Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:02:10Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623534656",
+      "name": "Window fingerprint / ubuntu-latest",
+      "startedAt": "2026-10-14T01:00:58Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:03:56Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623534879",
+      "name": "Window fingerprint / macos-latest",
+      "startedAt": "2026-10-14T01:01:06Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:06:24Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623534814",
+      "name": "Package / x86_64-unknown-linux-gnu",
+      "startedAt": "2026-10-14T01:00:58Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:11:52Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623534717",
+      "name": "Package / x86_64-apple-darwin",
+      "startedAt": "2026-10-14T01:01:05Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:15:51Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623534839",
+      "name": "Package / x86_64-pc-windows-msvc",
+      "startedAt": "2026-10-14T01:00:59Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:04:23Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115623534763",
+      "name": "Coverage Gate (icelines-core >= 80%)",
+      "startedAt": "2026-10-14T01:00:58Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:16:36Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115627878302",
+      "name": "Ferris artifact / x86_64-unknown-linux-gnu",
+      "startedAt": "2026-10-14T01:15:55Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:17:14Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115627878254",
+      "name": "Ferris artifact / x86_64-apple-darwin",
+      "startedAt": "2026-10-14T01:16:00Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-14T01:17:34Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/giodl73-repo/ICELINES/actions/runs/38493381284/job/115627878276",
+      "name": "Ferris artifact / x86_64-pc-windows-msvc",
+      "startedAt": "2026-10-14T01:15:54Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    }
+  ]
+}

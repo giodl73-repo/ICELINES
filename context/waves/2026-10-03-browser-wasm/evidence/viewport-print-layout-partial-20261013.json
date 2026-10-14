@@ -11,59 +11,64 @@
   "pdf_name_mismatches": [
     {
       "rank": 22,
-      "extracted": "Tim St�tzle",
-      "expected": "Tim Stützle"
+      "extracted": "Tim Stützle",
+      "expected": "Tim StÃ¼tzle"
     },
     {
       "rank": 45,
-      "extracted": "Juraj Slafkovsk�",
-      "expected": "Juraj Slafkovský"
+      "extracted": "Juraj Slafkovský",
+      "expected": "Juraj SlafkovskÃ½"
     },
     {
       "rank": 100,
-      "extracted": "Alexis Lafreni�re",
-      "expected": "Alexis Lafrenière"
+      "extracted": "Alexis Lafrenière",
+      "expected": "Alexis LafreniÃ¨re"
     },
     {
       "rank": 510,
-      "extracted": "Aatu R�ty",
-      "expected": "Aatu Räty"
+      "extracted": "Aatu Räty",
+      "expected": "Aatu RÃ¤ty"
     },
     {
       "rank": 536,
-      "extracted": "Isac Lundestr�m",
-      "expected": "Isac Lundeström"
+      "extracted": "Isac Lundeström",
+      "expected": "Isac LundestrÃ¶m"
     },
     {
       "rank": 538,
-      "extracted": "Oskar B�ck",
-      "expected": "Oskar Bäck"
+      "extracted": "Oskar Bäck",
+      "expected": "Oskar BÃ¤ck"
     },
     {
       "rank": 729,
-      "extracted": "Jonathan Lekkerim�ki",
-      "expected": "Jonathan Lekkerimäki"
+      "extracted": "Jonathan Lekkerimäki",
+      "expected": "Jonathan LekkerimÃ¤ki"
     },
     {
       "rank": 783,
-      "extracted": "Alex Barr�-Boulet",
-      "expected": "Alex Barré-Boulet"
+      "extracted": "Alex Barré-Boulet",
+      "expected": "Alex BarrÃ©-Boulet"
     },
     {
       "rank": 827,
-      "extracted": "Michael Brandsegg-Nyg�rd",
-      "expected": "Michael Brandsegg-Nygård"
+      "extracted": "Michael Brandsegg-Nygård",
+      "expected": "Michael Brandsegg-NygÃ¥rd"
     },
     {
       "rank": 879,
-      "extracted": "Nathan L�gar�",
-      "expected": "Nathan Légaré"
+      "extracted": "Nathan Légaré",
+      "expected": "Nathan LÃ©garÃ©"
     },
     {
       "rank": 880,
-      "extracted": "Matej Bl�mel",
-      "expected": "Matej Blümel"
+      "extracted": "Matej Blümel",
+      "expected": "Matej BlÃ¼mel"
     }
   ],
-  "additional_observation": "Segoe UI font probe reproduces the same 11 extraction mismatches. Arial visual raster shows the umlaut correctly; producer/ToUnicode cause remains unproven."
+  "additional_observation": "Segoe UI font probe reproduces the same 11 extraction mismatches. Arial visual raster shows the umlaut correctly; producer/ToUnicode cause remains unproven.",
+  "superseded": true,
+  "superseded_by": "viewport-print-utf8-corrected-20261013.json",
+  "invalid_verifier_reason": "UTF-8 reference JSON was read as Windows CP1252; PDF output was correct. Default CP1252 report output also made the old JSON non-UTF8.",
+  "original_report_bytes": "viewport-print-layout-partial-20261013.raw.cp1252",
+  "original_report_sha256": "e458b07d8dac80332bc76b197311f6f88c0e321b206bdf556c677dc9a48ad042"
 }

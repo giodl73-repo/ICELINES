@@ -1,0 +1,99 @@
+{
+  "current_public_source": "e58a3bfc0f71fe7ba844cf729df166132eff7693",
+  "artifact_id": 11870427683,
+  "master_browser_run": 38511436965,
+  "master_native_run": 38511437021,
+  "checks_passed": 29,
+  "source_shell": "466622feed4318b5ef58118be58cea1d8f91118accdd0ae42773a1ceada80269",
+  "phases": {
+    "first": {
+      "run": 38513149144,
+      "from": "2e265236f3e71fd2dbe6ecab74e64b296a553465",
+      "to": "e58a3bfc0f71fe7ba844cf729df166132eff7693",
+      "reports": {
+        "static": {
+          "file": "stream-expansion-public-first-static-20261013.json",
+          "sha256": "3d067ce3c3feb0603bbcb4d15180022c26ca1724aa74e8cb656ed59f5be98627"
+        },
+        "update": {
+          "file": "stream-expansion-public-first-update-20261013.json",
+          "sha256": "9300793c8917a6d1da760816ddbbfa190bb35d552bf4b178cded9cd2960ad2cb"
+        },
+        "offline": {
+          "file": "stream-expansion-public-first-offline-20261013.json",
+          "sha256": "dffdd9a071109760a4fb9f602416fe071d425a4a4dc1c6f5349cd2ef36773cae"
+        },
+        "history-workaround": {
+          "file": "stream-expansion-public-first-history-workaround-20261013.json",
+          "sha256": "414ba59d37839ac89daab9247eb0e056d0ae40b5e7d7cba842a73dee12892296"
+        }
+      },
+      "preservation_sha256": "145ec48790ed8c400c9dc452fa5327c98730cae8a8db884afbddff16a7e27e4d",
+      "preserved_files": 95,
+      "browser_files": 181,
+      "deployed_matches": 272
+    },
+    "rollback": {
+      "run": 38513650760,
+      "from": "e58a3bfc0f71fe7ba844cf729df166132eff7693",
+      "to": "2e265236f3e71fd2dbe6ecab74e64b296a553465",
+      "reports": {
+        "static": {
+          "file": "stream-expansion-public-rollback-static-20261013.json",
+          "sha256": "a469e33b067e3ada22d7fa24a781b805d563d8480acc795d7581ab6ab9e55b14"
+        },
+        "update": {
+          "file": "stream-expansion-public-rollback-update-20261013.json",
+          "sha256": "f771dd8dc56e19ae6290483b5635ea786f51109e3e40e0d65da0de09481fe9e1"
+        },
+        "offline": {
+          "file": "stream-expansion-public-rollback-offline-20261013.json",
+          "sha256": "7f2615841c0befa0f9fea2243a8a0d06e0cc837f4560f9adf79c11b5fb7d3d99"
+        },
+        "history-workaround": {
+          "file": "stream-expansion-public-rollback-history-workaround-20261013.json",
+          "sha256": "dc9473c5b41972c601aa597f959fd0a60c47cba5928ea08cdcf6d6dbe9ad39f5"
+        }
+      },
+      "preservation_sha256": "145ec48790ed8c400c9dc452fa5327c98730cae8a8db884afbddff16a7e27e4d",
+      "preserved_files": 95,
+      "browser_files": 181,
+      "deployed_matches": 272
+    },
+    "restore": {
+      "run": 38514090019,
+      "from": "2e265236f3e71fd2dbe6ecab74e64b296a553465",
+      "to": "e58a3bfc0f71fe7ba844cf729df166132eff7693",
+      "reports": {
+        "static": {
+          "file": "stream-expansion-public-restore-static-20261013.json",
+          "sha256": "a76da5881cba55ddf45f23079cd4a99fcc7b2a4722c24f041110ed1e1b4f8294"
+        },
+        "update": {
+          "file": "stream-expansion-public-restore-update-20261013.json",
+          "sha256": "1c24b81840b03061f79418c4f623d633d1388b04ae123955dc64374c23ece591"
+        },
+        "offline": {
+          "file": "stream-expansion-public-restore-offline-20261013.json",
+          "sha256": "45fa60d965586acf85b437355c46ff27c6f81c46c94a0af5f7509d4ae373e3af"
+        },
+        "history-workaround": {
+          "file": "stream-expansion-public-restore-history-workaround-20261013.json",
+          "sha256": "b00f089923e758bbac0063366bead85f0f7a15b78bbdae08117def9ab5a1dd9d"
+        }
+      },
+      "preservation_sha256": "145ec48790ed8c400c9dc452fa5327c98730cae8a8db884afbddff16a7e27e4d",
+      "preserved_files": 95,
+      "browser_files": 181,
+      "deployed_matches": 272
+    }
+  },
+  "open_gates": [
+    "250 MiB whole-browser target; actual master397.09 MiB",
+    "Physical Android deferred"
+  ],
+  "scope": "Exact retained-artifact publication, both consent-driven public transitions, process-close offline reopening and source-module hashes in the same owned profile. Frozen saved schedule; no live NHL, physical phone or memory acceptance claim.",
+  "all_documentation_inventories_identical": true,
+  "baseline_sha256": "8d2aa669f740d6f01be258b48597fe610de64f5e6c4fa62e74cad5f638a1ff7a",
+  "rehearsal_helper_sha256": "2369df985b8a9c37d131b7de37ad94e5bb4db0ee7d75eea95a427b79a314903c"
+}

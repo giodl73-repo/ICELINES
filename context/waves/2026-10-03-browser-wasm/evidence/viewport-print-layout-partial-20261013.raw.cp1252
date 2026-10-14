@@ -1,0 +1,69 @@
+{
+  "verified": false,
+  "layout_verified": true,
+  "exact_pdf_name_text_verified": false,
+  "scope": "Actual A4 Chromium PDF from viewport mode. All 933 ranks, complete pace column, page bounds and visual typography pass. Exact extracted names remain unverified for 11 accented names. Chromium AX names and JSON export preserve all names. Not physical printer, screen-reader or phone proof.",
+  "pages": 24,
+  "ranks_in_order": 933,
+  "first_pace_complete": true,
+  "last_player": "Jake Livanavage",
+  "out_of_page_text": [],
+  "pdf_name_mismatches": [
+    {
+      "rank": 22,
+      "extracted": "Tim Stützle",
+      "expected": "Tim StÃ¼tzle"
+    },
+    {
+      "rank": 45,
+      "extracted": "Juraj Slafkovský",
+      "expected": "Juraj SlafkovskÃ½"
+    },
+    {
+      "rank": 100,
+      "extracted": "Alexis Lafrenière",
+      "expected": "Alexis LafreniÃ¨re"
+    },
+    {
+      "rank": 510,
+      "extracted": "Aatu Räty",
+      "expected": "Aatu RÃ¤ty"
+    },
+    {
+      "rank": 536,
+      "extracted": "Isac Lundeström",
+      "expected": "Isac LundestrÃ¶m"
+    },
+    {
+      "rank": 538,
+      "extracted": "Oskar Bäck",
+      "expected": "Oskar BÃ¤ck"
+    },
+    {
+      "rank": 729,
+      "extracted": "Jonathan Lekkerimäki",
+      "expected": "Jonathan LekkerimÃ¤ki"
+    },
+    {
+      "rank": 783,
+      "extracted": "Alex Barré-Boulet",
+      "expected": "Alex BarrÃ©-Boulet"
+    },
+    {
+      "rank": 827,
+      "extracted": "Michael Brandsegg-Nygård",
+      "expected": "Michael Brandsegg-NygÃ¥rd"
+    },
+    {
+      "rank": 879,
+      "extracted": "Nathan Légaré",
+      "expected": "Nathan LÃ©garÃ©"
+    },
+    {
+      "rank": 880,
+      "extracted": "Matej Blümel",
+      "expected": "Matej BlÃ¼mel"
+    }
+  ],
+  "additional_observation": "Segoe UI font probe reproduces the same 11 extraction mismatches. Arial visual raster shows the umlaut correctly; producer/ToUnicode cause remains unproven."
+}

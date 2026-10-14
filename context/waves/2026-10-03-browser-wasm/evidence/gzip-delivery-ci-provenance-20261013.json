@@ -1,0 +1,27 @@
+{
+  "pr": 92,
+  "reviewed_head": "205819af36de2906a3fad1ce2d9f75a69c9867ae",
+  "ci_merge": "a59e410c1140ac7838d9e5e3abe39200b146046e",
+  "ci_parents": [
+    "4d1f513e29869bceba4fec9bf08d51511ad74207",
+    "205819af36de2906a3fad1ce2d9f75a69c9867ae"
+  ],
+  "browser_run": 38493381258,
+  "artifact_id": 11862962493,
+  "shell_build": "0cfbc071f1232d7c622c74eccc9d88de2fcd2ec6be5aa2ea181f6621ba865e64",
+  "wasm_sha256": "2e4c853309a32d8366c282afe113626fde5c25b26349bd9194ceafe59123f57b",
+  "artifact_files": 181,
+  "package_count": 75,
+  "reports": {
+    "browser": "target/viewport-browser-ph3Ymh/report.json",
+    "offline": "target/browser-acceptance-NKaK6V/report.json",
+    "corrupt_transfer": "target/gzip-delivery-refusal-ivmirO/report.json",
+    "in_place": "target/public-rehearsal-ZYuQBz/verify-a59e410c.json"
+  },
+  "public_baseline_directory": "target/public-rehearsal-wLiGtK",
+  "scope": "Exact retained PR CI artifact integrity, actual WASM75 packages, full browser regression, offline/corrupt-transfer and localhost saved-data update. Not final master/public/mobile/resource-target proof.",
+  "browser_report_sha256": "e6e285a00aa9e7d09e106f9d1df0abc88322d7a365e2f38fee68ee287b13c8cf",
+  "offline_report_sha256": "1cf6c8acb777e1f2698c51dfb6c59ce1a918b609f1c9cd82ab87b1a93c3e45a5",
+  "corrupt_transfer_report_sha256": "775a2b08075499679ebc61bb01b097b3ae47a27dd864833f11cbde190b0f02f6",
+  "in_place_report_sha256": "e6f6519c4bf998b4836d1088b8ca8efda3281391289a64ce078cc82a258766c4"
+}

@@ -1,0 +1,47 @@
+{
+  "started_at": "2026-10-14T04:41:16.894Z",
+  "verified": true,
+  "scope": "Isolated Chromium process close/reopen with offline network control; saved versus unsaved seasons, fresh query and player detail. Not physical-phone, total-memory or remote-rollback proof.",
+  "evidence": {
+    "saved_unfiltered_rows": 933,
+    "browser_process_closed": true,
+    "local_server_stopped": true,
+    "offline_viewport_rows": 42,
+    "offline": {
+      "online": false,
+      "probe_failed": true
+    },
+    "fresh_filtered_rows": 835,
+    "player_detail": "Connor McDavid",
+    "failed_requests": [
+      {
+        "url": "http://127.0.0.1:56072/ICELINES/workbench/uncached-acceptance-probe-1791952882198",
+        "error": "net::ERR_INTERNET_DISCONNECTED"
+      }
+    ]
+  },
+  "profile_retained": "C:\\Users\\giodl\\AppData\\Local\\Temp\\icelines-acceptance-LhtQ3c",
+  "retained_artifact": {
+    "commit": "e58a3bfc0f71fe7ba844cf729df166132eff7693",
+    "shell_build": "466622feed4318b5ef58118be58cea1d8f91118accdd0ae42773a1ceada80269",
+    "verified_files": 181,
+    "packages": 75
+  },
+  "url": "http://127.0.0.1:56072/ICELINES/workbench/",
+  "browser": "153.0.8010.12",
+  "build": {
+    "schema_version": 1,
+    "commit": "e58a3bfc0f71fe7ba844cf729df166132eff7693",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "2e4c853309a32d8366c282afe113626fde5c25b26349bd9194ceafe59123f57b"
+  },
+  "saved_package": "20252026-regular",
+  "unsaved_package": "20242025-regular",
+  "finished_at": "2026-10-14T04:41:22.800Z"
+}

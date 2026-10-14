@@ -1,0 +1,22 @@
+{
+  "verified": true,
+  "artifact": {
+    "commit": "a59e410c1140ac7838d9e5e3abe39200b146046e",
+    "shell_build": "0cfbc071f1232d7c622c74eccc9d88de2fcd2ec6be5aa2ea181f6621ba865e64",
+    "verified_files": 181,
+    "packages": 75
+  },
+  "scope": "Owned Chromium gzip transport request, previous-good preservation on corrupt transport, byte-exact package export and retry. No memory/mobile/public-host claim.",
+  "evidence": {
+    "gzip_requested": true,
+    "raw_package_not_requested": true,
+    "corrupt_transport_preserves_context_and_full_result": true,
+    "package_export_exact_original": true,
+    "retry_rows": 905,
+    "requests": [
+      "http://127.0.0.1:50978/ICELINES/workbench/data/93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44.json.gz",
+      "http://127.0.0.1:50978/ICELINES/workbench/data/ba4f8b9ab5e8882652099025360d8409b214a917d03ccc3c326a603a7ab86479.json.gz",
+      "http://127.0.0.1:50978/ICELINES/workbench/data/ba4f8b9ab5e8882652099025360d8409b214a917d03ccc3c326a603a7ab86479.json.gz"
+    ]
+  }
+}

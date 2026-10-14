@@ -1,10 +1,10 @@
 # Desktop allocation investigation — 2026-10-12
 
-## Latest local candidate: single-buffer gzip expansion (2026-10-13)
+## Merged single-buffer gzip expansion (2026-10-13)
 
-Clean master b29ba81c includes the merged PR93 catalog-context guard.
-Public release remains 2e265236; neither this prototype nor PR93 is published here.
-Candidate c0154ac6 decodes authenticated gzip into one bounded output buffer,
+Base b29ba81c includes the merged PR93 catalog-context guard. Published master
+e58a3bfc includes that guard and the single-buffer decoder from PR94.
+Initial candidate c0154ac6 decodes authenticated gzip into one bounded output buffer,
 removing retained decoded chunks and final complete concatenation.
 WASM, raw package files and compressed catalog match the control exactly.
 
@@ -30,9 +30,32 @@ reopening with fresh query/detail.
 
 Evidence: `evidence/stream-expansion-*-20261013.json` and
 `signals/roles/check/stream-expansion-roles-check-2026-10-13.md`.
-Reviewed-head CI artifact checks remain pending. The 250 MiB whole-browser
-requirement remains unmet. Android is deferred by the user. Sections below
-describe historical artifacts and diagnostics.
+PR94 merged as e58a3bfc after all29 checks passed. Exact preview a019be7c verifies
+181 files/75 packages and passes viewport, corrupt-transport/export/retry and
+offline reopening. Its full-workload memory comparison with retained b29ba81c
+master measured 388.95 versus406.71 MiB, baselines227.36/236.32 MiB and maximum
+warm queries83.23/79.16 ms. WASM/catalog bytes match. The observed17.76 MiB raw
+difference remains a local observation with baseline variation, not a waiver.
+Evidence: stream-expansion-ci-* reports and provenance. Master e58a3bfc runs
+38511436965/38511437021 pass with29 successful checks. Its actual full-workload
+private peak is397.09 MiB, baseline230.64 MiB, maximum warm query99.19 ms.
+All75 packages, eight residents, two imports,20 queries and restart complete
+with unchanged sampler/observer/flags, no forced GC and every sampled phase.
+Actual master and preview frontend modules/WASM match; raw memory variability
+remains explicit. See stream-expansion-master-memory/provenance reports.
+
+Public sourcee58a3bfc is finally restored by38514090019 after publication and
+rollback to2e265236. Each phase matches272 served files with identical preserved
+documentation inventories, same-profile saved bytes, source-module hashes,
+gzip/exact raw export and process-close offline queries. This closes selected
+publication/recovery checks, not resource or physical-mobile acceptance.
+
+A further digest-copy removal experiment834a3f37 passed157 units and the full
+workload but measured399.05 MiB versus395.33 MiB control (baselines229.51/231.79).
+No observed saving in this one pair: unadopted, on a separate local branch.
+
+The 250 MiB requirement remains unmet. Android is deferred by the user.
+Sections below describe historical artifacts and diagnostics.
 
 The provisional 250 MiB whole-browser target remains exceeded. Measurements
 below are Windows private allocations and summed working sets, not exact
@@ -557,3 +580,34 @@ normal full-workload private peak is 447.03 MiB against the prior matching 547.1
 control, with all 75 packages/two imports/20 queries/restart and original sampler.
 The 250 MiB requirement and real Android gate remain open. The public release
 remains e0741daa; PR91 is a draft candidate, not deployed readiness.
+
+## Current gzip release reconciliation (supersedes earlier current-state notes)
+
+PR91 and PR92 are merged. The public validation release is2e265236. Exact master
+artifact181 files/75 packages passes actual-WASM, full viewport/keyboard/AX/print,
+offline, corrupt-transfer and saved-data update checks. Historical references to
+unpublished PR91/e0741daa are scoped to their earlier investigation dates.
+
+Gzip catalog transfers retain canonical raw files/revisions/exports and validate
+compressed and expanded byte counts/SHA before activation. All75 transfers fall
+from41006884 to4960231 bytes (87.9%). Two opposite-order prototypes peak405.8/389.5
+versus controls449.6/434.6 MiB. Exact final Linux-built master on this Windows
+workstation peaks388.742 MiB private (blank227.957), with all75 packages,8 windows,
+two905/332 imports,20 queries and restart under original flags/sampler, no forced
+GC. Warm median70.454/max83.920 ms; no mobile inference.250 MiB still fails.
+
+Public first publication, rollback and final restore succeed; final272-file
+verification preserves the original documentation503 and targeted recovery.
+Owned saved season/schedule byte hashes and metadata/settings survive. Reused
+Chromium153 automation crashes during package export match reported upstream
+issue https://github.com/microsoft/playwright/issues/42506. A reversible backup
+and removal of three owned-test download-history tables resolves the repeated
+crash without changing app IndexedDB/cookies/preferences or benchmark settings.
+Final executing main-module SHA, byte-exact export and offline probes pass.
+Initial failed transition/export attempts remain; final successful check starts
+from already-restored2e265236. This is not a new uninterrupted transition claim.
+
+The earlier accented PDF-name discrepancy is a verifier CP1252/UTF-8 error.
+Original raw failure bytes and corrected provenance are retained; current exact
+master PDF passes all933 ranks/names with both parsers. The application font/data
+needed no correction. Physical printer, screen reader and Android remain unproved.

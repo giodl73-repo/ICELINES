@@ -1,0 +1,62 @@
+{
+  "head": "e701dd5812f3334dede23dd66dfc0c790f8f42a8",
+  "ci_merge": "a019be7cf48441f34a29fda38ab3666c28b47243",
+  "base": "b29ba81c544421d3a0111c7bc5cbf32d99855fb0",
+  "browser_run": 38509734320,
+  "native_run": 38509734143,
+  "checks_passed": 29,
+  "artifact_id": 11869891925,
+  "artifact": "target/stream-expansion-ci-a019be7c",
+  "shell_build": "61892b025ee53f354e902053338505340d85865042a04e9bffb64c4ee4eda915",
+  "reports": {
+    "viewport": "target/viewport-browser-XNsUqE/report.json",
+    "offline": "target/browser-acceptance-g9g7cq/report.json",
+    "refusal": "target/gzip-delivery-refusal-MK5a3s/report.json",
+    "memory_candidate": "target/browser-memory-GrAiCO/report.json",
+    "memory_control": "target/browser-memory-aGkaA0/report.json"
+  },
+  "publication": "Not yet published; current public release 2e265236",
+  "open_gates": [
+    "250 MiB whole-browser desktop target",
+    "Physical Android deferred by user"
+  ],
+  "merge_commit": "e58a3bfc0f71fe7ba844cf729df166132eff7693",
+  "master_browser_run": 38511436965,
+  "master_native_run": 38511437021,
+  "master_status": "Pending; do not publish before retained master artifact checks",
+  "report_hashes": {
+    "viewport": {
+      "file": "stream-expansion-ci-viewport-20261013.json",
+      "sha256": "6d68dcda82a8e99596d0fc1dde6842c0600453bffeb689359760bc56a9570e93"
+    },
+    "offline": {
+      "file": "stream-expansion-ci-offline-20261013.json",
+      "sha256": "65f530d812558a098fa4a9b807b9bd479200668549ecb0b6a5947c4494084cb4"
+    },
+    "refusal": {
+      "file": "stream-expansion-ci-refusal-20261013.json",
+      "sha256": "b2d960acfc28b134341dcadce6245f932030117bed6f9ca4b72b6dd883c8d568"
+    },
+    "memory_candidate": {
+      "file": "stream-expansion-ci-memory-candidate-20261013.json",
+      "sha256": "60319cac5a97a10c773d4d8a39d05c4534eda04e510ab1ed35887c48c5cd2bad"
+    },
+    "memory_control": {
+      "file": "stream-expansion-ci-memory-control-20261013.json",
+      "sha256": "631394630137a8feaebe442a9e2fb864b6075a3d22040c487307c8947a2df548"
+    }
+  },
+  "measurements": {
+    "memory_candidate": {
+      "private_peak_mib": 388.94921875,
+      "blank_mib": 227.35546875,
+      "warm_max_ms": 83.22510000001057
+    },
+    "memory_control": {
+      "private_peak_mib": 406.7109375,
+      "blank_mib": 236.3203125,
+      "warm_max_ms": 79.16099999999278
+    }
+  },
+  "scope": "Exact successful PR CI artifact; one additional Windows memory pair with retained successful master control. No forced GC or altered workload, flags, sampler or observer. No public or Android claim."
+}
