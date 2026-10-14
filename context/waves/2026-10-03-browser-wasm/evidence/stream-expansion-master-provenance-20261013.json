@@ -1,0 +1,49 @@
+{
+  "commit": "e58a3bfc0f71fe7ba844cf729df166132eff7693",
+  "browser_run": 38511436965,
+  "native_run": 38511437021,
+  "artifact_id": 11870427683,
+  "shell_build": "466622feed4318b5ef58118be58cea1d8f91118accdd0ae42773a1ceada80269",
+  "artifact": "target/wasm-validation-e58a3bfc",
+  "browser_ci": "success",
+  "native_ci": "success;28 passed, no failures;29 checks including browser",
+  "publication": "Published and finally restored by38514090019;272 served files, public update and offline reopening pass",
+  "reports": {
+    "browser": {
+      "file": "stream-expansion-master-browser-20261013.json",
+      "sha256": "97e026d8e8cb3a85986a5a4a11e68b0c37c5163418c39df8631b6bd2299d66b2"
+    },
+    "offline": {
+      "file": "stream-expansion-master-offline-20261013.json",
+      "sha256": "64d0216a285ed2b36e36694dbe12b54dfa62c0b40072e196251d744bc8232722"
+    },
+    "refusal": {
+      "file": "stream-expansion-master-refusal-20261013.json",
+      "sha256": "6562cf3b9997139e9b09763503795ffb80d89382dad8998c72f567e2738e34c9"
+    },
+    "print": {
+      "file": "stream-expansion-master-print-20261013.json",
+      "sha256": "0d14d76b63541630b178ba373560668db54877714e4dfe0e00891d7cd83e66e9"
+    },
+    "memory": {
+      "file": "stream-expansion-master-memory-20261013.json",
+      "sha256": "e9db520d0056a6da5d59e0573f4a814c83c48eec32ae1fb508ef5ad616f9380b"
+    }
+  },
+  "open_gates": [
+    "250 MiB whole-browser target",
+    "Android deferred by user"
+  ],
+  "memory": {
+    "private_peak_mib": 397.09375,
+    "blank_mib": 230.640625,
+    "warm_max_ms": 99.18539999998757,
+    "below_250_mib": false
+  },
+  "master_modules_and_wasm_match_reviewed_preview": true,
+  "executing_module_expectations": {
+    "main.js": "116931ca62cbffcecccc79605ccb02546c55c0f2486396222f9e8041ef1ce3bc",
+    "package-download.js": "ba5c95670886bde3371d1de5a11b0a41eceefca432c256395732322f694509db"
+  },
+  "publication_provenance": "stream-expansion-publication-provenance-20261013.json"
+}

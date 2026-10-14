@@ -37,7 +37,18 @@ master measured 388.95 versus406.71 MiB, baselines227.36/236.32 MiB and maximum
 warm queries83.23/79.16 ms. WASM/catalog bytes match. The observed17.76 MiB raw
 difference remains a local observation with baseline variation, not a waiver.
 Evidence: stream-expansion-ci-* reports and provenance. Master e58a3bfc runs
-38511436965/38511437021 are pending; public remains2e265236.
+38511436965/38511437021 pass with29 successful checks. Its actual full-workload
+private peak is397.09 MiB, baseline230.64 MiB, maximum warm query99.19 ms.
+All75 packages, eight residents, two imports,20 queries and restart complete
+with unchanged sampler/observer/flags, no forced GC and every sampled phase.
+Actual master and preview frontend modules/WASM match; raw memory variability
+remains explicit. See stream-expansion-master-memory/provenance reports.
+
+Public sourcee58a3bfc is finally restored by38514090019 after publication and
+rollback to2e265236. Each phase matches272 served files with identical preserved
+documentation inventories, same-profile saved bytes, source-module hashes,
+gzip/exact raw export and process-close offline queries. This closes selected
+publication/recovery checks, not resource or physical-mobile acceptance.
 
 A further digest-copy removal experiment834a3f37 passed157 units and the full
 workload but measured399.05 MiB versus395.33 MiB control (baselines229.51/231.79).

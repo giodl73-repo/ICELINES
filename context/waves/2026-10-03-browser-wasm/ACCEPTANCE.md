@@ -4,14 +4,44 @@ Updated: 2026-10-13. Requirement: REQ-BROWSER-001; work packages WP-BW-01..06.
 This reconciles implemented features with the plan's remaining acceptance gates.
 It does not declare the full plan complete.
 
-## Merged changes awaiting master validation
+## Current release
 
 PR93's catalog-context guard is merged as b29ba81c. Its 29 CI checks and exact
 master artifact verification, six catalog refusal cases, viewport and offline
 reopening pass. PR94's bounded gzip decoder is merged as e58a3bfc after 29 checks
 and exact preview a019be7c browser/offline/refusal validation. Master browser run
-38511436965 and native run 38511437021 are pending. Neither change is published;
-the current public release below remains 2e265236.
+38511436965 and native run 38511437021 pass: 29 successful checks. Retained
+artifact11870427683 verifies181 files,75 packages and26 shell assets. Current
+public source is e58a3bfc0f71fe7ba844cf729df166132eff7693, shell
+466622feed4318b5ef58118be58cea1d8f91118accdd0ae42773a1ceada80269.
+WASM remains2e4c853309a32d8366c282afe113626fde5c25b26349bd9194ceafe59123f57b.
+
+Publication38513149144, rollback38513650760 to2e265236, and final restore
+38514090019 all succeed using retained bytes, without rebuilding. Each public
+phase matches272 served files (178 runtime/94 documentation), with no failures.
+All95 staged documentation-file hashes match across the three phases; the
+upload-tar guard includes hidden files. The same owned profile completes both
+consent-driven directions, preserving the saved933-player season, frozen
+two-game schedule, revisions, bytes, metadata and settings. Each online phase
+loads the unsaved905-player package via gzip and exports exact original JSON.
+Executing main and decoder module hashes match their retained artifacts.
+Each process-close offline reopening performs a fresh eight-player query/detail
+with uncached probes blocked, including after debugger attachment.
+
+The owned-profile download-history workaround is backed up before each online
+phase. Only its three test-download tables are cleared; all other history tables
+and application storage remain unchanged. This handles the matching Chromium153
+automation regression, not an app defect or memory-budget waiver. Complete
+in-place transitions pass this time; no fresh profile substitutes for them.
+
+Exact master full-workload private peak is397.09 MiB, blank baseline230.64 MiB,
+maximum warm query99.19 ms. All75 packages, eight residents, two imports,
+20 queries and restart complete with every required phase sampled, original
+flags/sampler/observer and no forced GC. The250 MiB gate remains FAILED;
+physical Android is deferred by the user. Actual master A4 PDF text verification
+passes all933 ranks/names with two parsers,24 pages and no clipped text.
+Evidence: stream-expansion-master-* and stream-expansion-publication-provenance.
+This is an incremental validation release, not full resource/mobile acceptance.
 
 The PR94 CI preview's full-workload private peak is 388.95 MiB versus retained
 master control 406.71 MiB, with blank baselines 227.36/236.32 MiB. This additional
@@ -25,7 +55,7 @@ The digest-view experiment is unadopted: one full-workload pair measured
 399.05 MiB candidate versus 395.33 MiB control. Its code and reports remain on
 the separate local experiment branch, not the merged implementation.
 
-## Current release
+## Historical 2e265236 release
 
 - Validation source: `2e265236f3e71fd2dbe6ecab74e64b296a553465`, merged PR #92.
   Includes PR #91 viewport rendering and authenticated gzip catalog delivery.

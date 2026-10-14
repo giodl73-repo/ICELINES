@@ -33,7 +33,11 @@ This scoped review leaves the full 250 MiB and physical Android gates open.
 
 Roles: 5; P1: 0; P2: 0; P3: 15. APPROVED for this implementation.
 Exact CI artifact verification, browser/refusal/offline and full-workload memory
-checks pass. PR94 merged as e58a3bfc. Master validation/publication remain pending.
+checks pass. PR94 merged as e58a3bfc. All29 master checks and actual artifact
+browser/offline/refusal/print verification pass. Actual master private peak397.09
+MiB still fails250. Publication, same-profile rollback/restore and offline checks
+pass; final restore38514090019 matches272 served files. Source hashes verify
+the executing main and decoder modules; no new-profile transition is substituted.
 Top finding: measured reductions do not close the250 MiB requirement.
 Consensus: BENCH/KEEL require honest identity and open resource gates;
 WIRE/EDGE require complete integrity checks before replacing active data.

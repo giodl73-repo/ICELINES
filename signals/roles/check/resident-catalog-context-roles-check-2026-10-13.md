@@ -36,7 +36,9 @@ This scoped code review does not close the full 250 MiB or Android gates.
 
 Roles reviewed:5; P1:0; P2:0; P3:15.
 Verdict:APPROVED for this cached-header guard. PR93 merged as b29ba81c;
-exact master artifact passes catalog, viewport and offline checks. Not published.
+exact master artifact passes catalog, viewport and offline checks. The guard is
+included in public e58a3bfc, finally restored by38514090019; exact executing
+main-module hash matches the retained master artifact.
 Top finding: cached and fetched paths must enforce the same catalog context.
 Cross-role consensus: WIRE/KEEL/EDGE require rejection before state mutation.
 

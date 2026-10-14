@@ -1,0 +1,170 @@
+{
+  "phase": "verify",
+  "started_at": "2026-10-14T04:59:36.227Z",
+  "verified": true,
+  "scope": "Isolated desktop Chromium profile across real Pages deployments. Saved public season plus frozen repository schedule fixture. No physical-phone, live-NHL or whole-browser resource claim.",
+  "browser": "153.0.8010.12",
+  "browser_events": [
+    {
+      "event": "context-close",
+      "planned": true,
+      "at": 1791954003490
+    },
+    {
+      "event": "disconnected",
+      "planned": true,
+      "at": 1791954003490
+    }
+  ],
+  "initial_owned_pages": 0,
+  "extra_owned_pages_closed": 0,
+  "network_build": {
+    "schema_version": 1,
+    "commit": "e58a3bfc0f71fe7ba844cf729df166132eff7693",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "2e4c853309a32d8366c282afe113626fde5c25b26349bd9194ceafe59123f57b"
+  },
+  "loaded_before": "2e265236f3e71fd2dbe6ecab74e64b296a553465",
+  "registration_before": {
+    "controller": "activated",
+    "active": "activated",
+    "installing": "installing",
+    "scope": "https://giodl73-repo.github.io/ICELINES/workbench/"
+  },
+  "registration_waiting": {
+    "active": "activated",
+    "waiting": "installed"
+  },
+  "update_mode": "inplace",
+  "update_verified": true,
+  "executing_renderer": "viewport",
+  "mounted_players": 42,
+  "storage": {
+    "datasets": [
+      {
+        "id": "20252026-regular",
+        "revision": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+        "sha256": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+        "bytes": 926515,
+        "metadata": {
+          "schema_version": 1,
+          "season": 20252026,
+          "season_type": "regular",
+          "source": "repository:20252026",
+          "observed_at": null,
+          "fetched_at": null
+        },
+        "keepUpdated": false
+      }
+    ],
+    "schedules": [
+      {
+        "id": "nhl-game-week:2026-04-29",
+        "revision": "0142670ebe87b8d584a9fda0575e742fc43ce652ad2c2f297d7c48e73060222a",
+        "sha256": "0142670ebe87b8d584a9fda0575e742fc43ce652ad2c2f297d7c48e73060222a",
+        "bytes": 752,
+        "metadata": {
+          "schema_version": 1,
+          "kind": "nhl-game-week",
+          "requested_date": "2026-04-29",
+          "source": "NHL schedule",
+          "observed_at": null,
+          "fetched_at": "2026-10-13T00:00:00Z"
+        },
+        "keepUpdated": false
+      }
+    ],
+    "settings": [
+      "20252026-regular",
+      "nhl-game-week:2026-04-29"
+    ]
+  },
+  "saved_bytes_unchanged": true,
+  "filtered_rows": 8,
+  "player_detail": "Connor McDavid",
+  "gzip_acquisition": {
+    "id": "20242025-regular",
+    "rows": 905,
+    "wire_bytes": 118304,
+    "wire_sha256": "57e52b132fe4651f3815cff9a561b0e610affab22261c394ab488ce120495293",
+    "raw_export_bytes": 908625,
+    "raw_export_sha256": "ba4f8b9ab5e8882652099025360d8409b214a917d03ccc3c326a603a7ab86479",
+    "headers": {
+      "x-fastly-request-id": "a55cbfb465cf0e054a993bdc94bd045915c0f2a5",
+      "etag": "\"6acf0bd7-1ce20\"",
+      "age": "0",
+      "x-github-request-id": "1242:1B580C:B837:19CCD:6ACF0C53",
+      "expires": "Wed, 14 Oct 2026 05:10:03 GMT",
+      "x-proxy-cache": "MISS",
+      "x-cache": "MISS",
+      "date": "Wed, 14 Oct 2026 05:00:03 GMT",
+      "content-type": "application/gzip",
+      "last-modified": "Wed, 14 Oct 2026 04:57:59 GMT",
+      "x-served-by": "cache-bfi-kbfi7400046-BFI",
+      "x-cache-hits": "0",
+      "vary": "Accept-Encoding",
+      "strict-transport-security": "max-age=31556952",
+      "cache-control": "max-age=600",
+      "x-github-edge-region": "westus2",
+      "x-timer": "S1791954004.710586,VS0,VE80",
+      "via": "1.1 varnish",
+      "accept-ranges": "bytes",
+      "access-control-allow-origin": "*",
+      "content-length": "118304",
+      "x-origin-cache": "HIT",
+      "server": "GitHub.com"
+    },
+    "raw_json_not_requested": true
+  },
+  "storage_after_gzip": {
+    "datasets": [
+      {
+        "id": "20252026-regular",
+        "revision": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+        "sha256": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+        "bytes": 926515,
+        "metadata": {
+          "schema_version": 1,
+          "season": 20252026,
+          "season_type": "regular",
+          "source": "repository:20252026",
+          "observed_at": null,
+          "fetched_at": null
+        },
+        "keepUpdated": false
+      }
+    ],
+    "schedules": [
+      {
+        "id": "nhl-game-week:2026-04-29",
+        "revision": "0142670ebe87b8d584a9fda0575e742fc43ce652ad2c2f297d7c48e73060222a",
+        "sha256": "0142670ebe87b8d584a9fda0575e742fc43ce652ad2c2f297d7c48e73060222a",
+        "bytes": 752,
+        "metadata": {
+          "schema_version": 1,
+          "kind": "nhl-game-week",
+          "requested_date": "2026-04-29",
+          "source": "NHL schedule",
+          "observed_at": null,
+          "fetched_at": "2026-10-13T00:00:00Z"
+        },
+        "keepUpdated": false
+      }
+    ],
+    "settings": [
+      "20252026-regular",
+      "nhl-game-week:2026-04-29"
+    ]
+  },
+  "executing_main_sha256": "116931ca62cbffcecccc79605ccb02546c55c0f2486396222f9e8041ef1ce3bc",
+  "expected_main_sha256": "116931ca62cbffcecccc79605ccb02546c55c0f2486396222f9e8041ef1ce3bc",
+  "executing_package_download_sha256": "ba5c95670886bde3371d1de5a11b0a41eceefca432c256395732322f694509db",
+  "expected_package_download_sha256": "ba5c95670886bde3371d1de5a11b0a41eceefca432c256395732322f694509db",
+  "finished_at": "2026-10-14T05:00:03.653Z"
+}
