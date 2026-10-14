@@ -5,7 +5,7 @@
   "native_tests": 21,
   "native_legacy_parity_cases": 270,
   "full_checked_build_status": "passed;154 browser units,270 parity cases,21 wasm tests",
-  "memory_status": "not started; wait for compiler completion",
+  "memory_status": "completed clean candidate/control comparison; no observed saving",
   "probe_scope": "Two-entry unsigned catalog; hidden reload handler invoked by fixture, not a user flow. Initial hidden-button click failure retained.",
   "reports": {
     "wasm-parity": "target/atomic-catalog-parity.json",
@@ -16,10 +16,7 @@
   },
   "refusal_probe_sha256": "c8c103ee68ddfbd63f32decb58feec9f8d5b062d9647206f06a5b61c2bc20a8f",
   "remaining": [
-    "full checked build",
-    "clippy",
-    "matching original memory workload comparison",
-    "250 MiB budget",
+    "250 MiB whole-browser budget",
     "physical Android deferred"
   ],
   "clippy_passed": true,
@@ -35,5 +32,10 @@
     "blank_mib": 226.61328125,
     "max_warm_ms": 101.87889999999607
   },
-  "control_scope": "Retained Windows gzip-delivery control0bc5388f, matching encoder/raw packages/launch/workload; candidate adds native catalog API. Not comparison of identical WASM binaries."
+  "control_scope": "Retained Windows gzip-delivery control0bc5388f, matching encoder/raw packages/launch/workload; candidate adds native catalog API. Not comparison of identical WASM binaries.",
+  "limitations": [
+    "One clean pair, variable process baselines; not a statistical estimate.",
+    "Original flags/sampler/workload and no forced GC; compiler and other owned test browsers stopped before measurement.",
+    "More complex native API remains unadopted; separate frontend cached-context guard addresses confirmed regression."
+  ]
 }
