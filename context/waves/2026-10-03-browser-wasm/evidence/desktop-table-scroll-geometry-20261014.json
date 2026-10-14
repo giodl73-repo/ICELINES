@@ -1,0 +1,472 @@
+{
+  "verified": true,
+  "scope": "Three themes; visible header/player text and effective background equality. Desktop fit and narrow-screen/all-mode horizontal scrolling. Not memory or phone acceptance.",
+  "control": {
+    "night-game": [
+      {
+        "text": "Player",
+        "color": "rgb(179, 200, 208)",
+        "background": "rgb(16, 35, 43)"
+      },
+      {
+        "text": "Connor McDavid",
+        "color": "rgb(238, 248, 250)",
+        "background": "rgb(16, 35, 43)"
+      },
+      {
+        "text": "Nikita Kucherov",
+        "color": "rgb(238, 248, 250)",
+        "background": "rgb(14, 34, 42)"
+      }
+    ],
+    "fresh-ice": [
+      {
+        "text": "Player",
+        "color": "rgb(72, 99, 113)",
+        "background": "rgb(255, 255, 255)"
+      },
+      {
+        "text": "Connor McDavid",
+        "color": "rgb(16, 43, 58)",
+        "background": "rgb(255, 255, 255)"
+      },
+      {
+        "text": "Nikita Kucherov",
+        "color": "rgb(16, 43, 58)",
+        "background": "rgb(241, 247, 248)"
+      }
+    ],
+    "hockey-club": [
+      {
+        "text": "Player",
+        "color": "rgb(91, 98, 81)",
+        "background": "rgb(255, 250, 240)"
+      },
+      {
+        "text": "Connor McDavid",
+        "color": "rgb(32, 55, 47)",
+        "background": "rgb(255, 250, 240)"
+      },
+      {
+        "text": "Nikita Kucherov",
+        "color": "rgb(32, 55, 47)",
+        "background": "rgb(236, 230, 213)"
+      }
+    ]
+  },
+  "candidate": {
+    "night-game": [
+      {
+        "text": "Player",
+        "color": "rgb(179, 200, 208)",
+        "background": "rgb(16, 35, 43)"
+      },
+      {
+        "text": "Connor McDavid",
+        "color": "rgb(238, 248, 250)",
+        "background": "rgb(16, 35, 43)"
+      },
+      {
+        "text": "Nikita Kucherov",
+        "color": "rgb(238, 248, 250)",
+        "background": "rgb(14, 34, 42)"
+      }
+    ],
+    "fresh-ice": [
+      {
+        "text": "Player",
+        "color": "rgb(72, 99, 113)",
+        "background": "rgb(255, 255, 255)"
+      },
+      {
+        "text": "Connor McDavid",
+        "color": "rgb(16, 43, 58)",
+        "background": "rgb(255, 255, 255)"
+      },
+      {
+        "text": "Nikita Kucherov",
+        "color": "rgb(16, 43, 58)",
+        "background": "rgb(241, 247, 248)"
+      }
+    ],
+    "hockey-club": [
+      {
+        "text": "Player",
+        "color": "rgb(91, 98, 81)",
+        "background": "rgb(255, 250, 240)"
+      },
+      {
+        "text": "Connor McDavid",
+        "color": "rgb(32, 55, 47)",
+        "background": "rgb(255, 250, 240)"
+      },
+      {
+        "text": "Nikita Kucherov",
+        "color": "rgb(32, 55, 47)",
+        "background": "rgb(236, 230, 213)"
+      }
+    ]
+  },
+  "geometry": [
+    {
+      "artifact": "control",
+      "theme": "night-game",
+      "width": 1100,
+      "mode": "scroll",
+      "overflowX": "auto",
+      "clientWidth": 1012,
+      "scrollWidth": 1012,
+      "tableWidth": 1012
+    },
+    {
+      "artifact": "control",
+      "theme": "night-game",
+      "width": 1100,
+      "mode": "all",
+      "overflowX": "auto",
+      "clientWidth": 1012,
+      "scrollWidth": 1012,
+      "tableWidth": 1012
+    },
+    {
+      "artifact": "control",
+      "theme": "night-game",
+      "width": 1280,
+      "mode": "scroll",
+      "overflowX": "auto",
+      "clientWidth": 1178,
+      "scrollWidth": 1178,
+      "tableWidth": 1177.625
+    },
+    {
+      "artifact": "control",
+      "theme": "night-game",
+      "width": 1280,
+      "mode": "all",
+      "overflowX": "auto",
+      "clientWidth": 1178,
+      "scrollWidth": 1178,
+      "tableWidth": 1177.625
+    },
+    {
+      "artifact": "control",
+      "theme": "night-game",
+      "width": 390,
+      "mode": "scroll",
+      "overflowX": "auto",
+      "clientWidth": 358,
+      "scrollWidth": 900,
+      "tableWidth": 900
+    },
+    {
+      "artifact": "control",
+      "theme": "night-game",
+      "width": 390,
+      "mode": "all",
+      "overflowX": "auto",
+      "clientWidth": 358,
+      "scrollWidth": 624,
+      "tableWidth": 623.84375
+    },
+    {
+      "artifact": "control",
+      "theme": "fresh-ice",
+      "width": 1100,
+      "mode": "scroll",
+      "overflowX": "auto",
+      "clientWidth": 964,
+      "scrollWidth": 964,
+      "tableWidth": 964
+    },
+    {
+      "artifact": "control",
+      "theme": "fresh-ice",
+      "width": 1100,
+      "mode": "all",
+      "overflowX": "auto",
+      "clientWidth": 964,
+      "scrollWidth": 964,
+      "tableWidth": 964
+    },
+    {
+      "artifact": "control",
+      "theme": "fresh-ice",
+      "width": 1280,
+      "mode": "scroll",
+      "overflowX": "auto",
+      "clientWidth": 1130,
+      "scrollWidth": 1130,
+      "tableWidth": 1129.625
+    },
+    {
+      "artifact": "control",
+      "theme": "fresh-ice",
+      "width": 1280,
+      "mode": "all",
+      "overflowX": "auto",
+      "clientWidth": 1130,
+      "scrollWidth": 1130,
+      "tableWidth": 1129.625
+    },
+    {
+      "artifact": "control",
+      "theme": "fresh-ice",
+      "width": 390,
+      "mode": "scroll",
+      "overflowX": "auto",
+      "clientWidth": 330,
+      "scrollWidth": 900,
+      "tableWidth": 900
+    },
+    {
+      "artifact": "control",
+      "theme": "fresh-ice",
+      "width": 390,
+      "mode": "all",
+      "overflowX": "auto",
+      "clientWidth": 330,
+      "scrollWidth": 624,
+      "tableWidth": 623.84375
+    },
+    {
+      "artifact": "control",
+      "theme": "hockey-club",
+      "width": 1100,
+      "mode": "scroll",
+      "overflowX": "auto",
+      "clientWidth": 1012,
+      "scrollWidth": 1012,
+      "tableWidth": 1012
+    },
+    {
+      "artifact": "control",
+      "theme": "hockey-club",
+      "width": 1100,
+      "mode": "all",
+      "overflowX": "auto",
+      "clientWidth": 1012,
+      "scrollWidth": 1012,
+      "tableWidth": 1012
+    },
+    {
+      "artifact": "control",
+      "theme": "hockey-club",
+      "width": 1280,
+      "mode": "scroll",
+      "overflowX": "auto",
+      "clientWidth": 1178,
+      "scrollWidth": 1178,
+      "tableWidth": 1177.625
+    },
+    {
+      "artifact": "control",
+      "theme": "hockey-club",
+      "width": 1280,
+      "mode": "all",
+      "overflowX": "auto",
+      "clientWidth": 1178,
+      "scrollWidth": 1178,
+      "tableWidth": 1177.625
+    },
+    {
+      "artifact": "control",
+      "theme": "hockey-club",
+      "width": 390,
+      "mode": "scroll",
+      "overflowX": "auto",
+      "clientWidth": 358,
+      "scrollWidth": 900,
+      "tableWidth": 900
+    },
+    {
+      "artifact": "control",
+      "theme": "hockey-club",
+      "width": 390,
+      "mode": "all",
+      "overflowX": "auto",
+      "clientWidth": 358,
+      "scrollWidth": 624,
+      "tableWidth": 623.84375
+    },
+    {
+      "artifact": "candidate",
+      "theme": "night-game",
+      "width": 1100,
+      "mode": "scroll",
+      "overflowX": "clip",
+      "clientWidth": 1012,
+      "scrollWidth": 1012,
+      "tableWidth": 1012
+    },
+    {
+      "artifact": "candidate",
+      "theme": "night-game",
+      "width": 1100,
+      "mode": "all",
+      "overflowX": "auto",
+      "clientWidth": 1012,
+      "scrollWidth": 1012,
+      "tableWidth": 1012
+    },
+    {
+      "artifact": "candidate",
+      "theme": "night-game",
+      "width": 1280,
+      "mode": "scroll",
+      "overflowX": "clip",
+      "clientWidth": 1178,
+      "scrollWidth": 1178,
+      "tableWidth": 1177.625
+    },
+    {
+      "artifact": "candidate",
+      "theme": "night-game",
+      "width": 1280,
+      "mode": "all",
+      "overflowX": "auto",
+      "clientWidth": 1178,
+      "scrollWidth": 1178,
+      "tableWidth": 1177.625
+    },
+    {
+      "artifact": "candidate",
+      "theme": "night-game",
+      "width": 390,
+      "mode": "scroll",
+      "overflowX": "auto",
+      "clientWidth": 358,
+      "scrollWidth": 900,
+      "tableWidth": 900
+    },
+    {
+      "artifact": "candidate",
+      "theme": "night-game",
+      "width": 390,
+      "mode": "all",
+      "overflowX": "auto",
+      "clientWidth": 358,
+      "scrollWidth": 624,
+      "tableWidth": 623.84375
+    },
+    {
+      "artifact": "candidate",
+      "theme": "fresh-ice",
+      "width": 1100,
+      "mode": "scroll",
+      "overflowX": "clip",
+      "clientWidth": 964,
+      "scrollWidth": 964,
+      "tableWidth": 964
+    },
+    {
+      "artifact": "candidate",
+      "theme": "fresh-ice",
+      "width": 1100,
+      "mode": "all",
+      "overflowX": "auto",
+      "clientWidth": 964,
+      "scrollWidth": 964,
+      "tableWidth": 964
+    },
+    {
+      "artifact": "candidate",
+      "theme": "fresh-ice",
+      "width": 1280,
+      "mode": "scroll",
+      "overflowX": "clip",
+      "clientWidth": 1130,
+      "scrollWidth": 1130,
+      "tableWidth": 1129.625
+    },
+    {
+      "artifact": "candidate",
+      "theme": "fresh-ice",
+      "width": 1280,
+      "mode": "all",
+      "overflowX": "auto",
+      "clientWidth": 1130,
+      "scrollWidth": 1130,
+      "tableWidth": 1129.625
+    },
+    {
+      "artifact": "candidate",
+      "theme": "fresh-ice",
+      "width": 390,
+      "mode": "scroll",
+      "overflowX": "auto",
+      "clientWidth": 330,
+      "scrollWidth": 900,
+      "tableWidth": 900
+    },
+    {
+      "artifact": "candidate",
+      "theme": "fresh-ice",
+      "width": 390,
+      "mode": "all",
+      "overflowX": "auto",
+      "clientWidth": 330,
+      "scrollWidth": 624,
+      "tableWidth": 623.84375
+    },
+    {
+      "artifact": "candidate",
+      "theme": "hockey-club",
+      "width": 1100,
+      "mode": "scroll",
+      "overflowX": "clip",
+      "clientWidth": 1012,
+      "scrollWidth": 1012,
+      "tableWidth": 1012
+    },
+    {
+      "artifact": "candidate",
+      "theme": "hockey-club",
+      "width": 1100,
+      "mode": "all",
+      "overflowX": "auto",
+      "clientWidth": 1012,
+      "scrollWidth": 1012,
+      "tableWidth": 1012
+    },
+    {
+      "artifact": "candidate",
+      "theme": "hockey-club",
+      "width": 1280,
+      "mode": "scroll",
+      "overflowX": "clip",
+      "clientWidth": 1178,
+      "scrollWidth": 1178,
+      "tableWidth": 1177.625
+    },
+    {
+      "artifact": "candidate",
+      "theme": "hockey-club",
+      "width": 1280,
+      "mode": "all",
+      "overflowX": "auto",
+      "clientWidth": 1178,
+      "scrollWidth": 1178,
+      "tableWidth": 1177.625
+    },
+    {
+      "artifact": "candidate",
+      "theme": "hockey-club",
+      "width": 390,
+      "mode": "scroll",
+      "overflowX": "auto",
+      "clientWidth": 358,
+      "scrollWidth": 900,
+      "tableWidth": 900
+    },
+    {
+      "artifact": "candidate",
+      "theme": "hockey-club",
+      "width": 390,
+      "mode": "all",
+      "overflowX": "auto",
+      "clientWidth": 358,
+      "scrollWidth": 624,
+      "tableWidth": 623.84375
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "status": "UNADOPTED; candidate peak exceeded fresh matching control; no saving demonstrated",
+  "source": "6fc866c10b7de447735ad0f091cdb14d576364a5",
+  "treatment": "CSS only: virtual table overflow-x clip / overflow-y visible at desktop widths >=1100; all-mode and narrow screens retain auto scrolling",
+  "scope": "One sequential Windows candidate/control full75/eight residents/two archives/20 committed warm queries/restart pair; original flags/sampler/network observer, no forced GC. Neither report satisfies250 MiB.",
+  "reports": {
+    "candidate": {
+      "file": "desktop-table-scroll-candidate-20261014.json",
+      "sha256": "010ddc0ad89d609925af720ef1864180c0be9985ce4eb04fda5d4dd9a6535c72"
+    },
+    "control": {
+      "file": "desktop-table-scroll-control-20261014.json",
+      "sha256": "471d7408c41db0a96c55b453f9ff1717aa3fa2a1b3c2bdc97594c72633d08d42"
+    }
+  },
+  "measurements": {
+    "candidate": {
+      "private_mib": 401.4375,
+      "blank_mib": 236.6875,
+      "warm_max_ms": 90.21829999999318
+    },
+    "control": {
+      "private_mib": 395.69921875,
+      "blank_mib": 234.06640625,
+      "warm_max_ms": 88.58980000000156
+    }
+  },
+  "verification": {
+    "viewport": {
+      "file": "desktop-table-scroll-viewport-20261014.json",
+      "sha256": "f2c6e9bbf847f33981be45a0eb7ea18b36e36435400b98434e3d8ac2a6ed99ff"
+    },
+    "geometry": {
+      "file": "desktop-table-scroll-geometry-20261014.json",
+      "sha256": "a20864b3144435941df55783ffd528f0b13f48c1e1de26a8352fc361d5fa3b1d"
+    }
+  },
+  "byte_identical_to_control": [
+    "WASM",
+    "compiled frontend modules",
+    "catalog"
+  ],
+  "build_log_sha256": "a6ece5850f435d55281df5c6240e339316138d2cd0a2fd5d7114062de188fcf6",
+  "failed_geometry_probe": "Initial local helper selected nonexistent viewport option; original failed log retained in target/desktop-scroll-geometry.log. Corrected helper uses actual scroll value;36 cases pass."
+}
