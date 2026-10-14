@@ -1,5 +1,5 @@
 {
-  "status": "Prepublication baseline only; PR102 CI pending, no new publication",
+  "status": "Prepublication baseline retained; subsequent publication/rollback/restore passed as75e6ba97",
   "reviewed_head": "85122c6e07d06e21b389438e5ce0e087d2ff682f",
   "old_public_source": "5ef015c4d47ebbcee8234eb92f1fe83716b45054",
   "baseline": {
@@ -13,9 +13,13 @@
     "previous_history_helper_backup": "061b340e5fa70b321b78a46506e0618aeeeccbbf6c2ede17e064ced36b50bab9"
   },
   "history_helper_status": "New chunked phase labels prepared with required eight-hex release, original helper backed up; no history mutation executed for this baseline.",
-  "next_action": "Wait for PR CI; verify exact retained preview/master before publication; same-profile forward/rollback/restore with original saved bytes and static documentation preservation must still pass.",
+  "next_action": "Publication/rollback/restore complete; continue250 MiB resource investigation, Android explicitly deferred.",
   "open_gates": [
     "250 MiB whole-browser FAILED",
     "Physical Android explicitly deferred"
+  ],
+  "final_provenance": [
+    "chunked-decoder-input-master-provenance-20261014.json",
+    "chunked-decoder-input-publication-provenance-20261014.json"
   ]
 }

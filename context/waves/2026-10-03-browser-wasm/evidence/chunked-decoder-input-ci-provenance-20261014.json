@@ -1,5 +1,5 @@
 {
-  "status": "PR102 merged as75e6ba97; exact CI preview validated; master/publication/recovery pending;250 MiB not achieved",
+  "status": "PR102 merged/published75e6ba97; CI/master/publication/recovery reconciled;250 MiB remains FAILED",
   "pr": "https://github.com/giodl73-repo/ICELINES/pull/102",
   "reviewed_head": "85122c6e07d06e21b389438e5ce0e087d2ff682f",
   "ci_preview": "3b61f10e186339dbe29ec761eebdc9b63a6dd3e1",
@@ -54,10 +54,14 @@
   "limitations": "Raw1.90 MiB difference with228.21/233.79 blank baselines is not an exact causal or universal saving. Control102.92 ms warm maximum retained; candidate97.50 ms. Both250 MiB flags fail. No latency/budget waiver.",
   "engine_sha256": "8482c9fd825f773eb3fc0956e42f67f0931caf871d2bab89c76b01a4738aab3a",
   "package_download_sha256": "92935d08b51ef5c65f99adac15f763ec85b0e4471366771d41c5fecb4214524a",
-  "master_validation": "Pending exact successful master artifact and required checks; publication must use retained bytes and preserve documentation/original saved-profile data through forward/rollback/restore.",
-  "published_source": "5ef015c4d47ebbcee8234eb92f1fe83716b45054",
+  "master_validation": "Exact successful nonpublishing master38571406174/artifact11897464859 verified; source tree identical to tested preview. Retained-byte publication/rollback/restore verified; no automatic native master run claimed.",
+  "published_source": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
   "open_gates": [
     "250 MiB whole-browser FAILED",
     "Physical Android explicitly deferred"
+  ],
+  "final_provenance": [
+    "chunked-decoder-input-master-provenance-20261014.json",
+    "chunked-decoder-input-publication-provenance-20261014.json"
   ]
 }

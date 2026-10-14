@@ -1,5 +1,5 @@
 {
-  "status": "Incremental candidate supported by two local opposite-order pairs; CI/master/publication not yet validated; not250 MiB acceptance",
+  "status": "Merged/published as75e6ba97; local/CI/master/publication/recovery evidence reconciled;250 MiB remains FAILED",
   "source": "807e2adcd31cdd8cd31a74f87fdeec05247b7ef0",
   "control_source": "3906d86f8efbee9473c084ee2b243903cbf24700",
   "treatment": "Pull-based compressed input views limit each decoder write to8 KiB, preserving authenticated input, bounded output, hashes, cancellation/deadline and fallback. No buffer detachment or temporary chunk retention set.",
@@ -69,10 +69,14 @@
     "chunked-decoder-input-build.log": "5b528543eff39abb476667e068c93256e0944af51385aff7ec8a5651f4d53bed",
     "chunked-decoder-input-units.log": "6018b6ce7ef5cd4bca4b6605c7c1ce6fd79d1ea9b27db533ecee7ed9ea2e7a79"
   },
-  "published_source": "5ef015c4d47ebbcee8234eb92f1fe83716b45054",
+  "published_source": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
   "open_gates": [
     "250 MiB whole-browser FAILED",
     "Physical Android explicitly deferred"
   ],
-  "next_action": "Review incremental candidate, run required PR CI and verify exact retained preview/master artifacts before adopting; public release/recovery remains unproven for this source."
+  "next_action": "Continue whole-browser250 MiB optimization; physical Android remains deferred. Exact CI/master/publication/recovery evidence is complete for this incremental source.",
+  "final_provenance": [
+    "chunked-decoder-input-master-provenance-20261014.json",
+    "chunked-decoder-input-publication-provenance-20261014.json"
+  ]
 }

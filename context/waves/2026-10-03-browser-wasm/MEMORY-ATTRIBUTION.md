@@ -1,5 +1,33 @@
 # Desktop allocation investigation — 2026-10-12
 
+## Current published decoder input (2026-10-14)
+
+PR102 is merged/published as75e6ba97. Pull-based authenticated gzip input writes
+are at most8 KiB; canonical output, both hashes, context, cancellation/deadlines,
+raw fallback and eight residents remain intact. No disposal/chunk-retention set,
+new actor/schema/dependency or Rust change. The write bound is not a total native
+decoder allocation bound. Source/functional/recovery evidence is in ACCEPTANCE.md
+and chunked-decoder-input-* provenance.
+
+Two independent opposite-order Windows pairs peak387.26/394.45 and383.18/389.93
+MiB candidate/control. Baselines229.56/232.67 and227.47/230.81 differ; raw7.18/6.75
+MiB reductions repeat without an exact causal or universal saving claim. All four
+warm maxima stay below100 ms. Additional Linux-built CI pair peaks392.25/394.16,
+baselines228.21/233.79, with candidate97.50/control102.92 ms retained. That one
+pair is not independent opposite-order replication.
+
+Exact master387.24/389.67, baselines228.74/229.77. First101.06 ms warm max remains;
+repeat93.81 is a separate observation, not a waiver or replacement. Every normal
+run keeps75 packages/eight residents/two905/332 imports/20 committed queries and
+restart, original flags/sampler/network observer, no forced GC and every sampled
+phase.250 MiB remains FAILED, including startup. Physical Android stays deferred.
+
+Retained-byte publication, original-profile rollback/restore, exact gzip export,
+offline fresh queries/detail and executing module/WASM fingerprints pass. All95
+documentation hashes match; final273 served files match in each phase. First
+rollback static read had one HTTP503; failure preserved, new full check passed.
+No narrow diagnostic or baseline subtraction substitutes for resource acceptance.
+
 ## Current published wasm32 stats allocation (2026-10-14)
 
 PR99 is merged and published as5ef015c4. wasm32 repository stats hash slots hold

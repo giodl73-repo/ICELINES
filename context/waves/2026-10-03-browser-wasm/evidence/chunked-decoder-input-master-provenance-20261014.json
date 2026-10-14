@@ -1,5 +1,5 @@
 {
-  "status": "Exact master validated for incremental publication; full acceptance unproven, publication/recovery pending",
+  "status": "Exact master75e6ba97 published; retained-byte forward/rollback/restore verified; full resource/mobile acceptance remains open",
   "source": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
   "browser_run": 38571406174,
   "event": "workflow_dispatch",
@@ -69,10 +69,14 @@
   "scope": "Both complete normal75/eight/two905/332/20/restart measurements; all required phases, original flags/sampler/network observer, no forced GC. Unpaired master versus earlier reports is not a universal saving.",
   "latency": "First101.06 ms maximum retained, not relabeled as passing. New observation93.81 ms; repeat addresses variability without deleting first or changing flags. No latency/budget waiver.",
   "functional": "Exact182 files/75 packages;179 non-metadata files match reviewed CI. Corruption/exact export, six fresh/cached context refusals, offline reopening,933-player viewport/keyboard/AX/print transitions and24-page/two-parser PDF pass. First/last PDF pages visually inspected; executing WASM bytecode matches retained binary. Not physical printer/screen-reader/phone or memory acceptance.",
-  "publication": "Pending retained-byte deployment preserving static documentation and original saved-profile data through forward/rollback/restore.",
-  "published_source": "5ef015c4d47ebbcee8234eb92f1fe83716b45054",
+  "publication": "Retained-byte first38574453158, rollback38575692853 and restore38576162667 verified; all95 docs hashes identical; same-profile saved data preserved. First rollback static HTTP503 retained; new full check passed.",
+  "published_source": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
   "open_gates": [
     "250 MiB whole-browser FAILED",
     "Physical Android explicitly deferred"
+  ],
+  "final_provenance": [
+    "chunked-decoder-input-master-provenance-20261014.json",
+    "chunked-decoder-input-publication-provenance-20261014.json"
   ]
 }
