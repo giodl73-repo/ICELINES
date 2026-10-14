@@ -19,7 +19,9 @@ test('public package reads preserve each chunk when a producer reuses an offset 
 
 test('empty and short public bodies return only received bytes; authentication remains the caller responsibility', async () => {
   for (const bytes of [new Uint8Array(0),new Uint8Array([7,8])]) {
-    assert.deepEqual(await readPublicBytes(url,4,options(async () => new Response(bytes))),bytes);
+    const received = await readPublicBytes(url,4,options(async () => new Response(bytes)));
+    assert.deepEqual(received,bytes);
+    if (!bytes.length) assert.equal(received.buffer.byteLength,0,'Empty bodies must not allocate the advertised package capacity');
   }
 });
 

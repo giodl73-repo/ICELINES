@@ -37,6 +37,7 @@ async function readBytes(response: Response, signal: AbortSignal, max: number, l
       const { done, value } = await reader.read();
       signal.throwIfAborted();
       if (done) break;
+      if (value.length === 0) continue;
       length += value.length;
       if (length > max) throw new Error(limitMessage);
       if (boundedDestination) {
