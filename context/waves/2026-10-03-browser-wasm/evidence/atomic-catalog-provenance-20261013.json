@@ -1,0 +1,39 @@
+{
+  "source_commit": "e062f75d5314b93d558fb5426493c11a5d07e232",
+  "scope": "Experimental atomic catalog context assertion during existing Rust decode; no main full-package JSON parse. Production remains2e265236.",
+  "actual_checked_wasm_packages": 75,
+  "native_tests": 21,
+  "native_legacy_parity_cases": 270,
+  "full_checked_build_status": "passed;154 browser units,270 parity cases,21 wasm tests",
+  "memory_status": "not started; wait for compiler completion",
+  "probe_scope": "Two-entry unsigned catalog; hidden reload handler invoked by fixture, not a user flow. Initial hidden-button click failure retained.",
+  "reports": {
+    "wasm-parity": "target/atomic-catalog-parity.json",
+    "browser": "target/viewport-browser-pRl9Ps/report.json",
+    "offline": "target/browser-acceptance-E7BeO3/report.json",
+    "refusal": "target/atomic-catalog-refusal-dbWeF4/report.json",
+    "probe-failure": "target/atomic-catalog-refusal-ur5j8k/report.json"
+  },
+  "refusal_probe_sha256": "c8c103ee68ddfbd63f32decb58feec9f8d5b062d9647206f06a5b61c2bc20a8f",
+  "remaining": [
+    "full checked build",
+    "clippy",
+    "matching original memory workload comparison",
+    "250 MiB budget",
+    "physical Android deferred"
+  ],
+  "clippy_passed": true,
+  "adopted": false,
+  "decision": "Not adopted for memory: clean candidate/control pair396.81/392.64 MiB. Preserve independent cached-catalog header mismatch correction as a small frontend fix.",
+  "candidate-memory": {
+    "peak_mib": 396.8125,
+    "blank_mib": 224.91015625,
+    "max_warm_ms": 101.47869999999239
+  },
+  "control-memory": {
+    "peak_mib": 392.63671875,
+    "blank_mib": 226.61328125,
+    "max_warm_ms": 101.87889999999607
+  },
+  "control_scope": "Retained Windows gzip-delivery control0bc5388f, matching encoder/raw packages/launch/workload; candidate adds native catalog API. Not comparison of identical WASM binaries."
+}

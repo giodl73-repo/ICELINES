@@ -1,0 +1,11 @@
+{
+  "verified": false,
+  "artifact": {
+    "commit": "2e265236f3e71fd2dbe6ecab74e64b296a553465",
+    "shell_build": "9691890e23471a01accd6b907228e1d03eed268890039c5bb97061a9a26a8aad",
+    "verified_files": 181,
+    "packages": 75
+  },
+  "scope": "Local owned browser; complete result/export parity, continuous scrolling, keyboard, detail and failure/retry. Not phone or memory acceptance.",
+  "error": "Error: expect(locator).toContainText(expected) failed\n\nLocator: locator('#status')\nExpected pattern: /catalog context/i\nReceived string:  \"Selected in-memory season. Save locally to keep it.\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"toContainText\" locator('#status') with timeout 5000ms\n  - waiting for locator('#status')\n    14 \u00d7 locator resolved to <p class=\"\" id=\"status\" role=\"status\" aria-live=\"polite\">Selected in-memory season. Save locally to keep i\u2026</p>\n       - unexpected value \"Selected in-memory season. Save locally to keep it.\"\n"
+}

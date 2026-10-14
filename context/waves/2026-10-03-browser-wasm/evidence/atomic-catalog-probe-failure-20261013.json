@@ -1,0 +1,11 @@
+{
+  "verified": false,
+  "artifact": {
+    "commit": "e062f75d5314b93d558fb5426493c11a5d07e232",
+    "shell_build": "cfaef0b780cfa9c4c576522765995337309430f5540c256be0843d6cb472b85c",
+    "verified_files": 181,
+    "packages": 75
+  },
+  "scope": "Local owned browser; complete result/export parity, continuous scrolling, keyboard, detail and failure/retry. Not phone or memory acceptance.",
+  "error": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#retry-catalog')\u001b[22m\n\u001b[2m    - locator resolved to <button hidden=\"\" id=\"retry-catalog\">Retry public catalog</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 \u00d7 waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 \u00d7 waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    57 \u00d7 waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is not visible\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n"
+}
