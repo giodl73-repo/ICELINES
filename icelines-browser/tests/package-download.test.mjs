@@ -41,3 +41,13 @@ test('expansion bomb is bounded and cancellation/deadline remain errors',async()
   await assert.rejects(expandPackage(compressed,raw.length,{...options(),signal:controller.signal}),/cancelled/);
   await assert.rejects(expandPackage(compressed,raw.length,{...options(),deadline:0}),/deadline/);
 });
+test('multi-chunk expansion preserves an offset input view and the exact output limit',async()=>{
+  const large = Uint8Array.from({length:256*1024+17},(_,i)=>i%251);
+  const wire = new Uint8Array(gzipSync(large));
+  const padded = new Uint8Array(wire.length+13); padded.fill(0xff); padded.set(wire,7);
+  const view = padded.subarray(7,7+wire.length);
+  assert.deepEqual(await expandPackage(view,large.length,options()),large);
+  assert.deepEqual(await expandPackage(view,large.length+9,options()),large);
+  await assert.rejects(expandPackage(view,large.length-1,options()),/Expanded package/);
+  assert.deepEqual(view,wire);
+});

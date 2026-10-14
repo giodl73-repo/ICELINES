@@ -4,14 +4,20 @@ import { readPublicBytes, type ReadOptions } from './network.js';
 
 export async function expandPackage(bytes: Uint8Array, maximum: number, options: ReadOptions): Promise<Uint8Array> {
   if (!Number.isSafeInteger(maximum) || maximum <= 0 || maximum > MAX_BYTES) throw new Error('Invalid expanded package limit');
-  const stream = new Blob([bytes.slice().buffer]).stream().pipeThrough(new DecompressionStream('gzip'));
-  const reader = stream.getReader();
-  const parts: Uint8Array[] = []; let length = 0;
   const now = options.now ?? Date.now;
   const check = (): void => {
     options.signal.throwIfAborted();
     if (now() >= options.deadline) throw new Error('Package decompression deadline exceeded');
   };
+  check();
+  // Feed the authenticated view directly, including its byte offset. Write each
+  // decoded chunk into the bounded destination instead of retaining all chunks
+  // alongside a second complete copy at the end.
+  const input = bytes.buffer instanceof ArrayBuffer ? new Uint8Array(bytes.buffer,bytes.byteOffset,bytes.byteLength) : Uint8Array.from(bytes);
+  const stream = new ReadableStream<BufferSource>({ start(controller) { controller.enqueue(input); controller.close(); } })
+    .pipeThrough(new DecompressionStream('gzip'));
+  const reader = stream.getReader();
+  const expanded = new Uint8Array(maximum); let length = 0;
   const stop = (): void => { void reader.cancel().catch(() => {}); };
   const timer = setTimeout(stop, Math.max(0, options.deadline - now()));
   options.signal.addEventListener('abort', stop, {once:true});
@@ -19,13 +25,10 @@ export async function expandPackage(bytes: Uint8Array, maximum: number, options:
     for (;;) {
       check(); const {done,value} = await reader.read(); check();
       if (done) break;
-      length += value.length;
-      if (length > maximum) throw new Error('Expanded package exceeds its advertised byte limit');
-      parts.push(value);
+      if (value.length > maximum - length) throw new Error('Expanded package exceeds its advertised byte limit');
+      expanded.set(value,length); length += value.length;
     }
-    const expanded = new Uint8Array(length); let offset = 0;
-    for (const part of parts) { expanded.set(part,offset); offset += part.length; }
-    return expanded;
+    return expanded.subarray(0,length);
   } finally { clearTimeout(timer); options.signal.removeEventListener('abort',stop); await reader.cancel().catch(() => {}); }
 }
 
