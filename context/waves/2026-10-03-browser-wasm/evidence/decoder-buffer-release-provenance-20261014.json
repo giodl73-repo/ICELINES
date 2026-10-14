@@ -1,0 +1,85 @@
+{
+  "status": "UNADOPTED: direction reverses in independent opposite-order pairs; no performance PR/publication",
+  "source": "dfe95b5892ebf5350b472840a2aefba87cbfeb7a",
+  "control_source": "3906d86f8efbee9473c084ee2b243903cbf24700",
+  "treatment": "Keep decoder output backing buffers until EOF, then optional transfer(0); release private compressed transport after expansion. Preserve caller input/raw output, all authentication, cancellation/deadline and fallback behavior.",
+  "scope": "Two independent opposite-order normal75/eight/two905/332/20/restart pairs; original flags/sampler/network observer, no forced GC. Matched Windows WASM/template; only package-download.js differs among frontend modules. No baseline-subtracted acceptance.",
+  "reports": {
+    "candidate-first": {
+      "file": "decoder-buffer-release-candidate-first-20261014.json",
+      "sha256": "7dc48bd88d173f0c3354ab734454068410ff340fd4671fb0cbec8d1c114d882a"
+    },
+    "control-second": {
+      "file": "decoder-buffer-release-control-second-20261014.json",
+      "sha256": "469d8b05874710d89195de893a704e64b74b7d99eacc30f41ff355e76f043ac7"
+    },
+    "control-first": {
+      "file": "decoder-buffer-release-control-first-20261014.json",
+      "sha256": "627366e6bfcf7409b9c1848e531bab1f3f1545f0c792f9a04787179b743552dc"
+    },
+    "candidate-second": {
+      "file": "decoder-buffer-release-candidate-second-20261014.json",
+      "sha256": "962e97b4456a82bbad71016667a27de93e935b3190bc8ae6f491bde9d1304d55"
+    },
+    "refusal": {
+      "file": "decoder-buffer-release-refusal-20261014.json",
+      "sha256": "3b25142ef498fa38508ab1c6ac5fdfc4a9686267fb5dfb7e87b08226af5ac478"
+    },
+    "offline": {
+      "file": "decoder-buffer-release-offline-20261014.json",
+      "sha256": "ab330748c2943e9e11989f534749cea3655507a2bcbcf5b6699edfcc7c0f1bc9"
+    },
+    "viewport": {
+      "file": "decoder-buffer-release-viewport-20261014.json",
+      "sha256": "217ecf6abab15c676afb1f9dd3fce4022e7da97b9e0430e79e4633eb30d92acd"
+    }
+  },
+  "measurements": {
+    "candidate-first": {
+      "private_peak_mib": 386.87890625,
+      "blank_mib": 225.80859375,
+      "warm_max_ms": 94.78280000000086
+    },
+    "control-second": {
+      "private_peak_mib": 394.99609375,
+      "blank_mib": 232.5703125,
+      "warm_max_ms": 83.11000000000058
+    },
+    "control-first": {
+      "private_peak_mib": 382.25,
+      "blank_mib": 231.234375,
+      "warm_max_ms": 103.4369000000006
+    },
+    "candidate-second": {
+      "private_peak_mib": 404.5078125,
+      "blank_mib": 231.52734375,
+      "warm_max_ms": 140.55410000000848
+    }
+  },
+  "candidate_minus_control_private_mib": [
+    -8.1171875,
+    22.2578125
+  ],
+  "units": "163 pass; new regression tests fail against baseline; shared queued buffer copied before disposal; native/missing/throwing optional disposal tested with exact canonical bytes/refusal. Timing assertion moved outside optional fallback catch to avoid swallowed assertion.",
+  "latency": "Control-first103.44 ms and candidate-second140.55 ms retained; no latency waiver or selective rerun replaces them.",
+  "limitations": "Collecting chunk buffers until EOF can increase live temporary retention, including when optional disposal is absent. Data fallback passes, but unsupported-browser memory acceptance is not proven. This concern would require correction before adoption; experiment remains unadopted.",
+  "logs_sha256": {
+    "decoder-buffer-release-regression-before.log": "bc77b7095474c143266d8a124d1182c9108ce0c12d07b4d553760d86a8a8b4ae",
+    "decoder-buffer-release-regression-after.log": "f7a190662b97cb89ad9e9a0a503eec83bcbbcd575e904b0954da7b91a68a760e",
+    "decoder-buffer-release-build.log": "635de63a8efbcc84afa50f1837dc5c2b20cfc37391fbc2df1b6b3452068c0a52",
+    "decoder-buffer-release-final-build.log": "aba71973bdf9b62b9e662fadc1cbf3f043f95961ecbf0777751a7bcbf3d033cc",
+    "decoder-buffer-release-final-units.log": "176c0100889c4a3cb9a6e26cfd2c46eb12a8298c73b300dd15126dd6496bf17b",
+    "decoder-buffer-release-control-build.log": "006f8ef42185e493dab1458b2c41adba4e425866f2b38dc368d4aacbb4cecacf"
+  },
+  "references": [
+    "https://compression.spec.whatwg.org/#decompress-and-enqueue-a-chunk",
+    "https://tc39.es/ecma262/multipage/structured-data.html#sec-arraybuffer.prototype.transfer"
+  ],
+  "published_source_unchanged": "5ef015c4d47ebbcee8234eb92f1fe83716b45054",
+  "open_gates": [
+    "250 MiB whole-browser FAILED",
+    "Warm-query observations above100 ms retained",
+    "Physical Android explicitly deferred"
+  ],
+  "next_action": "Do not adopt temporary buffer disposal based on the first pair. Review acquisition producer chunking/lifetime before another implementation; no further saving proved."
+}
