@@ -12,3 +12,6 @@ examples/icecast-*-season*.json text eol=lf
 # Preserve exact bytes of historical Windows verifier failures as raw artifacts.
 # Their decoded UTF-8 JSON counterparts provide the reviewable text.
 *.raw.cp1252 -text -diff
+
+# These experiment reports are hashed byte-for-byte in their provenance.
+context/waves/2026-10-03-browser-wasm/evidence/isolated-decompression-*.json text eol=lf

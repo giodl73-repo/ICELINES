@@ -1,0 +1,11 @@
+{
+  "verified": true,
+  "scope": "Owned Chromium starts a new decoder worker from cached shell, with browser offline and server stopped. No physical-phone/public-host/memory claim.",
+  "evidence": {
+    "uncached_request_blocked": true,
+    "raw_bytes": 926515,
+    "expected_bytes": 926515,
+    "hash": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+    "expected_hash": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44"
+  }
+}

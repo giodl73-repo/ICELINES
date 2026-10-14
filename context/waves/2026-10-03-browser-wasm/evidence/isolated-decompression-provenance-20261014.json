@@ -1,0 +1,74 @@
+{
+  "status": "UNADOPTED; short-lived decoder passed correctness but one fresh pair shows no whole-browser memory saving",
+  "source": "d7849f94ee7a558943377f514617fde1d2ab93d3",
+  "treatment": "Authenticated catalog gzip expansion in a dedicated per-acquisition worker, terminated after success/cancel/failure. Engine remains in original worker; raw size/SHA/context validation and residency unchanged.",
+  "scope": "Full75/eight residents/two archives/20 committed queries/restart; original browser flags/sampler/network observer, no forced GC. Separate targeted tests and offline probe do not alter acceptance measurement.",
+  "reports": {
+    "candidate": {
+      "file": "isolated-decompression-candidate-20261014.json",
+      "sha256": "cfa89b86eee36545c8e0ccdecaa1a855132b8c18855cfc069af3f2365c146966"
+    },
+    "control": {
+      "file": "isolated-decompression-control-20261014.json",
+      "sha256": "c54270fbd4b8edc05f180448ce98b163f1b5a3e9f0b9d4358d28f9576a8bfc3d"
+    }
+  },
+  "measurements": {
+    "candidate": {
+      "private_mib": 404.75,
+      "blank_mib": 237.30078125,
+      "warm_max_ms": 94.67990000000282
+    },
+    "control": {
+      "private_mib": 398.62890625,
+      "blank_mib": 236.91015625,
+      "warm_max_ms": 93.33490000000165
+    }
+  },
+  "verification": {
+    "viewport": {
+      "file": "isolated-decompression-viewport-20261014.json",
+      "sha256": "ffeeacc361e03e26a24c6f001a0e0a850f921b9d9e33256b68239e64172dc01d"
+    },
+    "refusal": {
+      "file": "isolated-decompression-refusal-20261014.json",
+      "sha256": "85db9233a10fa53c5aecb4b8e7da1b01c5ffb9fdac5da9fe1b9a8cda10af4a30"
+    },
+    "offline": {
+      "file": "isolated-decompression-offline-20261014.json",
+      "sha256": "014b62e5782c675468b907586fd8f8a74b603522e79b1fed560528b231a5d752"
+    },
+    "offline-decoder": {
+      "file": "isolated-decompression-offline-decoder-20261014.json",
+      "sha256": "2e44edb077f26ed27bfb1ece33fda5ac28ac08ca10f20ccb114a633aeb6a53cc"
+    }
+  },
+  "artifact": {
+    "build_info": {
+      "schema_version": 1,
+      "commit": "d7849f94ee7a558943377f514617fde1d2ab93d3",
+      "working_tree_dirty": false,
+      "tools": {
+        "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+        "node": "v22.22.3",
+        "python": "Python 3.14.2",
+        "wasm_bindgen": "wasm-bindgen 0.2.118"
+      },
+      "wasm_sha256": "4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee"
+    },
+    "shell": "2d3db020ab40df55a0eeaccd0653e88ea86e0fe0afcdaef6c37e1f7f4dea6df3",
+    "local_path": "target\\isolated-decompression-artifact"
+  },
+  "unit_tests": {
+    "passed": 166,
+    "targeted_decoder_tests": 6,
+    "log_sha256": "08126e3483adffc04d82df4c4bde7158a958edfa006d6f2d8a02823c60a02922"
+  },
+  "build_log_sha256": "b82f2c0fadc3a6111b86c658d4f8e73204f68b39750a206903b809f99dee1a44",
+  "review": "signals/roles/check/isolated-decompression-roles-check-2026-10-14.md; five role lenses in one agent, no independent-agent claim",
+  "baseline": "No controlled runtime/design/interface change adopted; prototype and evidence retained on local experiment branch only.",
+  "open_gates": [
+    "250 MiB whole-browser acceptance",
+    "Physical Android deferred"
+  ]
+}
