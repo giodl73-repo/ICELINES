@@ -16,7 +16,7 @@ Verdict is limited to a draft candidate; it does not approve final acceptance.
 |---|---|---|---|---|
 | 1 | BENCH | Earlier opposite-order transformed pairs are promising but have varying baselines. | P1 | Measure the clean CI artifact before adopting a memory improvement claim. |
 | 2 | BENCH | 165 units include meaningful metadata ordering refusal and Unicode/relative worker URL behavior after removing the separate metadata module. | P3 | Preserve these build boundary regressions. |
-| 3 | BENCH | 270 native-loader/WASM cases pass; broader shared build check and CI are still running. | P3 | Preserve partial status; do not infer complete green. |
+| 3 | BENCH | Shared local build check passes:270 native-loader/WASM cases,161 Rust tests across nonempty groups,34 Python tests and165 browser units. CI still runs. | P3 | Preserve the CI pending gate. |
 | 4 | WIRE | Bundling occurs after authenticated generated metadata injection, before actual asset sealing. | P3 | Keep this ordering enforced by the helper. |
 | 5 | WIRE | Corrupted gzip preserves prior full results and byte-exact package export; retry returns905 rows. | P3 | Retain actual bundled-browser evidence. |
 | 6 | WIRE | All six fresh/cached wrong season/type/source cases preserve933 prior rows, exact export and requery. | P3 | Retain unsigned fixture scope; not a complete offline/live test. |

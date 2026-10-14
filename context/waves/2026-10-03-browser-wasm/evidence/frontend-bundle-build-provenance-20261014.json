@@ -52,10 +52,29 @@
     "fingerprint": {
       "file": "frontend-bundle-build-fingerprint-20261014.json",
       "sha256": "05540cc4b7b992e2a995ad3da6794885500dbe682a46988a2ad9499573c51310"
+    },
+    "build-check-log": {
+      "file": "frontend-bundle-build-build-check-log-20261014.log",
+      "sha256": "e02e76c977450e2f66f0a43e41bedfc10c6905bac978806445e831f408690c1f"
     }
   },
-  "browser_units": 165,
-  "native_distributed_wasm_parity_cases": 270,
+  "shared_build_check": {
+    "command": "node scripts/build-browser.mjs --check",
+    "exit_code": 0,
+    "browser_units": 165,
+    "native_distributed_wasm_parity_cases": 270,
+    "python_tests": 34,
+    "rust_test_groups": [
+      5,
+      88,
+      2,
+      18,
+      2,
+      42,
+      6
+    ]
+  },
+  "pdf_first_last_visual_inspection": "Readable, no clipping observed; not physical printing proof.",
   "production_unchanged": true,
   "pr": "https://github.com/giodl73-repo/ICELINES/pull/105",
   "pending": [
