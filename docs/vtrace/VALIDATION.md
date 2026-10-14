@@ -176,3 +176,18 @@ checks do not close the full deployed Pages/live/mobile/resource/rollback target
 The implementation handoff roles review (2026-10-04) records release as needing
 work. Validation deployment is a prerequisite for exact-origin checks, not
 release acceptance. See `icelines-browser/PAGES.md` for the corrected ordering.
+
+## CHG-120 browser delivery validation boundaries
+
+Local retained-artifact validation demonstrates authenticated compressed reads,
+previous-good preservation on corrupt transport, canonical package export and
+successful retry. Total package transfer falls from41006884 to4960231 bytes
+(87.9%); this bandwidth ratio is not a memory-saving percentage. Whole-browser
+private peaks are about44–45 MiB lower in two opposite-order pairs, but remain
+389–406 MiB for the candidate, above the retained250 MiB target.
+Before promotion, verify reviewed CI/master bytes and public Pages gzip
+size/hash/content handling, actual full query execution, saved-data update,
+offline reopening, previous-version rollback and forward restore. Physical
+Android is explicitly deferred by the user and is still required for full
+acceptance. No native behavior, data coverage, resident limit or resource waiver
+is altered by this change.

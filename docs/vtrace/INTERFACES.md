@@ -719,3 +719,16 @@ storage; rollback requires a compatible build or exported backups. Migration
 rollback, version refusal and family independence have deterministic test evidence;
 real browser restoration has fixture evidence. Live reachability remains open.
 Status: foundation implementation in progress; compatibility evidence pending.
+
+## IF-BROWSER-001 optional gzip transport — CHG-120
+
+The version1 public catalog retains each entry's canonical `url`, `bytes` and
+`sha256`. An optional `transport` contains `encoding: "gzip"`, `url`, `bytes` and
+`sha256`; the transport URL must equal the canonical JSON URL plus `.gz`.
+Both compressed and expanded size/hash checks precede context validation and
+engine activation. Expansion is bounded by the advertised canonical size, the
+100 MiB browser input ceiling, foreground deadline and cancellation. Integrity
+or decompression failures preserve the previous active season and do not silently
+retry an alternate representation. Old catalogs and browsers without gzip
+support use the retained raw JSON files. Saved/recovery/export bytes and revision
+identity remain canonical JSON. No live relay or worker query contract changes.

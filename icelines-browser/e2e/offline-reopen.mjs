@@ -64,6 +64,14 @@ try {
   report.unsaved_package = seasons[1].id;
   await page.locator('#catalog').selectOption(seasons[0].id);
   await page.locator('#load').click();
+  const viewport = await page.locator('#table-view').count() > 0;
+  if (viewport) {
+    await expect(page.locator('#rows')).toHaveAttribute('data-result-count', /^[1-9]\d*$/, { timeout: 60000 });
+    await expect(page.locator('#rows')).toHaveJSProperty('inert', false);
+    await page.locator('#table-view').selectOption('all');
+    const total = Number(await page.locator('#rows').getAttribute('data-result-count'));
+    await expect(page.locator('#rows tr[data-result-index]')).toHaveCount(total);
+  }
   await expect(page.locator('#rows tr').first()).toBeVisible({ timeout: 60000 });
   const baseline = await page.locator('#rows tr').evaluateAll(rows => rows.map(row => ({ name: row.cells[1].textContent, games: Number(row.cells[3].textContent), points: Number(row.cells[6].textContent) })));
   report.evidence.saved_unfiltered_rows = baseline.length;
@@ -91,7 +99,19 @@ try {
   await expect(reopened.locator('#data-state')).toContainText('Saved locally', { timeout: 60000 });
   await expect(reopened.locator('#context')).toContainText(String(seasons[0].id.split('-')[0]));
   await expect(reopened.locator('#saved-count')).toHaveText('(1)');
-  await expect(reopened.locator('#rows tr')).toHaveCount(baseline.length);
+  if (viewport) {
+    await expect(reopened.locator('#rows')).toHaveAttribute('data-result-count', String(baseline.length));
+    await expect(reopened.locator('#rows')).toHaveJSProperty('inert', false);
+    const mounted = await reopened.locator('#rows tr[data-result-index]').count();
+    expect(mounted).toBeGreaterThan(0);
+    // Default Chromium viewport is 720px tall; 72px rows plus overscan
+    // mount fewer than 44 rows, or the entire result for a small fixture.
+    expect(mounted).toBeLessThanOrEqual(Math.min(44, baseline.length));
+    report.evidence.offline_viewport_rows = mounted;
+    // The optional node-identity check operates on the complete table.
+    if (verifyAttachedRows) await reopened.locator('#table-view').selectOption('all');
+  }
+  if (!viewport || verifyAttachedRows) await expect(reopened.locator('#rows tr')).toHaveCount(baseline.length);
   report.evidence.offline = await reopened.evaluate(async () => ({ online: navigator.onLine, probe_failed: await fetch(`./uncached-acceptance-probe-${Date.now()}`, { cache: 'no-store' }).then(() => false, () => true) }));
   expect(report.evidence.offline).toEqual({ online: false, probe_failed: true });
   if (verifyAttachedRows) await reopened.evaluate(() => {
@@ -111,6 +131,11 @@ try {
   } else await reopened.locator('#query button[type="submit"]').click();
   const expected = baseline.filter(row => row.points >= 1 && row.games >= 1).map(row => row.name);
   if (!expected.length || expected.length === baseline.length) throw new Error('Fixture must distinguish the fresh query from the restored initial view.');
+  if (viewport) {
+    await expect(reopened.locator('#rows')).toHaveAttribute('data-result-count', String(expected.length));
+    await expect(reopened.locator('#rows')).toHaveJSProperty('inert', false);
+    await reopened.locator('#table-view').selectOption('all');
+  }
   await expect(reopened.locator('#rows tr')).toHaveCount(expected.length);
   expect(await reopened.locator('#rows tr td:nth-child(2)').allTextContents()).toEqual(expected);
   report.evidence.fresh_filtered_rows = expected.length;
@@ -126,12 +151,13 @@ try {
     expect(report.evidence.attached_rows).toEqual({ common_rows_unchanged: true, added: 0,
       removed: baseline.length - expected.length, rows: expected.length, previous_rows: baseline.length });
   }
+  if (viewport && !verifyAttachedRows) await reopened.locator('#table-view').selectOption('scroll');
   await reopened.locator('#rows button').first().click();
   await expect(reopened.locator('#player-dialog')).toBeVisible();
   await expect(reopened.locator('#player-name')).toHaveText(expected[0]);
   report.evidence.player_detail = expected[0];
   report.evidence.failed_requests = failedRequests;
-  await reopened.screenshot({ path: resolve(output, 'offline-player.png'), fullPage: true });
+  await reopened.screenshot({ path: resolve(output, 'offline-player.png'), fullPage: false });
   if (verifyAttachedRows) {
     await reopened.locator('#player-dialog button').click();
     await reopened.locator('#filter').fill('p>>');
@@ -149,7 +175,7 @@ try {
   failure = error;
   report.error = String(error);
   const page = context?.pages()[0];
-  if (page) await page.screenshot({ path: resolve(output, 'failure.png'), fullPage: true }).catch(() => {});
+  if (page) await page.screenshot({ path: resolve(output, 'failure.png'), fullPage: false }).catch(() => {});
 } finally {
   await context?.close();
   if (server?.listening) await new Promise(accept => server.close(accept));

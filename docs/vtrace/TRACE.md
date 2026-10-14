@@ -358,3 +358,15 @@ Initial implementation: icelines-data portable normalization + icelines-wasm
 engine binding; native stats_loader delegates to shared functions.
 Evidence record: context/waves/2026-10-03-browser-wasm/pulses/pulse-01.md.
 Verification and validation remain pending until recorded command/browser results.
+
+## CHG-120 trace: optional browser catalog transport
+
+| Contract / requirement | Implementation | Verification | Disposition |
+|---|---|---|---|
+| IF-BROWSER-001 / WP-BW-06 | catalog.ts, package-download.ts, build.mjs | 154 browser units; 9 artifact tests; all75 actual-WASM package loads and byte-identical transport expansion | Local prototype passes; reviewed CI/master/public origin pending |
+| REQ-BROWSER-001 / WP-BW-05 | previous-good activation; viewport-aware offline verifier | Full933-player browser checks, saved933/fresh835 offline reopen, corrupt gzip preservation/exact export and905-player retry | Local scoped parity passes; Android deferred |
+| Browser resource target | Original full75-package/8-resident/2-import/20-query/restart OS sampler | Two opposite-order candidate/control pairs:405.8/449.6 and389.5/434.6 MiB | Saving repeated; fixed250 MiB target still fails |
+
+Raw prototype reports and provenance are under
+`context/waves/2026-10-03-browser-wasm/evidence/gzip-delivery-*`.
+The prototype source commit is recorded independently from this clean PR branch.

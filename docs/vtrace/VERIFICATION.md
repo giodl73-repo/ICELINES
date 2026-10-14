@@ -471,3 +471,18 @@ drilldowns, visible memory/source summary and focus transfer after loading.
 360px contexts loaded/queryed a season; narrow containment, methodology access
 and selected player keyboard focus passed. Full state/device/resource/deployment
 acceptance remains open.
+
+## CHG-120 browser transport verification
+
+Verify both transport and canonical digests/sizes and bounded gzip expansion for
+all75 retained files, then load every original package through actual WASM.
+Unit/refusal cases cover invalid transport path/hash/size, malformed gzip,
+expansion bombs, cancellation/deadline, old catalogs and unavailable gzip support.
+The offline runner verifies full result count and bounded mounted rows after
+process reopening, then compares all names for a fresh filtered query using the
+full-table accessibility option. It also supports the previous classic renderer.
+Prototype evidence:154 browser units,9 artifact tests, all75 distributed loads,
+full933-player viewport/AX/print/keyboard,77 goalies, offline933/fresh835 and real
+corrupt-transfer previous-good/exact export/905-player retry. Two clean opposite
+order full workloads use unchanged flags/sampler/WASM and no forced GC.
+No full resource, mobile, CI-master or production-origin proof is claimed yet.
