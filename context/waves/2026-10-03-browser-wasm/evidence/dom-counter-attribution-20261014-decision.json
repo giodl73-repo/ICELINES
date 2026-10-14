@@ -1,0 +1,662 @@
+{
+  "scope": "Current retained published 75e6ba97 artifact, full workload with nine additional CDP DOM-counter/live-document observations. Original flags/channel/sampler/network observer, no forced GC, tracing or heap snapshot. Extra observer changes timing; no normal acceptance or latency claim.",
+  "acceptance": null,
+  "observations": [
+    {
+      "label": "ready_before_engine",
+      "at": "2026-10-14T19:10:57.745Z",
+      "counters": {
+        "documents": 8,
+        "nodes": 1084,
+        "jsEventListeners": 98
+      },
+      "live": {
+        "elements": 261,
+        "mounted_players": 0,
+        "result_count": null,
+        "library_items": 0
+      },
+      "latest_os_sample": {
+        "phase": "startup",
+        "processes": [
+          {
+            "lifetime_peak_working_set_bytes": 118206464,
+            "working_set_bytes": 118206464,
+            "private_bytes": 94511104,
+            "id": 70668
+          },
+          {
+            "lifetime_peak_working_set_bytes": 101453824,
+            "working_set_bytes": 101453824,
+            "private_bytes": 45150208,
+            "id": 54856
+          },
+          {
+            "lifetime_peak_working_set_bytes": 14192640,
+            "working_set_bytes": 12611584,
+            "private_bytes": 3014656,
+            "id": 24528
+          },
+          {
+            "lifetime_peak_working_set_bytes": 40624128,
+            "working_set_bytes": 39170048,
+            "private_bytes": 21110784,
+            "id": 3872
+          },
+          {
+            "lifetime_peak_working_set_bytes": 48701440,
+            "working_set_bytes": 48103424,
+            "private_bytes": 18419712,
+            "id": 34216
+          },
+          {
+            "lifetime_peak_working_set_bytes": 147668992,
+            "working_set_bytes": 147230720,
+            "private_bytes": 50454528,
+            "id": 66852
+          },
+          {
+            "lifetime_peak_working_set_bytes": 93224960,
+            "working_set_bytes": 92090368,
+            "private_bytes": 45826048,
+            "id": 25948
+          },
+          {
+            "lifetime_peak_working_set_bytes": 26030080,
+            "working_set_bytes": 24928256,
+            "private_bytes": 10436608,
+            "id": 65332
+          }
+        ],
+        "elapsed_ms": 4691
+      }
+    },
+    {
+      "label": "loaded_1",
+      "at": "2026-10-14T19:10:59.917Z",
+      "counters": {
+        "documents": 8,
+        "nodes": 1946,
+        "jsEventListeners": 167
+      },
+      "live": {
+        "elements": 715,
+        "mounted_players": 44,
+        "result_count": "933",
+        "library_items": 1
+      },
+      "latest_os_sample": {
+        "phase": "package_20252026-regular",
+        "processes": [
+          {
+            "lifetime_peak_working_set_bytes": 123170816,
+            "working_set_bytes": 123170816,
+            "private_bytes": 99266560,
+            "id": 70668
+          },
+          {
+            "lifetime_peak_working_set_bytes": 136904704,
+            "working_set_bytes": 135127040,
+            "private_bytes": 74403840,
+            "id": 54856
+          },
+          {
+            "lifetime_peak_working_set_bytes": 14192640,
+            "working_set_bytes": 12611584,
+            "private_bytes": 3014656,
+            "id": 24528
+          },
+          {
+            "lifetime_peak_working_set_bytes": 40624128,
+            "working_set_bytes": 39174144,
+            "private_bytes": 21114880,
+            "id": 3872
+          },
+          {
+            "lifetime_peak_working_set_bytes": 48701440,
+            "working_set_bytes": 48238592,
+            "private_bytes": 18440192,
+            "id": 34216
+          },
+          {
+            "lifetime_peak_working_set_bytes": 151093248,
+            "working_set_bytes": 148996096,
+            "private_bytes": 50728960,
+            "id": 66852
+          },
+          {
+            "lifetime_peak_working_set_bytes": 93224960,
+            "working_set_bytes": 92090368,
+            "private_bytes": 45826048,
+            "id": 25948
+          },
+          {
+            "lifetime_peak_working_set_bytes": 26030080,
+            "working_set_bytes": 24928256,
+            "private_bytes": 10436608,
+            "id": 65332
+          }
+        ],
+        "elapsed_ms": 6486
+      }
+    },
+    {
+      "label": "loaded_8",
+      "at": "2026-10-14T19:11:10.137Z",
+      "counters": {
+        "documents": 8,
+        "nodes": 2807,
+        "jsEventListeners": 657
+      },
+      "live": {
+        "elements": 736,
+        "mounted_players": 44,
+        "result_count": "1004",
+        "library_items": 8
+      },
+      "latest_os_sample": {
+        "phase": "package_20212022-regular",
+        "processes": [
+          {
+            "lifetime_peak_working_set_bytes": 136204288,
+            "working_set_bytes": 135962624,
+            "private_bytes": 111546368,
+            "id": 70668
+          },
+          {
+            "lifetime_peak_working_set_bytes": 203538432,
+            "working_set_bytes": 203538432,
+            "private_bytes": 143384576,
+            "id": 54856
+          },
+          {
+            "lifetime_peak_working_set_bytes": 14192640,
+            "working_set_bytes": 12611584,
+            "private_bytes": 3014656,
+            "id": 24528
+          },
+          {
+            "lifetime_peak_working_set_bytes": 40624128,
+            "working_set_bytes": 38998016,
+            "private_bytes": 20852736,
+            "id": 3872
+          },
+          {
+            "lifetime_peak_working_set_bytes": 48730112,
+            "working_set_bytes": 48599040,
+            "private_bytes": 18833408,
+            "id": 34216
+          },
+          {
+            "lifetime_peak_working_set_bytes": 151093248,
+            "working_set_bytes": 149766144,
+            "private_bytes": 51372032,
+            "id": 66852
+          },
+          {
+            "lifetime_peak_working_set_bytes": 93224960,
+            "working_set_bytes": 90865664,
+            "private_bytes": 44376064,
+            "id": 25948
+          },
+          {
+            "lifetime_peak_working_set_bytes": 26030080,
+            "working_set_bytes": 24936448,
+            "private_bytes": 10436608,
+            "id": 65332
+          }
+        ],
+        "elapsed_ms": 17182
+      }
+    },
+    {
+      "label": "loaded_10",
+      "at": "2026-10-14T19:11:13.344Z",
+      "counters": {
+        "documents": 3,
+        "nodes": 1880,
+        "jsEventListeners": 133
+      },
+      "live": {
+        "elements": 736,
+        "mounted_players": 44,
+        "result_count": "904",
+        "library_items": 8
+      },
+      "latest_os_sample": {
+        "phase": "package_20202021-regular",
+        "processes": [
+          {
+            "lifetime_peak_working_set_bytes": 136204288,
+            "working_set_bytes": 132739072,
+            "private_bytes": 108322816,
+            "id": 70668
+          },
+          {
+            "lifetime_peak_working_set_bytes": 222343168,
+            "working_set_bytes": 197107712,
+            "private_bytes": 132644864,
+            "id": 54856
+          },
+          {
+            "lifetime_peak_working_set_bytes": 14192640,
+            "working_set_bytes": 12611584,
+            "private_bytes": 3014656,
+            "id": 24528
+          },
+          {
+            "lifetime_peak_working_set_bytes": 40624128,
+            "working_set_bytes": 39059456,
+            "private_bytes": 20865024,
+            "id": 3872
+          },
+          {
+            "lifetime_peak_working_set_bytes": 48730112,
+            "working_set_bytes": 48599040,
+            "private_bytes": 18833408,
+            "id": 34216
+          },
+          {
+            "lifetime_peak_working_set_bytes": 151093248,
+            "working_set_bytes": 149860352,
+            "private_bytes": 52486144,
+            "id": 66852
+          },
+          {
+            "lifetime_peak_working_set_bytes": 93224960,
+            "working_set_bytes": 90865664,
+            "private_bytes": 44376064,
+            "id": 25948
+          },
+          {
+            "lifetime_peak_working_set_bytes": 26030080,
+            "working_set_bytes": 24936448,
+            "private_bytes": 10436608,
+            "id": 65332
+          }
+        ],
+        "elapsed_ms": 20281
+      }
+    },
+    {
+      "label": "loaded_11",
+      "at": "2026-10-14T19:11:15.409Z",
+      "counters": {
+        "documents": 3,
+        "nodes": 2063,
+        "jsEventListeners": 215
+      },
+      "live": {
+        "elements": 736,
+        "mounted_players": 44,
+        "result_count": "337",
+        "library_items": 8
+      },
+      "latest_os_sample": {
+        "phase": "package_20202021-playoff",
+        "processes": [
+          {
+            "lifetime_peak_working_set_bytes": 136204288,
+            "working_set_bytes": 132816896,
+            "private_bytes": 108335104,
+            "id": 70668
+          },
+          {
+            "lifetime_peak_working_set_bytes": 222343168,
+            "working_set_bytes": 198586368,
+            "private_bytes": 133836800,
+            "id": 54856
+          },
+          {
+            "lifetime_peak_working_set_bytes": 14192640,
+            "working_set_bytes": 12611584,
+            "private_bytes": 3014656,
+            "id": 24528
+          },
+          {
+            "lifetime_peak_working_set_bytes": 40624128,
+            "working_set_bytes": 39063552,
+            "private_bytes": 20869120,
+            "id": 3872
+          },
+          {
+            "lifetime_peak_working_set_bytes": 48730112,
+            "working_set_bytes": 48599040,
+            "private_bytes": 18833408,
+            "id": 34216
+          },
+          {
+            "lifetime_peak_working_set_bytes": 151093248,
+            "working_set_bytes": 149884928,
+            "private_bytes": 52510720,
+            "id": 66852
+          },
+          {
+            "lifetime_peak_working_set_bytes": 93224960,
+            "working_set_bytes": 90865664,
+            "private_bytes": 44376064,
+            "id": 25948
+          },
+          {
+            "lifetime_peak_working_set_bytes": 26030080,
+            "working_set_bytes": 24936448,
+            "private_bytes": 10436608,
+            "id": 65332
+          }
+        ],
+        "elapsed_ms": 21774
+      }
+    },
+    {
+      "label": "loaded_26",
+      "at": "2026-10-14T19:11:38.219Z",
+      "counters": {
+        "documents": 3,
+        "nodes": 1880,
+        "jsEventListeners": 133
+      },
+      "live": {
+        "elements": 736,
+        "mounted_players": 44,
+        "result_count": "826",
+        "library_items": 8
+      },
+      "latest_os_sample": {
+        "phase": "package_20122013-regular",
+        "processes": [
+          {
+            "lifetime_peak_working_set_bytes": 137400320,
+            "working_set_bytes": 128901120,
+            "private_bytes": 104296448,
+            "id": 70668
+          },
+          {
+            "lifetime_peak_working_set_bytes": 222343168,
+            "working_set_bytes": 195796992,
+            "private_bytes": 129236992,
+            "id": 54856
+          },
+          {
+            "lifetime_peak_working_set_bytes": 14192640,
+            "working_set_bytes": 12619776,
+            "private_bytes": 3022848,
+            "id": 24528
+          },
+          {
+            "lifetime_peak_working_set_bytes": 40624128,
+            "working_set_bytes": 39325696,
+            "private_bytes": 20897792,
+            "id": 3872
+          },
+          {
+            "lifetime_peak_working_set_bytes": 48750592,
+            "working_set_bytes": 48570368,
+            "private_bytes": 18407424,
+            "id": 34216
+          },
+          {
+            "lifetime_peak_working_set_bytes": 153124864,
+            "working_set_bytes": 151527424,
+            "private_bytes": 52011008,
+            "id": 66852
+          },
+          {
+            "lifetime_peak_working_set_bytes": 93569024,
+            "working_set_bytes": 85663744,
+            "private_bytes": 37388288,
+            "id": 25948
+          },
+          {
+            "lifetime_peak_working_set_bytes": 26030080,
+            "working_set_bytes": 24936448,
+            "private_bytes": 10436608,
+            "id": 65332
+          }
+        ],
+        "elapsed_ms": 45302
+      }
+    },
+    {
+      "label": "loaded_75",
+      "at": "2026-10-14T19:12:49.050Z",
+      "counters": {
+        "documents": 3,
+        "nodes": 2063,
+        "jsEventListeners": 215
+      },
+      "live": {
+        "elements": 736,
+        "mounted_players": 44,
+        "result_count": "367",
+        "library_items": 8
+      },
+      "latest_os_sample": {
+        "phase": "package_19871988-playoff",
+        "processes": [
+          {
+            "lifetime_peak_working_set_bytes": 137408512,
+            "working_set_bytes": 132800512,
+            "private_bytes": 105971712,
+            "id": 70668
+          },
+          {
+            "lifetime_peak_working_set_bytes": 222343168,
+            "working_set_bytes": 192278528,
+            "private_bytes": 124579840,
+            "id": 54856
+          },
+          {
+            "lifetime_peak_working_set_bytes": 14192640,
+            "working_set_bytes": 12558336,
+            "private_bytes": 2883584,
+            "id": 24528
+          },
+          {
+            "lifetime_peak_working_set_bytes": 40624128,
+            "working_set_bytes": 39337984,
+            "private_bytes": 18644992,
+            "id": 3872
+          },
+          {
+            "lifetime_peak_working_set_bytes": 48750592,
+            "working_set_bytes": 48173056,
+            "private_bytes": 15441920,
+            "id": 34216
+          },
+          {
+            "lifetime_peak_working_set_bytes": 153124864,
+            "working_set_bytes": 150315008,
+            "private_bytes": 48373760,
+            "id": 66852
+          },
+          {
+            "lifetime_peak_working_set_bytes": 93569024,
+            "working_set_bytes": 85024768,
+            "private_bytes": 35827712,
+            "id": 25948
+          },
+          {
+            "lifetime_peak_working_set_bytes": 26030080,
+            "working_set_bytes": 24961024,
+            "private_bytes": 10317824,
+            "id": 65332
+          }
+        ],
+        "elapsed_ms": 116124
+      }
+    },
+    {
+      "label": "after_twenty_queries",
+      "at": "2026-10-14T19:12:54.454Z",
+      "counters": {
+        "documents": 3,
+        "nodes": 1897,
+        "jsEventListeners": 133
+      },
+      "live": {
+        "elements": 736,
+        "mounted_players": 44,
+        "result_count": "280",
+        "library_items": 8
+      },
+      "latest_os_sample": {
+        "phase": "resident_settled",
+        "processes": [
+          {
+            "lifetime_peak_working_set_bytes": 137408512,
+            "working_set_bytes": 133500928,
+            "private_bytes": 106434560,
+            "id": 70668
+          },
+          {
+            "lifetime_peak_working_set_bytes": 222343168,
+            "working_set_bytes": 199798784,
+            "private_bytes": 131940352,
+            "id": 54856
+          },
+          {
+            "lifetime_peak_working_set_bytes": 14192640,
+            "working_set_bytes": 12558336,
+            "private_bytes": 2883584,
+            "id": 24528
+          },
+          {
+            "lifetime_peak_working_set_bytes": 40624128,
+            "working_set_bytes": 39346176,
+            "private_bytes": 18644992,
+            "id": 3872
+          },
+          {
+            "lifetime_peak_working_set_bytes": 48750592,
+            "working_set_bytes": 48168960,
+            "private_bytes": 15441920,
+            "id": 34216
+          },
+          {
+            "lifetime_peak_working_set_bytes": 153124864,
+            "working_set_bytes": 151797760,
+            "private_bytes": 48529408,
+            "id": 66852
+          },
+          {
+            "lifetime_peak_working_set_bytes": 93569024,
+            "working_set_bytes": 85024768,
+            "private_bytes": 35827712,
+            "id": 25948
+          },
+          {
+            "lifetime_peak_working_set_bytes": 43560960,
+            "working_set_bytes": 43560960,
+            "private_bytes": 50470912,
+            "id": 71092
+          },
+          {
+            "lifetime_peak_working_set_bytes": 26030080,
+            "working_set_bytes": 24961024,
+            "private_bytes": 10317824,
+            "id": 65332
+          }
+        ],
+        "elapsed_ms": 120546
+      }
+    },
+    {
+      "label": "after_restart",
+      "at": "2026-10-14T19:12:56.623Z",
+      "counters": {
+        "documents": 3,
+        "nodes": 1921,
+        "jsEventListeners": 149
+      },
+      "live": {
+        "elements": 261,
+        "mounted_players": 0,
+        "result_count": "0",
+        "library_items": 0
+      },
+      "latest_os_sample": {
+        "phase": "engine_restarted",
+        "processes": [
+          {
+            "lifetime_peak_working_set_bytes": 137555968,
+            "working_set_bytes": 137265152,
+            "private_bytes": 110018560,
+            "id": 70668
+          },
+          {
+            "lifetime_peak_working_set_bytes": 222343168,
+            "working_set_bytes": 180961280,
+            "private_bytes": 112386048,
+            "id": 54856
+          },
+          {
+            "lifetime_peak_working_set_bytes": 14192640,
+            "working_set_bytes": 12558336,
+            "private_bytes": 2883584,
+            "id": 24528
+          },
+          {
+            "lifetime_peak_working_set_bytes": 40624128,
+            "working_set_bytes": 39346176,
+            "private_bytes": 18644992,
+            "id": 3872
+          },
+          {
+            "lifetime_peak_working_set_bytes": 48750592,
+            "working_set_bytes": 48123904,
+            "private_bytes": 15372288,
+            "id": 34216
+          },
+          {
+            "lifetime_peak_working_set_bytes": 153124864,
+            "working_set_bytes": 151150592,
+            "private_bytes": 47976448,
+            "id": 66852
+          },
+          {
+            "lifetime_peak_working_set_bytes": 93569024,
+            "working_set_bytes": 85041152,
+            "private_bytes": 35827712,
+            "id": 25948
+          },
+          {
+            "lifetime_peak_working_set_bytes": 26030080,
+            "working_set_bytes": 24944640,
+            "private_bytes": 10301440,
+            "id": 65332
+          }
+        ],
+        "elapsed_ms": 123468
+      }
+    }
+  ],
+  "finding": "At package 8: 2807 nodes/657 listeners; package 10: 1880/133; package 26: 1880/133; package 75: 2063/215; after twenty queries: 1897/133. All package checkpoints have 44 mounted players, eight library entries from package 8 onward. These observations do not show monotonic DOM/listener accumulation across 75 loads.",
+  "limitations": [
+    "Counters are not byte measurements or a reachability/leak proof.",
+    "Protocol document/node/listener scope is broader than the current-document element count; do not subtract these as an exact detached-node count.",
+    "Post-restart 1921 counter nodes versus 261 attached elements does not prove permanent retention; no forced collection or lifetime analysis was performed.",
+    "Checkpoint sampling misses transient objects and peaks; it cannot establish a native-memory owner.",
+    "Desktop 250 MiB requirement remains unmet; physical Android is deferred and untested."
+  ],
+  "decision": "No DOM-leak fix is justified solely by these counters. Keep runtime and official memory runner unchanged; investigate native allocations rather than assuming unbounded player DOM.",
+  "protocol_reference": "https://chromedevtools.github.io/devtools-protocol/tot/Memory/#method-getDOMCounters",
+  "evidence": {
+    "report": {
+      "file": "dom-counter-attribution-20261014-report.json",
+      "sha256": "0e2f6ed1b890def95d7817d5f464b5a44e48f6ea19aa12d2526b6fab550ff987"
+    },
+    "recipe": {
+      "file": "dom-counter-attribution-20261014-recipe.py",
+      "sha256": "6d7d87a0e7063f8f17d05f2a31d419dd1f60fa4c8b7a7784df26be616a285e3a"
+    },
+    "runner": {
+      "file": "dom-counter-attribution-20261014-runner.mjs",
+      "sha256": "f1f352f5919589a76d074eee284370765be4138aa6a04b1f2e0b2ca703a1b91d"
+    },
+    "samples": {
+      "file": "dom-counter-attribution-20261014-samples.json.gz",
+      "sha256": "4740a663034ddff60cbe0ef2e3257ae2e5e89a2b6614ddcebc18065d61263bb9",
+      "expanded_sha256": "e4871510641abec4b779111b9f3d8d3b44d40b2e1521dd9011a2fadc97e90d92"
+    }
+  }
+}
