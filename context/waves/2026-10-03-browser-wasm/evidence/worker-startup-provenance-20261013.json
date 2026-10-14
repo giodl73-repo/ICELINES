@@ -1,0 +1,114 @@
+{
+  "artifact": {
+    "commit": "4d1f513e29869bceba4fec9bf08d51511ad74207",
+    "shell_build": "50ee682fbf9a9e2f9678cec47d9b128622f4e348a3ad5a2226d2d5a69b80ea61",
+    "verified_files": 105,
+    "packages": 75
+  },
+  "probe_sha256": "b0811765c3ec230ad192b00c6bfae20bb8462ab7290ef529d870063389c47535",
+  "sampler_sha256": "fef055f0dbbdaee58013089814436f5cd8c8d231c90e9c3fa40e416d4aaa50bc",
+  "samples_sha256": "7e91a5bf76e539b413c9a66254f1f6f10d2b6b9a5ef7e7a6e1fb260df0d08b90",
+  "probe_retained": "target/worker-startup-diagnostic.mjs",
+  "samples_retained": "target/worker-startup-diagnostic-SB8j7p/samples.json",
+  "acceptance": false,
+  "observations": [
+    {
+      "phase": "blank_browser",
+      "samples": 6,
+      "last_private_mib": 235.23046875,
+      "peak_private_mib": 235.23046875
+    },
+    {
+      "phase": "minimal_document",
+      "samples": 5,
+      "last_private_mib": 242.08984375,
+      "peak_private_mib": 242.26953125
+    },
+    {
+      "phase": "idle_worker",
+      "samples": 7,
+      "last_private_mib": 246.0078125,
+      "peak_private_mib": 246.22265625
+    },
+    {
+      "phase": "idle_worker_terminated",
+      "samples": 5,
+      "last_private_mib": 241.89453125,
+      "peak_private_mib": 243.515625
+    },
+    {
+      "phase": "empty_wasm_engine",
+      "samples": 5,
+      "last_private_mib": 236.75390625,
+      "peak_private_mib": 249.4375
+    },
+    {
+      "phase": "package_20252026-regular",
+      "samples": 2,
+      "last_private_mib": 250.4453125,
+      "peak_private_mib": 250.4453125
+    },
+    {
+      "phase": "package_20242025-regular",
+      "samples": 2,
+      "last_private_mib": 257.4921875,
+      "peak_private_mib": 257.4921875
+    },
+    {
+      "phase": "package_20242025-playoff",
+      "samples": 4,
+      "last_private_mib": 258.74609375,
+      "peak_private_mib": 258.74609375
+    },
+    {
+      "phase": "package_20232024-regular",
+      "samples": 3,
+      "last_private_mib": 267.05078125,
+      "peak_private_mib": 267.05078125
+    },
+    {
+      "phase": "package_20232024-playoff",
+      "samples": 2,
+      "last_private_mib": 267.71484375,
+      "peak_private_mib": 267.71484375
+    },
+    {
+      "phase": "package_20222023-regular",
+      "samples": 4,
+      "last_private_mib": 275.8671875,
+      "peak_private_mib": 275.8671875
+    },
+    {
+      "phase": "package_20222023-playoff",
+      "samples": 2,
+      "last_private_mib": 277.0859375,
+      "peak_private_mib": 277.0859375
+    },
+    {
+      "phase": "package_20212022-regular",
+      "samples": 4,
+      "last_private_mib": 282.390625,
+      "peak_private_mib": 282.390625
+    },
+    {
+      "phase": "eight_residents_settled",
+      "samples": 6,
+      "last_private_mib": 282.40625,
+      "peak_private_mib": 282.40625
+    },
+    {
+      "phase": "engine_terminated",
+      "samples": 7,
+      "last_private_mib": 249.61328125,
+      "peak_private_mib": 249.61328125
+    }
+  ],
+  "limitations": [
+    "Only first8 packages, not the75-package normal workload or either archive import. Console retains the predecessor diagnostic /75 counter; report contains exactly8 loaded packages.",
+    "No workbench UI, storage, service worker or main-thread backup bytes. Does not prove UI parity or production acceptance.",
+    "Same Chromium launch/context flags and owned-process OS sampler; no forced GC or buffer-setting changes.",
+    "Sampled structural stages include5 samples; asynchronous counter boundary transitions and ordinary GC can affect phase minima/maxima.",
+    "Private process-counter sums are not exact physical RAM.",
+    "Not a universal lower bound or proof that alternate code cannot meet250 MiB. Android remains deferred."
+  ]
+}

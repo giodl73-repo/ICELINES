@@ -706,3 +706,30 @@ against the retained previous classic-table release. No application runtime is
 changed by this verification repair, and screenshots capture the viewport rather
 than allocating a67000px-tall full-page image. Full print coverage remains in
 the dedicated viewport acceptance check.
+
+## Startup structure isolation
+
+A new diagnostic loads a minimal HTTP document, acknowledges an otherwise idle
+worker, terminates it, initializes the unchanged published4d1f513e actual WASM
+worker through currentSeason, loads the first8 catalog packages with complete
+query-count/season/type checks, then terminates the engine. Five OS samples are
+required for each structural settled stage. Browser launch/context flags, network
+observation and owned-process sampler are unchanged; no forced GC. No workbench
+UI, service worker, saved data or main-thread source backups are present.
+
+Sampled private peaks: blank235.23 MiB; minimal document242.27; idle worker246.22;
+empty WASM engine249.44; first season250.45; eight residents282.41; terminated
+engine249.61. The empty-engine last sample236.75 illustrates ordinary collection
+and phase-boundary variation; these are not fixed irreducible allocations. All8
+package counts and contexts match. Missing sampled phases is empty. This gives
+more direct structural attribution than a UI styling trial: even the minimal
+first-eight-season configuration exceeds250 MiB, while termination releases
+about32.8 MiB from the settled counter. It does not establish a universal lower
+bound, exact physical RAM, full-workload acceptance or mobile behavior.
+
+Retained raw report and provenance use worker-startup prefixes. The diagnostic's
+predecessor console label still says /75; the report records exactly8 packages
+and explicitly limits its scope. The full75-package normal control436.77 MiB
+remains failed acceptance. Next larger investigations must address acquisition
+and duplicate package representations across the page/worker boundary; further
+styling or tiny serialization trials have not demonstrated useful memory gains.

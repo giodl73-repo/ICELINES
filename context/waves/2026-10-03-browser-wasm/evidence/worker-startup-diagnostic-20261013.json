@@ -1,0 +1,254 @@
+{
+  "started_at": "2026-10-14T00:41:56.303Z",
+  "completed": true,
+  "host": {
+    "platform": "win32",
+    "arch": "x64",
+    "os_release": "10.0.26310",
+    "cpu": "12th Gen Intel(R) Core(TM) i7-12800HX",
+    "logical_cpus": 24,
+    "ram_bytes": 34042929152
+  },
+  "scope": "Single isolated headless Chromium on this Windows workstation. Includes owned browser/renderer/GPU/utility processes; excludes Node runner, local HTTP server and sampler. Working-set sums may count shared pages more than once. Private-byte sums measure private allocations, not just resident RAM. Sample maxima may miss transient spikes; lifetime working-set peaks are per-process, not concurrent group peaks. No physical-phone or remote-rollback claim.",
+  "sampling": {
+    "requested_interval_ms": 100,
+    "tree_discovery_interval_ms": 500,
+    "actual_median_interval_ms": 208,
+    "actual_max_interval_ms": 840
+  },
+  "packages": [
+    {
+      "id": "20252026-regular",
+      "rows": 933,
+      "resident_windows": 1,
+      "load_and_query_ms": 62.38020000000142
+    },
+    {
+      "id": "20242025-regular",
+      "rows": 905,
+      "resident_windows": 2,
+      "load_and_query_ms": 40.000700000000506
+    },
+    {
+      "id": "20242025-playoff",
+      "rows": 332,
+      "resident_windows": 3,
+      "load_and_query_ms": 20.524999999997817
+    },
+    {
+      "id": "20232024-regular",
+      "rows": 911,
+      "resident_windows": 4,
+      "load_and_query_ms": 44.92150000000038
+    },
+    {
+      "id": "20232024-playoff",
+      "rows": 339,
+      "resident_windows": 5,
+      "load_and_query_ms": 17.63130000000092
+    },
+    {
+      "id": "20222023-regular",
+      "rows": 939,
+      "resident_windows": 6,
+      "load_and_query_ms": 35.808100000002014
+    },
+    {
+      "id": "20222023-playoff",
+      "rows": 334,
+      "resident_windows": 7,
+      "load_and_query_ms": 18.94050000000061
+    },
+    {
+      "id": "20212022-regular",
+      "rows": 1004,
+      "resident_windows": 8,
+      "load_and_query_ms": 48.36059999999998
+    }
+  ],
+  "imports": [],
+  "warm_query_ms": [],
+  "artifact": {
+    "commit": "4d1f513e29869bceba4fec9bf08d51511ad74207",
+    "shell_build": "50ee682fbf9a9e2f9678cec47d9b128622f4e348a3ad5a2226d2d5a69b80ea61",
+    "verified_files": 105,
+    "packages": 75
+  },
+  "archive": {
+    "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca",
+    "bytes": 149672
+  },
+  "browser": "153.0.8010.12",
+  "current_season": 20262027,
+  "memory": [
+    {
+      "phase": "blank_browser",
+      "samples": 6,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 240177152,
+      "last_private_bytes": 246657024,
+      "peak_private_bytes": 246657024,
+      "peak_working_set_bytes": 523186176,
+      "peak_sum_lifetime_working_set_bytes": 532525056
+    },
+    {
+      "phase": "minimal_document",
+      "samples": 5,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 253833216,
+      "last_private_bytes": 253849600,
+      "peak_private_bytes": 254038016,
+      "peak_working_set_bytes": 539447296,
+      "peak_sum_lifetime_working_set_bytes": 545193984
+    },
+    {
+      "phase": "idle_worker",
+      "samples": 7,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 257818624,
+      "last_private_bytes": 257957888,
+      "peak_private_bytes": 258183168,
+      "peak_working_set_bytes": 545734656,
+      "peak_sum_lifetime_working_set_bytes": 551698432
+    },
+    {
+      "phase": "idle_worker_terminated",
+      "samples": 5,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 253644800,
+      "last_private_bytes": 253644800,
+      "peak_private_bytes": 255344640,
+      "peak_working_set_bytes": 545263616,
+      "peak_sum_lifetime_working_set_bytes": 552312832
+    },
+    {
+      "phase": "empty_wasm_engine",
+      "samples": 5,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 248254464,
+      "last_private_bytes": 248254464,
+      "peak_private_bytes": 261554176,
+      "peak_working_set_bytes": 552169472,
+      "peak_sum_lifetime_working_set_bytes": 562774016
+    },
+    {
+      "phase": "package_20252026-regular",
+      "samples": 2,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 262606848,
+      "last_private_bytes": 262610944,
+      "peak_private_bytes": 262610944,
+      "peak_working_set_bytes": 554438656,
+      "peak_sum_lifetime_working_set_bytes": 578486272
+    },
+    {
+      "phase": "package_20242025-regular",
+      "samples": 2,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 270000128,
+      "last_private_bytes": 270000128,
+      "peak_private_bytes": 270000128,
+      "peak_working_set_bytes": 561229824,
+      "peak_sum_lifetime_working_set_bytes": 585613312
+    },
+    {
+      "phase": "package_20242025-playoff",
+      "samples": 4,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 271302656,
+      "last_private_bytes": 271314944,
+      "peak_private_bytes": 271314944,
+      "peak_working_set_bytes": 562569216,
+      "peak_sum_lifetime_working_set_bytes": 587169792
+    },
+    {
+      "phase": "package_20232024-regular",
+      "samples": 3,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 280023040,
+      "last_private_bytes": 280023040,
+      "peak_private_bytes": 280023040,
+      "peak_working_set_bytes": 571215872,
+      "peak_sum_lifetime_working_set_bytes": 595226624
+    },
+    {
+      "phase": "package_20232024-playoff",
+      "samples": 2,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 280719360,
+      "last_private_bytes": 280719360,
+      "peak_private_bytes": 280719360,
+      "peak_working_set_bytes": 571953152,
+      "peak_sum_lifetime_working_set_bytes": 596226048
+    },
+    {
+      "phase": "package_20222023-regular",
+      "samples": 4,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 289255424,
+      "last_private_bytes": 289267712,
+      "peak_private_bytes": 289267712,
+      "peak_working_set_bytes": 580165632,
+      "peak_sum_lifetime_working_set_bytes": 604180480
+    },
+    {
+      "phase": "package_20222023-playoff",
+      "samples": 2,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 290545664,
+      "last_private_bytes": 290545664,
+      "peak_private_bytes": 290545664,
+      "peak_working_set_bytes": 581554176,
+      "peak_sum_lifetime_working_set_bytes": 605564928
+    },
+    {
+      "phase": "package_20212022-regular",
+      "samples": 4,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 296099840,
+      "last_private_bytes": 296108032,
+      "peak_private_bytes": 296108032,
+      "peak_working_set_bytes": 587063296,
+      "peak_sum_lifetime_working_set_bytes": 611127296
+    },
+    {
+      "phase": "eight_residents_settled",
+      "samples": 6,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 296116224,
+      "last_private_bytes": 296124416,
+      "peak_private_bytes": 296124416,
+      "peak_working_set_bytes": 587079680,
+      "peak_sum_lifetime_working_set_bytes": 611135488
+    },
+    {
+      "phase": "engine_terminated",
+      "samples": 7,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 261730304,
+      "last_private_bytes": 261738496,
+      "peak_private_bytes": 261738496,
+      "peak_working_set_bytes": 556572672,
+      "peak_sum_lifetime_working_set_bytes": 611184640
+    }
+  ],
+  "missing_sampled_phases": [],
+  "provisional_250_mib_target": null,
+  "target_scope": "Startup isolation diagnostic: minimal HTTP document, acknowledged idle worker, actual empty WASM engine, first eight packages/full query counts, worker termination. Five settled samples for structural stages. Same launch flags, network observation and OS sampler, no forced GC. No full workload acceptance, persistence/UI parity, or general impossibility/lower-bound claim. Phase labels may include boundary transitions due to asynchronous sampling.",
+  "finished_at": "2026-10-14T00:42:25.804Z"
+}
