@@ -186,7 +186,7 @@ function renderResidentLibrary(): void {
   const node = element('resident-library');
   // Retired presentation nodes must not retain evicted package buffers while
   // waiting for DOM collection. Current residents get fresh handlers below.
-  for (const button of node.querySelectorAll<HTMLButtonElement>('button')) button.onclick = null;
+  node.querySelectorAll<HTMLButtonElement>('button').forEach(button => { button.onclick = null; });
   node.replaceChildren();
   for (const dataset of resident.values()) {
     const row = document.createElement('li');
