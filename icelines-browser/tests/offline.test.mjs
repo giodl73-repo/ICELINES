@@ -20,7 +20,7 @@ function harness({ corrupt = false, timers = {setTimeout,clearTimeout}, baseURL 
     addEventListener: (name, callback) => listeners.set(name, callback),
     skipWaiting: async () => { activated++; },
     clients: { claim: async () => { claimed++; }, matchAll: async () => clients } };
-  vm.runInNewContext(code, { self, caches, URL, Response, Uint8Array, crypto: webcrypto, AbortController, ...timers,
+  vm.runInNewContext(code, { self, caches, URL, Response, Headers, Uint8Array, crypto: webcrypto, AbortController, ...timers,
     fetch: async (url, options) => {
       fetched.push({ url, options });
       const path = new URL(url).pathname.slice(new URL(baseURL).pathname.length);
@@ -46,6 +46,25 @@ test('offline install verifies and caches the complete shell, excluding datasets
 test('changed deployment asset rejects installation and removes the incomplete cache', async () => {
   const h = harness({ corrupt: true }); await assert.rejects(h.dispatch('install'), /changed during install/);
   assert.equal(h.storage.size, 0);
+});
+
+test('verified decoded shell bytes preserve MIME while replacing wire encoding and length', async () => {
+  const h = harness();
+  // Fetch exposes decoded bytes even when response headers describe gzip wire
+  // bytes. The canonical fixture supplies the independently expected body.
+  h.setNetwork(path => new Response(fixtureAssets.get(path), {
+    headers: { 'content-type': path.endsWith('.wasm') ? 'application/wasm' : 'application/javascript',
+      'content-encoding': 'gzip', 'content-length': '7', 'etag': 'fixture-tag' }
+  }));
+  await h.dispatch('install');
+  for (const path of ['src/worker.js', 'pkg/icelines_wasm_bg.wasm']) {
+    const response = await h.dispatch('fetch', { request: new Request('https://example.test/ICELINES/' + path) });
+    assert.deepEqual(Buffer.from(await response.arrayBuffer()), fixtureAssets.get(path));
+    assert.equal(response.headers.get('content-encoding'), null);
+    assert.equal(response.headers.get('content-length'), String(fixtureAssets.get(path).length));
+    assert.equal(response.headers.get('content-type'), path.endsWith('.wasm') ? 'application/wasm' : 'application/javascript');
+    assert.equal(response.headers.get('etag'), 'fixture-tag');
+  }
 });
 test('root/hash shell reload resolves the cached index under the Pages project path', async () => {
   const h = harness(); await h.dispatch('install');
