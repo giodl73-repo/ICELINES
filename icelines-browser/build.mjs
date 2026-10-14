@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { buildOfflineShell } from './offline-build.mjs';
 import { gzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
+import { injectCatalogMetadata } from './metadata-build.mjs';
 const root = fileURLToPath(new URL('.', import.meta.url));
 const expectedDist = resolve(await realpath(root), 'dist');
 try {
@@ -35,9 +36,7 @@ for (const entry of catalog.packages) {
 await writeFile(new URL('dist/catalog.json', import.meta.url),JSON.stringify(catalog,null,2) + '\n');
 const metadataModule = new URL('dist/src/catalog-metadata.js',import.meta.url);
 const metadataSource = await readFile(metadataModule,'utf8');
-const metadataMarker = 'const knownMetadata = {}; // BUILD_CATALOG_METADATA';
-if (metadataSource.split(metadataMarker).length !== 2) throw new Error('Missing or repeated catalog metadata build marker');
-await writeFile(metadataModule,metadataSource.replace(metadataMarker,`const knownMetadata = ${JSON.stringify(headers)}; // BUILD_CATALOG_METADATA`));
+await writeFile(metadataModule,injectCatalogMetadata(metadataSource,headers));
 try { await cp(new URL('public/build-info.json', import.meta.url), new URL('dist/build-info.json', import.meta.url)); }
 catch (error) { if (error.code !== 'ENOENT') throw error; }
 await writeFile(new URL('dist/.nojekyll', import.meta.url), '');
