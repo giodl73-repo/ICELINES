@@ -62,6 +62,30 @@ class BrowserArtifactTests(unittest.TestCase):
     def test_accepts_clean_selected_identity(self):
         self.assertEqual(artifact.verify(self.root, self.commit, self.build)["packages"], 1)
 
+    def reseal_worker(self, template):
+        shell = json.loads((self.root / 'shell-manifest.json').read_bytes())
+        shell['worker_sha256'] = artifact.digest(template.encode('utf-8'))
+        identity = {'assets': shell['assets'], 'worker_sha256': shell['worker_sha256']}
+        self.build = artifact.digest(json.dumps(identity, separators=(',', ':')).encode())
+        shell['build'] = self.build
+        (self.root / 'shell-manifest.json').write_bytes(json.dumps(shell).encode())
+        (self.root / 'sw.js').write_bytes(template.replace('__SHELL_MANIFEST__', json.dumps(shell)).encode('utf-8'))
+
+    def test_authenticates_exact_lf_crlf_and_mixed_worker_bytes(self):
+        for template in ['// fixture\nconst manifest = __SHELL_MANIFEST__;\n',
+                         '// fixture\r\nconst manifest = __SHELL_MANIFEST__;\r\n',
+                         '// fixture\r\nconst manifest = __SHELL_MANIFEST__;\n']:
+            with self.subTest(template=repr(template)):
+                self.reseal_worker(template)
+                self.assertEqual(artifact.verify(self.root, self.commit, self.build)['packages'], 1)
+
+    def test_refuses_worker_line_ending_changes_without_resealing(self):
+        self.reseal_worker('// fixture\r\nconst manifest = __SHELL_MANIFEST__;\r\n')
+        worker = self.root / 'sw.js'
+        worker.write_bytes(worker.read_bytes().replace(b'\r\n', b'\n'))
+        with self.assertRaisesRegex(ValueError, 'worker template integrity mismatch'):
+            artifact.verify(self.root, self.commit, self.build)
+
     def test_refuses_wrong_commit_and_shell(self):
         for commit, build in [("b"*40,self.build),(self.commit,"b"*64)]:
             with self.assertRaises(ValueError):
