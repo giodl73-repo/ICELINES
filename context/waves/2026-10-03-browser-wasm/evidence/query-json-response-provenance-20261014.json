@@ -1,0 +1,128 @@
+{
+  "decision": "Do not adopt as a memory optimization. Opposite-order raw reductions1.078/8.613 MiB closely track blank baseline differences0.902/8.320 MiB; no convincing benefit beyond observed variation. This is not a universal no-benefit/regression claim or baseline-subtracted acceptance. No PR/CI/merge/publication.",
+  "source_commit": "6c3e96a09e1a8dad66e978485e1af6eb36a02286",
+  "build_info": {
+    "schema_version": 1,
+    "commit": "6c3e96a09e1a8dad66e978485e1af6eb36a02286",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "782009af96f7a4c5fbd17a46e0716d4b6a300d4e85286a65c2b92e5cdd7f12ed",
+    "reused_engine": {
+      "source_commit": "807e2adcd31cdd8cd31a74f87fdeec05247b7ef0",
+      "wasm_sha256": "782009af96f7a4c5fbd17a46e0716d4b6a300d4e85286a65c2b92e5cdd7f12ed",
+      "scope": "Controlled frontend-only local experiment. Exact verified retained engine; Rust source subtrees/workspace manifest match. No claim Rust was recompiled for this frontend candidate; normal CI build required before adoption."
+    }
+  },
+  "shell_build": "7021bc536e7d610d4ccb513e1768c2b2b2f93204403f882f0056116e8cbcee1f",
+  "evidence": {
+    "candidate-first": {
+      "file": "query-json-response-candidate-first-20261014.json",
+      "sha256": "3cbd7e4b152959e0e0cd50621832a2a7ec2f4493782f6c7c170c319e456ac064"
+    },
+    "control-second": {
+      "file": "query-json-response-control-second-20261014.json",
+      "sha256": "a0eed6d6675cfdb5b5dbd49715ad8efd67ec6fbea1ae695ea21cf7c5a5145fd2"
+    },
+    "control-first": {
+      "file": "query-json-response-control-first-20261014.json",
+      "sha256": "5aadca4ef10b691c9113e00ba38def18d552d221d2f6666d51b86a6f1c17443d"
+    },
+    "candidate-second": {
+      "file": "query-json-response-candidate-second-20261014.json",
+      "sha256": "dcebec91529f158d3afb64270ca6810b534e1cffd8a2accff79cf7733f8faf6a"
+    },
+    "interop": {
+      "file": "query-json-response-interop-20261014.json",
+      "sha256": "e58d8e6e06c0dad8470a846afc7cf04a21301d2d1c6501db5eb6f5f369db428b"
+    },
+    "refusal": {
+      "file": "query-json-response-refusal-20261014.json",
+      "sha256": "b27f69f55314a43371bedf0867aba502c80f35636a2960396d45d71c75df9617"
+    },
+    "context": {
+      "file": "query-json-response-context-20261014.txt",
+      "sha256": "b793847013a085578370779639824070d4ba6fd915ae164e6c85259c0591a061"
+    },
+    "offline": {
+      "file": "query-json-response-offline-20261014.json",
+      "sha256": "1d60503c9ad7a01008438d8d1c8e3fa48e0317be6440458c880edb8c60fd32b0"
+    },
+    "viewport": {
+      "file": "query-json-response-viewport-20261014.json",
+      "sha256": "5380568334ebd0739f3a871199451150af6810f4fff083846ba2687458cd5b8e"
+    },
+    "print": {
+      "file": "query-json-response-print-20261014.json",
+      "sha256": "24b4e36788a21eed5eb7b4ebe90d6dc0f9292dc657c5f47fa46cb0208de43b8e"
+    },
+    "pdf": {
+      "file": "query-json-response-pdf-20261014.pdf",
+      "sha256": "233719ad27c7b0b7fef9df7ed997efa9129956a6da300831794564d28f1b259d"
+    },
+    "print-reference": {
+      "file": "query-json-response-print-reference-20261014.json",
+      "sha256": "11040639dcccbf5a7aaa565b03a4346c419b64c4f7728feefac605c040a1140e"
+    },
+    "units": {
+      "file": "query-json-response-units-20261014.txt",
+      "sha256": "7440057851bbe1f78147d8a03dbcddf3a2772c3c3bfd2d5b2e9cc94d3efb1062"
+    },
+    "failed-interop-sort": {
+      "file": "query-json-response-failed-interop-sort-20261014.txt",
+      "sha256": "38cb9a70d6a9df4e6e64dd258deec78ede8c4f6585be0e243bd6b923e9eede8a"
+    },
+    "build-recipe": {
+      "file": "query-json-response-build-recipe-20261014.mjs",
+      "sha256": "d8e2566d3de9ade081267d4941f4dfa728f6842915d9b2f10697c36cd1154b06"
+    },
+    "interop-recipe": {
+      "file": "query-json-response-interop-recipe-20261014.mjs",
+      "sha256": "bbbd724ec66170084884c73a87f7bbcb7b076e7931103a172986c0449455095a"
+    }
+  },
+  "measurements": [
+    {
+      "run": "candidate-first",
+      "peak_private_mib": 396.3515625,
+      "blank_private_mib": 234.24609375,
+      "warm_median_ms": 73.63960000000225,
+      "warm_max_ms": 82.39999999999418
+    },
+    {
+      "run": "control-second",
+      "peak_private_mib": 397.4296875,
+      "blank_private_mib": 235.1484375,
+      "warm_median_ms": 70.79564999999275,
+      "warm_max_ms": 90.34249999999884
+    },
+    {
+      "run": "control-first",
+      "peak_private_mib": 394.25390625,
+      "blank_private_mib": 236.78125,
+      "warm_median_ms": 67.38255000000208,
+      "warm_max_ms": 87.40589999999793
+    },
+    {
+      "run": "candidate-second",
+      "peak_private_mib": 385.640625,
+      "blank_private_mib": 228.4609375,
+      "warm_median_ms": 65.79790000000503,
+      "warm_max_ms": 83.49739999999292
+    }
+  ],
+  "scope": "Both opposite-order pairs complete75/eight/two905/332/20/restart, original flags/OS sampler/network observer/no forced GC. Whole-browser250 MiB fails all4 runs. These local candidates reuse the exact verified Windows engine and have honest reused-engine provenance; not normal CI Rust rebuilds.",
+  "matching_control": "807e2adcd31cdd8cd31a74f87fdeec05247b7ef0;182 files match except worker.js/engine-client.js and3 build identity files. Rust engine source subtrees/workspace manifest match and WASM782009af... is reused exactly.",
+  "correctness": "167 units; meaningful malformed/unsupported/legacy/cancelled response checks. All3 real-worker new/new and mixed-version variants preserve complete933 skater/77 goalie/detail payloads against exact retained WASM outputs in Node. Actual corruption/context/offline/viewport/PDF checks pass. Node expected values validate protocol parity, not an independent domain algorithm.",
+  "fixture_failure": "Initial interoperability fixture incorrectly used skater points sort for goalies; expected engine rejection occurred before browser cases. Raw failure retained. Corrected wins-sort fixture passes; no app correction inferred.",
+  "next": "Refine page sampling ownership using execution-context/script metadata; empty-URL internal/automation frames are not app-attributed. Current churn samples are not removable live bytes.",
+  "remaining": [
+    "250 MiB whole-browser target unmet",
+    "Physical Android explicitly deferred"
+  ],
+  "production_unchanged": true
+}

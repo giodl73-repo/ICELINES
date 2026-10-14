@@ -209,3 +209,7 @@ Review: BENCH/WIRE/KEEL/FORGE/EDGE, one agent. Adoption gates: meaningful protoc
 tests, old/new worker-client compatibility, exact artifact correctness, full
 workload comparisons, clean CI and publication recovery.250 MiB and Android
 remain open; no requirement, local-state schema or resource-budget revision.
+
+CHG-122 disposition: not adopted2026-10-14. Raw opposite-order reductions closely
+track blank-browser variation; evidence is insufficient for a memory improvement
+claim. Correctness/three-way compatibility pass locally. No PR/CI/merge/publication.

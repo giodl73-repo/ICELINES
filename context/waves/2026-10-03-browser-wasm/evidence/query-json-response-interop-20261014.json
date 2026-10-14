@@ -1,0 +1,183 @@
+{
+  "verified": true,
+  "scope": "Owned real-worker query protocol fixture; new/new, old-worker/new-client and new-worker/old-client. SW is blocked for mixed module delivery; not production identity, offline, memory or publication proof. Expected complete payloads are produced by the exact retained WASM in Node, not independent domain algorithm validation.",
+  "variants": [
+    {
+      "variant": "new-new",
+      "replaced_module": null,
+      "replacement_sha256": null,
+      "skater_rows": 933,
+      "goalie_rows": 98,
+      "all_query_fields_and_order_match": true,
+      "detail_match": true,
+      "protocol": {
+        "requests": [
+          {
+            "request_id": 1,
+            "operation": "load",
+            "encoding": null
+          },
+          {
+            "request_id": 2,
+            "operation": "query",
+            "encoding": "json"
+          },
+          {
+            "request_id": 3,
+            "operation": "query",
+            "encoding": "json"
+          },
+          {
+            "request_id": 4,
+            "operation": "detail",
+            "encoding": null
+          }
+        ],
+        "responses": [
+          {
+            "request_id": 1,
+            "encoding": null,
+            "value_type": "object",
+            "error": null
+          },
+          {
+            "request_id": 2,
+            "encoding": "json",
+            "value_type": "string",
+            "error": null
+          },
+          {
+            "request_id": 3,
+            "encoding": "json",
+            "value_type": "string",
+            "error": null
+          },
+          {
+            "request_id": 4,
+            "encoding": null,
+            "value_type": "object",
+            "error": null
+          }
+        ]
+      }
+    },
+    {
+      "variant": "old-worker",
+      "replaced_module": "src/worker.js",
+      "replacement_sha256": "12a6c48e58a22f545477760166bc8752a24d8cd7a8977b683df1a98fd0f03e42",
+      "skater_rows": 933,
+      "goalie_rows": 98,
+      "all_query_fields_and_order_match": true,
+      "detail_match": true,
+      "protocol": {
+        "requests": [
+          {
+            "request_id": 1,
+            "operation": "load",
+            "encoding": null
+          },
+          {
+            "request_id": 2,
+            "operation": "query",
+            "encoding": "json"
+          },
+          {
+            "request_id": 3,
+            "operation": "query",
+            "encoding": "json"
+          },
+          {
+            "request_id": 4,
+            "operation": "detail",
+            "encoding": null
+          }
+        ],
+        "responses": [
+          {
+            "request_id": 1,
+            "encoding": null,
+            "value_type": "object",
+            "error": null
+          },
+          {
+            "request_id": 2,
+            "encoding": null,
+            "value_type": "object",
+            "error": null
+          },
+          {
+            "request_id": 3,
+            "encoding": null,
+            "value_type": "object",
+            "error": null
+          },
+          {
+            "request_id": 4,
+            "encoding": null,
+            "value_type": "object",
+            "error": null
+          }
+        ]
+      }
+    },
+    {
+      "variant": "old-client",
+      "replaced_module": "src/engine-client.js",
+      "replacement_sha256": "6530325b756b4daa4b93ef100903e1fb2c9cf8e8143f99ff06252a525fb40072",
+      "skater_rows": 933,
+      "goalie_rows": 98,
+      "all_query_fields_and_order_match": true,
+      "detail_match": true,
+      "protocol": {
+        "requests": [
+          {
+            "request_id": 1,
+            "operation": "load",
+            "encoding": null
+          },
+          {
+            "request_id": 2,
+            "operation": "query",
+            "encoding": null
+          },
+          {
+            "request_id": 3,
+            "operation": "query",
+            "encoding": null
+          },
+          {
+            "request_id": 4,
+            "operation": "detail",
+            "encoding": null
+          }
+        ],
+        "responses": [
+          {
+            "request_id": 1,
+            "encoding": null,
+            "value_type": "object",
+            "error": null
+          },
+          {
+            "request_id": 2,
+            "encoding": null,
+            "value_type": "object",
+            "error": null
+          },
+          {
+            "request_id": 3,
+            "encoding": null,
+            "value_type": "object",
+            "error": null
+          },
+          {
+            "request_id": 4,
+            "encoding": null,
+            "value_type": "object",
+            "error": null
+          }
+        ]
+      }
+    }
+  ]
+}

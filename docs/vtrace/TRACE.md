@@ -6,6 +6,11 @@ diagnostic: context/waves/2026-10-03-browser-wasm/evidence/js-allocation-samplin
 Protocol/compatibility/artifact/memory/CI gates pending;250 MiB and Android remain
 unmet. No source-state or scoring change is promoted.
 
+CHG-122 disposition: not adopted; query-json-response-provenance-20261014.json
+records paired measurements, reused-engine build provenance and protocol parity.
+Local correctness passes, but memory benefit is not established. Production
+stays75e6ba97; no CI/public transition claim for this unadopted candidate.
+
 ## Scope
 
 Repo or feature: `icelines` repo-baseline VTRACE adoption.

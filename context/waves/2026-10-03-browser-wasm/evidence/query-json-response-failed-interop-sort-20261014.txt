@@ -1,0 +1,8 @@
+
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+invalid query: sort does not apply to this player type
+(Use `node --trace-uncaught ...` to show where the exception was thrown)
+
+Node.js v22.22.3

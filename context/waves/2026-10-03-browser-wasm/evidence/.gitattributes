@@ -2,3 +2,5 @@
 # Some original reporters emit LF and others CRLF. Preserve both exactly.
 *.json -text whitespace=cr-at-eol
 js-allocation-sampling-*.py -text
+query-json-response-*.mjs -text
+query-json-response-*.txt -text whitespace=cr-at-eol

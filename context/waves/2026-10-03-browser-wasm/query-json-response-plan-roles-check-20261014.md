@@ -33,3 +33,13 @@ Five roles;3 P1,2 P2,10 P3. BENCH/FORGE require measured rather than inferred
 benefit. Amendments: explicit request capability with legacy fallback, strict
 encoding recovery/cancelled-response handling, and full artifact/interoperability
 checks before adoption. First two implemented; runtime/memory/CI gates pending.
+
+Final local disposition: not adopted. [Evidence](evidence/query-json-response-provenance-20261014.json)
+contains167 passing units, all3 real-worker compatibility directions with full
+payload/detail parity, corruption/context, offline,933-player viewport and24-page
+PDF checks. First interop fixture used invalid goalie points sort; failed output
+and corrected wins-sort result remain separate. Opposite-order raw reductions
+1.078/8.613 MiB track baseline differences0.902/8.320 MiB. No convincing memory
+benefit is established; no causal subtraction or budget waiver. Normal CI Rust
+rebuild/public transitions are not claimed for this rejected local experiment.
+The full250 MiB/Android acceptance remains open; production is unchanged.
