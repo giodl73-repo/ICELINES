@@ -1,0 +1,38 @@
+{
+  "status": "UNADOPTED; no observed whole-browser saving in one full-workload pair",
+  "candidate": "57562a07b40e0aa446bc4599ae57097bef9ca1ba",
+  "control": "c0154ac6",
+  "scope": "Windows owned browsers, original flags/sampler/observer, no forced GC. Three-theme visible color/background equality and full viewport regression pass. One pair, not a universal result.",
+  "reports": {
+    "candidate": {
+      "file": "table-paint-candidate-20261013.json",
+      "sha256": "a5debfa86ebf875366f107b697d5838ac9223d1dd07851e3a78b553d461858a8"
+    },
+    "control": {
+      "file": "table-paint-control-20261013.json",
+      "sha256": "cf7fd8968eaf8288fd8539e9055583cac3707fabf839d4b0b44a34a88c04986f"
+    },
+    "browser": {
+      "file": "table-paint-browser-20261013.json",
+      "sha256": "41768f9f18e31662633c1ff6b6645458a126b36aa32bc4d1d519be6b3427938d"
+    },
+    "readability": {
+      "file": "table-paint-readability-20261013.json",
+      "sha256": "f697352b77a52e3db1d2ffd49c67cda4c8b3d0d768af793393a69018c5c28a57"
+    }
+  },
+  "measurements": {
+    "candidate": {
+      "peak_private_mib": 407.17578125,
+      "blank_mib": 237.2890625
+    },
+    "control": {
+      "peak_private_mib": 395.91796875,
+      "blank_mib": 229.8984375
+    }
+  },
+  "open_gates": [
+    "250 MiB whole-browser target",
+    "Physical Android deferred"
+  ]
+}
