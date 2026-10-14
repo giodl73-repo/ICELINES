@@ -270,7 +270,10 @@ async function loadCatalog(entry: CatalogEntry): Promise<void> {
   const stored = retained ? await loadSaved(retained.id, retained.revision) : undefined;
   const bytes = stored ? stored.bytes : await downloadPackage(entry, new URL(location.href.split('#')[0]),
     {signal:controller.signal,deadline:Date.now() + 120000});
-  if (bytes.length !== entry.bytes || await digest(bytes) !== entry.sha256) throw new Error('Package size or checksum mismatch');
+  // Both sources authenticate these exact bytes: downloadPackage checks the
+  // catalog digest; loadSaved checks the requested revision before returning.
+  // Keep catalog size/context checks without hashing the same buffer again.
+  if (bytes.length !== entry.bytes) throw new Error('Package size or checksum mismatch');
   const context = metadataForVerifiedCatalogBytes(bytes,entry.sha256);
   if (context.season !== entry.season || context.season_type !== entry.season_type || context.source !== entry.source) throw new Error('Package does not match catalog context');
   requireCurrentAcquisition(sequence, controller.signal);
