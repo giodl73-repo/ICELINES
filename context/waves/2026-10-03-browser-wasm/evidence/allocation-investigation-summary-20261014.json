@@ -1,0 +1,1619 @@
+{
+  "scope": "Diagnostic allocations only; hierarchical and shared allocator entries must not be summed as whole-browser RAM. Additional tracing/inspector overhead; acceptance unchanged.",
+  "phases": [
+    {
+      "phase": "blank_browser",
+      "guid": "0x3",
+      "request_success": true,
+      "trace_intervals": [],
+      "allocator_events": 0,
+      "processes": []
+    },
+    {
+      "phase": "ready_before_engine",
+      "guid": "0x4",
+      "request_success": true,
+      "trace_intervals": [],
+      "allocator_events": 0,
+      "processes": []
+    },
+    {
+      "phase": "loaded_26",
+      "guid": "0x6",
+      "request_success": true,
+      "trace_intervals": [
+        [
+          449807545131,
+          449807652162
+        ]
+      ],
+      "allocator_events": 7,
+      "processes": [
+        {
+          "pid": 32984,
+          "name": "Service: network.mojom.NetworkService",
+          "allocations": [
+            {
+              "name": "malloc",
+              "size_bytes": 8890864,
+              "effective_size_bytes": 8890832
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 7425920,
+              "effective_size_bytes": 417437
+            },
+            {
+              "name": "malloc/partitions/allocator",
+              "size_bytes": 7196544,
+              "effective_size_bytes": 404553
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 7008451,
+              "effective_size_bytes": 7008451
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets",
+              "size_bytes": 6737920,
+              "effective_size_bytes": 378771
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets/directMap_1",
+              "size_bytes": 2101248,
+              "effective_size_bytes": 118127
+            },
+            {
+              "name": "malloc/win_heap",
+              "size_bytes": 1418835,
+              "effective_size_bytes": 1418835
+            }
+          ]
+        },
+        {
+          "pid": 37296,
+          "name": "Service: storage.mojom.StorageService",
+          "allocations": [
+            {
+              "name": "malloc",
+              "size_bytes": 2895319,
+              "effective_size_bytes": 2895319
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 1939047,
+              "effective_size_bytes": 1939047
+            },
+            {
+              "name": "malloc/allocated_objects/<unspecified>",
+              "size_bytes": 1939047,
+              "effective_size_bytes": 1939047
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 1939047,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/allocator",
+              "size_bytes": 1336416,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets",
+              "size_bytes": 1134592,
+              "effective_size_bytes": null
+            }
+          ]
+        },
+        {
+          "pid": 49836,
+          "name": "Service: tracing.mojom.TracingService",
+          "allocations": [
+            {
+              "name": "shared_memory",
+              "size_bytes": 4349952,
+              "effective_size_bytes": 2204330
+            },
+            {
+              "name": "shared_memory/56E5BA8F7BE1998CD40002382DB8EF79",
+              "size_bytes": 4182016,
+              "effective_size_bytes": 2091008
+            },
+            {
+              "name": "malloc",
+              "size_bytes": 3230511,
+              "effective_size_bytes": 3230511
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 2077551,
+              "effective_size_bytes": 2077551
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 2077551,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/allocator",
+              "size_bytes": 1156672,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/win_heap",
+              "size_bytes": 1128047,
+              "effective_size_bytes": 1128047
+            }
+          ]
+        },
+        {
+          "pid": 63128,
+          "name": "Browser",
+          "allocations": [
+            {
+              "name": "malloc",
+              "size_bytes": 38307472,
+              "effective_size_bytes": 37145940
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 32043888,
+              "effective_size_bytes": 484080
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 31559736,
+              "effective_size_bytes": 30398276
+            },
+            {
+              "name": "malloc/allocated_objects/<unspecified>",
+              "size_bytes": 30398276,
+              "effective_size_bytes": 30398276
+            },
+            {
+              "name": "malloc/partitions/allocator",
+              "size_bytes": 29426544,
+              "effective_size_bytes": 444560
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets",
+              "size_bytes": 27848704,
+              "effective_size_bytes": 420721
+            },
+            {
+              "name": "shared_memory",
+              "size_bytes": 9908096,
+              "effective_size_bytes": 3383295
+            },
+            {
+              "name": "malloc/win_heap",
+              "size_bytes": 6073812,
+              "effective_size_bytes": 6073812
+            },
+            {
+              "name": "gpu",
+              "size_bytes": 4325248,
+              "effective_size_bytes": 4325248
+            },
+            {
+              "name": "shared_memory/56E5BA8F7BE1998CD40002382DB8EF79",
+              "size_bytes": 4194304,
+              "effective_size_bytes": 2103296
+            },
+            {
+              "name": "cc",
+              "size_bytes": 3376128,
+              "effective_size_bytes": 3376128
+            },
+            {
+              "name": "cc/tile_memory",
+              "size_bytes": 3375104,
+              "effective_size_bytes": 3375104
+            },
+            {
+              "name": "cc/tile_memory/provider_-414636447",
+              "size_bytes": 3375104,
+              "effective_size_bytes": 3375104
+            },
+            {
+              "name": "cc/tile_memory/provider_-414636447/DesktopNativeWidgetAura - content window",
+              "size_bytes": 2621440,
+              "effective_size_bytes": 2621440
+            },
+            {
+              "name": "malloc/partitions/original",
+              "size_bytes": 2617344,
+              "effective_size_bytes": 39520
+            },
+            {
+              "name": "malloc/partitions/original/buckets",
+              "size_bytes": 2617344,
+              "effective_size_bytes": 39520
+            }
+          ]
+        },
+        {
+          "pid": 65396,
+          "name": "Renderer",
+          "allocations": [
+            {
+              "name": "malloc",
+              "size_bytes": 5621263,
+              "effective_size_bytes": 5559767
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 4633935,
+              "effective_size_bytes": 4572439
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 4633935,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/allocated_objects/<unspecified>",
+              "size_bytes": 4572439,
+              "effective_size_bytes": 4572439
+            },
+            {
+              "name": "malloc/partitions/allocator",
+              "size_bytes": 3760752,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets",
+              "size_bytes": 3641344,
+              "effective_size_bytes": null
+            }
+          ]
+        },
+        {
+          "pid": 66584,
+          "name": "Renderer",
+          "allocations": [
+            {
+              "name": "partition_alloc",
+              "size_bytes": 40812544,
+              "effective_size_bytes": 40807179
+            },
+            {
+              "name": "partition_alloc/partitions",
+              "size_bytes": 40812544,
+              "effective_size_bytes": 5238367
+            },
+            {
+              "name": "malloc",
+              "size_bytes": 40684912,
+              "effective_size_bytes": 40231686
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 39320768,
+              "effective_size_bytes": 11133631
+            },
+            {
+              "name": "malloc/partitions/allocator",
+              "size_bytes": 39054528,
+              "effective_size_bytes": 11058268
+            },
+            {
+              "name": "partition_alloc/allocated_objects",
+              "size_bytes": 35574136,
+              "effective_size_bytes": 35568812
+            },
+            {
+              "name": "partition_alloc/allocated_objects/<unspecified>",
+              "size_bytes": 35568812,
+              "effective_size_bytes": 35568812
+            },
+            {
+              "name": "blink_gc",
+              "size_bytes": 35070032,
+              "effective_size_bytes": 31585082
+            },
+            {
+              "name": "blink_gc/main",
+              "size_bytes": 32972880,
+              "effective_size_bytes": 30402498
+            },
+            {
+              "name": "blink_gc/main/heap",
+              "size_bytes": 32972880,
+              "effective_size_bytes": 30402498
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets",
+              "size_bytes": 30711808,
+              "effective_size_bytes": 8696026
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 28187083,
+              "effective_size_bytes": 27733911
+            },
+            {
+              "name": "malloc/allocated_objects/<unspecified>",
+              "size_bytes": 27733911,
+              "effective_size_bytes": 27733911
+            },
+            {
+              "name": "partition_alloc/partitions/array_buffer",
+              "size_bytes": 26218496,
+              "effective_size_bytes": 3365206
+            },
+            {
+              "name": "partition_alloc/partitions/array_buffer/buckets",
+              "size_bytes": 26218496,
+              "effective_size_bytes": 3365206
+            },
+            {
+              "name": "partition_alloc/partitions/array_buffer/buckets/bucket_0917504",
+              "size_bytes": 14680064,
+              "effective_size_bytes": 1884228
+            }
+          ]
+        },
+        {
+          "pid": 32984,
+          "name": "Service: network.mojom.NetworkService",
+          "allocations": [
+            {
+              "name": "global",
+              "size_bytes": 30967512,
+              "effective_size_bytes": 92120
+            },
+            {
+              "name": "global/a6f9276f64006bdd",
+              "size_bytes": 4194304,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/77ce2d3dc0cd598c",
+              "size_bytes": 2097152,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/ae23a7e21fea0167",
+              "size_bytes": 2097152,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/383d0dc59a07df08",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/64dcd88127c06745",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/671b1b984530ff72",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/7406f6da38d73f12",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/76220f20257b9a67",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/785897360cdd2e77",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/9041d614084f3e30",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/9a06dfac3c961e92",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/d8ee1bf472d5a6ab",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/efedd086324b3b35",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/f421462c9100dd40",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/72f3962b34107cda",
+              "size_bytes": 1245184,
+              "effective_size_bytes": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "after_twenty_queries",
+      "guid": "0x9",
+      "request_success": true,
+      "trace_intervals": [
+        [
+          449864685394,
+          449864825916
+        ]
+      ],
+      "allocator_events": 9,
+      "processes": [
+        {
+          "pid": 5172,
+          "name": "GPU Process",
+          "allocations": [
+            {
+              "name": "malloc",
+              "size_bytes": 49890118,
+              "effective_size_bytes": 49600732
+            },
+            {
+              "name": "gpu",
+              "size_bytes": 32861552,
+              "effective_size_bytes": 4380272
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 29063030,
+              "effective_size_bytes": 28773644
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 29063030,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/allocated_objects/<unspecified>",
+              "size_bytes": 28773644,
+              "effective_size_bytes": 28773644
+            },
+            {
+              "name": "gpu/shared_images",
+              "size_bytes": 25598464,
+              "effective_size_bytes": 4004352
+            },
+            {
+              "name": "malloc/win_heap",
+              "size_bytes": 20470198,
+              "effective_size_bytes": 20470198
+            },
+            {
+              "name": "malloc/partitions/<unspecified>",
+              "size_bytes": 19236870,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "gpu/shared_images/client_0x6",
+              "size_bytes": 18219008,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "skia",
+              "size_bytes": 13182570,
+              "effective_size_bytes": 13181546
+            },
+            {
+              "name": "skia/gpu_resources",
+              "size_bytes": 12893184,
+              "effective_size_bytes": 12892160
+            },
+            {
+              "name": "cc",
+              "size_bytes": 7667712,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "cc/resource_memory",
+              "size_bytes": 7667712,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "cc/resource_memory/provider_0",
+              "size_bytes": 7667712,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/allocator",
+              "size_bytes": 7491440,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "shared_memory",
+              "size_bytes": 7249920,
+              "effective_size_bytes": 96768
+            }
+          ]
+        },
+        {
+          "pid": 19680,
+          "name": "WebUI Top Renderer",
+          "allocations": [
+            {
+              "name": "malloc",
+              "size_bytes": 12455664,
+              "effective_size_bytes": 12317876
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 11212528,
+              "effective_size_bytes": 1138401
+            },
+            {
+              "name": "malloc/partitions/allocator",
+              "size_bytes": 10954480,
+              "effective_size_bytes": 1112225
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets",
+              "size_bytes": 10637312,
+              "effective_size_bytes": 1080023
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 10074079,
+              "effective_size_bytes": 9936339
+            },
+            {
+              "name": "malloc/allocated_objects/<unspecified>",
+              "size_bytes": 9936339,
+              "effective_size_bytes": 9936339
+            },
+            {
+              "name": "blink_gc",
+              "size_bytes": 5373952,
+              "effective_size_bytes": 3228996
+            },
+            {
+              "name": "blink_gc/main",
+              "size_bytes": 5373952,
+              "effective_size_bytes": 3228996
+            },
+            {
+              "name": "blink_gc/main/heap",
+              "size_bytes": 5373952,
+              "effective_size_bytes": 3228996
+            },
+            {
+              "name": "v8",
+              "size_bytes": 5116924,
+              "effective_size_bytes": 5116924
+            },
+            {
+              "name": "v8/main",
+              "size_bytes": 5116924,
+              "effective_size_bytes": 5116924
+            },
+            {
+              "name": "v8/main/heap",
+              "size_bytes": 4980736,
+              "effective_size_bytes": 4980736
+            },
+            {
+              "name": "partition_alloc",
+              "size_bytes": 3977216,
+              "effective_size_bytes": 3907048
+            },
+            {
+              "name": "partition_alloc/partitions",
+              "size_bytes": 3977216,
+              "effective_size_bytes": 484060
+            },
+            {
+              "name": "partition_alloc/partitions/buffer",
+              "size_bytes": 3969024,
+              "effective_size_bytes": 483063
+            },
+            {
+              "name": "partition_alloc/partitions/buffer/buckets",
+              "size_bytes": 3969024,
+              "effective_size_bytes": 483063
+            }
+          ]
+        },
+        {
+          "pid": 32984,
+          "name": "Service: network.mojom.NetworkService",
+          "allocations": [
+            {
+              "name": "malloc",
+              "size_bytes": 7776063,
+              "effective_size_bytes": 7776063
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 6445951,
+              "effective_size_bytes": 6445951
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 6445951,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/allocator",
+              "size_bytes": 5923184,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets",
+              "size_bytes": 5783552,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets/directMap_1",
+              "size_bytes": 2101248,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/win_heap",
+              "size_bytes": 1288383,
+              "effective_size_bytes": 1288383
+            }
+          ]
+        },
+        {
+          "pid": 37296,
+          "name": "Service: storage.mojom.StorageService",
+          "allocations": [
+            {
+              "name": "malloc",
+              "size_bytes": 2743615,
+              "effective_size_bytes": 2743615
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 1790575,
+              "effective_size_bytes": 1790575
+            },
+            {
+              "name": "malloc/allocated_objects/<unspecified>",
+              "size_bytes": 1790575,
+              "effective_size_bytes": 1790575
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 1790575,
+              "effective_size_bytes": null
+            }
+          ]
+        },
+        {
+          "pid": 49836,
+          "name": "Service: tracing.mojom.TracingService",
+          "allocations": [
+            {
+              "name": "shared_memory",
+              "size_bytes": 4395008,
+              "effective_size_bytes": 2230784
+            },
+            {
+              "name": "shared_memory/56E5BA8F7BE1998CD40002382DB8EF79",
+              "size_bytes": 4182016,
+              "effective_size_bytes": 2091008
+            },
+            {
+              "name": "malloc",
+              "size_bytes": 3200295,
+              "effective_size_bytes": 3200295
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 2050551,
+              "effective_size_bytes": 2050551
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 2050551,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/win_heap",
+              "size_bytes": 1124903,
+              "effective_size_bytes": 1124903
+            }
+          ]
+        },
+        {
+          "pid": 63128,
+          "name": "Browser",
+          "allocations": [
+            {
+              "name": "malloc",
+              "size_bytes": 36891771,
+              "effective_size_bytes": 35712888
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 30767851,
+              "effective_size_bytes": 29588968
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 30767851,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/allocated_objects/<unspecified>",
+              "size_bytes": 29588968,
+              "effective_size_bytes": 29588968
+            },
+            {
+              "name": "malloc/partitions/allocator",
+              "size_bytes": 26168544,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets",
+              "size_bytes": 25530368,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "shared_memory",
+              "size_bytes": 9908096,
+              "effective_size_bytes": 3325440
+            },
+            {
+              "name": "malloc/win_heap",
+              "size_bytes": 5937611,
+              "effective_size_bytes": 5937611
+            },
+            {
+              "name": "gpu",
+              "size_bytes": 4325248,
+              "effective_size_bytes": 4325248
+            },
+            {
+              "name": "shared_memory/56E5BA8F7BE1998CD40002382DB8EF79",
+              "size_bytes": 4194304,
+              "effective_size_bytes": 2103296
+            },
+            {
+              "name": "cc",
+              "size_bytes": 3376128,
+              "effective_size_bytes": 3376128
+            },
+            {
+              "name": "cc/tile_memory",
+              "size_bytes": 3375104,
+              "effective_size_bytes": 3375104
+            },
+            {
+              "name": "cc/tile_memory/provider_-414636447",
+              "size_bytes": 3375104,
+              "effective_size_bytes": 3375104
+            },
+            {
+              "name": "cc/tile_memory/provider_-414636447/DesktopNativeWidgetAura - content window",
+              "size_bytes": 2621440,
+              "effective_size_bytes": 2621440
+            },
+            {
+              "name": "malloc/partitions/original",
+              "size_bytes": 2613248,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/original/buckets",
+              "size_bytes": 2613248,
+              "effective_size_bytes": null
+            }
+          ]
+        },
+        {
+          "pid": 65396,
+          "name": "Renderer",
+          "allocations": [
+            {
+              "name": "malloc",
+              "size_bytes": 5570343,
+              "effective_size_bytes": 5508847
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 4586231,
+              "effective_size_bytes": 4524735
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 4586231,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/allocated_objects/<unspecified>",
+              "size_bytes": 4524735,
+              "effective_size_bytes": 4524735
+            },
+            {
+              "name": "malloc/partitions/allocator",
+              "size_bytes": 4130368,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets",
+              "size_bytes": 4055040,
+              "effective_size_bytes": null
+            }
+          ]
+        },
+        {
+          "pid": 66584,
+          "name": "Renderer",
+          "allocations": [
+            {
+              "name": "blink_gc",
+              "size_bytes": 35520592,
+              "effective_size_bytes": 18130896
+            },
+            {
+              "name": "malloc",
+              "size_bytes": 33448448,
+              "effective_size_bytes": 32977685
+            },
+            {
+              "name": "blink_gc/main",
+              "size_bytes": 33030224,
+              "effective_size_bytes": 16893678
+            },
+            {
+              "name": "blink_gc/main/heap",
+              "size_bytes": 33030224,
+              "effective_size_bytes": 16893678
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 32087520,
+              "effective_size_bytes": 5843482
+            },
+            {
+              "name": "malloc/partitions/allocator",
+              "size_bytes": 31833568,
+              "effective_size_bytes": 5797261
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets",
+              "size_bytes": 27992064,
+              "effective_size_bytes": 5097676
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 26243987,
+              "effective_size_bytes": 25773275
+            },
+            {
+              "name": "partition_alloc",
+              "size_bytes": 25939968,
+              "effective_size_bytes": 25934599
+            },
+            {
+              "name": "partition_alloc/partitions",
+              "size_bytes": 25939968,
+              "effective_size_bytes": 561971
+            },
+            {
+              "name": "malloc/allocated_objects/<unspecified>",
+              "size_bytes": 25773275,
+              "effective_size_bytes": 25773275
+            },
+            {
+              "name": "partition_alloc/allocated_objects",
+              "size_bytes": 25377952,
+              "effective_size_bytes": 25372628
+            },
+            {
+              "name": "partition_alloc/allocated_objects/<unspecified>",
+              "size_bytes": 25372628,
+              "effective_size_bytes": 25372628
+            },
+            {
+              "name": "v8",
+              "size_bytes": 20231000,
+              "effective_size_bytes": 20231000
+            },
+            {
+              "name": "cc",
+              "size_bytes": 18219008,
+              "effective_size_bytes": 18219008
+            },
+            {
+              "name": "cc/tile_memory",
+              "size_bytes": 18219008,
+              "effective_size_bytes": 18219008
+            }
+          ]
+        },
+        {
+          "pid": 5172,
+          "name": "GPU Process",
+          "allocations": [
+            {
+              "name": "global",
+              "size_bytes": 51488216,
+              "effective_size_bytes": 92120
+            },
+            {
+              "name": "global/3b71568c5b9db502",
+              "size_bytes": 4194304,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/4774dc19678f5d83",
+              "size_bytes": 4194304,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/a6f9276f64006bdd",
+              "size_bytes": 4194304,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/b6771483e5bc701e",
+              "size_bytes": 4194304,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/8dc0d810f08cd709",
+              "size_bytes": 4004352,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/a9ae1e324a6b6f1b",
+              "size_bytes": 2097152,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/e7b02034210bac78",
+              "size_bytes": 2097152,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/383d0dc59a07df08",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/64dcd88127c06745",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/671b1b984530ff72",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/70c0604151273154",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/7406f6da38d73f12",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/76220f20257b9a67",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/77621e41de07887c",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/785897360cdd2e77",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "after_restart",
+      "guid": "0xa",
+      "request_success": true,
+      "trace_intervals": [
+        [
+          449868533647,
+          449868627711
+        ]
+      ],
+      "allocator_events": 9,
+      "processes": [
+        {
+          "pid": 5172,
+          "name": "GPU Process",
+          "allocations": [
+            {
+              "name": "malloc",
+              "size_bytes": 48690717,
+              "effective_size_bytes": 48387200
+            },
+            {
+              "name": "gpu",
+              "size_bytes": 29846896,
+              "effective_size_bytes": 4380144
+            },
+            {
+              "name": "gpu/shared_images",
+              "size_bytes": 28219904,
+              "effective_size_bytes": 4004352
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 27868669,
+              "effective_size_bytes": 27565152
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 27868669,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/allocated_objects/<unspecified>",
+              "size_bytes": 27565152,
+              "effective_size_bytes": 27565152
+            },
+            {
+              "name": "gpu/shared_images/client_0x6",
+              "size_bytes": 22151168,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/win_heap",
+              "size_bytes": 20466173,
+              "effective_size_bytes": 20466173
+            },
+            {
+              "name": "malloc/partitions/<unspecified>",
+              "size_bytes": 18455821,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/allocator",
+              "size_bytes": 7078128,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets",
+              "size_bytes": 6791168,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "cc",
+              "size_bytes": 6356992,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "cc/resource_memory",
+              "size_bytes": 6356992,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "cc/resource_memory/provider_0",
+              "size_bytes": 6356992,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "gpu/shared_images/client_0x0",
+              "size_bytes": 4004352,
+              "effective_size_bytes": 4004352
+            },
+            {
+              "name": "gpu/shared_images/client_0x0/mailbox_8C:52:49:F9:E5:03:56:8A:11:30:56:B8:3B:F2:6C:C3",
+              "size_bytes": 4004352,
+              "effective_size_bytes": 4004352
+            }
+          ]
+        },
+        {
+          "pid": 19680,
+          "name": "WebUI Top Renderer",
+          "allocations": [
+            {
+              "name": "malloc",
+              "size_bytes": 12563168,
+              "effective_size_bytes": 12425379
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 11320032,
+              "effective_size_bytes": 1244944
+            },
+            {
+              "name": "malloc/partitions/allocator",
+              "size_bytes": 11061984,
+              "effective_size_bytes": 1216582
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets",
+              "size_bytes": 10743808,
+              "effective_size_bytes": 1181590
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 10075039,
+              "effective_size_bytes": 9937299
+            },
+            {
+              "name": "malloc/allocated_objects/<unspecified>",
+              "size_bytes": 9937299,
+              "effective_size_bytes": 9937299
+            },
+            {
+              "name": "blink_gc",
+              "size_bytes": 5373952,
+              "effective_size_bytes": 3228996
+            },
+            {
+              "name": "blink_gc/main",
+              "size_bytes": 5373952,
+              "effective_size_bytes": 3228996
+            },
+            {
+              "name": "blink_gc/main/heap",
+              "size_bytes": 5373952,
+              "effective_size_bytes": 3228996
+            },
+            {
+              "name": "v8",
+              "size_bytes": 5116924,
+              "effective_size_bytes": 5116924
+            },
+            {
+              "name": "v8/main",
+              "size_bytes": 5116924,
+              "effective_size_bytes": 5116924
+            },
+            {
+              "name": "v8/main/heap",
+              "size_bytes": 4980736,
+              "effective_size_bytes": 4980736
+            },
+            {
+              "name": "partition_alloc",
+              "size_bytes": 3977216,
+              "effective_size_bytes": 3907048
+            },
+            {
+              "name": "partition_alloc/partitions",
+              "size_bytes": 3977216,
+              "effective_size_bytes": 484060
+            },
+            {
+              "name": "partition_alloc/partitions/buffer",
+              "size_bytes": 3969024,
+              "effective_size_bytes": 483063
+            },
+            {
+              "name": "partition_alloc/partitions/buffer/buckets",
+              "size_bytes": 3969024,
+              "effective_size_bytes": 483063
+            }
+          ]
+        },
+        {
+          "pid": 32984,
+          "name": "Service: network.mojom.NetworkService",
+          "allocations": [
+            {
+              "name": "malloc",
+              "size_bytes": 7933583,
+              "effective_size_bytes": 7933583
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 6585023,
+              "effective_size_bytes": 6585023
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 6585023,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/allocator",
+              "size_bytes": 5938256,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets",
+              "size_bytes": 5791744,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets/directMap_1",
+              "size_bytes": 2101248,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/win_heap",
+              "size_bytes": 1305999,
+              "effective_size_bytes": 1305999
+            }
+          ]
+        },
+        {
+          "pid": 37296,
+          "name": "Service: storage.mojom.StorageService",
+          "allocations": [
+            {
+              "name": "malloc",
+              "size_bytes": 2737855,
+              "effective_size_bytes": 2737855
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 1784815,
+              "effective_size_bytes": 1784815
+            },
+            {
+              "name": "malloc/allocated_objects/<unspecified>",
+              "size_bytes": 1784815,
+              "effective_size_bytes": 1784815
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 1784815,
+              "effective_size_bytes": null
+            }
+          ]
+        },
+        {
+          "pid": 49836,
+          "name": "Service: tracing.mojom.TracingService",
+          "allocations": [
+            {
+              "name": "shared_memory",
+              "size_bytes": 4411392,
+              "effective_size_bytes": 2241024
+            },
+            {
+              "name": "shared_memory/56E5BA8F7BE1998CD40002382DB8EF79",
+              "size_bytes": 4186112,
+              "effective_size_bytes": 2093056
+            },
+            {
+              "name": "malloc",
+              "size_bytes": 3264327,
+              "effective_size_bytes": 3264327
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 2114583,
+              "effective_size_bytes": 2114583
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 2114583,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/allocator",
+              "size_bytes": 1128112,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/win_heap",
+              "size_bytes": 1124903,
+              "effective_size_bytes": 1124903
+            }
+          ]
+        },
+        {
+          "pid": 63128,
+          "name": "Browser",
+          "allocations": [
+            {
+              "name": "malloc",
+              "size_bytes": 36843623,
+              "effective_size_bytes": 35649244
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 30715335,
+              "effective_size_bytes": 29520956
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 30715335,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/allocated_objects/<unspecified>",
+              "size_bytes": 29520956,
+              "effective_size_bytes": 29520956
+            },
+            {
+              "name": "malloc/partitions/allocator",
+              "size_bytes": 27404176,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets",
+              "size_bytes": 27017216,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "shared_memory",
+              "size_bytes": 6696896,
+              "effective_size_bytes": 3323392
+            },
+            {
+              "name": "malloc/win_heap",
+              "size_bytes": 5941783,
+              "effective_size_bytes": 5941783
+            },
+            {
+              "name": "shared_memory/56E5BA8F7BE1998CD40002382DB8EF79",
+              "size_bytes": 4194304,
+              "effective_size_bytes": 2101248
+            },
+            {
+              "name": "malloc/partitions/original",
+              "size_bytes": 2613248,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/original/buckets",
+              "size_bytes": 2613248,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets/bucket_0000080",
+              "size_bytes": 2584576,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets/bucket_0000064",
+              "size_bytes": 2260992,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/original/buckets/directMap_1",
+              "size_bytes": 2097152,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "cc",
+              "size_bytes": 2065408,
+              "effective_size_bytes": 2065408
+            },
+            {
+              "name": "cc/tile_memory",
+              "size_bytes": 2064384,
+              "effective_size_bytes": 2064384
+            }
+          ]
+        },
+        {
+          "pid": 65396,
+          "name": "Renderer",
+          "allocations": [
+            {
+              "name": "malloc",
+              "size_bytes": 5571399,
+              "effective_size_bytes": 5509903
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 4587287,
+              "effective_size_bytes": 4525791
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 4587287,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/allocated_objects/<unspecified>",
+              "size_bytes": 4525791,
+              "effective_size_bytes": 4525791
+            },
+            {
+              "name": "malloc/partitions/allocator",
+              "size_bytes": 4134432,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets",
+              "size_bytes": 4055040,
+              "effective_size_bytes": null
+            }
+          ]
+        },
+        {
+          "pid": 66584,
+          "name": "Renderer",
+          "allocations": [
+            {
+              "name": "blink_gc",
+              "size_bytes": 35455056,
+              "effective_size_bytes": 30976577
+            },
+            {
+              "name": "blink_gc/main",
+              "size_bytes": 32964688,
+              "effective_size_bytes": 29768146
+            },
+            {
+              "name": "blink_gc/main/heap",
+              "size_bytes": 32964688,
+              "effective_size_bytes": 29768146
+            },
+            {
+              "name": "malloc",
+              "size_bytes": 28091424,
+              "effective_size_bytes": 27622593
+            },
+            {
+              "name": "malloc/partitions",
+              "size_bytes": 26730496,
+              "effective_size_bytes": 3754746
+            },
+            {
+              "name": "malloc/partitions/allocator",
+              "size_bytes": 26476544,
+              "effective_size_bytes": 3719086
+            },
+            {
+              "name": "malloc/partitions/allocator/buckets",
+              "size_bytes": 24186880,
+              "effective_size_bytes": 3397462
+            },
+            {
+              "name": "malloc/allocated_objects",
+              "size_bytes": 22975715,
+              "effective_size_bytes": 22506919
+            },
+            {
+              "name": "malloc/allocated_objects/<unspecified>",
+              "size_bytes": 22506919,
+              "effective_size_bytes": 22506919
+            },
+            {
+              "name": "cc",
+              "size_bytes": 22151168,
+              "effective_size_bytes": 22151168
+            },
+            {
+              "name": "cc/tile_memory",
+              "size_bytes": 22151168,
+              "effective_size_bytes": 22151168
+            },
+            {
+              "name": "cc/tile_memory/provider_-2098503468",
+              "size_bytes": 22151168,
+              "effective_size_bytes": 22151168
+            },
+            {
+              "name": "partition_alloc",
+              "size_bytes": 19812352,
+              "effective_size_bytes": 19806994
+            },
+            {
+              "name": "partition_alloc/partitions",
+              "size_bytes": 19812352,
+              "effective_size_bytes": 989326
+            },
+            {
+              "name": "partition_alloc/allocated_objects",
+              "size_bytes": 18822992,
+              "effective_size_bytes": 18817668
+            },
+            {
+              "name": "partition_alloc/allocated_objects/<unspecified>",
+              "size_bytes": 18817668,
+              "effective_size_bytes": 18817668
+            }
+          ]
+        },
+        {
+          "pid": 5172,
+          "name": "GPU Process",
+          "allocations": [
+            {
+              "name": "global",
+              "size_bytes": 35743192,
+              "effective_size_bytes": 92120
+            },
+            {
+              "name": "global/a6f9276f64006bdd",
+              "size_bytes": 4194304,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/8dc0d810f08cd709",
+              "size_bytes": 4004352,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/2f595ecdfd63a977",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/383d0dc59a07df08",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/3fc98d8f3b93fe7e",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/64dcd88127c06745",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/70c0604151273154",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/7406f6da38d73f12",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/76220f20257b9a67",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/77621e41de07887c",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/785897360cdd2e77",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/9041d614084f3e30",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/9a06dfac3c961e92",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/d67e1e1c51319f01",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            },
+            {
+              "name": "global/d8ee1bf472d5a6ab",
+              "size_bytes": 1310720,
+              "effective_size_bytes": null
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "usable": false
+}

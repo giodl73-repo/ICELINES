@@ -1,0 +1,102 @@
+{
+  "status": "PARTIAL_DIAGNOSTIC; no implementation adopted or acceptance claim",
+  "application_control": "target/catalog-metadata-index-final-artifact",
+  "scope": "Original full75/eight residents/two archives/20 queries/restart; original browser flags/sampler/network observer. Added inspector/tracing observer changes memory/collection timing. No forced GC; dump deterministic:false.",
+  "missing": "LayerTree produced no layers. Blank and ready allocation dumps are absent from final trace despite successful requests. Do not infer their allocations or changes above baseline.",
+  "association": "Trace serialized allocator IDs differ from requested dump GUIDs. Matching uses GlobalMemoryDump begin/end timestamp intervals with the exact requested dump_guid. Hierarchical/shared allocator entries overlap and must not be summed.",
+  "next_investigation": "Inspect browser-managed Blink allocations and GPU shared images before another implementation trial. Measurements are allocation categories, not a proved application leak or removable bytes.",
+  "reports": {
+    "layer-observer": {
+      "report": "allocation-investigation-layer-observer-20261014.json",
+      "report_sha256": "72493b58ef4efbf9c9a071813d85a8cbf16b0c5a8c9a95a944bd7357bb83bba9",
+      "local_directory": "target\\viewport-runtime-attribution-wpZSho",
+      "trace": null
+    },
+    "trace-unfiltered": {
+      "report": "allocation-investigation-trace-unfiltered-20261014.json",
+      "report_sha256": "d6b3dac30fc075cab6d2a6ee169846d4e715fa90551c8fd1d646b0dcce851712",
+      "local_directory": "target\\viewport-runtime-attribution-wHiHsO",
+      "trace": {
+        "additional_observer": true,
+        "deterministic": false,
+        "trace_buffer_kib": 8192,
+        "dumps": [
+          {
+            "phase": "blank_browser",
+            "dumpGuid": "0x3",
+            "success": true
+          },
+          {
+            "phase": "ready_before_engine",
+            "dumpGuid": "0x4",
+            "success": true
+          },
+          {
+            "phase": "loaded_26",
+            "dumpGuid": "0x6",
+            "success": true
+          },
+          {
+            "phase": "after_twenty_queries",
+            "dumpGuid": "0x9",
+            "success": true
+          },
+          {
+            "phase": "after_restart",
+            "dumpGuid": "0xa",
+            "success": true
+          }
+        ],
+        "bytes": 28366135,
+        "sha256": "c7cfaec69b5c17d960287e2b92f850ee7c161b9f7d150a4fe11819863dcbc882"
+      }
+    },
+    "trace-corrected": {
+      "report": "allocation-investigation-trace-corrected-20261014.json",
+      "report_sha256": "aff1e3780593ed5d7c9aba7155f3205d96afa8994b3f40bb59d0e88641ade036",
+      "local_directory": "target\\viewport-runtime-attribution-jsfgBj",
+      "trace": {
+        "additional_observer": true,
+        "deterministic": false,
+        "trace_buffer_kib": 8192,
+        "dumps": [
+          {
+            "phase": "blank_browser",
+            "dumpGuid": "0x3",
+            "success": true
+          },
+          {
+            "phase": "ready_before_engine",
+            "dumpGuid": "0x4",
+            "success": true
+          },
+          {
+            "phase": "loaded_26",
+            "dumpGuid": "0x6",
+            "success": true
+          },
+          {
+            "phase": "after_twenty_queries",
+            "dumpGuid": "0x9",
+            "success": true
+          },
+          {
+            "phase": "after_restart",
+            "dumpGuid": "0xa",
+            "success": true
+          }
+        ],
+        "bytes": 13764599,
+        "sha256": "dccbebc1712bfaaf30204dbfae45f50d2bac97582253065150d111cadbf40b15"
+      }
+    }
+  },
+  "summary": {
+    "file": "allocation-investigation-summary-20261014.json",
+    "sha256": "16c90722076eaee27d9450eeaf99fbbbebca6785d679f54ad72e9845151fcd5b"
+  },
+  "open_gates": [
+    "250 MiB whole-browser acceptance remains failed",
+    "Physical Android remains deferred"
+  ]
+}
