@@ -643,3 +643,31 @@ ms on this workstation. No mobile timing inference. The plan/current feature tab
 now points to actual public4d1f513e publication/rollback/offline evidence instead
 of obsolete pending/current E0741daa notes. The250 MiB and physical-device gates
 remain unchanged and open.
+
+## Compressed canonical export experiment
+
+Isolated5c607105 replaces the retained raw parsed package DTO with headers and
+fast gzip of its complete canonical export, alongside the existing normalized
+repository. Validation/normalization/compression stage before active replacement.
+All raw exported values survive; input-byte accounting and eight-window semantics
+stay unchanged. It adds the workspace's already-locked flate2 to the WASM crate.
+19 native tests, including canonical byte equality after selection/invalid refresh,
+and clippy pass. Two actual WASM modules compare all75 canonical exports byte for
+byte, metadata, complete ordered skater/goalie DTOs and resident revisions.
+Browser viewport/AX/print/keyboard/failure and offline process reopen also pass.
+
+After the Node export/parity sequence, control linear memory is26083328 bytes,
+candidate23330816, a2.625 MiB saving. This is not a browser memory trace or total
+browser peak. Normal full-workload candidate runs peak440.47 and439.43 MiB. An
+initial445.84 MiB control overlaps native clippy during early phases and is not
+used as clean causal comparison. A later clean control peaks452.23 MiB (blank234.85)
+versus candidate439.43 MiB (blank229.67); only one clean pair and variable baseline,
+so the magnitude of whole-browser saving remains uncertain. Imports take longer
+in this pair (regular214→257 ms; playoff107→164 ms). Neither budget comparison
+passes250 MiB. No data/query reduction, observer-buffer changes or forced GC.
+
+The native storage experiment is retained locally but not promoted. Its small
+confirmed linear-memory gain comes with CPU work, dependency/code size and data
+representation complexity; it does not close the full resource gap. Stable source
+and generated engine bindings are restored. Reports/source hashes/qualification
+are in compressed-export provenance and raw reports. Real Android remains deferred.

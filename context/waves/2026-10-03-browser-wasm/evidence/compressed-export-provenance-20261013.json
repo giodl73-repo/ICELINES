@@ -1,0 +1,62 @@
+{
+  "branch": "codex/wasm-compressed-export-experiment",
+  "commit": "5c607105f60a3d84886af6bdfbc1948c56166351",
+  "adopted": false,
+  "candidate_wasm_sha256": "0d324b4fb1d73f525c1bed684859746e41fcce655329d7e01f93b556382efc23",
+  "control_wasm_sha256": "4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee",
+  "parity_probe_sha256": "8cc51ec3daf70b938d9406b34c7f0958d97f56787d8871ea0ca4847e1cc0254e",
+  "native_tests_passed": 19,
+  "clippy_passed": true,
+  "scope": "Parsed raw SeasonPackage DTO replaced only after normalization/compression staging with retained header and gzip canonical export; normalized repository/query semantics unchanged. All75 canonical export bytes, metadata, ordered skater/goalie results and resident revisions equal old actual WASM.",
+  "linear_memory_after_node_export_parity_bytes": [
+    26083328,
+    23330816
+  ],
+  "linear_memory_saving_mib": 2.625,
+  "linear_memory_scope": "Node75-package canonical export/query parity sequence, not browser linear-memory trace or total-memory acceptance.",
+  "measurements": [
+    {
+      "file": "compressed-export-first-memory-20261013.json",
+      "peak_mib": 440.47265625,
+      "blank_mib": 231.296875,
+      "import_ms": [
+        301.7774999999965,
+        188.6036999999924
+      ]
+    },
+    {
+      "file": "compressed-export-overlap-control-memory-20261013.json",
+      "peak_mib": 445.8359375,
+      "blank_mib": 230.71484375,
+      "import_ms": [
+        170.4103000000032,
+        115.78530000000319
+      ]
+    },
+    {
+      "file": "compressed-export-clean-control-memory-20261013.json",
+      "peak_mib": 452.2265625,
+      "blank_mib": 234.8515625,
+      "import_ms": [
+        214.44040000000678,
+        106.80659999999625
+      ]
+    },
+    {
+      "file": "compressed-export-repeat-memory-20261013.json",
+      "peak_mib": 439.42578125,
+      "blank_mib": 229.671875,
+      "import_ms": [
+        256.6618999999919,
+        164.46089999999094
+      ]
+    }
+  ],
+  "limitations": [
+    "First comparison control overlaps native clippy during early phases and is excluded from clean causal comparison.",
+    "Clean control/candidate run sequentially with no active compiler, original sampler/flags/workload and no forced GC. Blank baselines still vary.",
+    "Only one clean pair; whole-browser saving magnitude not statistically established.",
+    "New compression/import CPU work and a larger engine binary; candidate remains unadopted.",
+    "250 MiB desktop and real Android gates remain open."
+  ]
+}
