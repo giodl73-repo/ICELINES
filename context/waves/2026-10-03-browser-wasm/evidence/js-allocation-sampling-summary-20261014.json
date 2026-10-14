@@ -1,0 +1,1219 @@
+{
+  "scope": "Sampled cumulative JS allocation churn after first committed package, including naturally collected objects. Direct selfSize tree accounting, not retained/native/backing-store/Rust/OS bytes or leak evidence. Nearest application ancestor is a stack attribution heuristic; unattributed/internal allocations remain separate.",
+  "contexts": {
+    "page": {
+      "node_count": 927,
+      "sample_count": 5031,
+      "summed_node_self_size_bytes": 82867376,
+      "summed_sample_size_bytes": 82936248,
+      "direct": [
+        {
+          "url": "",
+          "function": "next",
+          "line": 0,
+          "sampled_self_size_bytes": 20886084
+        },
+        {
+          "url": "src/engine-client.js",
+          "function": "worker.onmessage",
+          "line": 44,
+          "sampled_self_size_bytes": 11225516
+        },
+        {
+          "url": "",
+          "function": "(V8 API)",
+          "line": 0,
+          "sampled_self_size_bytes": 9284700
+        },
+        {
+          "url": "",
+          "function": "innerSerialize",
+          "line": 186,
+          "sampled_self_size_bytes": 3951216
+        },
+        {
+          "url": "",
+          "function": "",
+          "line": 1,
+          "sampled_self_size_bytes": 2822604
+        },
+        {
+          "url": "",
+          "function": "set",
+          "line": 0,
+          "sampled_self_size_bytes": 2198464
+        },
+        {
+          "url": "",
+          "function": "_cached",
+          "line": 5500,
+          "sampled_self_size_bytes": 2116472
+        },
+        {
+          "url": "",
+          "function": "replace",
+          "line": 0,
+          "sampled_self_size_bytes": 1918784
+        },
+        {
+          "url": "",
+          "function": "parseEvaluationResultValue",
+          "line": 106,
+          "sampled_self_size_bytes": 1853348
+        },
+        {
+          "url": "",
+          "function": "Set",
+          "line": 0,
+          "sampled_self_size_bytes": 1182172
+        },
+        {
+          "url": "",
+          "function": "Map",
+          "line": 0,
+          "sampled_self_size_bytes": 1083332
+        },
+        {
+          "url": "",
+          "function": "entries",
+          "line": 0,
+          "sampled_self_size_bytes": 1016472
+        },
+        {
+          "url": "",
+          "function": "exit",
+          "line": 2979,
+          "sampled_self_size_bytes": 968044
+        },
+        {
+          "url": "",
+          "function": "_matchesParents",
+          "line": 5630,
+          "sampled_self_size_bytes": 934952
+        },
+        {
+          "url": "",
+          "function": "end",
+          "line": 5486,
+          "sampled_self_size_bytes": 886768
+        },
+        {
+          "url": "",
+          "function": "yamlStringNeedsQuotes",
+          "line": 564,
+          "sampled_self_size_bytes": 819880
+        },
+        {
+          "url": "",
+          "function": "join",
+          "line": 0,
+          "sampled_self_size_bytes": 711480
+        },
+        {
+          "url": "src/player-table.js",
+          "function": "",
+          "line": 63,
+          "sampled_self_size_bytes": 672492
+        },
+        {
+          "url": "",
+          "function": "values",
+          "line": 0,
+          "sampled_self_size_bytes": 655800
+        },
+        {
+          "url": "",
+          "function": "normalizeWhiteSpace",
+          "line": 464,
+          "sampled_self_size_bytes": 639360
+        },
+        {
+          "url": "",
+          "function": "visitChild",
+          "line": 2930,
+          "sampled_self_size_bytes": 623204
+        },
+        {
+          "url": "",
+          "function": "evaluate",
+          "line": 305,
+          "sampled_self_size_bytes": 558008
+        },
+        {
+          "url": "src/package-download.js",
+          "function": "expandPackage",
+          "line": 3,
+          "sampled_self_size_bytes": 541392
+        },
+        {
+          "url": "",
+          "function": "_matchesSimple",
+          "line": 5582,
+          "sampled_self_size_bytes": 541232
+        },
+        {
+          "url": "",
+          "function": "push",
+          "line": 0,
+          "sampled_self_size_bytes": 509768
+        },
+        {
+          "url": "",
+          "function": "eval",
+          "line": 6938,
+          "sampled_self_size_bytes": 482364
+        },
+        {
+          "url": "",
+          "function": "previewNode",
+          "line": 7805,
+          "sampled_self_size_bytes": 475536
+        },
+        {
+          "url": "",
+          "function": "getTextAlternativeInternal",
+          "line": 3807,
+          "sampled_self_size_bytes": 459172
+        },
+        {
+          "url": "src/main.js",
+          "function": "renderResidentLibrary",
+          "line": 240,
+          "sampled_self_size_bytes": 459036
+        },
+        {
+          "url": "",
+          "function": "receivesPointerEvents",
+          "line": 4216,
+          "sampled_self_size_bytes": 426548
+        },
+        {
+          "url": "",
+          "function": "visit",
+          "line": 642,
+          "sampled_self_size_bytes": 409868
+        },
+        {
+          "url": "",
+          "function": "selectOptions",
+          "line": 7425,
+          "sampled_self_size_bytes": 393816
+        },
+        {
+          "url": "",
+          "function": "toAriaNode",
+          "line": 4473,
+          "sampled_self_size_bytes": 361128
+        },
+        {
+          "url": "",
+          "function": "processElement",
+          "line": 4413,
+          "sampled_self_size_bytes": 344592
+        },
+        {
+          "url": "",
+          "function": "expectSingleElement",
+          "line": 8026,
+          "sampled_self_size_bytes": 313292
+        },
+        {
+          "url": "",
+          "function": "query",
+          "line": 5719,
+          "sampled_self_size_bytes": 311800
+        },
+        {
+          "url": "",
+          "function": "innerAccumulatedElementText",
+          "line": 4039,
+          "sampled_self_size_bytes": 311720
+        },
+        {
+          "url": "",
+          "function": "add",
+          "line": 0,
+          "sampled_self_size_bytes": 303720
+        },
+        {
+          "url": "",
+          "function": "(BYTECODE_COMPILER)",
+          "line": 0,
+          "sampled_self_size_bytes": 295148
+        },
+        {
+          "url": "",
+          "function": "map",
+          "line": 0,
+          "sampled_self_size_bytes": 278744
+        },
+        {
+          "url": "",
+          "function": "_callQuery",
+          "line": 5708,
+          "sampled_self_size_bytes": 246168
+        },
+        {
+          "url": "",
+          "function": "slice",
+          "line": 0,
+          "sampled_self_size_bytes": 246020
+        },
+        {
+          "url": "",
+          "function": "getElementComputedStyle",
+          "line": 3133,
+          "sampled_self_size_bytes": 245952
+        },
+        {
+          "url": "",
+          "function": "",
+          "line": 336,
+          "sampled_self_size_bytes": 229736
+        },
+        {
+          "url": "src/network.js",
+          "function": "readPublic",
+          "line": 56,
+          "sampled_self_size_bytes": 216540
+        },
+        {
+          "url": "",
+          "function": "",
+          "line": 5504,
+          "sampled_self_size_bytes": 213168
+        },
+        {
+          "url": "",
+          "function": "",
+          "line": 0,
+          "sampled_self_size_bytes": 213168
+        },
+        {
+          "url": "src/player-table.js",
+          "function": "",
+          "line": 84,
+          "sampled_self_size_bytes": 213120
+        },
+        {
+          "url": "",
+          "function": "computeBox",
+          "line": 3165,
+          "sampled_self_size_bytes": 196840
+        },
+        {
+          "url": "",
+          "function": "query",
+          "line": 5534,
+          "sampled_self_size_bytes": 196828
+        },
+        {
+          "url": "src/main.js",
+          "function": "updateState",
+          "line": 132,
+          "sampled_self_size_bytes": 196812
+        },
+        {
+          "url": "",
+          "function": "",
+          "line": 3607,
+          "sampled_self_size_bytes": 196736
+        },
+        {
+          "url": "src/network.js",
+          "function": "readBytes",
+          "line": 17,
+          "sampled_self_size_bytes": 180872
+        },
+        {
+          "url": "",
+          "function": "expect",
+          "line": 8006,
+          "sampled_self_size_bytes": 180500
+        },
+        {
+          "url": "",
+          "function": "_promiseAwareJsonValueNoThrow",
+          "line": 327,
+          "sampled_self_size_bytes": 180376
+        },
+        {
+          "url": "",
+          "function": "",
+          "line": 5717,
+          "sampled_self_size_bytes": 180368
+        },
+        {
+          "url": "",
+          "function": "joinCompositeString",
+          "line": 4314,
+          "sampled_self_size_bytes": 180328
+        },
+        {
+          "url": "",
+          "function": "split",
+          "line": 0,
+          "sampled_self_size_bytes": 164024
+        },
+        {
+          "url": "",
+          "function": "computeAccessibleNameComposite",
+          "line": 3683,
+          "sampled_self_size_bytes": 164000
+        },
+        {
+          "url": "",
+          "function": "from",
+          "line": 0,
+          "sampled_self_size_bytes": 148144
+        },
+        {
+          "url": "",
+          "function": "_queryCSS",
+          "line": 5716,
+          "sampled_self_size_bytes": 147628
+        },
+        {
+          "url": "",
+          "function": "isElementHiddenForAria",
+          "line": 3546,
+          "sampled_self_size_bytes": 147584
+        },
+        {
+          "url": "",
+          "function": "isTypedArray",
+          "line": 65,
+          "sampled_self_size_bytes": 147560
+        },
+        {
+          "url": "",
+          "function": "traverse",
+          "line": 2928,
+          "sampled_self_size_bytes": 131240
+        },
+        {
+          "url": "",
+          "function": "query",
+          "line": 5747,
+          "sampled_self_size_bytes": 131200
+        },
+        {
+          "url": "",
+          "function": "visit",
+          "line": 4671,
+          "sampled_self_size_bytes": 131176
+        },
+        {
+          "url": "src/main.js",
+          "function": "beginAcquisition",
+          "line": 47,
+          "sampled_self_size_bytes": 118152
+        },
+        {
+          "url": "",
+          "function": "filter",
+          "line": 0,
+          "sampled_self_size_bytes": 115048
+        },
+        {
+          "url": "",
+          "function": "createKey",
+          "line": 600,
+          "sampled_self_size_bytes": 114892
+        },
+        {
+          "url": "",
+          "function": "_checkElementIsStable",
+          "line": 7308,
+          "sampled_self_size_bytes": 114876
+        },
+        {
+          "url": "src/acquisition.js",
+          "function": "digest",
+          "line": 4,
+          "sampled_self_size_bytes": 114852
+        },
+        {
+          "url": "",
+          "function": "trim",
+          "line": 0,
+          "sampled_self_size_bytes": 114840
+        },
+        {
+          "url": "",
+          "function": "Uint8Array",
+          "line": 0,
+          "sampled_self_size_bytes": 98616
+        },
+        {
+          "url": "",
+          "function": "concat",
+          "line": 0,
+          "sampled_self_size_bytes": 82288
+        },
+        {
+          "url": "",
+          "function": "checkElementStates",
+          "line": 7290,
+          "sampled_self_size_bytes": 82192
+        },
+        {
+          "url": "",
+          "function": "keys",
+          "line": 0,
+          "sampled_self_size_bytes": 82032
+        },
+        {
+          "url": "",
+          "function": "toLowerCase",
+          "line": 0,
+          "sampled_self_size_bytes": 82020
+        },
+        {
+          "url": "",
+          "function": "computeAriaRole",
+          "line": 3529,
+          "sampled_self_size_bytes": 82012
+        },
+        {
+          "url": "",
+          "function": "queryAll",
+          "line": 7079,
+          "sampled_self_size_bytes": 82004
+        },
+        {
+          "url": "",
+          "function": "querySelectorAll",
+          "line": 7010,
+          "sampled_self_size_bytes": 82000
+        },
+        {
+          "url": "",
+          "function": "",
+          "line": 4207,
+          "sampled_self_size_bytes": 81988
+        },
+        {
+          "url": "",
+          "function": "markTargetElements",
+          "line": 7961,
+          "sampled_self_size_bytes": 81976
+        },
+        {
+          "url": "",
+          "function": "repeat",
+          "line": 0,
+          "sampled_self_size_bytes": 81972
+        },
+        {
+          "url": "",
+          "function": "(IDLE_EXTERNAL)",
+          "line": 0,
+          "sampled_self_size_bytes": 67136
+        },
+        {
+          "url": "",
+          "function": "visit",
+          "line": 4357,
+          "sampled_self_size_bytes": 65720
+        },
+        {
+          "url": "src/main.js",
+          "function": "runQuery",
+          "line": 295,
+          "sampled_self_size_bytes": 65612
+        },
+        {
+          "url": "src/view-state.js",
+          "function": "parseViewHash",
+          "line": 5,
+          "sampled_self_size_bytes": 65612
+        },
+        {
+          "url": "",
+          "function": "getExplicitAriaRole",
+          "line": 3514,
+          "sampled_self_size_bytes": 65604
+        },
+        {
+          "url": "",
+          "function": "",
+          "line": 5538,
+          "sampled_self_size_bytes": 65604
+        },
+        {
+          "url": "",
+          "function": "",
+          "line": 5572,
+          "sampled_self_size_bytes": 65604
+        },
+        {
+          "url": "",
+          "function": "filter",
+          "line": 7438,
+          "sampled_self_size_bytes": 65604
+        },
+        {
+          "url": "",
+          "function": "checkDeprecatedSelectorUsage",
+          "line": 7860,
+          "sampled_self_size_bytes": 65580
+        },
+        {
+          "url": "",
+          "function": "toString",
+          "line": 0,
+          "sampled_self_size_bytes": 65568
+        },
+        {
+          "url": "",
+          "function": "trimString",
+          "line": 490,
+          "sampled_self_size_bytes": 49800
+        },
+        {
+          "url": "src/view-state.js",
+          "function": "serializeViewHash",
+          "line": 42,
+          "sampled_self_size_bytes": 49376
+        },
+        {
+          "url": "",
+          "function": "Promise",
+          "line": 0,
+          "sampled_self_size_bytes": 49280
+        },
+        {
+          "url": "",
+          "function": "getIdRefs",
+          "line": 3584,
+          "sampled_self_size_bytes": 49264
+        },
+        {
+          "url": "",
+          "function": "generateAriaTree",
+          "line": 4346,
+          "sampled_self_size_bytes": 49224
+        },
+        {
+          "url": "",
+          "function": "toInternalOptions",
+          "line": 4328,
+          "sampled_self_size_bytes": 49216
+        },
+        {
+          "url": "",
+          "function": "asFlatString",
+          "line": 3606,
+          "sampled_self_size_bytes": 49196
+        },
+        {
+          "url": "",
+          "function": "jsonValue",
+          "line": 322,
+          "sampled_self_size_bytes": 49196
+        },
+        {
+          "url": "",
+          "function": "_hasScopeClause",
+          "line": 5571,
+          "sampled_self_size_bytes": 49196
+        },
+        {
+          "url": "",
+          "function": "allowsNameFromContent",
+          "line": 3678,
+          "sampled_self_size_bytes": 49192
+        },
+        {
+          "url": "",
+          "function": "elementState",
+          "line": 7371,
+          "sampled_self_size_bytes": 49192
+        },
+        {
+          "url": "",
+          "function": "check",
+          "line": 7313,
+          "sampled_self_size_bytes": 49176
+        },
+        {
+          "url": "src/package-download.js",
+          "function": "downloadPackage",
+          "line": 58,
+          "sampled_self_size_bytes": 49172
+        },
+        {
+          "url": "",
+          "function": "test",
+          "line": 0,
+          "sampled_self_size_bytes": 33096
+        },
+        {
+          "url": "src/main.js",
+          "function": "loadCatalog",
+          "line": 344,
+          "sampled_self_size_bytes": 32940
+        },
+        {
+          "url": "",
+          "function": "includes",
+          "line": 0,
+          "sampled_self_size_bytes": 32844
+        },
+        {
+          "url": "",
+          "function": "ExpectedTextMatcher",
+          "line": 8306,
+          "sampled_self_size_bytes": 32840
+        },
+        {
+          "url": "src/main.js",
+          "function": "",
+          "line": 384,
+          "sampled_self_size_bytes": 32832
+        },
+        {
+          "url": "src/main.js",
+          "function": "perform",
+          "line": 209,
+          "sampled_self_size_bytes": 32824
+        },
+        {
+          "url": "src/network.js",
+          "function": "readPublicBytes",
+          "line": 123,
+          "sampled_self_size_bytes": 32808
+        },
+        {
+          "url": "",
+          "function": "getAccessibleNameFromAssociatedLabels",
+          "line": 4206,
+          "sampled_self_size_bytes": 32808
+        },
+        {
+          "url": "",
+          "function": "sort",
+          "line": 0,
+          "sampled_self_size_bytes": 32808
+        },
+        {
+          "url": "src/main.js",
+          "function": "activate",
+          "line": 222,
+          "sampled_self_size_bytes": 32808
+        },
+        {
+          "url": "",
+          "function": "serializeAsCallArgument",
+          "line": 172,
+          "sampled_self_size_bytes": 32800
+        },
+        {
+          "url": "",
+          "function": "setupHitTargetInterceptor",
+          "line": 7676,
+          "sampled_self_size_bytes": 32800
+        },
+        {
+          "url": "",
+          "function": "runPlugins",
+          "line": 2925,
+          "sampled_self_size_bytes": 32792
+        },
+        {
+          "url": "",
+          "function": "isNativelyDisabled",
+          "line": 4171,
+          "sampled_self_size_bytes": 32792
+        },
+        {
+          "url": "",
+          "function": "renderAriaTreeAsJSON",
+          "line": 4668,
+          "sampled_self_size_bytes": 32788
+        },
+        {
+          "url": "src/package-download.js",
+          "function": "check",
+          "line": 7,
+          "sampled_self_size_bytes": 32784
+        },
+        {
+          "url": "",
+          "function": "oneLine",
+          "line": 8245,
+          "sampled_self_size_bytes": 32784
+        },
+        {
+          "url": "src/main.js",
+          "function": "",
+          "line": 392,
+          "sampled_self_size_bytes": 17116
+        },
+        {
+          "url": "",
+          "function": "subarray",
+          "line": 0,
+          "sampled_self_size_bytes": 16440
+        },
+        {
+          "url": "",
+          "function": "delete",
+          "line": 0,
+          "sampled_self_size_bytes": 16416
+        },
+        {
+          "url": "",
+          "function": "_queryEngine",
+          "line": 5696,
+          "sampled_self_size_bytes": 16416
+        },
+        {
+          "url": "",
+          "function": "elementText",
+          "line": 5209,
+          "sampled_self_size_bytes": 16416
+        },
+        {
+          "url": "src/engine-client.js",
+          "function": "",
+          "line": 111,
+          "sampled_self_size_bytes": 16416
+        },
+        {
+          "url": "",
+          "function": "_ariaSnapshotForExpect",
+          "line": 8014,
+          "sampled_self_size_bytes": 16408
+        },
+        {
+          "url": "",
+          "function": "renderAriaSnapshotAsYaml",
+          "line": 591,
+          "sampled_self_size_bytes": 16408
+        },
+        {
+          "url": "",
+          "function": "safeJson",
+          "line": 328,
+          "sampled_self_size_bytes": 16408
+        },
+        {
+          "url": "",
+          "function": "_querySimple",
+          "line": 5595,
+          "sampled_self_size_bytes": 16408
+        },
+        {
+          "url": "",
+          "function": "expectHitTarget",
+          "line": 7589,
+          "sampled_self_size_bytes": 16408
+        },
+        {
+          "url": "src/main.js",
+          "function": "status",
+          "line": 58,
+          "sampled_self_size_bytes": 16400
+        },
+        {
+          "url": "",
+          "function": "isElementIgnoredForAria",
+          "line": 3543,
+          "sampled_self_size_bytes": 16400
+        },
+        {
+          "url": "",
+          "function": "visit",
+          "line": 4042,
+          "sampled_self_size_bytes": 16400
+        },
+        {
+          "url": "",
+          "function": "_queryEngineAll",
+          "line": 7058,
+          "sampled_self_size_bytes": 16400
+        },
+        {
+          "url": "src/player-table.js",
+          "function": "suspend",
+          "line": 16,
+          "sampled_self_size_bytes": 16400
+        },
+        {
+          "url": "src/viewport-table.js",
+          "function": "",
+          "line": 152,
+          "sampled_self_size_bytes": 16400
+        },
+        {
+          "url": "src/engine-client.js",
+          "function": "request",
+          "line": 102,
+          "sampled_self_size_bytes": 16392
+        },
+        {
+          "url": "src/view-state.js",
+          "function": "",
+          "line": 12,
+          "sampled_self_size_bytes": 16392
+        },
+        {
+          "url": "",
+          "function": "",
+          "line": 325,
+          "sampled_self_size_bytes": 16392
+        },
+        {
+          "url": "",
+          "function": "(JS)",
+          "line": 0,
+          "sampled_self_size_bytes": 16392
+        }
+      ],
+      "nearest_application_ancestor": [
+        {
+          "url": "(unattributed/internal)",
+          "function": "",
+          "line": 0,
+          "sampled_self_size_bytes": 67286756
+        },
+        {
+          "url": "src/engine-client.js",
+          "function": "worker.onmessage",
+          "line": 44,
+          "sampled_self_size_bytes": 11241932
+        },
+        {
+          "url": "src/player-table.js",
+          "function": "",
+          "line": 63,
+          "sampled_self_size_bytes": 672492
+        },
+        {
+          "url": "src/package-download.js",
+          "function": "expandPackage",
+          "line": 3,
+          "sampled_self_size_bytes": 607048
+        },
+        {
+          "url": "src/acquisition.js",
+          "function": "digest",
+          "line": 4,
+          "sampled_self_size_bytes": 558412
+        },
+        {
+          "url": "src/main.js",
+          "function": "renderResidentLibrary",
+          "line": 240,
+          "sampled_self_size_bytes": 540996
+        },
+        {
+          "url": "src/main.js",
+          "function": "updateState",
+          "line": 132,
+          "sampled_self_size_bytes": 377168
+        },
+        {
+          "url": "src/network.js",
+          "function": "readPublic",
+          "line": 56,
+          "sampled_self_size_bytes": 216540
+        },
+        {
+          "url": "src/network.js",
+          "function": "readBytes",
+          "line": 17,
+          "sampled_self_size_bytes": 213688
+        },
+        {
+          "url": "src/player-table.js",
+          "function": "",
+          "line": 84,
+          "sampled_self_size_bytes": 213120
+        },
+        {
+          "url": "src/viewport-table.js",
+          "function": "draw",
+          "line": 126,
+          "sampled_self_size_bytes": 131188
+        },
+        {
+          "url": "src/main.js",
+          "function": "beginAcquisition",
+          "line": 47,
+          "sampled_self_size_bytes": 118152
+        },
+        {
+          "url": "src/view-state.js",
+          "function": "parseViewHash",
+          "line": 5,
+          "sampled_self_size_bytes": 82012
+        },
+        {
+          "url": "src/main.js",
+          "function": "runQuery",
+          "line": 295,
+          "sampled_self_size_bytes": 65612
+        },
+        {
+          "url": "src/acquisition.js",
+          "function": "",
+          "line": 6,
+          "sampled_self_size_bytes": 65568
+        },
+        {
+          "url": "src/view-state.js",
+          "function": "serializeViewHash",
+          "line": 42,
+          "sampled_self_size_bytes": 49376
+        },
+        {
+          "url": "src/main.js",
+          "function": "activate",
+          "line": 222,
+          "sampled_self_size_bytes": 49208
+        },
+        {
+          "url": "src/package-download.js",
+          "function": "downloadPackage",
+          "line": 58,
+          "sampled_self_size_bytes": 49172
+        },
+        {
+          "url": "src/main.js",
+          "function": "loadCatalog",
+          "line": 344,
+          "sampled_self_size_bytes": 32940
+        },
+        {
+          "url": "src/main.js",
+          "function": "",
+          "line": 384,
+          "sampled_self_size_bytes": 32832
+        },
+        {
+          "url": "src/main.js",
+          "function": "perform",
+          "line": 209,
+          "sampled_self_size_bytes": 32824
+        },
+        {
+          "url": "src/network.js",
+          "function": "readPublicBytes",
+          "line": 123,
+          "sampled_self_size_bytes": 32808
+        },
+        {
+          "url": "src/engine-client.js",
+          "function": "request",
+          "line": 102,
+          "sampled_self_size_bytes": 32792
+        },
+        {
+          "url": "src/package-download.js",
+          "function": "check",
+          "line": 7,
+          "sampled_self_size_bytes": 32784
+        },
+        {
+          "url": "src/main.js",
+          "function": "",
+          "line": 392,
+          "sampled_self_size_bytes": 17116
+        },
+        {
+          "url": "src/package-download.js",
+          "function": "pull",
+          "line": 18,
+          "sampled_self_size_bytes": 16440
+        },
+        {
+          "url": "src/engine-client.js",
+          "function": "",
+          "line": 111,
+          "sampled_self_size_bytes": 16416
+        },
+        {
+          "url": "src/main.js",
+          "function": "status",
+          "line": 58,
+          "sampled_self_size_bytes": 16400
+        },
+        {
+          "url": "src/player-table.js",
+          "function": "suspend",
+          "line": 16,
+          "sampled_self_size_bytes": 16400
+        },
+        {
+          "url": "src/viewport-table.js",
+          "function": "",
+          "line": 152,
+          "sampled_self_size_bytes": 16400
+        },
+        {
+          "url": "src/player-table.js",
+          "function": "render",
+          "line": 38,
+          "sampled_self_size_bytes": 16392
+        },
+        {
+          "url": "src/view-state.js",
+          "function": "",
+          "line": 12,
+          "sampled_self_size_bytes": 16392
+        }
+      ]
+    },
+    "worker": {
+      "node_count": 24,
+      "sample_count": 389,
+      "summed_node_self_size_bytes": 8694916,
+      "summed_sample_size_bytes": 8689540,
+      "direct": [
+        {
+          "url": "src/worker.js",
+          "function": "",
+          "line": 17,
+          "sampled_self_size_bytes": 5257356
+        },
+        {
+          "url": "src/archive.js",
+          "function": "archivePackage",
+          "line": 121,
+          "sampled_self_size_bytes": 2334112
+        },
+        {
+          "url": "src/archive.js",
+          "function": "json",
+          "line": 115,
+          "sampled_self_size_bytes": 742456
+        },
+        {
+          "url": "src/worker.js",
+          "function": "self.onmessage",
+          "line": 12,
+          "sampled_self_size_bytes": 98408
+        },
+        {
+          "url": "",
+          "function": "(V8 API)",
+          "line": 0,
+          "sampled_self_size_bytes": 49236
+        },
+        {
+          "url": "",
+          "function": "next",
+          "line": 0,
+          "sampled_self_size_bytes": 49180
+        },
+        {
+          "url": "",
+          "function": "subarray",
+          "line": 0,
+          "sampled_self_size_bytes": 32820
+        },
+        {
+          "url": "src/archive.js",
+          "function": "read",
+          "line": 12,
+          "sampled_self_size_bytes": 32808
+        },
+        {
+          "url": "",
+          "function": "(JS)",
+          "line": 0,
+          "sampled_self_size_bytes": 32784
+        },
+        {
+          "url": "src/archive.js",
+          "function": "readTarFiles",
+          "line": 53,
+          "sampled_self_size_bytes": 16500
+        },
+        {
+          "url": "",
+          "function": "Uint8Array",
+          "line": 0,
+          "sampled_self_size_bytes": 16440
+        },
+        {
+          "url": "pkg/icelines_wasm_bg.wasm",
+          "function": "js-to-wasm:i:ii",
+          "line": 1,
+          "sampled_self_size_bytes": 16416
+        },
+        {
+          "url": "pkg/icelines_wasm_bg.wasm",
+          "function": "js-to-wasm:iii:iiii",
+          "line": 1,
+          "sampled_self_size_bytes": 16400
+        }
+      ],
+      "nearest_application_ancestor": [
+        {
+          "url": "src/worker.js",
+          "function": "",
+          "line": 17,
+          "sampled_self_size_bytes": 5273796
+        },
+        {
+          "url": "src/archive.js",
+          "function": "archivePackage",
+          "line": 121,
+          "sampled_self_size_bytes": 2383292
+        },
+        {
+          "url": "src/archive.js",
+          "function": "json",
+          "line": 115,
+          "sampled_self_size_bytes": 742456
+        },
+        {
+          "url": "src/worker.js",
+          "function": "self.onmessage",
+          "line": 12,
+          "sampled_self_size_bytes": 98408
+        },
+        {
+          "url": "(unattributed/internal)",
+          "function": "",
+          "line": 0,
+          "sampled_self_size_bytes": 82020
+        },
+        {
+          "url": "pkg/icelines_wasm.js",
+          "function": "decodeText",
+          "line": 292,
+          "sampled_self_size_bytes": 32820
+        },
+        {
+          "url": "src/archive.js",
+          "function": "read",
+          "line": 12,
+          "sampled_self_size_bytes": 32808
+        },
+        {
+          "url": "src/archive.js",
+          "function": "readTarFiles",
+          "line": 53,
+          "sampled_self_size_bytes": 16500
+        },
+        {
+          "url": "pkg/icelines_wasm_bg.wasm",
+          "function": "js-to-wasm:i:ii",
+          "line": 1,
+          "sampled_self_size_bytes": 16416
+        },
+        {
+          "url": "pkg/icelines_wasm_bg.wasm",
+          "function": "js-to-wasm:iii:iiii",
+          "line": 1,
+          "sampled_self_size_bytes": 16400
+        }
+      ]
+    }
+  }
+}

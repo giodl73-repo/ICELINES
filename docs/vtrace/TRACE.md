@@ -1,5 +1,11 @@
 # Trace Matrix
 
+CHG-122 candidate: IF-BROWSER-001 / REQ-BROWSER-001 / WP-BW-05 / WP-BW-06 to
+types.ts, worker.ts and engine-client.ts query response negotiation. JS churn
+diagnostic: context/waves/2026-10-03-browser-wasm/evidence/js-allocation-sampling-provenance-20261014.json.
+Protocol/compatibility/artifact/memory/CI gates pending;250 MiB and Android remain
+unmet. No source-state or scoring change is promoted.
+
 ## Scope
 
 Repo or feature: `icelines` repo-baseline VTRACE adoption.

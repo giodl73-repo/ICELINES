@@ -1,0 +1,46 @@
+{
+  "scope": "One full75/eight/two905/332/20/restart diagnostic using unchanged published75e6ba97 artifact, additional page/worker HeapProfiler samplers after first committed package. Cumulative allocation churn including naturally collected objects, not retained/live memory, native backing buffers, leak proof, OS partition or acceptance. No explicit GC/pressure commands.",
+  "source": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+  "artifact": {
+    "commit": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+    "shell_build": "e575ec099d635615476610b46ec106b97e83d28b66fc3980bbdcbbf4292c1a36",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "evidence": {
+    "report": {
+      "file": "js-allocation-sampling-report-20261014.json.gz",
+      "sha256": "4eecb47681878deececa851c5256534b386ed5ba1fcd6c0cccb8dbe631572670",
+      "raw_sha256": "198cb68724b2a9bd833ae2af2fe7372d5f9229a43a4348cd5c4d0840ebaaa6f3",
+      "raw_bytes": 1372128,
+      "compression": "gzip; lossless full raw diagnostic report"
+    },
+    "summary": {
+      "file": "js-allocation-sampling-summary-20261014.json",
+      "sha256": "d2b76f116629daef1110d2145ecedf1cb3d8ed00ac80ff721ef9426e7e9b8622"
+    },
+    "runner-recipe": {
+      "file": "js-allocation-sampling-runner-recipe-20261014.py",
+      "sha256": "373feda0aeb46ac595d175a4d4def80bacbe674d9a04f651c6280d2181900d56"
+    },
+    "summary-recipe": {
+      "file": "js-allocation-sampling-summary-recipe-20261014.py",
+      "sha256": "3619651789c76ba66b647809a75b6ebfea6487a05b98422dd1e40875588fa5ce"
+    },
+    "native-symbol-availability": {
+      "file": "js-allocation-sampling-native-symbol-availability-20261014.json",
+      "sha256": "0a28e848fbe4b5e31581e98ba6943672debb54328991a917809004926afd7a17"
+    }
+  },
+  "sampling_interval_bytes": 16384,
+  "stack_depth": 64,
+  "profile_node_accounting": "Sum direct selfSize once per unique node. Nearest app ancestor is a heuristic; unresolved/empty-URL internal and automation frames are not attributed to the app. Samples.size sum is recorded separately; no exact allocation census.",
+  "native_symbols": "Existing earlier Chromium153.0.8010.12 native stacks have unresolved addresses; exact chrome.exe.pdb and chrome.dll.pdb IDs return404 on the documented Chromium public symbol server. No fresh native sampler rerun.",
+  "observations": "Page sampled selfSize sum79.03 MiB cumulative, mostly unattributed/internal; worker8.29 MiB cumulative. Engine-client callback is11.24 MiB nearest-app estimate; worker callback5.27 MiB combines operations. These are not removable live-memory amounts.",
+  "next_hypothesis": "Known code parses WASM query JSON in worker then clones resulting objects to page. Test negotiated query JSON-text responses parsed once in page, preserving old/new client-worker compatibility. No promise of OS saving.",
+  "remaining": [
+    "250 MiB whole-browser target unmet",
+    "Android explicitly deferred"
+  ],
+  "production_unchanged": true
+}

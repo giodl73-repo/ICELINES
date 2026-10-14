@@ -722,6 +722,15 @@ Status: foundation implementation in progress; compatibility evidence pending.
 
 ## IF-BROWSER-001 optional gzip transport — CHG-120
 
+CHG-122 candidate worker protocol extension (not adopted): optional
+`response_encoding:"json"` on schema1 query requests permits the same field on
+successful responses whose value is query JSON text. Worker must return object
+values when the capability is absent; client must accept legacy object replies
+when the capability is ignored. Only negotiated queries may carry encoded values.
+Malformed/unknown/unsolicited encodings fail protocol recovery, preserving request
+identity, generation, epoch and cancellation rules. Package/detail/schedule/load
+formats, domain projections and persistent data schemas remain unchanged.
+
 The version1 public catalog retains each entry's canonical `url`, `bytes` and
 `sha256`. An optional `transport` contains `encoding: "gzip"`, `url`, `bytes` and
 `sha256`; the transport URL must equal the canonical JSON URL plus `.gz`.

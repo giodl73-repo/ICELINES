@@ -25,6 +25,7 @@ self.onmessage = (event: MessageEvent<EngineRequest>) => {
     const response: EngineResponse = { schema_version: 1, request_id: request.request_id, context_generation: request.context_generation };
     try {
       if (request.schema_version !== 1) throw new Error('unsupported schema version');
+      if (request.response_encoding !== undefined && (request.response_encoding !== 'json' || request.operation !== 'query')) throw new Error('unsupported response encoding');
       let bindings: Bindings;
       try { bindings = await ready; }
       catch { response.error = { kind: 'engine_failure', message: 'WASM engine initialization failed.' }; self.postMessage(response); return; }
@@ -41,7 +42,12 @@ self.onmessage = (event: MessageEvent<EngineRequest>) => {
           const revision = engine.load_package(new Uint8Array(request.payload as ArrayBuffer));
           response.value = { revision, residents: JSON.parse(engine.resident_revisions()), metadata: JSON.parse(engine.package_metadata()) }; break;
         }
-        case 'query': response.value = JSON.parse(engine.query(JSON.stringify(request.payload as QueryRequest))); break;
+        case 'query': {
+          const json = engine.query(JSON.stringify(request.payload as QueryRequest));
+          if (request.response_encoding === 'json') { response.value = json; response.response_encoding = 'json'; }
+          else response.value = JSON.parse(json);
+          break;
+        }
         case 'detail': response.value = JSON.parse(engine.player_detail(Number(request.payload))); break;
         case 'currentSeason': response.value = engine.current_season(); break;
         case 'schedule': response.value = JSON.parse(engine.schedule_week(new Uint8Array(request.payload as ArrayBuffer))); break;

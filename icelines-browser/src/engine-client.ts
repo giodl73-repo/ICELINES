@@ -8,7 +8,7 @@ export class EngineClient {
   private cold = false;
   generation = 0;
   get available(): boolean { return this.cold || !!this.worker; }
-  private pending = new Map<number, { generation: number; resolve: (value: unknown) => void; reject: (reason: Error) => void; timer: ReturnType<typeof setTimeout> }>();
+  private pending = new Map<number, { generation: number; acceptJSON: boolean; resolve: (value: unknown) => void; reject: (reason: Error) => void; timer: ReturnType<typeof setTimeout> }>();
   constructor(private onFailure: (message: string) => void,
     private createWorker: () => WorkerHandle = () => new Worker(new URL('./worker.js', import.meta.url), { type: 'module' }),
     private timeoutMs = 120000, options: { deferStart?: boolean } = {}) {
@@ -35,6 +35,7 @@ export class EngineClient {
       if (!response || response.schema_version !== 1 || !Number.isSafeInteger(response.request_id)
         || !Number.isSafeInteger(response.context_generation)
         || (!!response.error === Object.hasOwn(response, 'value'))
+        || (response.response_encoding !== undefined && response.response_encoding !== 'json')
         || (response.error && (typeof response.error.kind !== 'string' || typeof response.error.message !== 'string'))) {
         this.fail(epoch, 'Engine returned an invalid response.'); return;
       }
@@ -42,10 +43,18 @@ export class EngineClient {
       if (!pending) return;
       if (response.context_generation !== pending.generation) { this.fail(epoch, 'Engine response context was invalid.'); return; }
       if (response.error?.kind === 'engine_failure') { this.fail(epoch, response.error.message); return; }
+      let value = response.value;
+      if (response.response_encoding === 'json') {
+        if (!pending.acceptJSON || response.error || typeof value !== 'string') {
+          this.fail(epoch, 'Engine returned an invalid encoded response.'); return;
+        }
+        try { value = JSON.parse(value); }
+        catch { this.fail(epoch, 'Engine returned invalid query JSON.'); return; }
+      }
       clearTimeout(pending.timer); this.pending.delete(response.request_id);
       if (response.context_generation !== this.generation) pending.reject(new Error('cancelled: context changed'));
       else if (response.error) pending.reject(new Error(response.error.message));
-      else pending.resolve(response.value);
+      else pending.resolve(value);
     };
     worker.onerror = () => this.fail(epoch, 'Engine stopped unexpectedly.');
     worker.onmessageerror = () => this.fail(epoch, 'Engine response could not be decoded.');
@@ -68,11 +77,12 @@ export class EngineClient {
     if (this.cold) this.startWorker();
     const worker = this.worker;
     if (!worker) return Promise.reject(new EngineStoppedError('Engine unavailable. Restart it or reload the application.'));
-    const request: EngineRequest = { schema_version: 1, request_id: ++this.nextId, context_generation: this.generation, operation, payload };
+    const request: EngineRequest = { schema_version: 1, request_id: ++this.nextId, context_generation: this.generation, operation, payload,
+      ...(operation === 'query' ? { response_encoding: 'json' as const } : {}) };
     return new Promise<T>((resolve, reject) => {
       const epoch = this.epoch;
       const timer = setTimeout(() => this.fail(epoch, 'Engine did not respond within two minutes.'), this.timeoutMs);
-      this.pending.set(request.request_id, { generation: request.context_generation, timer, resolve: value => resolve(value as T), reject });
+      this.pending.set(request.request_id, { generation: request.context_generation, acceptJSON: operation === 'query', timer, resolve: value => resolve(value as T), reject });
       try { worker.postMessage(request, transfer); }
       catch { this.fail(epoch, 'Engine request could not be sent.'); }
     });

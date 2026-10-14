@@ -48,8 +48,10 @@ export type Operation = 'load' | 'query' | 'detail' | 'currentSeason' | 'unload'
 export interface EngineRequest {
   schema_version: 1; request_id: number; context_generation: number;
   operation: Operation; payload: unknown;
+  response_encoding?: 'json';
 }
 export interface EngineResponse {
   schema_version: 1; request_id: number; context_generation: number;
   value?: unknown; error?: { kind: string; message: string };
+  response_encoding?: 'json';
 }

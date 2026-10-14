@@ -193,3 +193,19 @@ remain open. CI/master/public-origin transfer and update/rollback evidence are
 required before promoting the delivery implementation.
 Trace updates: INTERFACES, WORK_PACKAGES, TRACE, VERIFICATION and VALIDATION.
 No resource waiver, native dependency change or hockey semantics change.
+
+## CHG-122: Negotiated query JSON response candidate (2026-10-14)
+
+Candidate only, not adopted. Request schema1 may ask `response_encoding:"json"`
+for query responses; an upgraded worker echoes the encoding with JSON text only
+when requested. Legacy requests retain object values. New clients accept both
+legacy object responses and negotiated text parsed once on the page. Unknown
+encoding, nonstring encoded values, malformed JSON or unsolicited encoding fail
+the worker/client protocol. Epoch, generation, cancellation and recovery remain.
+Affected: IF-BROWSER-001 / REQ-BROWSER-001 / WP-BW-05 / WP-BW-06.
+Reason: avoid constructing a query object tree in the worker before cloning it
+to the page. JS sampling identifies allocation churn, not removable live bytes.
+Review: BENCH/WIRE/KEEL/FORGE/EDGE, one agent. Adoption gates: meaningful protocol
+tests, old/new worker-client compatibility, exact artifact correctness, full
+workload comparisons, clean CI and publication recovery.250 MiB and Android
+remain open; no requirement, local-state schema or resource-budget revision.

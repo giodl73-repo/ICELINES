@@ -16,6 +16,50 @@ function reply(worker, value, error, overrides = {}) {
     context_generation: request.context_generation, ...(error ? { error } : { value }), ...overrides } });
 }
 
+test('queries negotiate JSON text while accepting legacy object replies', async () => {
+  const {client,workers,failures} = setup();
+  const expected = {season:20252026,rows:[{name:'Slafkovský "team"',points:0,pace_82:null}],missing_sources:['realtime']};
+  for (const encoded of [true,false]) {
+    const pending = client.request('query',{});
+    assert.equal(workers[0].messages.at(-1).response_encoding,'json');
+    reply(workers[0],encoded ? JSON.stringify(expected) : expected,undefined,encoded ? {response_encoding:'json'} : {});
+    assert.deepEqual(await pending,expected);
+  }
+  const season = client.request('currentSeason',null);
+  assert.equal(Object.hasOwn(workers[0].messages.at(-1),'response_encoding'),false);
+  reply(workers[0],20252026); assert.equal(await season,20252026);
+  assert.deepEqual(failures,[]);
+});
+
+test('unknown encoding, malformed JSON and nonstring encoded values require recovery', async () => {
+  for (const [value,encoding] of [['{}','unknown'],['{','json'],[{},'json']]) {
+    const {client,workers,failures} = setup();
+    const pending = client.request('query',{}); const rejected = assert.rejects(pending,EngineStoppedError);
+    reply(workers[0],value,undefined,{response_encoding:encoding}); await rejected;
+    assert.equal(client.available,false); assert.equal(workers[0].terminated,true); assert.equal(failures.length,1);
+  }
+});
+
+test('unsolicited encoded responses and encoded errors fail the protocol', async () => {
+  for (const operation of ['currentSeason','query']) {
+    const {client,workers} = setup();
+    const pending = client.request(operation,null); const rejected = assert.rejects(pending,EngineStoppedError);
+    reply(workers[0],operation==='currentSeason' ? '20252026' : undefined,
+      operation==='query' ? {kind:'engine_error',message:'bad query'} : undefined,{response_encoding:'json'});
+    await rejected; assert.equal(client.available,false);
+  }
+});
+
+test('a cancelled query cannot make malformed retired JSON poison the next context', async () => {
+  const {client,workers,failures} = setup();
+  const old = client.request('query',{});const cancelled=assert.rejects(old,/cancelled/);
+  client.changeContext();await cancelled;
+  reply(workers[0],'{',undefined,{response_encoding:'json'});
+  assert.equal(client.available,true);assert.deepEqual(failures,[]);
+  const current=client.request('query',{});reply(workers[0],'{"rows":[]}',undefined,{response_encoding:'json'});
+  assert.deepEqual(await current,{rows:[]});
+});
+
 test('deferred first load preserves the context chosen before any worker exists', async () => {
   const {client, workers, failures} = setup(120000, {deferStart:true});
   assert.equal(workers.length, 0); assert.equal(client.available, true);

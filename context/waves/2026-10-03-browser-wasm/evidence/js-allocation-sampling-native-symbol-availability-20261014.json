@@ -1,0 +1,14 @@
+[
+  {
+    "module": "chrome.exe.pdb",
+    "uuid": "3752FDEEB21DC2C34C4C44205044422E1",
+    "url": "https://chromium-browser-symsrv.commondatastorage.googleapis.com/chrome.exe.pdb/3752FDEEB21DC2C34C4C44205044422E1/chrome.exe.pdb",
+    "status": 404
+  },
+  {
+    "module": "chrome.dll.pdb",
+    "uuid": "A1FB22D59518C5D74C4C44205044422E1",
+    "url": "https://chromium-browser-symsrv.commondatastorage.googleapis.com/chrome.dll.pdb/A1FB22D59518C5D74C4C44205044422E1/chrome.dll.pdb",
+    "status": 404
+  }
+]
