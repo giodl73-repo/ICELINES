@@ -1,0 +1,44 @@
+{
+  "head": "b516025971546e5c0461f870c4a50df14fb5668c",
+  "merge_preview": "b4ad32ba34f3f749729c2308ad9f582d696a6288",
+  "base": "05396122bfe43f3ee86ec27191bda32018545feb",
+  "browser_run": 38521473349,
+  "native_run": 38521473253,
+  "checks_passed": 29,
+  "artifact_id": 11874184452,
+  "artifact": "target/catalog-metadata-index-ci-b4ad32ba",
+  "shell_build": "c765c4074967f6897d15688e8832eafba5572425689ef1fc9b8b562ab5123d13",
+  "reports": {
+    "context": "target/catalog-context-HxSqyn/report.json",
+    "viewport": "target/viewport-browser-VZtJyR/report.json",
+    "offline": "target/browser-acceptance-mtejaD/report.json",
+    "refusal": "target/gzip-delivery-refusal-NGk0w8/report.json"
+  },
+  "publication": "Not published; public remains e58a3bfc",
+  "open_gates": [
+    "250 MiB whole-browser target",
+    "Physical Android deferred by user"
+  ],
+  "merged_master": "38d2a053b0abc6b139b8f20718377c4df8a57a11",
+  "master_browser_run": 38523902672,
+  "master_native_run": 38523902552,
+  "master_status": "Pending; do not publish before exact master artifact validation",
+  "report_hashes": {
+    "context": {
+      "file": "catalog-metadata-index-ci-context-20261013.json",
+      "sha256": "4817d84bc2705e26eb6ea549c388402897dc8c60b57efdaa700da48ee64e4807"
+    },
+    "viewport": {
+      "file": "catalog-metadata-index-ci-viewport-20261013.json",
+      "sha256": "eee9d7018767186d3e48c288e476e9f3ae69565f52c410e0842b6c20cf9c9a5a"
+    },
+    "offline": {
+      "file": "catalog-metadata-index-ci-offline-20261013.json",
+      "sha256": "6d9cba09c6462bc91240986d7d9150a4764d5c9873d4af04b6f6c808075351f5"
+    },
+    "refusal": {
+      "file": "catalog-metadata-index-ci-refusal-20261013.json",
+      "sha256": "136e24c76e076cca09d324b16ca6d8cb315c8a7938156e3ad754913e8379296f"
+    }
+  }
+}
