@@ -1,0 +1,98 @@
+{
+  "source_commit": "0bc5388f546590fe5269e3172f21d0406fdeb1ba",
+  "branch": "codex/wasm-gzip-delivery-experiment",
+  "published": false,
+  "decision": "Retain for a focused implementation PR: two opposite-order pairs show about44-45 MiB lower sampled whole-browser private peak; fixed250 MiB target still fails.",
+  "wire_raw_bytes": 41006884,
+  "wire_gzip_bytes": 4960231,
+  "unit_tests_passed": 154,
+  "artifact_tests_passed": 9,
+  "distributed_wasm_all_packages": 75,
+  "refusal_probe_sha256": "51eca5c697df5aa823fe4570cfa928fe6d1980336e4670ac28785820fd691c30",
+  "memory_runner_sha256": "f3fdbd700fa4de81bdae18842e13716a851d3a64c856f8dd8c56a59283a8b0f0",
+  "sampler_sha256": "fef055f0dbbdaee58013089814436f5cd8c8d231c90e9c3fa40e416d4aaa50bc",
+  "measurements": [
+    {
+      "label": "first-candidate",
+      "peak_private_mib": 405.8046875,
+      "blank_private_mib": 234.25390625,
+      "max_warm_ms": 73.98970000000554,
+      "imports": [
+        {
+          "season_type": "regular",
+          "import_and_render_ms": 154.30490000000282,
+          "rows": 905
+        },
+        {
+          "season_type": "playoff",
+          "import_and_render_ms": 179.5411000000022,
+          "rows": 332
+        }
+      ]
+    },
+    {
+      "label": "first-control",
+      "peak_private_mib": 449.640625,
+      "blank_private_mib": 239.42578125,
+      "max_warm_ms": 86.02139999999781,
+      "imports": [
+        {
+          "season_type": "regular",
+          "import_and_render_ms": 159.46790000000328,
+          "rows": 905
+        },
+        {
+          "season_type": "playoff",
+          "import_and_render_ms": 114.46390000000247,
+          "rows": 332
+        }
+      ]
+    },
+    {
+      "label": "reverse-control",
+      "peak_private_mib": 434.6484375,
+      "blank_private_mib": 229.44140625,
+      "max_warm_ms": 73.22009999999136,
+      "imports": [
+        {
+          "season_type": "regular",
+          "import_and_render_ms": 160.39009999998962,
+          "rows": 905
+        },
+        {
+          "season_type": "playoff",
+          "import_and_render_ms": 94.80000000000291,
+          "rows": 332
+        }
+      ]
+    },
+    {
+      "label": "reverse-candidate",
+      "peak_private_mib": 389.4609375,
+      "blank_private_mib": 239.65234375,
+      "max_warm_ms": 74.74059999999008,
+      "imports": [
+        {
+          "season_type": "regular",
+          "import_and_render_ms": 187.38090000000375,
+          "rows": 905
+        },
+        {
+          "season_type": "playoff",
+          "import_and_render_ms": 114.07399999999325,
+          "rows": 332
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Original flags/sampler/network observation; no forced GC or compiler/browser overlap. Each run completes75 packages, two archive imports,20 full queries,8 resident windows and restart.",
+    "Opposite-order pairs reduce ordering concern, but only two pairs, one Windows workstation, sampled process-counter sums, variable blank baselines. Not a statistical confidence interval or exact physical RAM.",
+    "Bandwidth reduction is87.9%; not the same percentage as memory saving.",
+    "Canonical JSON revision, bytes, saving, recovery and exports unchanged. No native query or engine change.",
+    "No production-host gzip/update/rollback validation or reviewed CI yet; local prototype only.",
+    "250 MiB whole-browser and physical Android gates remain open; phone deferred."
+  ],
+  "candidate_wasm_sha256": "4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee",
+  "control_wasm_sha256": "4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee"
+}

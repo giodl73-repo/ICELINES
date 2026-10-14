@@ -733,3 +733,37 @@ and explicitly limits its scope. The full75-package normal control436.77 MiB
 remains failed acceptance. Next larger investigations must address acquisition
 and duplicate package representations across the page/worker boundary; further
 styling or tiny serialization trials have not demonstrated useful memory gains.
+
+## Authenticated gzip catalog delivery
+
+Prototype 0bc5388f retains raw canonical JSON files and adds optional authenticated
+static gzip transports. The browser validates the envelope's size/hash, expands
+under the advertised raw-size ceiling/deadline/cancellation, and validates the
+original raw size/hash before catalog context or engine activation. Old catalogs
+and browsers without DecompressionStream use existing raw JSON. No silent fallback
+on corrupt gzip. Saving/recovery/revision/export use the original raw bytes.
+
+All75 transport files expand to byte-identical packages. Total package transfer
+falls from41006884 to4960231 bytes (87.9%). The actual unchanged WASM loads all75;
+154 units,9 artifact-refusal tests, full933-player viewport/AX/keyboard/print,
+77-goalie parity and offline saved933/fresh835 process reopening pass. A dedicated
+browser probe observes gzip requests with no raw JSON request, injects corrupt
+second-season transport, confirms previous-good context/full result/exact raw
+package export and then retries successfully to905 players.
+
+Two clean opposite-order normal-workload pairs:
+- Candidate first405.80 MiB (blank234.25), control449.64 (blank239.43).
+- Control first434.65 MiB, candidate389.46 MiB.
+Each completes all75 packages, eight residents, two905/332-player imports,
+20 full queries and restart with the original launch flags/sampler/observer,
+no forced GC and no active compiler/other owned-browser workload. Same WASM hash.
+About44-45 MiB lower sampled private peak repeats across both pairs, with the
+usual baseline/process-counter variation. This is not a confidence interval or
+exact physical RAM, and bandwidth saving is not memory-saving percentage.
+
+The delivery prototype is retained for a focused implementation PR rather than
+rejected. It is not published/adopted yet: reviewed CI/master artifact and real
+Pages gzip byte/execution/update/rollback verification remain necessary. The
+fixed250 MiB requirement still fails, and physical Android remains deferred.
+Exact raw reports/provenance use gzip-delivery prefixes. The five-role review
+keeps full validation NEEDS-WORK while recognizing scoped local parity/saving.
