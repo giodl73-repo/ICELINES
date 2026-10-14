@@ -1,0 +1,525 @@
+{
+  "source": "e58a3bfc0f71fe7ba844cf729df166132eff7693",
+  "scope": "Two full-workload read-only inspector diagnostics. No forced GC. Additional observer can change timing; NOT acceptance or exact simultaneous component attribution.",
+  "reports": {
+    "page-worker": {
+      "file": "current-runtime-attribution-page-worker-20261013.json",
+      "sha256": "e4a43a008101e2d7771d6ea09b62e879ca0201d65cbdc00169ea6c9b0692e318"
+    },
+    "supplemental": {
+      "file": "current-runtime-attribution-supplemental-20261013.json",
+      "sha256": "bae30048898bb49d5e9e33430cb38a237a88320a24ad2be18e50017302ac45d5"
+    }
+  },
+  "summaries": {
+    "page-worker": [
+      {
+        "phase": "blank_browser",
+        "nearest_os_private_mib": {
+          "renderer": 82.5859375,
+          "unreported": 2.8984375,
+          "network.mojom.NetworkService": 15.42578125,
+          "GPU": 76.1171875,
+          "browser": 43.18359375,
+          "storage.mojom.StorageService": 9.7890625
+        },
+        "main_used_mib": 0.6189346313476562,
+        "main_embedder_mib": 1.319854736328125,
+        "main_backing_mib": 5.7220458984375e-06,
+        "wasm_linear_mib": 0.0,
+        "supplemental_target_heaps": []
+      },
+      {
+        "phase": "ready_before_engine",
+        "nearest_os_private_mib": {
+          "renderer": 108.12109375,
+          "unreported": 2.8984375,
+          "network.mojom.NetworkService": 16.890625,
+          "GPU": 91.0,
+          "browser": 48.30859375,
+          "storage.mojom.StorageService": 9.875
+        },
+        "main_used_mib": 2.6408920288085938,
+        "main_embedder_mib": 3.0946731567382812,
+        "main_backing_mib": 0.39821720123291016,
+        "wasm_linear_mib": 0.0,
+        "supplemental_target_heaps": []
+      },
+      {
+        "phase": "loaded_1",
+        "nearest_os_private_mib": {
+          "renderer": 109.91796875,
+          "unreported": 2.8984375,
+          "network.mojom.NetworkService": 16.890625,
+          "GPU": 91.05859375,
+          "browser": 48.515625,
+          "storage.mojom.StorageService": 9.875
+        },
+        "main_used_mib": 3.7987327575683594,
+        "main_embedder_mib": 6.662315368652344,
+        "main_backing_mib": 5.071591377258301,
+        "wasm_linear_mib": 6.1875,
+        "supplemental_target_heaps": []
+      },
+      {
+        "phase": "loaded_8",
+        "nearest_os_private_mib": {
+          "renderer": 201.92578125,
+          "unreported": 2.8984375,
+          "network.mojom.NetworkService": 17.29296875,
+          "GPU": 96.484375,
+          "browser": 48.87890625,
+          "storage.mojom.StorageService": 9.875
+        },
+        "main_used_mib": 3.2864761352539062,
+        "main_embedder_mib": 3.1299819946289062,
+        "main_backing_mib": 23.029942512512207,
+        "wasm_linear_mib": 19.5625,
+        "supplemental_target_heaps": []
+      },
+      {
+        "phase": "loaded_75",
+        "nearest_os_private_mib": {
+          "renderer": 185.23046875,
+          "unreported": 2.7734375,
+          "network.mojom.NetworkService": 16.5703125,
+          "GPU": 104.109375,
+          "browser": 47.69921875,
+          "storage.mojom.StorageService": 9.765625
+        },
+        "main_used_mib": 4.794471740722656,
+        "main_embedder_mib": 10.916290283203125,
+        "main_backing_mib": 9.743551254272461,
+        "wasm_linear_mib": 23.875,
+        "supplemental_target_heaps": []
+      },
+      {
+        "phase": "after_both_archives",
+        "nearest_os_private_mib": {
+          "renderer": 187.63671875,
+          "unreported": 2.7734375,
+          "network.mojom.NetworkService": 16.5703125,
+          "GPU": 104.15625,
+          "browser": 48.671875,
+          "storage.mojom.StorageService": 9.765625
+        },
+        "main_used_mib": 5.313079833984375,
+        "main_embedder_mib": 7.575233459472656,
+        "main_backing_mib": 5.846982002258301,
+        "wasm_linear_mib": 23.875,
+        "supplemental_target_heaps": []
+      },
+      {
+        "phase": "after_twenty_queries",
+        "nearest_os_private_mib": {
+          "renderer": 189.46484375,
+          "unreported": 2.7734375,
+          "network.mojom.NetworkService": 16.5703125,
+          "GPU": 104.453125,
+          "browser": 48.91015625,
+          "storage.mojom.StorageService": 9.765625
+        },
+        "main_used_mib": 6.629657745361328,
+        "main_embedder_mib": 18.319107055664062,
+        "main_backing_mib": 5.849562644958496,
+        "wasm_linear_mib": 23.875,
+        "supplemental_target_heaps": []
+      },
+      {
+        "phase": "after_restart",
+        "nearest_os_private_mib": {
+          "renderer": 156.4609375,
+          "unreported": 2.7734375,
+          "network.mojom.NetworkService": 16.5703125,
+          "GPU": 108.48828125,
+          "browser": 47.5546875,
+          "storage.mojom.StorageService": 9.765625
+        },
+        "main_used_mib": 4.3180084228515625,
+        "main_embedder_mib": 3.5704269409179688,
+        "main_backing_mib": 5.845553398132324,
+        "wasm_linear_mib": 1.1875,
+        "supplemental_target_heaps": []
+      }
+    ],
+    "supplemental": [
+      {
+        "phase": "blank_browser",
+        "nearest_os_private_mib": {
+          "GPU": 74.35546875,
+          "storage.mojom.StorageService": 9.765625,
+          "renderer": 81.34765625,
+          "unreported": 2.90234375,
+          "network.mojom.NetworkService": 15.4609375,
+          "browser": 39.3515625
+        },
+        "main_used_mib": 0.6189346313476562,
+        "main_embedder_mib": 1.319854736328125,
+        "main_backing_mib": 5.7220458984375e-06,
+        "wasm_linear_mib": 0.0,
+        "supplemental_target_heaps": [
+          {
+            "type": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html",
+            "heap": {
+              "usedSize": 6897504,
+              "totalSize": 11272192,
+              "embedderHeapUsedSize": 5515808,
+              "backingStorageSize": 2414096
+            }
+          },
+          {
+            "type": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/",
+            "heap": {
+              "usedSize": 6897504,
+              "totalSize": 11272192,
+              "embedderHeapUsedSize": 5515808,
+              "backingStorageSize": 2414096
+            }
+          }
+        ]
+      },
+      {
+        "phase": "ready_before_engine",
+        "nearest_os_private_mib": {
+          "GPU": 91.45703125,
+          "storage.mojom.StorageService": 9.84765625,
+          "renderer": 103.23828125,
+          "unreported": 2.90234375,
+          "network.mojom.NetworkService": 16.86328125,
+          "browser": 48.51953125
+        },
+        "main_used_mib": 2.6408920288085938,
+        "main_embedder_mib": 2.8159561157226562,
+        "main_backing_mib": 0.39821720123291016,
+        "wasm_linear_mib": 0.0,
+        "supplemental_target_heaps": [
+          {
+            "type": "service_worker",
+            "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js",
+            "heap": {
+              "usedSize": 694800,
+              "totalSize": 2097152,
+              "embedderHeapUsedSize": 1115320,
+              "backingStorageSize": 1932268
+            }
+          },
+          {
+            "type": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html",
+            "heap": {
+              "usedSize": 6921556,
+              "totalSize": 11272192,
+              "embedderHeapUsedSize": 5515808,
+              "backingStorageSize": 2414782
+            }
+          },
+          {
+            "type": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/",
+            "heap": {
+              "usedSize": 6921556,
+              "totalSize": 11272192,
+              "embedderHeapUsedSize": 5515808,
+              "backingStorageSize": 2414782
+            }
+          }
+        ]
+      },
+      {
+        "phase": "loaded_1",
+        "nearest_os_private_mib": {
+          "GPU": 91.45703125,
+          "storage.mojom.StorageService": 9.84765625,
+          "renderer": 103.23828125,
+          "unreported": 2.90234375,
+          "network.mojom.NetworkService": 16.86328125,
+          "browser": 48.51953125
+        },
+        "main_used_mib": 3.7884597778320312,
+        "main_embedder_mib": 6.432807922363281,
+        "main_backing_mib": 5.071591377258301,
+        "wasm_linear_mib": 6.1875,
+        "supplemental_target_heaps": [
+          {
+            "type": "service_worker",
+            "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js",
+            "heap": {
+              "usedSize": 712192,
+              "totalSize": 2097152,
+              "embedderHeapUsedSize": 1115320,
+              "backingStorageSize": 1932390
+            }
+          },
+          {
+            "type": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html",
+            "heap": {
+              "usedSize": 6922348,
+              "totalSize": 11272192,
+              "embedderHeapUsedSize": 5642712,
+              "backingStorageSize": 2414846
+            }
+          },
+          {
+            "type": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/",
+            "heap": {
+              "usedSize": 6922348,
+              "totalSize": 11272192,
+              "embedderHeapUsedSize": 5642712,
+              "backingStorageSize": 2414846
+            }
+          }
+        ]
+      },
+      {
+        "phase": "loaded_8",
+        "nearest_os_private_mib": {
+          "GPU": 97.0234375,
+          "storage.mojom.StorageService": 9.8515625,
+          "renderer": 197.8125,
+          "unreported": 2.90234375,
+          "network.mojom.NetworkService": 17.32421875,
+          "browser": 49.8125
+        },
+        "main_used_mib": 3.276439666748047,
+        "main_embedder_mib": 2.9606170654296875,
+        "main_backing_mib": 23.029924392700195,
+        "wasm_linear_mib": 19.5625,
+        "supplemental_target_heaps": [
+          {
+            "type": "service_worker",
+            "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js",
+            "heap": {
+              "usedSize": 714764,
+              "totalSize": 2097152,
+              "embedderHeapUsedSize": 1242144,
+              "backingStorageSize": 1933223
+            }
+          },
+          {
+            "type": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html",
+            "heap": {
+              "usedSize": 6927892,
+              "totalSize": 11272192,
+              "embedderHeapUsedSize": 5642712,
+              "backingStorageSize": 2415294
+            }
+          },
+          {
+            "type": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/",
+            "heap": {
+              "usedSize": 6927892,
+              "totalSize": 11272192,
+              "embedderHeapUsedSize": 5642712,
+              "backingStorageSize": 2415294
+            }
+          }
+        ]
+      },
+      {
+        "phase": "loaded_75",
+        "nearest_os_private_mib": {
+          "GPU": 97.02734375,
+          "storage.mojom.StorageService": 9.7421875,
+          "renderer": 184.09375,
+          "unreported": 2.76953125,
+          "network.mojom.NetworkService": 16.87109375,
+          "browser": 48.328125
+        },
+        "main_used_mib": 6.471839904785156,
+        "main_embedder_mib": 10.807609558105469,
+        "main_backing_mib": 9.743551254272461,
+        "wasm_linear_mib": 23.875,
+        "supplemental_target_heaps": [
+          {
+            "type": "service_worker",
+            "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js",
+            "heap": {
+              "usedSize": 720660,
+              "totalSize": 2097152,
+              "embedderHeapUsedSize": 1488528,
+              "backingStorageSize": 1941196
+            }
+          },
+          {
+            "type": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html",
+            "heap": {
+              "usedSize": 4118512,
+              "totalSize": 4980736,
+              "embedderHeapUsedSize": 2545624,
+              "backingStorageSize": 1287767
+            }
+          },
+          {
+            "type": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/",
+            "heap": {
+              "usedSize": 4118512,
+              "totalSize": 4980736,
+              "embedderHeapUsedSize": 2545624,
+              "backingStorageSize": 1287767
+            }
+          }
+        ]
+      },
+      {
+        "phase": "after_both_archives",
+        "nearest_os_private_mib": {
+          "GPU": 104.9140625,
+          "storage.mojom.StorageService": 9.7421875,
+          "renderer": 187.74609375,
+          "unreported": 2.76953125,
+          "network.mojom.NetworkService": 16.87109375,
+          "browser": 49.1484375
+        },
+        "main_used_mib": 5.257347106933594,
+        "main_embedder_mib": 7.501472473144531,
+        "main_backing_mib": 5.846982002258301,
+        "wasm_linear_mib": 23.875,
+        "supplemental_target_heaps": [
+          {
+            "type": "service_worker",
+            "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js",
+            "heap": {
+              "usedSize": 720660,
+              "totalSize": 2097152,
+              "embedderHeapUsedSize": 1488528,
+              "backingStorageSize": 1941196
+            }
+          },
+          {
+            "type": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html",
+            "heap": {
+              "usedSize": 4120096,
+              "totalSize": 4980736,
+              "embedderHeapUsedSize": 2545624,
+              "backingStorageSize": 1287895
+            }
+          },
+          {
+            "type": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/",
+            "heap": {
+              "usedSize": 4120096,
+              "totalSize": 4980736,
+              "embedderHeapUsedSize": 2545624,
+              "backingStorageSize": 1287895
+            }
+          }
+        ]
+      },
+      {
+        "phase": "after_twenty_queries",
+        "nearest_os_private_mib": {
+          "GPU": 104.96875,
+          "storage.mojom.StorageService": 9.7421875,
+          "renderer": 190.53125,
+          "unreported": 2.76953125,
+          "network.mojom.NetworkService": 16.87109375,
+          "browser": 48.453125
+        },
+        "main_used_mib": 7.609352111816406,
+        "main_embedder_mib": 16.594558715820312,
+        "main_backing_mib": 5.849562644958496,
+        "wasm_linear_mib": 23.875,
+        "supplemental_target_heaps": [
+          {
+            "type": "service_worker",
+            "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js",
+            "heap": {
+              "usedSize": 720660,
+              "totalSize": 2097152,
+              "embedderHeapUsedSize": 1614736,
+              "backingStorageSize": 1941196
+            }
+          },
+          {
+            "type": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html",
+            "heap": {
+              "usedSize": 4135936,
+              "totalSize": 4980736,
+              "embedderHeapUsedSize": 2545624,
+              "backingStorageSize": 1289175
+            }
+          },
+          {
+            "type": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/",
+            "heap": {
+              "usedSize": 4135936,
+              "totalSize": 4980736,
+              "embedderHeapUsedSize": 2545624,
+              "backingStorageSize": 1289175
+            }
+          }
+        ]
+      },
+      {
+        "phase": "after_restart",
+        "nearest_os_private_mib": {
+          "GPU": 113.0,
+          "storage.mojom.StorageService": 9.7421875,
+          "renderer": 157.703125,
+          "unreported": 2.76953125,
+          "network.mojom.NetworkService": 16.87109375,
+          "browser": 48.5234375
+        },
+        "main_used_mib": 4.3101043701171875,
+        "main_embedder_mib": 3.5449295043945312,
+        "main_backing_mib": 5.845553398132324,
+        "wasm_linear_mib": 1.1875,
+        "supplemental_target_heaps": [
+          {
+            "type": "service_worker",
+            "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js",
+            "heap": {
+              "usedSize": 727828,
+              "totalSize": 2097152,
+              "embedderHeapUsedSize": 1614736,
+              "backingStorageSize": 1941196
+            }
+          },
+          {
+            "type": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html",
+            "heap": {
+              "usedSize": 4135936,
+              "totalSize": 4980736,
+              "embedderHeapUsedSize": 2605520,
+              "backingStorageSize": 1289175
+            }
+          },
+          {
+            "type": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/",
+            "heap": {
+              "usedSize": 4135936,
+              "totalSize": 4980736,
+              "embedderHeapUsedSize": 2605520,
+              "backingStorageSize": 1289175
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "open_gates": [
+    "250 MiB whole-browser target",
+    "Physical Android deferred"
+  ],
+  "observer_hashes": {
+    "target/viewport-runtime-attribution.mjs": "1543691e615b3601dcd26d204525f564ef9a0de1bb18aa259ac3b87627ec9189",
+    "target/runtime-memory-snapshot.mjs": "dc3e021c7e797dd6e0d4f9bf966543f3a28d80d45461811910b6b2e87ea8806c",
+    "target/stream-runtime-attribution-expanded.mjs": "034613190479ad6160a008813be740a3c1c6d5e73dbe98b0a8cfd172d6fc527c",
+    "target/runtime-memory-snapshot-expanded.mjs": "cb9871b10796eaa98aae13034c7f952c35fcc03161b262f5eb6773450c05a034"
+  },
+  "normal_runner_sampler_and_phase_classifier_unchanged": true
+}

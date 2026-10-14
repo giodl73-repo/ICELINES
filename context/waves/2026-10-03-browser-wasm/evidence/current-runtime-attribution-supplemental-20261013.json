@@ -1,0 +1,2806 @@
+{
+  "started_at": "2026-10-14T05:34:26.156Z",
+  "completed": true,
+  "host": {
+    "platform": "win32",
+    "arch": "x64",
+    "os_release": "10.0.26310",
+    "cpu": "12th Gen Intel(R) Core(TM) i7-12800HX",
+    "logical_cpus": 24,
+    "ram_bytes": 34042929152
+  },
+  "scope": "Single isolated headless Chromium on this Windows workstation. Includes owned browser/renderer/GPU/utility processes; excludes Node runner, local HTTP server and sampler. Working-set sums may count shared pages more than once. Private-byte sums measure private allocations, not just resident RAM. Sample maxima may miss transient spikes; lifetime working-set peaks are per-process, not concurrent group peaks. No physical-phone or remote-rollback claim.",
+  "sampling": {
+    "requested_interval_ms": 100,
+    "tree_discovery_interval_ms": 500,
+    "actual_median_interval_ms": 187,
+    "actual_max_interval_ms": 843
+  },
+  "packages": [
+    {
+      "id": "20252026-regular",
+      "bytes": 926515,
+      "load_and_render_ms": 159.4998999999989,
+      "rows": 933,
+      "resident_windows": 1
+    },
+    {
+      "id": "20242025-regular",
+      "bytes": 908625,
+      "load_and_render_ms": 175.625,
+      "rows": 905,
+      "resident_windows": 2
+    },
+    {
+      "id": "20242025-playoff",
+      "bytes": 259978,
+      "load_and_render_ms": 85.62510000000111,
+      "rows": 332,
+      "resident_windows": 3
+    },
+    {
+      "id": "20232024-regular",
+      "bytes": 909591,
+      "load_and_render_ms": 136.57880000000296,
+      "rows": 911,
+      "resident_windows": 4
+    },
+    {
+      "id": "20232024-playoff",
+      "bytes": 264960,
+      "load_and_render_ms": 76.1913999999997,
+      "rows": 339,
+      "resident_windows": 5
+    },
+    {
+      "id": "20222023-regular",
+      "bytes": 936534,
+      "load_and_render_ms": 139.7589999999982,
+      "rows": 939,
+      "resident_windows": 6
+    },
+    {
+      "id": "20222023-playoff",
+      "bytes": 262089,
+      "load_and_render_ms": 97.9375,
+      "rows": 334,
+      "resident_windows": 7
+    },
+    {
+      "id": "20212022-regular",
+      "bytes": 988849,
+      "load_and_render_ms": 150.4966999999997,
+      "rows": 1004,
+      "resident_windows": 8
+    },
+    {
+      "id": "20212022-playoff",
+      "bytes": 263293,
+      "load_and_render_ms": 81.51190000000133,
+      "rows": 335,
+      "resident_windows": 8
+    },
+    {
+      "id": "20202021-regular",
+      "bytes": 892768,
+      "load_and_render_ms": 137.36869999999908,
+      "rows": 904,
+      "resident_windows": 8
+    },
+    {
+      "id": "20202021-playoff",
+      "bytes": 262152,
+      "load_and_render_ms": 76.81979999999749,
+      "rows": 337,
+      "resident_windows": 8
+    },
+    {
+      "id": "20192020-regular",
+      "bytes": 860817,
+      "load_and_render_ms": 138.14519999999902,
+      "rows": 861,
+      "resident_windows": 8
+    },
+    {
+      "id": "20192020-playoff",
+      "bytes": 402760,
+      "load_and_render_ms": 78.84439999999813,
+      "rows": 516,
+      "resident_windows": 8
+    },
+    {
+      "id": "20182019-regular",
+      "bytes": 884461,
+      "load_and_render_ms": 136.64740000000165,
+      "rows": 906,
+      "resident_windows": 8
+    },
+    {
+      "id": "20182019-playoff",
+      "bytes": 258349,
+      "load_and_render_ms": 79.0067999999992,
+      "rows": 333,
+      "resident_windows": 8
+    },
+    {
+      "id": "20172018-regular",
+      "bytes": 869271,
+      "load_and_render_ms": 89.41700000000128,
+      "rows": 871,
+      "resident_windows": 8
+    },
+    {
+      "id": "20172018-playoff",
+      "bytes": 260915,
+      "load_and_render_ms": 86.78610000000117,
+      "rows": 333,
+      "resident_windows": 8
+    },
+    {
+      "id": "20162017-regular",
+      "bytes": 865646,
+      "load_and_render_ms": 141.71359999999913,
+      "rows": 885,
+      "resident_windows": 8
+    },
+    {
+      "id": "20162017-playoff",
+      "bytes": 266101,
+      "load_and_render_ms": 75.68549999999959,
+      "rows": 343,
+      "resident_windows": 8
+    },
+    {
+      "id": "20152016-regular",
+      "bytes": 872850,
+      "load_and_render_ms": 142.59889999999723,
+      "rows": 890,
+      "resident_windows": 8
+    },
+    {
+      "id": "20152016-playoff",
+      "bytes": 265706,
+      "load_and_render_ms": 74.1877999999997,
+      "rows": 340,
+      "resident_windows": 8
+    },
+    {
+      "id": "20142015-regular",
+      "bytes": 857046,
+      "load_and_render_ms": 138.08200000000215,
+      "rows": 859,
+      "resident_windows": 8
+    },
+    {
+      "id": "20142015-playoff",
+      "bytes": 264283,
+      "load_and_render_ms": 77.18789999999717,
+      "rows": 339,
+      "resident_windows": 8
+    },
+    {
+      "id": "20132014-regular",
+      "bytes": 862203,
+      "load_and_render_ms": 100.54589999999735,
+      "rows": 878,
+      "resident_windows": 8
+    },
+    {
+      "id": "20132014-playoff",
+      "bytes": 269000,
+      "load_and_render_ms": 72.9974000000002,
+      "rows": 344,
+      "resident_windows": 8
+    },
+    {
+      "id": "20122013-regular",
+      "bytes": 809752,
+      "load_and_render_ms": 139.41159999999945,
+      "rows": 826,
+      "resident_windows": 8
+    },
+    {
+      "id": "20122013-playoff",
+      "bytes": 270604,
+      "load_and_render_ms": 75.08099999999831,
+      "rows": 349,
+      "resident_windows": 8
+    },
+    {
+      "id": "20112012-regular",
+      "bytes": 865276,
+      "load_and_render_ms": 137.53689999999915,
+      "rows": 877,
+      "resident_windows": 8
+    },
+    {
+      "id": "20112012-playoff",
+      "bytes": 268863,
+      "load_and_render_ms": 77.03420000000187,
+      "rows": 347,
+      "resident_windows": 8
+    },
+    {
+      "id": "20102011-regular",
+      "bytes": 861262,
+      "load_and_render_ms": 88.23500000000058,
+      "rows": 886,
+      "resident_windows": 8
+    },
+    {
+      "id": "20102011-playoff",
+      "bytes": 263962,
+      "load_and_render_ms": 94.56340000000637,
+      "rows": 339,
+      "resident_windows": 8
+    },
+    {
+      "id": "20092010-regular",
+      "bytes": 848598,
+      "load_and_render_ms": 104.1846000000005,
+      "rows": 855,
+      "resident_windows": 8
+    },
+    {
+      "id": "20092010-playoff",
+      "bytes": 267154,
+      "load_and_render_ms": 80.43480000000272,
+      "rows": 342,
+      "resident_windows": 8
+    },
+    {
+      "id": "20082009-regular",
+      "bytes": 856255,
+      "load_and_render_ms": 126.4542999999976,
+      "rows": 870,
+      "resident_windows": 8
+    },
+    {
+      "id": "20082009-playoff",
+      "bytes": 259274,
+      "load_and_render_ms": 73.15869999999995,
+      "rows": 333,
+      "resident_windows": 8
+    },
+    {
+      "id": "20072008-regular",
+      "bytes": 825438,
+      "load_and_render_ms": 136.90600000000268,
+      "rows": 851,
+      "resident_windows": 8
+    },
+    {
+      "id": "20072008-playoff",
+      "bytes": 263177,
+      "load_and_render_ms": 73.38759999999456,
+      "rows": 340,
+      "resident_windows": 8
+    },
+    {
+      "id": "20062007-regular",
+      "bytes": 829179,
+      "load_and_render_ms": 138.38439999999537,
+      "rows": 847,
+      "resident_windows": 8
+    },
+    {
+      "id": "20062007-playoff",
+      "bytes": 256138,
+      "load_and_render_ms": 74.81110000000626,
+      "rows": 331,
+      "resident_windows": 8
+    },
+    {
+      "id": "20052006-regular",
+      "bytes": 843241,
+      "load_and_render_ms": 128.7280000000028,
+      "rows": 853,
+      "resident_windows": 8
+    },
+    {
+      "id": "20052006-playoff",
+      "bytes": 259019,
+      "load_and_render_ms": 75.76950000000215,
+      "rows": 333,
+      "resident_windows": 8
+    },
+    {
+      "id": "20032004-regular",
+      "bytes": 886180,
+      "load_and_render_ms": 134.9470999999976,
+      "rows": 909,
+      "resident_windows": 8
+    },
+    {
+      "id": "20032004-playoff",
+      "bytes": 267212,
+      "load_and_render_ms": 77.29360000000452,
+      "rows": 343,
+      "resident_windows": 8
+    },
+    {
+      "id": "20022003-regular",
+      "bytes": 859084,
+      "load_and_render_ms": 147.3781999999992,
+      "rows": 885,
+      "resident_windows": 8
+    },
+    {
+      "id": "20022003-playoff",
+      "bytes": 262138,
+      "load_and_render_ms": 77.79209999999875,
+      "rows": 337,
+      "resident_windows": 8
+    },
+    {
+      "id": "20012002-regular",
+      "bytes": 845117,
+      "load_and_render_ms": 95.74070000000211,
+      "rows": 871,
+      "resident_windows": 8
+    },
+    {
+      "id": "20012002-playoff",
+      "bytes": 268188,
+      "load_and_render_ms": 78.80129999999917,
+      "rows": 344,
+      "resident_windows": 8
+    },
+    {
+      "id": "20002001-regular",
+      "bytes": 854477,
+      "load_and_render_ms": 147.1981999999989,
+      "rows": 876,
+      "resident_windows": 8
+    },
+    {
+      "id": "20002001-playoff",
+      "bytes": 261769,
+      "load_and_render_ms": 76.77389999999286,
+      "rows": 338,
+      "resident_windows": 8
+    },
+    {
+      "id": "19992000-regular",
+      "bytes": 809404,
+      "load_and_render_ms": 145.75849999999627,
+      "rows": 828,
+      "resident_windows": 8
+    },
+    {
+      "id": "19992000-playoff",
+      "bytes": 257832,
+      "load_and_render_ms": 75.68959999999788,
+      "rows": 334,
+      "resident_windows": 8
+    },
+    {
+      "id": "19981999-regular",
+      "bytes": 787336,
+      "load_and_render_ms": 138.9230000000025,
+      "rows": 804,
+      "resident_windows": 8
+    },
+    {
+      "id": "19981999-playoff",
+      "bytes": 277483,
+      "load_and_render_ms": 79.53689999999915,
+      "rows": 358,
+      "resident_windows": 8
+    },
+    {
+      "id": "19971998-regular",
+      "bytes": 734809,
+      "load_and_render_ms": 99.81010000000242,
+      "rows": 750,
+      "resident_windows": 8
+    },
+    {
+      "id": "19971998-playoff",
+      "bytes": 265265,
+      "load_and_render_ms": 77.43029999999271,
+      "rows": 340,
+      "resident_windows": 8
+    },
+    {
+      "id": "19961997-regular",
+      "bytes": 739627,
+      "load_and_render_ms": 138.54349999999977,
+      "rows": 752,
+      "resident_windows": 8
+    },
+    {
+      "id": "19961997-playoff",
+      "bytes": 264916,
+      "load_and_render_ms": 94.5902999999962,
+      "rows": 343,
+      "resident_windows": 8
+    },
+    {
+      "id": "19951996-regular",
+      "bytes": 747478,
+      "load_and_render_ms": 140.7451999999903,
+      "rows": 767,
+      "resident_windows": 8
+    },
+    {
+      "id": "19951996-playoff",
+      "bytes": 270316,
+      "load_and_render_ms": 78.83200000000943,
+      "rows": 347,
+      "resident_windows": 8
+    },
+    {
+      "id": "19941995-regular",
+      "bytes": 705563,
+      "load_and_render_ms": 151.50380000000587,
+      "rows": 717,
+      "resident_windows": 8
+    },
+    {
+      "id": "19941995-playoff",
+      "bytes": 268354,
+      "load_and_render_ms": 76.47200000000885,
+      "rows": 344,
+      "resident_windows": 8
+    },
+    {
+      "id": "19931994-regular",
+      "bytes": 760939,
+      "load_and_render_ms": 137.126700000008,
+      "rows": 775,
+      "resident_windows": 8
+    },
+    {
+      "id": "19931994-playoff",
+      "bytes": 265306,
+      "load_and_render_ms": 90.54850000000442,
+      "rows": 342,
+      "resident_windows": 8
+    },
+    {
+      "id": "19921993-regular",
+      "bytes": 687976,
+      "load_and_render_ms": 145.03949999999895,
+      "rows": 696,
+      "resident_windows": 8
+    },
+    {
+      "id": "19921993-playoff",
+      "bytes": 261498,
+      "load_and_render_ms": 83.69229999999516,
+      "rows": 337,
+      "resident_windows": 8
+    },
+    {
+      "id": "19911992-regular",
+      "bytes": 681944,
+      "load_and_render_ms": 139.244200000001,
+      "rows": 695,
+      "resident_windows": 8
+    },
+    {
+      "id": "19911992-playoff",
+      "bytes": 276696,
+      "load_and_render_ms": 87.85529999999562,
+      "rows": 358,
+      "resident_windows": 8
+    },
+    {
+      "id": "19901991-regular",
+      "bytes": 637269,
+      "load_and_render_ms": 117.5346000000136,
+      "rows": 648,
+      "resident_windows": 8
+    },
+    {
+      "id": "19901991-playoff",
+      "bytes": 275451,
+      "load_and_render_ms": 78.27679999999236,
+      "rows": 354,
+      "resident_windows": 8
+    },
+    {
+      "id": "19891990-regular",
+      "bytes": 631007,
+      "load_and_render_ms": 111.74610000000393,
+      "rows": 652,
+      "resident_windows": 8
+    },
+    {
+      "id": "19891990-playoff",
+      "bytes": 274505,
+      "load_and_render_ms": 91.90649999999732,
+      "rows": 352,
+      "resident_windows": 8
+    },
+    {
+      "id": "19881989-regular",
+      "bytes": 637726,
+      "load_and_render_ms": 120.03680000000168,
+      "rows": 648,
+      "resident_windows": 8
+    },
+    {
+      "id": "19881989-playoff",
+      "bytes": 273661,
+      "load_and_render_ms": 119.97860000000219,
+      "rows": 352,
+      "resident_windows": 8
+    },
+    {
+      "id": "19871988-regular",
+      "bytes": 644102,
+      "load_and_render_ms": 155.171399999992,
+      "rows": 671,
+      "resident_windows": 8
+    },
+    {
+      "id": "19871988-playoff",
+      "bytes": 284302,
+      "load_and_render_ms": 79.01460000000952,
+      "rows": 367,
+      "resident_windows": 8
+    }
+  ],
+  "imports": [
+    {
+      "season_type": "regular",
+      "import_and_render_ms": 151.27700000000186,
+      "rows": 905
+    },
+    {
+      "season_type": "playoff",
+      "import_and_render_ms": 103.24280000000726,
+      "rows": 332
+    }
+  ],
+  "warm_query_ms": [
+    72.97370000000228,
+    68.25169999999343,
+    83.09799999999814,
+    79.1987000000081,
+    44.58620000000519,
+    70.24889999999141,
+    69.26009999999951,
+    76.05020000001241,
+    66.50569999999425,
+    72.2164000000048,
+    68.73109999998996,
+    77.91030000000319,
+    69.3969999999972,
+    77.35409999999683,
+    58.749500000005355,
+    81.30000000000291,
+    60.245899999994435,
+    70.74040000000969,
+    77.73200000000361,
+    65.26799999999639
+  ],
+  "artifact": {
+    "commit": "e58a3bfc0f71fe7ba844cf729df166132eff7693",
+    "shell_build": "466622feed4318b5ef58118be58cea1d8f91118accdd0ae42773a1ceada80269",
+    "verified_files": 181,
+    "packages": 75
+  },
+  "archive": {
+    "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca",
+    "bytes": 149672
+  },
+  "browser": "153.0.8010.12",
+  "query_completion": "Complete result count (and query summary for viewport rendering), then pending tbody.inert cleared before starting the next query.",
+  "runtime_snapshots": [
+    {
+      "phase": "blank_browser",
+      "at": "2026-10-14T05:34:36.162Z",
+      "targets": [
+        {
+          "type": "page",
+          "url": "about:blank"
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html"
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/"
+        }
+      ],
+      "process_types": [
+        {
+          "type": "browser",
+          "id": 42928,
+          "cpuTime": 1.657781
+        },
+        {
+          "type": "renderer",
+          "id": 22220,
+          "cpuTime": 0.826377
+        },
+        {
+          "type": "renderer",
+          "id": 59160,
+          "cpuTime": 0.319774
+        },
+        {
+          "type": "renderer",
+          "id": 13076,
+          "cpuTime": 1.186215
+        },
+        {
+          "type": "GPU",
+          "id": 58340,
+          "cpuTime": 0.700388
+        },
+        {
+          "type": "network.mojom.NetworkService",
+          "id": 52620,
+          "cpuTime": 0.624494
+        },
+        {
+          "type": "storage.mojom.StorageService",
+          "id": 8952,
+          "cpuTime": 0.334248
+        }
+      ],
+      "main_heap": {
+        "usedSize": 649000,
+        "totalSize": 1310720,
+        "embedderHeapUsedSize": 1383968,
+        "backingStorageSize": 6
+      },
+      "main_dom": {
+        "documents": 2,
+        "nodes": 8,
+        "jsEventListeners": 0
+      },
+      "latest_os_sample": {
+        "phase": "blank_browser",
+        "processes": [
+          {
+            "lifetime_peak_working_set_bytes": 101490688,
+            "working_set_bytes": 97542144,
+            "private_bytes": 77967360,
+            "id": 58340
+          },
+          {
+            "lifetime_peak_working_set_bytes": 23937024,
+            "working_set_bytes": 22609920,
+            "private_bytes": 10240000,
+            "id": 8952
+          },
+          {
+            "lifetime_peak_working_set_bytes": 90619904,
+            "working_set_bytes": 89608192,
+            "private_bytes": 46292992,
+            "id": 13076
+          },
+          {
+            "lifetime_peak_working_set_bytes": 13299712,
+            "working_set_bytes": 11972608,
+            "private_bytes": 3043328,
+            "id": 19472
+          },
+          {
+            "lifetime_peak_working_set_bytes": 41795584,
+            "working_set_bytes": 41795584,
+            "private_bytes": 16211968,
+            "id": 52620
+          },
+          {
+            "lifetime_peak_working_set_bytes": 127889408,
+            "working_set_bytes": 127881216,
+            "private_bytes": 41263104,
+            "id": 42928
+          },
+          {
+            "lifetime_peak_working_set_bytes": 37126144,
+            "working_set_bytes": 35831808,
+            "private_bytes": 18718720,
+            "id": 22220
+          },
+          {
+            "lifetime_peak_working_set_bytes": 52768768,
+            "working_set_bytes": 51449856,
+            "private_bytes": 20287488,
+            "id": 59160
+          }
+        ],
+        "elapsed_ms": 2764
+      },
+      "supplemental_target_heaps": [
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html",
+          "heap": {
+            "usedSize": 6897504,
+            "totalSize": 11272192,
+            "embedderHeapUsedSize": 5515808,
+            "backingStorageSize": 2414096
+          }
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/",
+          "heap": {
+            "usedSize": 6897504,
+            "totalSize": 11272192,
+            "embedderHeapUsedSize": 5515808,
+            "backingStorageSize": 2414096
+          }
+        }
+      ]
+    },
+    {
+      "phase": "ready_before_engine",
+      "at": "2026-10-14T05:34:37.270Z",
+      "targets": [
+        {
+          "type": "service_worker",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js"
+        },
+        {
+          "type": "page",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/"
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html"
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/"
+        }
+      ],
+      "process_types": [
+        {
+          "type": "browser",
+          "id": 42928,
+          "cpuTime": 2.099598
+        },
+        {
+          "type": "renderer",
+          "id": 22220,
+          "cpuTime": 0.826538
+        },
+        {
+          "type": "renderer",
+          "id": 59160,
+          "cpuTime": 0.555076
+        },
+        {
+          "type": "renderer",
+          "id": 13076,
+          "cpuTime": 1.191169
+        },
+        {
+          "type": "GPU",
+          "id": 58340,
+          "cpuTime": 0.825875
+        },
+        {
+          "type": "network.mojom.NetworkService",
+          "id": 52620,
+          "cpuTime": 0.712322
+        },
+        {
+          "type": "storage.mojom.StorageService",
+          "id": 8952,
+          "cpuTime": 0.335879
+        }
+      ],
+      "main_heap": {
+        "usedSize": 2769176,
+        "totalSize": 3993600,
+        "embedderHeapUsedSize": 2952744,
+        "backingStorageSize": 417561
+      },
+      "main_dom": {
+        "documents": 6,
+        "nodes": 1070,
+        "jsEventListeners": 98
+      },
+      "latest_os_sample": {
+        "phase": "startup",
+        "processes": [
+          {
+            "lifetime_peak_working_set_bytes": 116031488,
+            "working_set_bytes": 116031488,
+            "private_bytes": 95899648,
+            "id": 58340
+          },
+          {
+            "lifetime_peak_working_set_bytes": 23937024,
+            "working_set_bytes": 23056384,
+            "private_bytes": 10326016,
+            "id": 8952
+          },
+          {
+            "lifetime_peak_working_set_bytes": 90619904,
+            "working_set_bytes": 89780224,
+            "private_bytes": 46309376,
+            "id": 13076
+          },
+          {
+            "lifetime_peak_working_set_bytes": 13299712,
+            "working_set_bytes": 11972608,
+            "private_bytes": 3043328,
+            "id": 19472
+          },
+          {
+            "lifetime_peak_working_set_bytes": 45031424,
+            "working_set_bytes": 44650496,
+            "private_bytes": 17682432,
+            "id": 52620
+          },
+          {
+            "lifetime_peak_working_set_bytes": 142651392,
+            "working_set_bytes": 141848576,
+            "private_bytes": 50876416,
+            "id": 42928
+          },
+          {
+            "lifetime_peak_working_set_bytes": 37126144,
+            "working_set_bytes": 35831808,
+            "private_bytes": 18718720,
+            "id": 22220
+          },
+          {
+            "lifetime_peak_working_set_bytes": 95752192,
+            "working_set_bytes": 95752192,
+            "private_bytes": 43225088,
+            "id": 59160
+          }
+        ],
+        "elapsed_ms": 3853
+      },
+      "supplemental_target_heaps": [
+        {
+          "type": "service_worker",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js",
+          "heap": {
+            "usedSize": 694800,
+            "totalSize": 2097152,
+            "embedderHeapUsedSize": 1115320,
+            "backingStorageSize": 1932268
+          }
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html",
+          "heap": {
+            "usedSize": 6921556,
+            "totalSize": 11272192,
+            "embedderHeapUsedSize": 5515808,
+            "backingStorageSize": 2414782
+          }
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/",
+          "heap": {
+            "usedSize": 6921556,
+            "totalSize": 11272192,
+            "embedderHeapUsedSize": 5515808,
+            "backingStorageSize": 2414782
+          }
+        }
+      ]
+    },
+    {
+      "phase": "loaded_1",
+      "at": "2026-10-14T05:34:37.505Z",
+      "targets": [
+        {
+          "type": "service_worker",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js"
+        },
+        {
+          "type": "worker",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/src/worker.js"
+        },
+        {
+          "type": "page",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/#/leaders?season=20252026&type=regular&kind=skaters&sort=points&gp="
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html"
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/"
+        }
+      ],
+      "process_types": [
+        {
+          "type": "browser",
+          "id": 42928,
+          "cpuTime": 2.144142
+        },
+        {
+          "type": "renderer",
+          "id": 22220,
+          "cpuTime": 0.826538
+        },
+        {
+          "type": "renderer",
+          "id": 59160,
+          "cpuTime": 0.712516
+        },
+        {
+          "type": "renderer",
+          "id": 13076,
+          "cpuTime": 1.193549
+        },
+        {
+          "type": "GPU",
+          "id": 58340,
+          "cpuTime": 0.841389
+        },
+        {
+          "type": "network.mojom.NetworkService",
+          "id": 52620,
+          "cpuTime": 0.717463
+        },
+        {
+          "type": "storage.mojom.StorageService",
+          "id": 8952,
+          "cpuTime": 0.335879
+        }
+      ],
+      "main_heap": {
+        "usedSize": 3972488,
+        "totalSize": 6152192,
+        "embedderHeapUsedSize": 6745288,
+        "backingStorageSize": 5317949
+      },
+      "main_dom": {
+        "documents": 6,
+        "nodes": 1932,
+        "jsEventListeners": 167
+      },
+      "latest_os_sample": {
+        "phase": "startup",
+        "processes": [
+          {
+            "lifetime_peak_working_set_bytes": 116031488,
+            "working_set_bytes": 116031488,
+            "private_bytes": 95899648,
+            "id": 58340
+          },
+          {
+            "lifetime_peak_working_set_bytes": 23937024,
+            "working_set_bytes": 23056384,
+            "private_bytes": 10326016,
+            "id": 8952
+          },
+          {
+            "lifetime_peak_working_set_bytes": 90619904,
+            "working_set_bytes": 89780224,
+            "private_bytes": 46309376,
+            "id": 13076
+          },
+          {
+            "lifetime_peak_working_set_bytes": 13299712,
+            "working_set_bytes": 11972608,
+            "private_bytes": 3043328,
+            "id": 19472
+          },
+          {
+            "lifetime_peak_working_set_bytes": 45031424,
+            "working_set_bytes": 44650496,
+            "private_bytes": 17682432,
+            "id": 52620
+          },
+          {
+            "lifetime_peak_working_set_bytes": 142651392,
+            "working_set_bytes": 141848576,
+            "private_bytes": 50876416,
+            "id": 42928
+          },
+          {
+            "lifetime_peak_working_set_bytes": 37126144,
+            "working_set_bytes": 35831808,
+            "private_bytes": 18718720,
+            "id": 22220
+          },
+          {
+            "lifetime_peak_working_set_bytes": 95752192,
+            "working_set_bytes": 95752192,
+            "private_bytes": 43225088,
+            "id": 59160
+          }
+        ],
+        "elapsed_ms": 3853
+      },
+      "worker_heap": {
+        "usedSize": 573764,
+        "totalSize": 1048576,
+        "embedderHeapUsedSize": 773712,
+        "backingStorageSize": 1155234
+      },
+      "wasm_linear_bytes": 6488064,
+      "supplemental_target_heaps": [
+        {
+          "type": "service_worker",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js",
+          "heap": {
+            "usedSize": 712192,
+            "totalSize": 2097152,
+            "embedderHeapUsedSize": 1115320,
+            "backingStorageSize": 1932390
+          }
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html",
+          "heap": {
+            "usedSize": 6922348,
+            "totalSize": 11272192,
+            "embedderHeapUsedSize": 5642712,
+            "backingStorageSize": 2414846
+          }
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/",
+          "heap": {
+            "usedSize": 6922348,
+            "totalSize": 11272192,
+            "embedderHeapUsedSize": 5642712,
+            "backingStorageSize": 2414846
+          }
+        }
+      ]
+    },
+    {
+      "phase": "loaded_8",
+      "at": "2026-10-14T05:34:45.129Z",
+      "targets": [
+        {
+          "type": "service_worker",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js"
+        },
+        {
+          "type": "worker",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/src/worker.js"
+        },
+        {
+          "type": "page",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/#/leaders?season=20212022&type=regular&kind=skaters&sort=points&gp="
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html"
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/"
+        }
+      ],
+      "process_types": [
+        {
+          "type": "browser",
+          "id": 42928,
+          "cpuTime": 2.376564
+        },
+        {
+          "type": "renderer",
+          "id": 22220,
+          "cpuTime": 0.827311
+        },
+        {
+          "type": "renderer",
+          "id": 59160,
+          "cpuTime": 1.211598
+        },
+        {
+          "type": "renderer",
+          "id": 13076,
+          "cpuTime": 1.198219
+        },
+        {
+          "type": "GPU",
+          "id": 58340,
+          "cpuTime": 0.95759
+        },
+        {
+          "type": "network.mojom.NetworkService",
+          "id": 52620,
+          "cpuTime": 0.783619
+        },
+        {
+          "type": "storage.mojom.StorageService",
+          "id": 8952,
+          "cpuTime": 0.336157
+        }
+      ],
+      "main_heap": {
+        "usedSize": 3435596,
+        "totalSize": 9297920,
+        "embedderHeapUsedSize": 3104432,
+        "backingStorageSize": 24148626
+      },
+      "main_dom": {
+        "documents": 2,
+        "nodes": 1874,
+        "jsEventListeners": 133
+      },
+      "latest_os_sample": {
+        "phase": "package_20222023-playoff",
+        "processes": [
+          {
+            "lifetime_peak_working_set_bytes": 122556416,
+            "working_set_bytes": 122515456,
+            "private_bytes": 101736448,
+            "id": 58340
+          },
+          {
+            "lifetime_peak_working_set_bytes": 23937024,
+            "working_set_bytes": 23068672,
+            "private_bytes": 10330112,
+            "id": 8952
+          },
+          {
+            "lifetime_peak_working_set_bytes": 90619904,
+            "working_set_bytes": 88854528,
+            "private_bytes": 45158400,
+            "id": 13076
+          },
+          {
+            "lifetime_peak_working_set_bytes": 13299712,
+            "working_set_bytes": 11972608,
+            "private_bytes": 3043328,
+            "id": 19472
+          },
+          {
+            "lifetime_peak_working_set_bytes": 45309952,
+            "working_set_bytes": 45060096,
+            "private_bytes": 18165760,
+            "id": 52620
+          },
+          {
+            "lifetime_peak_working_set_bytes": 145641472,
+            "working_set_bytes": 144412672,
+            "private_bytes": 52232192,
+            "id": 42928
+          },
+          {
+            "lifetime_peak_working_set_bytes": 37126144,
+            "working_set_bytes": 35536896,
+            "private_bytes": 18391040,
+            "id": 22220
+          },
+          {
+            "lifetime_peak_working_set_bytes": 200069120,
+            "working_set_bytes": 198488064,
+            "private_bytes": 143872000,
+            "id": 59160
+          }
+        ],
+        "elapsed_ms": 11559
+      },
+      "worker_heap": {
+        "usedSize": 1120364,
+        "totalSize": 2359296,
+        "embedderHeapUsedSize": 773712,
+        "backingStorageSize": 6723618
+      },
+      "wasm_linear_bytes": 20512768,
+      "supplemental_target_heaps": [
+        {
+          "type": "service_worker",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js",
+          "heap": {
+            "usedSize": 714764,
+            "totalSize": 2097152,
+            "embedderHeapUsedSize": 1242144,
+            "backingStorageSize": 1933223
+          }
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html",
+          "heap": {
+            "usedSize": 6927892,
+            "totalSize": 11272192,
+            "embedderHeapUsedSize": 5642712,
+            "backingStorageSize": 2415294
+          }
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/",
+          "heap": {
+            "usedSize": 6927892,
+            "totalSize": 11272192,
+            "embedderHeapUsedSize": 5642712,
+            "backingStorageSize": 2415294
+          }
+        }
+      ]
+    },
+    {
+      "phase": "loaded_75",
+      "at": "2026-10-14T05:35:47.327Z",
+      "targets": [
+        {
+          "type": "service_worker",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js"
+        },
+        {
+          "type": "worker",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/src/worker.js"
+        },
+        {
+          "type": "page",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/#/leaders?season=19871988&type=playoff&kind=skaters&sort=points&gp="
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html"
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/"
+        }
+      ],
+      "process_types": [
+        {
+          "type": "browser",
+          "id": 42928,
+          "cpuTime": 4.103752
+        },
+        {
+          "type": "renderer",
+          "id": 22220,
+          "cpuTime": 0.828603
+        },
+        {
+          "type": "renderer",
+          "id": 59160,
+          "cpuTime": 5.666786
+        },
+        {
+          "type": "renderer",
+          "id": 13076,
+          "cpuTime": 1.317188
+        },
+        {
+          "type": "GPU",
+          "id": 58340,
+          "cpuTime": 1.767935
+        },
+        {
+          "type": "network.mojom.NetworkService",
+          "id": 52620,
+          "cpuTime": 1.02104
+        },
+        {
+          "type": "storage.mojom.StorageService",
+          "id": 8952,
+          "cpuTime": 0.337774
+        }
+      ],
+      "main_heap": {
+        "usedSize": 6786216,
+        "totalSize": 13230080,
+        "embedderHeapUsedSize": 11332600,
+        "backingStorageSize": 10216854
+      },
+      "main_dom": {
+        "documents": 2,
+        "nodes": 2423,
+        "jsEventListeners": 379
+      },
+      "latest_os_sample": {
+        "phase": "package_19871988-playoff",
+        "processes": [
+          {
+            "lifetime_peak_working_set_bytes": 123039744,
+            "working_set_bytes": 122945536,
+            "private_bytes": 101740544,
+            "id": 58340
+          },
+          {
+            "lifetime_peak_working_set_bytes": 23937024,
+            "working_set_bytes": 23089152,
+            "private_bytes": 10215424,
+            "id": 8952
+          },
+          {
+            "lifetime_peak_working_set_bytes": 91545600,
+            "working_set_bytes": 83685376,
+            "private_bytes": 37646336,
+            "id": 13076
+          },
+          {
+            "lifetime_peak_working_set_bytes": 13299712,
+            "working_set_bytes": 11907072,
+            "private_bytes": 2904064,
+            "id": 19472
+          },
+          {
+            "lifetime_peak_working_set_bytes": 45760512,
+            "working_set_bytes": 45379584,
+            "private_bytes": 17690624,
+            "id": 52620
+          },
+          {
+            "lifetime_peak_working_set_bytes": 147914752,
+            "working_set_bytes": 144936960,
+            "private_bytes": 50675712,
+            "id": 42928
+          },
+          {
+            "lifetime_peak_working_set_bytes": 37126144,
+            "working_set_bytes": 35508224,
+            "private_bytes": 18284544,
+            "id": 22220
+          },
+          {
+            "lifetime_peak_working_set_bytes": 220024832,
+            "working_set_bytes": 198995968,
+            "private_bytes": 137105408,
+            "id": 59160
+          }
+        ],
+        "elapsed_ms": 74131
+      },
+      "worker_heap": {
+        "usedSize": 858972,
+        "totalSize": 1835008,
+        "embedderHeapUsedSize": 747776,
+        "backingStorageSize": 4560222
+      },
+      "wasm_linear_bytes": 25034752,
+      "supplemental_target_heaps": [
+        {
+          "type": "service_worker",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js",
+          "heap": {
+            "usedSize": 720660,
+            "totalSize": 2097152,
+            "embedderHeapUsedSize": 1488528,
+            "backingStorageSize": 1941196
+          }
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html",
+          "heap": {
+            "usedSize": 4118512,
+            "totalSize": 4980736,
+            "embedderHeapUsedSize": 2545624,
+            "backingStorageSize": 1287767
+          }
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/",
+          "heap": {
+            "usedSize": 4118512,
+            "totalSize": 4980736,
+            "embedderHeapUsedSize": 2545624,
+            "backingStorageSize": 1287767
+          }
+        }
+      ]
+    },
+    {
+      "phase": "after_both_archives",
+      "at": "2026-10-14T05:35:50.659Z",
+      "targets": [
+        {
+          "type": "service_worker",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js"
+        },
+        {
+          "type": "worker",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/src/worker.js"
+        },
+        {
+          "type": "page",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/#/leaders?season=20242025&type=playoff&kind=skaters&sort=points&gp=&data=local"
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html"
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/"
+        }
+      ],
+      "process_types": [
+        {
+          "type": "browser",
+          "id": 42928,
+          "cpuTime": 4.172679
+        },
+        {
+          "type": "renderer",
+          "id": 22220,
+          "cpuTime": 0.828603
+        },
+        {
+          "type": "renderer",
+          "id": 59160,
+          "cpuTime": 5.855153
+        },
+        {
+          "type": "renderer",
+          "id": 13076,
+          "cpuTime": 1.319062
+        },
+        {
+          "type": "GPU",
+          "id": 58340,
+          "cpuTime": 1.800496
+        },
+        {
+          "type": "network.mojom.NetworkService",
+          "id": 52620,
+          "cpuTime": 1.027194
+        },
+        {
+          "type": "storage.mojom.StorageService",
+          "id": 8952,
+          "cpuTime": 0.337821
+        }
+      ],
+      "main_heap": {
+        "usedSize": 5512728,
+        "totalSize": 13492224,
+        "embedderHeapUsedSize": 7865864,
+        "backingStorageSize": 6131005
+      },
+      "main_dom": {
+        "documents": 2,
+        "nodes": 2256,
+        "jsEventListeners": 285
+      },
+      "latest_os_sample": {
+        "phase": "archive_playoff",
+        "processes": [
+          {
+            "lifetime_peak_working_set_bytes": 131268608,
+            "working_set_bytes": 131264512,
+            "private_bytes": 110010368,
+            "id": 58340
+          },
+          {
+            "lifetime_peak_working_set_bytes": 23937024,
+            "working_set_bytes": 23089152,
+            "private_bytes": 10215424,
+            "id": 8952
+          },
+          {
+            "lifetime_peak_working_set_bytes": 91545600,
+            "working_set_bytes": 83685376,
+            "private_bytes": 37646336,
+            "id": 13076
+          },
+          {
+            "lifetime_peak_working_set_bytes": 13299712,
+            "working_set_bytes": 11907072,
+            "private_bytes": 2904064,
+            "id": 19472
+          },
+          {
+            "lifetime_peak_working_set_bytes": 45760512,
+            "working_set_bytes": 45379584,
+            "private_bytes": 17690624,
+            "id": 52620
+          },
+          {
+            "lifetime_peak_working_set_bytes": 147914752,
+            "working_set_bytes": 145940480,
+            "private_bytes": 51535872,
+            "id": 42928
+          },
+          {
+            "lifetime_peak_working_set_bytes": 37126144,
+            "working_set_bytes": 35508224,
+            "private_bytes": 18284544,
+            "id": 22220
+          },
+          {
+            "lifetime_peak_working_set_bytes": 220024832,
+            "working_set_bytes": 203075584,
+            "private_bytes": 140935168,
+            "id": 59160
+          }
+        ],
+        "elapsed_ms": 77483
+      },
+      "worker_heap": {
+        "usedSize": 1314620,
+        "totalSize": 3653632,
+        "embedderHeapUsedSize": 736264,
+        "backingStorageSize": 4526570
+      },
+      "wasm_linear_bytes": 25034752,
+      "supplemental_target_heaps": [
+        {
+          "type": "service_worker",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js",
+          "heap": {
+            "usedSize": 720660,
+            "totalSize": 2097152,
+            "embedderHeapUsedSize": 1488528,
+            "backingStorageSize": 1941196
+          }
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html",
+          "heap": {
+            "usedSize": 4120096,
+            "totalSize": 4980736,
+            "embedderHeapUsedSize": 2545624,
+            "backingStorageSize": 1287895
+          }
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/",
+          "heap": {
+            "usedSize": 4120096,
+            "totalSize": 4980736,
+            "embedderHeapUsedSize": 2545624,
+            "backingStorageSize": 1287895
+          }
+        }
+      ]
+    },
+    {
+      "phase": "after_twenty_queries",
+      "at": "2026-10-14T05:35:52.119Z",
+      "targets": [
+        {
+          "type": "service_worker",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js"
+        },
+        {
+          "type": "worker",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/src/worker.js"
+        },
+        {
+          "type": "page",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/#/leaders?season=20242025&type=playoff&kind=skaters&sort=points&gp=&data=local"
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html"
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/"
+        }
+      ],
+      "process_types": [
+        {
+          "type": "browser",
+          "id": 42928,
+          "cpuTime": 4.497717
+        },
+        {
+          "type": "renderer",
+          "id": 22220,
+          "cpuTime": 0.828603
+        },
+        {
+          "type": "renderer",
+          "id": 59160,
+          "cpuTime": 6.530592
+        },
+        {
+          "type": "renderer",
+          "id": 13076,
+          "cpuTime": 1.32451
+        },
+        {
+          "type": "GPU",
+          "id": 58340,
+          "cpuTime": 1.997264
+        },
+        {
+          "type": "network.mojom.NetworkService",
+          "id": 52620,
+          "cpuTime": 1.054019
+        },
+        {
+          "type": "storage.mojom.StorageService",
+          "id": 8952,
+          "cpuTime": 0.337913
+        }
+      ],
+      "main_heap": {
+        "usedSize": 7978984,
+        "totalSize": 14802944,
+        "embedderHeapUsedSize": 17400656,
+        "backingStorageSize": 6133711
+      },
+      "main_dom": {
+        "documents": 2,
+        "nodes": 5000,
+        "jsEventListeners": 1645
+      },
+      "latest_os_sample": {
+        "phase": "warm_query",
+        "processes": [
+          {
+            "lifetime_peak_working_set_bytes": 131317760,
+            "working_set_bytes": 131309568,
+            "private_bytes": 110067712,
+            "id": 58340
+          },
+          {
+            "lifetime_peak_working_set_bytes": 23937024,
+            "working_set_bytes": 23089152,
+            "private_bytes": 10215424,
+            "id": 8952
+          },
+          {
+            "lifetime_peak_working_set_bytes": 91545600,
+            "working_set_bytes": 83689472,
+            "private_bytes": 37650432,
+            "id": 13076
+          },
+          {
+            "lifetime_peak_working_set_bytes": 13299712,
+            "working_set_bytes": 11907072,
+            "private_bytes": 2904064,
+            "id": 19472
+          },
+          {
+            "lifetime_peak_working_set_bytes": 45760512,
+            "working_set_bytes": 45379584,
+            "private_bytes": 17690624,
+            "id": 52620
+          },
+          {
+            "lifetime_peak_working_set_bytes": 147914752,
+            "working_set_bytes": 145883136,
+            "private_bytes": 50806784,
+            "id": 42928
+          },
+          {
+            "lifetime_peak_working_set_bytes": 37126144,
+            "working_set_bytes": 35508224,
+            "private_bytes": 18284544,
+            "id": 22220
+          },
+          {
+            "lifetime_peak_working_set_bytes": 220024832,
+            "working_set_bytes": 206053376,
+            "private_bytes": 143851520,
+            "id": 59160
+          }
+        ],
+        "elapsed_ms": 78909
+      },
+      "worker_heap": {
+        "usedSize": 629088,
+        "totalSize": 1572864,
+        "embedderHeapUsedSize": 736264,
+        "backingStorageSize": 4586435
+      },
+      "wasm_linear_bytes": 25034752,
+      "supplemental_target_heaps": [
+        {
+          "type": "service_worker",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js",
+          "heap": {
+            "usedSize": 720660,
+            "totalSize": 2097152,
+            "embedderHeapUsedSize": 1614736,
+            "backingStorageSize": 1941196
+          }
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html",
+          "heap": {
+            "usedSize": 4135936,
+            "totalSize": 4980736,
+            "embedderHeapUsedSize": 2545624,
+            "backingStorageSize": 1289175
+          }
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/",
+          "heap": {
+            "usedSize": 4135936,
+            "totalSize": 4980736,
+            "embedderHeapUsedSize": 2545624,
+            "backingStorageSize": 1289175
+          }
+        }
+      ]
+    },
+    {
+      "phase": "after_restart",
+      "at": "2026-10-14T05:35:55.818Z",
+      "targets": [
+        {
+          "type": "service_worker",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js"
+        },
+        {
+          "type": "worker",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/src/worker.js"
+        },
+        {
+          "type": "page",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/#/leaders?season=20242025&type=playoff&kind=skaters&sort=points&gp=&data=local"
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html"
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/"
+        }
+      ],
+      "process_types": [
+        {
+          "type": "browser",
+          "id": 42928,
+          "cpuTime": 4.53453
+        },
+        {
+          "type": "renderer",
+          "id": 22220,
+          "cpuTime": 0.828619
+        },
+        {
+          "type": "renderer",
+          "id": 59160,
+          "cpuTime": 6.623314
+        },
+        {
+          "type": "renderer",
+          "id": 13076,
+          "cpuTime": 1.325878
+        },
+        {
+          "type": "GPU",
+          "id": 58340,
+          "cpuTime": 2.020311
+        },
+        {
+          "type": "network.mojom.NetworkService",
+          "id": 52620,
+          "cpuTime": 1.056259
+        },
+        {
+          "type": "storage.mojom.StorageService",
+          "id": 8952,
+          "cpuTime": 0.337913
+        }
+      ],
+      "main_heap": {
+        "usedSize": 4519472,
+        "totalSize": 14802944,
+        "embedderHeapUsedSize": 3717128,
+        "backingStorageSize": 6129507
+      },
+      "main_dom": {
+        "documents": 2,
+        "nodes": 1915,
+        "jsEventListeners": 149
+      },
+      "latest_os_sample": {
+        "phase": "engine_restarted",
+        "processes": [
+          {
+            "lifetime_peak_working_set_bytes": 139833344,
+            "working_set_bytes": 139833344,
+            "private_bytes": 118489088,
+            "id": 58340
+          },
+          {
+            "lifetime_peak_working_set_bytes": 23937024,
+            "working_set_bytes": 23089152,
+            "private_bytes": 10215424,
+            "id": 8952
+          },
+          {
+            "lifetime_peak_working_set_bytes": 91545600,
+            "working_set_bytes": 83689472,
+            "private_bytes": 37650432,
+            "id": 13076
+          },
+          {
+            "lifetime_peak_working_set_bytes": 13299712,
+            "working_set_bytes": 11907072,
+            "private_bytes": 2904064,
+            "id": 19472
+          },
+          {
+            "lifetime_peak_working_set_bytes": 45760512,
+            "working_set_bytes": 45379584,
+            "private_bytes": 17690624,
+            "id": 52620
+          },
+          {
+            "lifetime_peak_working_set_bytes": 147914752,
+            "working_set_bytes": 145973248,
+            "private_bytes": 50880512,
+            "id": 42928
+          },
+          {
+            "lifetime_peak_working_set_bytes": 37126144,
+            "working_set_bytes": 35508224,
+            "private_bytes": 18284544,
+            "id": 22220
+          },
+          {
+            "lifetime_peak_working_set_bytes": 220024832,
+            "working_set_bytes": 173322240,
+            "private_bytes": 109428736,
+            "id": 59160
+          }
+        ],
+        "elapsed_ms": 82417
+      },
+      "worker_heap": {
+        "usedSize": 436388,
+        "totalSize": 1048576,
+        "embedderHeapUsedSize": 773712,
+        "backingStorageSize": 24921
+      },
+      "wasm_linear_bytes": 1245184,
+      "supplemental_target_heaps": [
+        {
+          "type": "service_worker",
+          "url": "http://127.0.0.1:60030/ICELINES/workbench/sw.js",
+          "heap": {
+            "usedSize": 727828,
+            "totalSize": 2097152,
+            "embedderHeapUsedSize": 1614736,
+            "backingStorageSize": 1941196
+          }
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html",
+          "heap": {
+            "usedSize": 4135936,
+            "totalSize": 4980736,
+            "embedderHeapUsedSize": 2605520,
+            "backingStorageSize": 1289175
+          }
+        },
+        {
+          "type": "browser_ui",
+          "url": "chrome://omnibox-popup.top-chrome/",
+          "heap": {
+            "usedSize": 4135936,
+            "totalSize": 4980736,
+            "embedderHeapUsedSize": 2605520,
+            "backingStorageSize": 1289175
+          }
+        }
+      ]
+    }
+  ],
+  "renderer": "Viewport rows; complete engine result retained, at most 44 mounted players at 1280x800.",
+  "memory": [
+    {
+      "phase": "blank_browser",
+      "samples": 6,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 232529920,
+      "last_private_bytes": 234024960,
+      "peak_private_bytes": 234024960,
+      "peak_working_set_bytes": 478691328,
+      "peak_sum_lifetime_working_set_bytes": 488927232
+    },
+    {
+      "phase": "startup",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 285904896,
+      "last_private_bytes": 286081024,
+      "peak_private_bytes": 286081024,
+      "peak_working_set_bytes": 558923776,
+      "peak_sum_lifetime_working_set_bytes": 564449280
+    },
+    {
+      "phase": "package_20252026-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 325509120,
+      "last_private_bytes": 325582848,
+      "peak_private_bytes": 325582848,
+      "peak_working_set_bytes": 602972160,
+      "peak_sum_lifetime_working_set_bytes": 612024320
+    },
+    {
+      "phase": "package_20242025-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 342102016,
+      "last_private_bytes": 342118400,
+      "peak_private_bytes": 342118400,
+      "peak_working_set_bytes": 620515328,
+      "peak_sum_lifetime_working_set_bytes": 626405376
+    },
+    {
+      "phase": "package_20242025-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 350900224,
+      "last_private_bytes": 350900224,
+      "peak_private_bytes": 350912512,
+      "peak_working_set_bytes": 628133888,
+      "peak_sum_lifetime_working_set_bytes": 633995264
+    },
+    {
+      "phase": "package_20232024-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 367108096,
+      "last_private_bytes": 367382528,
+      "peak_private_bytes": 367382528,
+      "peak_working_set_bytes": 644472832,
+      "peak_sum_lifetime_working_set_bytes": 650391552
+    },
+    {
+      "phase": "package_20232024-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 372441088,
+      "last_private_bytes": 372441088,
+      "peak_private_bytes": 374079488,
+      "peak_working_set_bytes": 650997760,
+      "peak_sum_lifetime_working_set_bytes": 656744448
+    },
+    {
+      "phase": "package_20222023-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 387567616,
+      "last_private_bytes": 387567616,
+      "peak_private_bytes": 387571712,
+      "peak_working_set_bytes": 664580096,
+      "peak_sum_lifetime_working_set_bytes": 671629312
+    },
+    {
+      "phase": "package_20222023-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 392929280,
+      "last_private_bytes": 392929280,
+      "peak_private_bytes": 392970240,
+      "peak_working_set_bytes": 669949952,
+      "peak_sum_lifetime_working_set_bytes": 678559744
+    },
+    {
+      "phase": "package_20212022-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 377270272,
+      "last_private_bytes": 377270272,
+      "peak_private_bytes": 377270272,
+      "peak_working_set_bytes": 657686528,
+      "peak_sum_lifetime_working_set_bytes": 693706752
+    },
+    {
+      "phase": "package_20212022-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 380182528,
+      "last_private_bytes": 380182528,
+      "peak_private_bytes": 380182528,
+      "peak_working_set_bytes": 660267008,
+      "peak_sum_lifetime_working_set_bytes": 693710848
+    },
+    {
+      "phase": "package_20202021-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 380141568,
+      "last_private_bytes": 380141568,
+      "peak_private_bytes": 380289024,
+      "peak_working_set_bytes": 660791296,
+      "peak_sum_lifetime_working_set_bytes": 693735424
+    },
+    {
+      "phase": "package_20202021-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 383037440,
+      "last_private_bytes": 383041536,
+      "peak_private_bytes": 383041536,
+      "peak_working_set_bytes": 663621632,
+      "peak_sum_lifetime_working_set_bytes": 693735424
+    },
+    {
+      "phase": "package_20192020-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 389799936,
+      "last_private_bytes": 389799936,
+      "peak_private_bytes": 389984256,
+      "peak_working_set_bytes": 670605312,
+      "peak_sum_lifetime_working_set_bytes": 693735424
+    },
+    {
+      "phase": "package_20192020-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 385310720,
+      "last_private_bytes": 385310720,
+      "peak_private_bytes": 385310720,
+      "peak_working_set_bytes": 666243072,
+      "peak_sum_lifetime_working_set_bytes": 693735424
+    },
+    {
+      "phase": "package_20182019-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 394457088,
+      "last_private_bytes": 394457088,
+      "peak_private_bytes": 394457088,
+      "peak_working_set_bytes": 674725888,
+      "peak_sum_lifetime_working_set_bytes": 693735424
+    },
+    {
+      "phase": "package_20182019-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 395816960,
+      "last_private_bytes": 395816960,
+      "peak_private_bytes": 395816960,
+      "peak_working_set_bytes": 676020224,
+      "peak_sum_lifetime_working_set_bytes": 693735424
+    },
+    {
+      "phase": "package_20172018-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 392183808,
+      "last_private_bytes": 392187904,
+      "peak_private_bytes": 392187904,
+      "peak_working_set_bytes": 673013760,
+      "peak_sum_lifetime_working_set_bytes": 693735424
+    },
+    {
+      "phase": "package_20172018-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 393256960,
+      "last_private_bytes": 393261056,
+      "peak_private_bytes": 393261056,
+      "peak_working_set_bytes": 674308096,
+      "peak_sum_lifetime_working_set_bytes": 693735424
+    },
+    {
+      "phase": "package_20162017-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 399306752,
+      "last_private_bytes": 399306752,
+      "peak_private_bytes": 399306752,
+      "peak_working_set_bytes": 680501248,
+      "peak_sum_lifetime_working_set_bytes": 693735424
+    },
+    {
+      "phase": "package_20162017-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 403394560,
+      "last_private_bytes": 403394560,
+      "peak_private_bytes": 403394560,
+      "peak_working_set_bytes": 684089344,
+      "peak_sum_lifetime_working_set_bytes": 693735424
+    },
+    {
+      "phase": "package_20152016-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 398016512,
+      "last_private_bytes": 398020608,
+      "peak_private_bytes": 398020608,
+      "peak_working_set_bytes": 679067648,
+      "peak_sum_lifetime_working_set_bytes": 698544128
+    },
+    {
+      "phase": "package_20152016-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 398045184,
+      "last_private_bytes": 400322560,
+      "peak_private_bytes": 400322560,
+      "peak_working_set_bytes": 681406464,
+      "peak_sum_lifetime_working_set_bytes": 698544128
+    },
+    {
+      "phase": "package_20142015-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 399765504,
+      "last_private_bytes": 399765504,
+      "peak_private_bytes": 400326656,
+      "peak_working_set_bytes": 681410560,
+      "peak_sum_lifetime_working_set_bytes": 698548224
+    },
+    {
+      "phase": "package_20142015-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 399765504,
+      "last_private_bytes": 402522112,
+      "peak_private_bytes": 402522112,
+      "peak_working_set_bytes": 683429888,
+      "peak_sum_lifetime_working_set_bytes": 698560512
+    },
+    {
+      "phase": "package_20132014-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 395079680,
+      "last_private_bytes": 395079680,
+      "peak_private_bytes": 402722816,
+      "peak_working_set_bytes": 685219840,
+      "peak_sum_lifetime_working_set_bytes": 702029824
+    },
+    {
+      "phase": "package_20132014-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 396075008,
+      "last_private_bytes": 396615680,
+      "peak_private_bytes": 396615680,
+      "peak_working_set_bytes": 681746432,
+      "peak_sum_lifetime_working_set_bytes": 702066688
+    },
+    {
+      "phase": "package_20122013-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 391331840,
+      "last_private_bytes": 391331840,
+      "peak_private_bytes": 402055168,
+      "peak_working_set_bytes": 686194688,
+      "peak_sum_lifetime_working_set_bytes": 702140416
+    },
+    {
+      "phase": "package_20122013-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 391413760,
+      "last_private_bytes": 393654272,
+      "peak_private_bytes": 393654272,
+      "peak_working_set_bytes": 678944768,
+      "peak_sum_lifetime_working_set_bytes": 702152704
+    },
+    {
+      "phase": "package_20112012-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 394518528,
+      "last_private_bytes": 394518528,
+      "peak_private_bytes": 399732736,
+      "peak_working_set_bytes": 684085248,
+      "peak_sum_lifetime_working_set_bytes": 702205952
+    },
+    {
+      "phase": "package_20112012-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 368410624,
+      "last_private_bytes": 368410624,
+      "peak_private_bytes": 397750272,
+      "peak_working_set_bytes": 682790912,
+      "peak_sum_lifetime_working_set_bytes": 702246912
+    },
+    {
+      "phase": "package_20102011-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 368513024,
+      "last_private_bytes": 369668096,
+      "peak_private_bytes": 369668096,
+      "peak_working_set_bytes": 657383424,
+      "peak_sum_lifetime_working_set_bytes": 702341120
+    },
+    {
+      "phase": "package_20102011-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 369983488,
+      "last_private_bytes": 369983488,
+      "peak_private_bytes": 369983488,
+      "peak_working_set_bytes": 657203200,
+      "peak_sum_lifetime_working_set_bytes": 702353408
+    },
+    {
+      "phase": "package_20092010-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 369983488,
+      "last_private_bytes": 370102272,
+      "peak_private_bytes": 370102272,
+      "peak_working_set_bytes": 657694720,
+      "peak_sum_lifetime_working_set_bytes": 702386176
+    },
+    {
+      "phase": "package_20092010-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 370163712,
+      "last_private_bytes": 372264960,
+      "peak_private_bytes": 372264960,
+      "peak_working_set_bytes": 659525632,
+      "peak_sum_lifetime_working_set_bytes": 702410752
+    },
+    {
+      "phase": "package_20082009-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 372264960,
+      "last_private_bytes": 379555840,
+      "peak_private_bytes": 379555840,
+      "peak_working_set_bytes": 666705920,
+      "peak_sum_lifetime_working_set_bytes": 702414848
+    },
+    {
+      "phase": "package_20082009-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 375472128,
+      "last_private_bytes": 375472128,
+      "peak_private_bytes": 375472128,
+      "peak_working_set_bytes": 662691840,
+      "peak_sum_lifetime_working_set_bytes": 702427136
+    },
+    {
+      "phase": "package_20072008-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 375537664,
+      "last_private_bytes": 382431232,
+      "peak_private_bytes": 382431232,
+      "peak_working_set_bytes": 668696576,
+      "peak_sum_lifetime_working_set_bytes": 702513152
+    },
+    {
+      "phase": "package_20072008-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 382717952,
+      "last_private_bytes": 386813952,
+      "peak_private_bytes": 386813952,
+      "peak_working_set_bytes": 674988032,
+      "peak_sum_lifetime_working_set_bytes": 702533632
+    },
+    {
+      "phase": "package_20062007-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 379760640,
+      "last_private_bytes": 379760640,
+      "peak_private_bytes": 395096064,
+      "peak_working_set_bytes": 682524672,
+      "peak_sum_lifetime_working_set_bytes": 702541824
+    },
+    {
+      "phase": "package_20062007-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 382914560,
+      "last_private_bytes": 382951424,
+      "peak_private_bytes": 382951424,
+      "peak_working_set_bytes": 671944704,
+      "peak_sum_lifetime_working_set_bytes": 702550016
+    },
+    {
+      "phase": "package_20052006-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 382615552,
+      "last_private_bytes": 382615552,
+      "peak_private_bytes": 382951424,
+      "peak_working_set_bytes": 672182272,
+      "peak_sum_lifetime_working_set_bytes": 702558208
+    },
+    {
+      "phase": "package_20052006-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 374034432,
+      "last_private_bytes": 374034432,
+      "peak_private_bytes": 374034432,
+      "peak_working_set_bytes": 663846912,
+      "peak_sum_lifetime_working_set_bytes": 702578688
+    },
+    {
+      "phase": "package_20032004-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 374050816,
+      "last_private_bytes": 381964288,
+      "peak_private_bytes": 381964288,
+      "peak_working_set_bytes": 670912512,
+      "peak_sum_lifetime_working_set_bytes": 702586880
+    },
+    {
+      "phase": "package_20032004-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 381964288,
+      "last_private_bytes": 384585728,
+      "peak_private_bytes": 384585728,
+      "peak_working_set_bytes": 673824768,
+      "peak_sum_lifetime_working_set_bytes": 702586880
+    },
+    {
+      "phase": "package_20022003-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 378527744,
+      "last_private_bytes": 378527744,
+      "peak_private_bytes": 384585728,
+      "peak_working_set_bytes": 673824768,
+      "peak_sum_lifetime_working_set_bytes": 702586880
+    },
+    {
+      "phase": "package_20022003-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 378527744,
+      "last_private_bytes": 379871232,
+      "peak_private_bytes": 379871232,
+      "peak_working_set_bytes": 669380608,
+      "peak_sum_lifetime_working_set_bytes": 702590976
+    },
+    {
+      "phase": "package_20012002-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 387317760,
+      "last_private_bytes": 387338240,
+      "peak_private_bytes": 387338240,
+      "peak_working_set_bytes": 675807232,
+      "peak_sum_lifetime_working_set_bytes": 702590976
+    },
+    {
+      "phase": "package_20012002-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 381202432,
+      "last_private_bytes": 381202432,
+      "peak_private_bytes": 387346432,
+      "peak_working_set_bytes": 675815424,
+      "peak_sum_lifetime_working_set_bytes": 702599168
+    },
+    {
+      "phase": "package_20002001-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 388296704,
+      "last_private_bytes": 388296704,
+      "peak_private_bytes": 388296704,
+      "peak_working_set_bytes": 677228544,
+      "peak_sum_lifetime_working_set_bytes": 702607360
+    },
+    {
+      "phase": "package_20002001-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 390074368,
+      "last_private_bytes": 390074368,
+      "peak_private_bytes": 390074368,
+      "peak_working_set_bytes": 679522304,
+      "peak_sum_lifetime_working_set_bytes": 702611456
+    },
+    {
+      "phase": "package_19992000-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 384823296,
+      "last_private_bytes": 384823296,
+      "peak_private_bytes": 390098944,
+      "peak_working_set_bytes": 679550976,
+      "peak_sum_lifetime_working_set_bytes": 702615552
+    },
+    {
+      "phase": "package_19992000-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 384884736,
+      "last_private_bytes": 386666496,
+      "peak_private_bytes": 386666496,
+      "peak_working_set_bytes": 675745792,
+      "peak_sum_lifetime_working_set_bytes": 702623744
+    },
+    {
+      "phase": "package_19981999-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 384516096,
+      "last_private_bytes": 384516096,
+      "peak_private_bytes": 386666496,
+      "peak_working_set_bytes": 675745792,
+      "peak_sum_lifetime_working_set_bytes": 702623744
+    },
+    {
+      "phase": "package_19981999-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 377536512,
+      "last_private_bytes": 377536512,
+      "peak_private_bytes": 377536512,
+      "peak_working_set_bytes": 666890240,
+      "peak_sum_lifetime_working_set_bytes": 702627840
+    },
+    {
+      "phase": "package_19971998-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 382353408,
+      "last_private_bytes": 382414848,
+      "peak_private_bytes": 382414848,
+      "peak_working_set_bytes": 671432704,
+      "peak_sum_lifetime_working_set_bytes": 702640128
+    },
+    {
+      "phase": "package_19971998-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 382455808,
+      "last_private_bytes": 384315392,
+      "peak_private_bytes": 384315392,
+      "peak_working_set_bytes": 673583104,
+      "peak_sum_lifetime_working_set_bytes": 702640128
+    },
+    {
+      "phase": "package_19961997-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 378048512,
+      "last_private_bytes": 378048512,
+      "peak_private_bytes": 378187776,
+      "peak_working_set_bytes": 667934720,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "package_19961997-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 376184832,
+      "last_private_bytes": 377171968,
+      "peak_private_bytes": 377712640,
+      "peak_working_set_bytes": 667320320,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "package_19951996-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 372723712,
+      "last_private_bytes": 381644800,
+      "peak_private_bytes": 381644800,
+      "peak_working_set_bytes": 670584832,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "package_19951996-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 375013376,
+      "last_private_bytes": 375013376,
+      "peak_private_bytes": 381661184,
+      "peak_working_set_bytes": 670597120,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "package_19941995-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 379977728,
+      "last_private_bytes": 379977728,
+      "peak_private_bytes": 379977728,
+      "peak_working_set_bytes": 669523968,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "package_19941995-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 379977728,
+      "last_private_bytes": 381493248,
+      "peak_private_bytes": 381493248,
+      "peak_working_set_bytes": 670990336,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "package_19931994-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 376492032,
+      "last_private_bytes": 376492032,
+      "peak_private_bytes": 381501440,
+      "peak_working_set_bytes": 671006720,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "package_19931994-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 378908672,
+      "last_private_bytes": 378908672,
+      "peak_private_bytes": 378908672,
+      "peak_working_set_bytes": 668811264,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "package_19921993-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 382550016,
+      "last_private_bytes": 382550016,
+      "peak_private_bytes": 382550016,
+      "peak_working_set_bytes": 672202752,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "package_19921993-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 382558208,
+      "last_private_bytes": 384327680,
+      "peak_private_bytes": 384856064,
+      "peak_working_set_bytes": 674476032,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "package_19911992-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 381952000,
+      "last_private_bytes": 381952000,
+      "peak_private_bytes": 390000640,
+      "peak_working_set_bytes": 679124992,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "package_19911992-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 373542912,
+      "last_private_bytes": 373542912,
+      "peak_private_bytes": 381968384,
+      "peak_working_set_bytes": 671592448,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "package_19901991-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 379777024,
+      "last_private_bytes": 379777024,
+      "peak_private_bytes": 379777024,
+      "peak_working_set_bytes": 669671424,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "package_19901991-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 369483776,
+      "last_private_bytes": 369483776,
+      "peak_private_bytes": 374411264,
+      "peak_working_set_bytes": 664358912,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "package_19891990-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 369500160,
+      "last_private_bytes": 376336384,
+      "peak_private_bytes": 376336384,
+      "peak_working_set_bytes": 666292224,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "package_19891990-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 377823232,
+      "last_private_bytes": 377823232,
+      "peak_private_bytes": 377823232,
+      "peak_working_set_bytes": 667906048,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "package_19881989-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 372957184,
+      "last_private_bytes": 372957184,
+      "peak_private_bytes": 377499648,
+      "peak_working_set_bytes": 667619328,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "package_19881989-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 372957184,
+      "last_private_bytes": 374726656,
+      "peak_private_bytes": 374726656,
+      "peak_working_set_bytes": 665149440,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "package_19871988-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 379908096,
+      "last_private_bytes": 379908096,
+      "peak_private_bytes": 379908096,
+      "peak_working_set_bytes": 670134272,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "package_19871988-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 376262656,
+      "last_private_bytes": 378986496,
+      "peak_private_bytes": 378986496,
+      "peak_working_set_bytes": 668987392,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "archive_regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 377319424,
+      "last_private_bytes": 377319424,
+      "peak_private_bytes": 386400256,
+      "peak_working_set_bytes": 676753408,
+      "peak_sum_lifetime_working_set_bytes": 702648320
+    },
+    {
+      "phase": "archive_playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 379473920,
+      "last_private_bytes": 389222400,
+      "peak_private_bytes": 389222400,
+      "peak_working_set_bytes": 679849984,
+      "peak_sum_lifetime_working_set_bytes": 710877184
+    },
+    {
+      "phase": "warm_query",
+      "samples": 4,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 390221824,
+      "last_private_bytes": 391471104,
+      "peak_private_bytes": 391905280,
+      "peak_working_set_bytes": 683163648,
+      "peak_sum_lifetime_working_set_bytes": 710926336
+    },
+    {
+      "phase": "resident_settled",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 387940352,
+      "last_private_bytes": 387940352,
+      "peak_private_bytes": 387940352,
+      "peak_working_set_bytes": 679731200,
+      "peak_sum_lifetime_working_set_bytes": 710926336
+    },
+    {
+      "phase": "engine_restarted",
+      "samples": 7,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 364584960,
+      "last_private_bytes": 364584960,
+      "peak_private_bytes": 365543424,
+      "peak_working_set_bytes": 658702336,
+      "peak_sum_lifetime_working_set_bytes": 719441920
+    }
+  ],
+  "missing_sampled_phases": [],
+  "target_scope": "Runtime attribution diagnostic with inspector snapshots: not normal acceptance. No forced GC, altered flags, package/query truncation or observer-buffer change. Sequential OS/heap snapshots are not exact synchronized attribution; inspection can change collection timing.",
+  "sampled_peak_private_bytes": 403394560,
+  "sampled_peak_working_set_bytes": 686194688,
+  "sampled_private_bytes_over_blank_baseline": 169369600,
+  "provisional_250_mib_target": null,
+  "finished_at": "2026-10-14T05:35:56.703Z"
+}
