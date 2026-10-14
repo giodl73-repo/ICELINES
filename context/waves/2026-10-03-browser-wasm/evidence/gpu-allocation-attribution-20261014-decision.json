@@ -12,8 +12,10 @@
   ],
   "evidence": {
     "historical-report": {
-      "file": "gpu-allocation-attribution-20261014-historical-report.json",
-      "sha256": "94ad9c1e6fbe230be3436e731b6dd6807df7ad6c112cdc1b378141c009083522"
+      "file": "gpu-allocation-attribution-20261014-historical-report.json.gz",
+      "sha256": "59040d4f1cc03476ad0fa8ec86705bd6dfaf368f0762121538a7f0627cd7950b",
+      "expanded_sha256": "94ad9c1e6fbe230be3436e731b6dd6807df7ad6c112cdc1b378141c009083522",
+      "scope": "Original report uses runtime-relative trace names; resolve each label through the retained compressed trace descriptors below."
     },
     "summary": {
       "file": "gpu-allocation-attribution-20261014-summary.json",
