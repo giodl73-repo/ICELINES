@@ -34,12 +34,12 @@ export async function expandPackage(bytes: Uint8Array, maximum: number, options:
 
 // JSON remains the interchange format and revision source. Transport bytes are
 // separately bounded/authenticated; decompression failures never downgrade reads.
-export async function downloadPackage(entry: CatalogEntry, base: URL, options: ReadOptions): Promise<Uint8Array> {
+export async function downloadPackage(entry: CatalogEntry, base: URL, options: ReadOptions, expand = expandPackage): Promise<Uint8Array> {
   const compressed = entry.transport && typeof DecompressionStream !== 'undefined';
   const wire = compressed ? entry.transport! : entry;
   const bytes = await readPublicBytes(new URL(wire.url,base),wire.bytes,options);
   if (bytes.length !== wire.bytes || await digest(bytes) !== wire.sha256) throw new Error('Package transport size or checksum mismatch');
-  const expanded = compressed ? await expandPackage(bytes,entry.bytes,options) : bytes;
+  const expanded = compressed ? await expand(bytes,entry.bytes,options) : bytes;
   if (expanded.length !== entry.bytes || await digest(expanded) !== entry.sha256) throw new Error('Package size or checksum mismatch');
   return expanded;
 }
