@@ -1,0 +1,22 @@
+{
+  "verified": true,
+  "scope": "Two retained engines, actual executing WASM bytecode fingerprints. Not memory or phone acceptance.",
+  "control": {
+    "verified": true,
+    "scope": "Debugger bytecode from the one owned engine worker; additional observer, not memory acceptance.",
+    "worker_url": "http://127.0.0.1:61019/ICELINES/workbench/src/worker.js",
+    "wasm_script_url": "http://127.0.0.1:61019/ICELINES/workbench/pkg/icelines_wasm_bg.wasm",
+    "bytes": 632676,
+    "sha256": "4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee",
+    "expected_sha256": "4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee"
+  },
+  "candidate": {
+    "verified": true,
+    "scope": "Debugger bytecode from the one owned engine worker; additional observer, not memory acceptance.",
+    "worker_url": "http://127.0.0.1:56802/ICELINES/workbench/src/worker.js",
+    "wasm_script_url": "http://127.0.0.1:56802/ICELINES/workbench/pkg/icelines_wasm_bg.wasm",
+    "bytes": 630021,
+    "sha256": "8482c9fd825f773eb3fc0956e42f67f0931caf871d2bab89c76b01a4738aab3a",
+    "expected_sha256": "8482c9fd825f773eb3fc0956e42f67f0931caf871d2bab89c76b01a4738aab3a"
+  }
+}

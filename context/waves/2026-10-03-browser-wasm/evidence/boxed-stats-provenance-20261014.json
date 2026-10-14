@@ -1,5 +1,5 @@
 {
-  "status": "Measured local incremental candidate; CI/public validation pending;250 MiB remains failed",
+  "status": "Merged/published incremental optimization as5ef015c4; CI/master/publication/recovery evidence reconciled;250 MiB remains failed",
   "source": "d825f9d01d937c8878b961528346486238bd8885",
   "initial_checked_source": "f30fe205371543651b1b3d0ecd2408ad28f67c47",
   "treatment": "wasm32-only unique Box<SeasonStats> behind repository stats hash slots; native rows remain inline. Public borrowed types/keys/normalization/residency/exports unchanged.",
@@ -106,7 +106,11 @@
   ],
   "open_gates": [
     "250 MiB whole-browser acceptance",
-    "Physical Android deferred",
-    "Exact CI/master/publication/recovery validation for adoption"
+    "Physical Android deferred"
+  ],
+  "final_provenance": [
+    "boxed-stats-ci-provenance-20261014.json",
+    "boxed-stats-master-provenance-20261014.json",
+    "boxed-stats-publication-provenance-20261014.json"
   ]
 }

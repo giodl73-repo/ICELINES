@@ -1,0 +1,111 @@
+{
+  "reviewed_head": "2a3125722d8c5cc45d211069093ad1f775050e72",
+  "ci_preview": "d5221ba15694c7aa62afb544ab472116917ca88e",
+  "base": "5ab9680e34774e5b533e8c66febb314969414b0c",
+  "browser_run": 38545979661,
+  "native_run": 38545979842,
+  "checks_passed": 29,
+  "artifact_id": 11885400826,
+  "artifact_directory": "target/boxed-stats-ci-d5221ba1",
+  "reports": {
+    "viewport": {
+      "path": "target/viewport-browser-jA6rjP/report.json",
+      "sha256": "b33a087e16e37e6d4d605f746964ea733370fa612283441b1b377c6816cc28d6"
+    },
+    "print": {
+      "path": "target/viewport-browser-jA6rjP/print-verification.json",
+      "sha256": "99f00e6b74604ae958c8cd4152dce287f2110200ec5c2e64e87043bd37d1aa5e"
+    },
+    "offline": {
+      "path": "target/browser-acceptance-rLgDJb/report.json",
+      "sha256": "3e87c5af128fff5857f5dd50702e8cdb0b59971c4f4ff8f9db7e25474f9d19c5"
+    },
+    "refusal": {
+      "path": "target/gzip-delivery-refusal-euL5aE/report.json",
+      "sha256": "4dcaa8ea0d1035febee4a53fbd2a40ca913ec691e04eee44b7baed979e52f868"
+    },
+    "context": {
+      "path": "target/catalog-context-z7NIK0/report.json",
+      "sha256": "17c16f68da9c6e458d63b5d9e7cea0cde8281f80586355269fecfaed8846fe69"
+    },
+    "executing-wasm": {
+      "path": "target/engine-wasm-fingerprint-ci-probe/report.json",
+      "sha256": "ff2d3bbcdb5e895f966f9dec32876da0845d2c1188fa20042357321c006dad54"
+    },
+    "memory-candidate-first": {
+      "path": "target/browser-memory-1bNtIX/report.json",
+      "sha256": "ba9c9a784738084cae890b21c076e77c9f7e695e5441721b87454b553ffef80e"
+    },
+    "memory-control": {
+      "path": "target/browser-memory-oRgISk/report.json",
+      "sha256": "812e0c66c80ec6eaa951443bb3646e9051c4ae4350a9369ef84dec2076122ea9"
+    },
+    "memory-candidate-repeat": {
+      "path": "target/browser-memory-xUyQYP/report.json",
+      "sha256": "b5426f89b5a0342fa1d421df4e2fcad94abfb9838ee44d17cd2f6bba4acc6b54"
+    }
+  },
+  "memory": {
+    "candidate-first": {
+      "private_mib": 392.33203125,
+      "blank_mib": 230.86328125,
+      "warm_max_ms": 100.80580000000191
+    },
+    "control": {
+      "private_mib": 392.86328125,
+      "blank_mib": 229.85546875,
+      "warm_max_ms": 93.26950000000943
+    },
+    "candidate-repeat": {
+      "private_mib": 390.046875,
+      "blank_mib": 234.71875,
+      "warm_max_ms": 99.40389999999024
+    }
+  },
+  "status": "Successful reviewed PR artifact validation; source merged as5ef015c4 and published/rehearsed",
+  "open_gates": [
+    "250 MiB whole-browser target",
+    "Physical Android deferred"
+  ],
+  "qualification": "First CI warm max100.81 ms retained; repeat99.40 ms. First/repeat CI candidates share one comparison control: not independent opposite-order pairs. Local Windows-built two independent opposite-order pairs are separate. No250 MiB pass or universal saving claim.",
+  "wasm_sha256": "8482c9fd825f773eb3fc0956e42f67f0931caf871d2bab89c76b01a4738aab3a",
+  "shell_build": "df808fd9f80d858e708aed0b2a2a93b7800590e185ed3cbafb946d8c798ac9cd",
+  "report_hashes": {
+    "viewport": {
+      "file": "boxed-stats-ci-viewport-20261014.json",
+      "sha256": "b33a087e16e37e6d4d605f746964ea733370fa612283441b1b377c6816cc28d6"
+    },
+    "print": {
+      "file": "boxed-stats-ci-print-20261014.json",
+      "sha256": "99f00e6b74604ae958c8cd4152dce287f2110200ec5c2e64e87043bd37d1aa5e"
+    },
+    "offline": {
+      "file": "boxed-stats-ci-offline-20261014.json",
+      "sha256": "3e87c5af128fff5857f5dd50702e8cdb0b59971c4f4ff8f9db7e25474f9d19c5"
+    },
+    "refusal": {
+      "file": "boxed-stats-ci-refusal-20261014.json",
+      "sha256": "4dcaa8ea0d1035febee4a53fbd2a40ca913ec691e04eee44b7baed979e52f868"
+    },
+    "context": {
+      "file": "boxed-stats-ci-context-20261014.json",
+      "sha256": "17c16f68da9c6e458d63b5d9e7cea0cde8281f80586355269fecfaed8846fe69"
+    },
+    "executing-wasm": {
+      "file": "boxed-stats-ci-executing-wasm-20261014.json",
+      "sha256": "ff2d3bbcdb5e895f966f9dec32876da0845d2c1188fa20042357321c006dad54"
+    },
+    "memory-candidate-first": {
+      "file": "boxed-stats-ci-memory-candidate-first-20261014.json",
+      "sha256": "ba9c9a784738084cae890b21c076e77c9f7e695e5441721b87454b553ffef80e"
+    },
+    "memory-control": {
+      "file": "boxed-stats-ci-memory-control-20261014.json",
+      "sha256": "812e0c66c80ec6eaa951443bb3646e9051c4ae4350a9369ef84dec2076122ea9"
+    },
+    "memory-candidate-repeat": {
+      "file": "boxed-stats-ci-memory-candidate-repeat-20261014.json",
+      "sha256": "b5426f89b5a0342fa1d421df4e2fcad94abfb9838ee44d17cd2f6bba4acc6b54"
+    }
+  }
+}
