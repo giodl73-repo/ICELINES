@@ -193,3 +193,16 @@ remain open. CI/master/public-origin transfer and update/rollback evidence are
 required before promoting the delivery implementation.
 Trace updates: INTERFACES, WORK_PACKAGES, TRACE, VERIFICATION and VALIDATION.
 No resource waiver, native dependency change or hockey semantics change.
+
+## CHG-121: Browser frontend entry bundling candidate (2026-10-14)
+
+Candidate only; adoption requires clean artifact validation. Pin esbuild0.28.2
+as a build dependency. Bundle/minify compiled main.js after authenticated catalog
+metadata injection and before shell hashing. Preserve worker/WASM paths,
+authentication, state schemas, URLs and individual modules for module tests.
+Affected: REQ-BROWSER-001; IF-BROWSER-001; WP-BW-05; WP-BW-06.
+Local diagnostics show9.016/11.793 MiB lower peaks with varying blank baselines;
+no fixed causal saving or acceptance claim.250 MiB and Android remain open.
+Review lenses: BENCH/WIRE/KEEL/FORGE/EDGE, single agent. Adoption gates: corruption
+and context checks, offline/viewport, executing bundle identity, clean CI and full
+workload measurements. Update DESIGN/TRACE; no resource-budget revision.

@@ -6,6 +6,7 @@ import { buildOfflineShell } from './offline-build.mjs';
 import { gzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
 import { injectCatalogMetadata } from './metadata-build.mjs';
+import { bundleFrontend } from './bundle-build.mjs';
 const root = fileURLToPath(new URL('.', import.meta.url));
 const expectedDist = resolve(await realpath(root), 'dist');
 try {
@@ -37,6 +38,7 @@ await writeFile(new URL('dist/catalog.json', import.meta.url),JSON.stringify(cat
 const metadataModule = new URL('dist/src/catalog-metadata.js',import.meta.url);
 const metadataSource = await readFile(metadataModule,'utf8');
 await writeFile(metadataModule,injectCatalogMetadata(metadataSource,headers));
+await bundleFrontend(new URL('dist/', import.meta.url));
 try { await cp(new URL('public/build-info.json', import.meta.url), new URL('dist/build-info.json', import.meta.url)); }
 catch (error) { if (error.code !== 'ENOENT') throw error; }
 await writeFile(new URL('dist/.nojekyll', import.meta.url), '');

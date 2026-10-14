@@ -36,7 +36,8 @@ run(cli, ['target/browser/wasm32-unknown-unknown/browser-release/icelines_wasm.w
 run('python', ['scripts/build-browser-catalog.py']);
 const info = { schema_version: 1, commit: capture('git', ['rev-parse', 'HEAD']),
   working_tree_dirty: capture('git', ['status', '--porcelain', '--untracked-files=normal']).length > 0,
-  tools: { rust: capture('rustc', ['--version']), node: process.version, python: capture('python', ['--version']), wasm_bindgen: capture(cli, ['--version']) },
+  tools: { rust: capture('rustc', ['--version']), node: process.version, python: capture('python', ['--version']), wasm_bindgen: capture(cli, ['--version']), esbuild: JSON.parse(await readFile(new URL('../icelines-browser/node_modules/esbuild/package.json', import.meta.url), 'utf8')).version },
+  frontend: { entry: 'src/main.js', format: 'bundled-esm', target: 'es2022' },
   wasm_sha256: createHash('sha256').update(await readFile(new URL('../icelines-browser/public/pkg/icelines_wasm_bg.wasm', import.meta.url))).digest('hex') };
 await writeFile(new URL('../icelines-browser/public/build-info.json', import.meta.url), JSON.stringify(info, null, 2) + '\n');
 run(process.execPath, ['icelines-browser/build.mjs']);

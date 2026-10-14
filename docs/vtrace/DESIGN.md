@@ -1,5 +1,12 @@
 # Detailed Design
 
+Browser build candidate CHG-121: bundle compiled main.js as ESM using pinned
+esbuild0.28.2 after authenticated metadata injection and before shell hashing.
+Keep worker/WASM separate and retain src/main.js as the relative URL base.
+Individual modules remain cached; no cache-byte saving is claimed. Production
+adoption remains gated by clean artifact correctness, executing bundle identity
+and full workload measurement.
+
 ## Scope
 
 Repo or feature: `icelines` repo-baseline VTRACE adoption.

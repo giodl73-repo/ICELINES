@@ -1,5 +1,11 @@
 # Trace Matrix
 
+CHG-121 candidate trace: REQ-BROWSER-001 / IF-BROWSER-001 / WP-BW-05 / WP-BW-06
+to icelines-browser/bundle-build.mjs and tests/bundle-build.test.mjs. Diagnostic
+evidence: context/waves/2026-10-03-browser-wasm/evidence/frontend-bundle-provenance-20261014.json.
+Clean artifact verification, corruption/context, executing bundle identity and
+full workload gates remain pending;250 MiB and physical Android remain unmet.
+
 ## Scope
 
 Repo or feature: `icelines` repo-baseline VTRACE adoption.
