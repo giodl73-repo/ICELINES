@@ -1,0 +1,53 @@
+{
+  "source": "e58a3bfc0f71fe7ba844cf729df166132eff7693",
+  "scope": "Additional native renderer profiler after app startup. No forced GC or memory-pressure commands. Sample estimates are not process private bytes, exact live-memory attribution, a leak finding, or acceptance.",
+  "report_sha256": "06f741b9cecadfa3ea48fa9f7398327b085e1c34e188986f3eb11777764db834",
+  "sampling_interval_bytes": 32768,
+  "sample_count": 272,
+  "sample_attributed_mib": 22.25,
+  "symbols": "Native stacks are unresolved addresses; ownership not established",
+  "exact_catalog_size_matches": [
+    {
+      "id": "19901991-regular",
+      "bytes": 637269,
+      "sample_count": 1
+    },
+    {
+      "id": "19901991-playoff",
+      "bytes": 275451,
+      "sample_count": 1
+    },
+    {
+      "id": "19891990-regular",
+      "bytes": 631007,
+      "sample_count": 1
+    },
+    {
+      "id": "19891990-playoff",
+      "bytes": 274505,
+      "sample_count": 1
+    },
+    {
+      "id": "19881989-regular",
+      "bytes": 637726,
+      "sample_count": 1
+    },
+    {
+      "id": "19881989-playoff",
+      "bytes": 273661,
+      "sample_count": 1
+    },
+    {
+      "id": "19871988-regular",
+      "bytes": 644102,
+      "sample_count": 1
+    },
+    {
+      "id": "19871988-playoff",
+      "bytes": 284302,
+      "sample_count": 1
+    }
+  ],
+  "hypothesis": "Detached resident-library callbacks can retain whole Dataset byte buffers; test explicitly clearing retired callbacks, without changing residency or forcing collection.",
+  "observer_sha256": "acccfef573de22f80347bc8ef2e1a527fc05d911c7ae6a1148b9c3fe046909ed"
+}

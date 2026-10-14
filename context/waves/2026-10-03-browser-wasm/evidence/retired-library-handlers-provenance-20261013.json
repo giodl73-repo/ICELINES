@@ -1,0 +1,51 @@
+{
+  "status": "UNADOPTED; raw private saving did not repeat in reverse-order pair",
+  "candidate": "b9ecde1e",
+  "control": "c0154ac6",
+  "scope": "Two opposite-order normal full-workload Windows pairs; original flags/sampler/observer, no forced GC. No public or mobile claim.",
+  "reports": {
+    "candidate-first": {
+      "file": "retired-library-handlers-candidate-first-20261013.json",
+      "sha256": "7f98b2d98b11ae60d135cb30789ca8603edd8844044b327f6a2ca97bd9d4eefa"
+    },
+    "control-second": {
+      "file": "retired-library-handlers-control-second-20261013.json",
+      "sha256": "c4302172d7270a0ed57863dc80f1615b1dde93bce47c4e3fd41515ca0b1f2a74"
+    },
+    "control-first": {
+      "file": "retired-library-handlers-control-first-20261013.json",
+      "sha256": "745a75f6f39949adee850181aa32a7cbf9b3b0a565766f195af82ad2649de3cb"
+    },
+    "candidate-second": {
+      "file": "retired-library-handlers-candidate-second-20261013.json",
+      "sha256": "a9484c53eaea1c5337ee2073203a2f7bb4aa0553773f8dbc7531d386d874d8c2"
+    }
+  },
+  "measurements": {
+    "candidate-first": {
+      "private_mib": 391.40234375,
+      "blank_mib": 229.0703125,
+      "warm_max_ms": 96.91839999999502
+    },
+    "control-second": {
+      "private_mib": 400.52734375,
+      "blank_mib": 234.39453125,
+      "warm_max_ms": 95.39719999999215
+    },
+    "control-first": {
+      "private_mib": 396.05859375,
+      "blank_mib": 231.48046875,
+      "warm_max_ms": 102.92429999999877
+    },
+    "candidate-second": {
+      "private_mib": 395.921875,
+      "blank_mib": 225.44921875,
+      "warm_max_ms": 91.431700000001
+    }
+  },
+  "open_gates": [
+    "250 MiB whole-browser target",
+    "Physical Android deferred"
+  ],
+  "native_attribution": "Additional native sampling only;272 samples,22.25 MiB estimated attributed bytes, unresolved address stacks. Allocation-size coincidences do not establish ownership or a leak."
+}
