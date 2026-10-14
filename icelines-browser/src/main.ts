@@ -183,7 +183,11 @@ async function activate(bytes: Uint8Array, id: string, policy = false): Promise<
 }
 function renderResidentLibrary(): void {
   element('resident-count').textContent = `(${resident.size}/8)`;
-  const node = element('resident-library'); node.replaceChildren();
+  const node = element('resident-library');
+  // Retired presentation nodes must not retain evicted package buffers while
+  // waiting for DOM collection. Current residents get fresh handlers below.
+  for (const button of node.querySelectorAll<HTMLButtonElement>('button')) button.onclick = null;
+  node.replaceChildren();
   for (const dataset of resident.values()) {
     const row = document.createElement('li');
     const label = document.createElement('span');
