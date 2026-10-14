@@ -51,3 +51,36 @@ test('multi-chunk expansion preserves an offset input view and the exact output 
   await assert.rejects(expandPackage(view,large.length-1,options()),/Expanded package/);
   assert.deepEqual(view,wire);
 });
+
+test('decoder input writes preserve offset views and remain bounded without copying',async()=>{
+  const original=globalThis.DecompressionStream;const writes=[];
+  const padded=Uint8Array.from({length:32768+22},(_,i)=>i%251);const input=padded.subarray(7,padded.length-8);
+  const expected=input.slice();
+  try{
+    globalThis.DecompressionStream=class{constructor(){return new TransformStream({transform(chunk,controller){writes.push({length:chunk.length,buffer:chunk.buffer,offset:chunk.byteOffset});controller.enqueue(chunk);}});}};
+    assert.deepEqual(await expandPackage(input,input.length,options()),expected);
+    assert.ok(writes.length>1);assert.ok(writes.every(w=>w.length<=8192&&w.buffer===input.buffer));
+    assert.equal(writes[0].offset,input.byteOffset);assert.equal(writes.reduce((n,w)=>n+w.length,0),input.length);
+    assert.deepEqual(input,expected);
+  }finally{globalThis.DecompressionStream=original;}
+});
+
+test('native gzip expansion preserves incompressible data across decoder input boundaries',async()=>{
+  let state=0x12345678;
+  const large=Uint8Array.from({length:256*1024+17},()=>{state^=state<<13;state^=state>>>17;state^=state<<5;return state&255;});
+  const wire=new Uint8Array(gzipSync(large));assert.ok(wire.length>8192);
+  const original=wire.slice();
+  assert.deepEqual(await expandPackage(wire,large.length,options()),large);
+  assert.deepEqual(wire,original);
+  await assert.rejects(expandPackage(wire,large.length-1,options()),/Expanded package/);
+});
+
+test('cancellation stops decoder input before forwarding the whole payload',async()=>{
+  const original=globalThis.DecompressionStream;const abort=new AbortController();let forwarded=0;
+  const input=new Uint8Array(32769);
+  try{
+    globalThis.DecompressionStream=class{constructor(){return new TransformStream({transform(chunk,controller){forwarded+=chunk.length;controller.enqueue(chunk);abort.abort(new Error('cancelled during decoder write'));}});}};
+    await assert.rejects(expandPackage(input,input.length,{...options(),signal:abort.signal}),/cancelled during decoder write/);
+    assert.ok(forwarded>0&&forwarded<input.length);assert.equal(input.byteLength,32769);
+  }finally{globalThis.DecompressionStream=original;}
+});

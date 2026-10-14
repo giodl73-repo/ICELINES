@@ -1,0 +1,78 @@
+{
+  "status": "Incremental candidate supported by two local opposite-order pairs; CI/master/publication not yet validated; not250 MiB acceptance",
+  "source": "807e2adcd31cdd8cd31a74f87fdeec05247b7ef0",
+  "control_source": "3906d86f8efbee9473c084ee2b243903cbf24700",
+  "treatment": "Pull-based compressed input views limit each decoder write to8 KiB, preserving authenticated input, bounded output, hashes, cancellation/deadline and fallback. No buffer detachment or temporary chunk retention set.",
+  "scope": "Two independent opposite-order normal75/eight/two905/332/20/restart pairs. Original flags/sampler/network observer, no forced GC; matched Windows WASM/template, only package-download.js differs among frontend modules. No baseline-subtracted acceptance.",
+  "reports": {
+    "candidate-first": {
+      "file": "chunked-decoder-input-candidate-first-20261014.json",
+      "sha256": "f7cf4812497a9be547168a0a934cc49241d3203e9ceeff0c2fda39eeb9473467"
+    },
+    "control-second": {
+      "file": "chunked-decoder-input-control-second-20261014.json",
+      "sha256": "9d70175e416c94ef8041a95e1a7f7a6f2485c6da75d7e05652ce93e6acf11058"
+    },
+    "control-first": {
+      "file": "chunked-decoder-input-control-first-20261014.json",
+      "sha256": "e137bd23898d89edea2839d4335ae9d4b0f8406113f5e6e08abd503048b05e99"
+    },
+    "candidate-second": {
+      "file": "chunked-decoder-input-candidate-second-20261014.json",
+      "sha256": "c55497415072326699a46f5caa23fe28d5f8e530ffcbdfae75af9747dd82fdc3"
+    },
+    "refusal": {
+      "file": "chunked-decoder-input-refusal-20261014.json",
+      "sha256": "583d9fec1d2576619b1b90804d0a15d78c911e79eea985372c2041b2529fb99e"
+    },
+    "offline": {
+      "file": "chunked-decoder-input-offline-20261014.json",
+      "sha256": "a6fbd9a0bc5f6f8aa0a205aa2a641d06faf1bb48221fc10c415b8312cfd51f8b"
+    },
+    "viewport": {
+      "file": "chunked-decoder-input-viewport-20261014.json",
+      "sha256": "9267a6e719a133362a772fabae2c7f1d97026b0510cdc3c60927718c2ec6afdd"
+    }
+  },
+  "measurements": {
+    "candidate-first": {
+      "private_peak_mib": 387.26171875,
+      "blank_mib": 229.5625,
+      "warm_max_ms": 97.64400000000023
+    },
+    "control-second": {
+      "private_peak_mib": 394.4453125,
+      "blank_mib": 232.671875,
+      "warm_max_ms": 98.5905000000057
+    },
+    "control-first": {
+      "private_peak_mib": 389.9296875,
+      "blank_mib": 230.8125,
+      "warm_max_ms": 92.52330000000075
+    },
+    "candidate-second": {
+      "private_peak_mib": 383.17578125,
+      "blank_mib": 227.47265625,
+      "warm_max_ms": 84.07839999999851
+    }
+  },
+  "raw_peak_savings_mib": [
+    7.18359375,
+    6.75390625
+  ],
+  "units": "163 pass; new bounded offset-view and mid-write cancellation tests fail before change; native incompressible gzip crosses multiple input boundaries with exact output/refusal.",
+  "limits": "Input-write bound is not a hard bound on native decoder allocations or an exact process partition. Blank baselines differ by3.11/3.34 MiB; repeated raw7.18/6.75 reductions are not universal or exact causal byte estimates. Startup still exceeds250 MiB.",
+  "engine_sha256": "782009af96f7a4c5fbd17a46e0716d4b6a300d4e85286a65c2b92e5cdd7f12ed",
+  "candidate_shell": "b18354d00bed4b1a92d50287b76bada82bdc4ebb7f87a7f7661a1cae78173385",
+  "logs_sha256": {
+    "chunked-decoder-input-regression-before.log": "c08d769619028a5fcf08c77e4c53e575e80a1c812de24a3670a7273a06841d1b",
+    "chunked-decoder-input-build.log": "5b528543eff39abb476667e068c93256e0944af51385aff7ec8a5651f4d53bed",
+    "chunked-decoder-input-units.log": "6018b6ce7ef5cd4bca4b6605c7c1ce6fd79d1ea9b27db533ecee7ed9ea2e7a79"
+  },
+  "published_source": "5ef015c4d47ebbcee8234eb92f1fe83716b45054",
+  "open_gates": [
+    "250 MiB whole-browser FAILED",
+    "Physical Android explicitly deferred"
+  ],
+  "next_action": "Review incremental candidate, run required PR CI and verify exact retained preview/master artifacts before adopting; public release/recovery remains unproven for this source."
+}
