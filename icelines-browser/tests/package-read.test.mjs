@@ -4,6 +4,25 @@ import {readPublicBytes} from '../dist/src/network.js';
 const url = new URL('https://example.test/ICELINES/data/package.json');
 const options = fetch => ({signal:new AbortController().signal,deadline:Date.now()+120000,fetch,wait:async () => {}});
 
+test('public package reads preserve each chunk when a producer reuses an offset buffer view', async () => {
+  const backing = new Uint8Array(9); backing.fill(255);
+  const chunk = backing.subarray(3, 6);
+  let index = 0;
+  const body = new ReadableStream({ pull(controller) {
+    if (index === 3) { controller.close(); return; }
+    chunk.set([index * 3 + 1, index * 3 + 2, index * 3 + 3]);
+    controller.enqueue(chunk); index++;
+  } }, { highWaterMark: 0 });
+  assert.deepEqual(await readPublicBytes(url,9,options(async () => new Response(body))), new Uint8Array([1,2,3,4,5,6,7,8,9]));
+  assert.equal(backing[0],255); assert.equal(backing[8],255);
+});
+
+test('empty and short public bodies return only received bytes; authentication remains the caller responsibility', async () => {
+  for (const bytes of [new Uint8Array(0),new Uint8Array([7,8])]) {
+    assert.deepEqual(await readPublicBytes(url,4,options(async () => new Response(bytes))),bytes);
+  }
+});
+
 test('public package reads retry safe failures and preserve exact bytes with private caching disabled', async () => {
   let calls = 0; const bytes = new Uint8Array([0,255,7,9]);
   const result = await readPublicBytes(url,4,options(async (_url,request) => {

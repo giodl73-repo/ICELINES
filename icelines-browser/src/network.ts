@@ -23,11 +23,12 @@ export function retryDelay(value: string | null, now: number): number | undefine
   return Number.isFinite(date) ? Math.max(0, date - now) : undefined;
 }
 
-async function readBytes(response: Response, signal: AbortSignal, max: number, limitMessage: string): Promise<Uint8Array> {
+async function readBytes(response: Response, signal: AbortSignal, max: number, limitMessage: string, boundedDestination = false): Promise<Uint8Array> {
   if (Number(response.headers.get('content-length')) > max) { await response.body?.cancel(); throw new Error(limitMessage); }
   const reader = response.body?.getReader();
   if (!reader) throw new Error('Source returned no body');
   let length = 0; const parts: Uint8Array[] = [];
+  let destination: Uint8Array | undefined;
   const stop = (): void => { void reader.cancel(signal.reason); };
   signal.addEventListener('abort', stop, { once: true });
   try {
@@ -38,8 +39,15 @@ async function readBytes(response: Response, signal: AbortSignal, max: number, l
       if (done) break;
       length += value.length;
       if (length > max) throw new Error(limitMessage);
-      parts.push(value);
+      if (boundedDestination) {
+        // Catalog downloads have an authenticated advertised bound. Copy each
+        // chunk before reading the next, avoiding a retained chunk collection
+        // alongside a second complete wire buffer. Allocate after first data.
+        destination ??= new Uint8Array(max);
+        destination.set(value, length - value.length);
+      } else parts.push(value);
     }
+    if (boundedDestination) return destination?.subarray(0, length) ?? new Uint8Array(0);
     const bytes = new Uint8Array(length); let offset = 0;
     for (const part of parts) { bytes.set(part, offset); offset += part.length; }
     return bytes;
@@ -99,5 +107,5 @@ export function readPublicJSON(url: URL, options: ReadOptions): Promise<unknown>
 
 export function readPublicBytes(url: URL, maximumBytes: number, options: ReadOptions): Promise<Uint8Array> {
   if (!Number.isSafeInteger(maximumBytes) || maximumBytes <= 0 || maximumBytes > 100 * 1024 * 1024) throw new Error('Invalid public package byte limit');
-  return readPublic(url, options, (response, signal) => readBytes(response, signal, maximumBytes, 'Package response exceeds its advertised byte limit'));
+  return readPublic(url, options, (response, signal) => readBytes(response, signal, maximumBytes, 'Package response exceeds its advertised byte limit', true));
 }
