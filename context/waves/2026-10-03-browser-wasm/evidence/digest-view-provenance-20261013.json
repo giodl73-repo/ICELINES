@@ -1,0 +1,29 @@
+{
+  "status": "UNADOPTED: no observed whole-browser saving in one candidate/control pair",
+  "scope": "Same full workload, flags, sampler and observer; no forced GC. One Windows pair, not a universal result or acceptance.",
+  "candidate": "834a3f37",
+  "control": "c0154ac6",
+  "typecheck": true,
+  "unit_tests": 157,
+  "measurements": {
+    "candidate": {
+      "report": "digest-view-candidate-20261013.json",
+      "sha256": "6cca23457ae2a866d07d8afd6c7320f05c69099ca4f9b79c19597b7b131666fa",
+      "private_peak_mib": 399.046875,
+      "blank_mib": 229.5078125,
+      "warm_max_ms": 96.94970000001194
+    },
+    "control": {
+      "report": "digest-view-control-20261013.json",
+      "sha256": "3ff146f7b9c3e2070318fef4488bd25aeb8ef4a47d1dd407512eb2bb0c7721fd",
+      "private_peak_mib": 395.33203125,
+      "blank_mib": 231.79296875,
+      "warm_max_ms": 102.14630000000761
+    }
+  },
+  "open_gates": [
+    "250 MiB whole-browser target",
+    "Physical Android deferred"
+  ],
+  "wasm_and_catalog_identical": true
+}
