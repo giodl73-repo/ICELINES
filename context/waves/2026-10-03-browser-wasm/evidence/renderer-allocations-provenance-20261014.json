@@ -1,0 +1,96 @@
+{
+  "status": "Supplemental native allocation attribution only; no implementation/adoption",
+  "source": "5ef015c4d47ebbcee8234eb92f1fe83716b45054",
+  "reports": {
+    "report": {
+      "file": "renderer-allocations-report-20261014.json",
+      "sha256": "94ad9c1e6fbe230be3436e731b6dd6807df7ad6c112cdc1b378141c009083522"
+    },
+    "summary": {
+      "file": "renderer-allocations-summary-20261014.json",
+      "sha256": "4e1fdd5b28c5f296dc77a0775aef16599166b5bffd6b59c076e91dbaba82909d"
+    }
+  },
+  "compressed_traces": {
+    "ready_before_engine": {
+      "file": "renderer-allocations-ready_before_engine-trace-20261014.json.gz",
+      "sha256": "158227d4bebde6a9d96b2fb328fe9edca13b362c108bb23245fb86d74a0c3ae0",
+      "expanded_sha256": "fa3798b9b56968eb306ddfb5f45b27275b0c268f89f6d4c90d22cf826a62667c",
+      "expanded_bytes": 4487912
+    },
+    "loaded_1": {
+      "file": "renderer-allocations-loaded_1-trace-20261014.json.gz",
+      "sha256": "51dcccf0b635f380980387facbc87ab19ee2ef674d21a0d2e016e98d673fb5d3",
+      "expanded_sha256": "76660f6847fecd282b3dfe70b94d57a25982f337a811ca9b778879ac6e8f26c2",
+      "expanded_bytes": 5225269
+    },
+    "loaded_8": {
+      "file": "renderer-allocations-loaded_8-trace-20261014.json.gz",
+      "sha256": "c3f3c9d238eac895626727c0a38d90f9dc6b8d8c9ffb3264f4bbf4e2955d1649",
+      "expanded_sha256": "b9eca63bd8b0fbbbf656b3b7cbcedb636e7251bb63b52d04ce4dd63e67c848a0",
+      "expanded_bytes": 6470494
+    },
+    "loaded_10": {
+      "file": "renderer-allocations-loaded_10-trace-20261014.json.gz",
+      "sha256": "e0d4bec9240bbe7a3de92f444e631832c645b9d1110c38a67d224d362098febb",
+      "expanded_sha256": "46b7d06ef1d0c05c2a97a724b526c2ffb14cc0754f2002b837e880f5555129d4",
+      "expanded_bytes": 4863925
+    },
+    "loaded_11": {
+      "file": "renderer-allocations-loaded_11-trace-20261014.json.gz",
+      "sha256": "9694f8d7b0ea64aff87721ba0abc9386c27b6608a88cce86cabfda7c019e0013",
+      "expanded_sha256": "452da289f9e0f498b2291591e715e19fc1a8bc49dcc7886b0ae6d4875ab30675",
+      "expanded_bytes": 5212722
+    },
+    "loaded_26": {
+      "file": "renderer-allocations-loaded_26-trace-20261014.json.gz",
+      "sha256": "93b31fd6fe95a4fa24068c474e97ef96ce9059140d8381c9e2b7d326ef822aea",
+      "expanded_sha256": "d41f3b5058dd21cae79ed8abdab09c18e4afdc35e3d8a4bad40cbaadf26ee0b1",
+      "expanded_bytes": 5060324
+    },
+    "loaded_75": {
+      "file": "renderer-allocations-loaded_75-trace-20261014.json.gz",
+      "sha256": "107472967bb7b6f2eac1dc43afb4ce8993142d715dd27f0ac553fe91a2884e1b",
+      "expanded_sha256": "432f1012826a1b981a332640dd4257c8e6c3234f8852562930be90aadb1726e9",
+      "expanded_bytes": 4867851
+    },
+    "after_twenty_queries": {
+      "file": "renderer-allocations-after_twenty_queries-trace-20261014.json.gz",
+      "sha256": "dd20c170ba182bd3723a042c290664443777acef780faf9a05f2781c9aa0d9b5",
+      "expanded_sha256": "3c394a5b2ea76d9d06baae91a2b53c121ef4c14a17b14261d0660f6cf5d2e892",
+      "expanded_bytes": 4602703
+    },
+    "after_restart": {
+      "file": "renderer-allocations-after_restart-trace-20261014.json.gz",
+      "sha256": "3a3aa99319647c201f24b50f519a19def93b2879f25d421a8a2556a4dc1a4810",
+      "expanded_sha256": "2c8f5292f899a4c54042d3143b09c6f3a946ad405f1bfc5b0bb2192c51844c29",
+      "expanded_bytes": 4821995
+    }
+  },
+  "scope": "Nine bounded manual native allocation dumps with exact target PID markers and dump GUID/time-window matching; full75/eight/two/20/restart; repeated observer affects later counters, original flags/sampler, deterministic:false and no forced GC, null acceptance target.",
+  "observations": [
+    "Application renderer array_buffer partition31.10 MiB after eight,14.32 after ten,27.82 after26,8.92 after75 and8.68 after queries. Not an object-lifetime map or exact reclaimable bytes.",
+    "Blink heap size27.95 after eight then33.20 after ten; main allocated objects24.26 then2.39. Capacity stays about33.5 after queries/restart while allocated objects2.59/3.06. Shared/hierarchical categories overlap and effective_size differs from size; do not add them.",
+    "malloc metadata_fragmentation_caches category about0.035 MiB after loading. That named category is not proof that all allocator fragmentation or caches are small."
+  ],
+  "summarizer_correction": "Initial strict one-allocator-event-per-PID assertion failed: Chrome emits separate global ownership graph under an omnibox PID. Original failure retained. Corrected summary excludes global graph entries, asserts disjoint local categories and matches exact manual GUID interval. All nine checkpoints verified without rerunning browser.",
+  "archive_note": "Original local trace filenames retained in runtime report; separately named lossless gzip archives explicitly map raw and compressed hashes. Flat archival audit sees those nine runtime trace references as external.",
+  "helpers_sha256": {
+    "target/prepare-renderer-allocation-checkpoints.py": "7d676c368f8dcb7822caf7abc0a3c758c222d0b8a78fee8b214cf1b85d7b8526",
+    "target/target-allocation-markers.mjs": "0957666dc0c9649c5976f58c4d1951742c4b763fd9877813392230b71ad88ad5",
+    "target/renderer-allocation-checkpoints.mjs": "6a4dd1e9fd04ecbafff6a68fc590a59d6e4f6b05e267ebc0a8e889bc51ecc3b3",
+    "target/summarize-renderer-allocations.py": "ca5fd701f0573ae4e4b20827f3c1af642176c4fd4df7db80840d59eefd465ed7"
+  },
+  "logs_sha256": {
+    "target/renderer-allocation-checkpoints.log": "7753052ed1d58a3416acbc127f24db1cd3d516696d6a113efa90c79ab9068ff7",
+    "target/renderer-allocation-summary.log": "6526749402390667014d460bf764b36fdbefe5266e2a029755360821feff7e4b",
+    "target/renderer-allocation-summary-corrected.log": "4772d7c1e40565d183c1835451781bd96c8abd194fd1b1fb01a98f1795a83b13"
+  },
+  "samples_sha256": "6ac2f57c79d374d20829196b9630faf136c6454e66113bfb95078349631e127b",
+  "retained_output": "target\\renderer-allocation-checkpoints-W9Zw60",
+  "next_hypothesis": "Review ownership of temporary gzip transport and decompression chunks before testing explicit buffer disposal. Preserve returned canonical raw bytes, integrity, deadlines/cancellation and fallback behavior. No saving proved.",
+  "open_gates": [
+    "250 MiB whole-browser gate FAILED",
+    "Physical Android explicitly deferred"
+  ]
+}

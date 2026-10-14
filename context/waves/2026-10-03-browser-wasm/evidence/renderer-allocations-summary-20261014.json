@@ -1,0 +1,1652 @@
+{
+  "scope": "Target PID markers and exact manual dump GUID/time interval; repeated additional observers, no forced GC, no acceptance. Hierarchical/shared categories overlap; do not sum them or subtract them from OS counters.",
+  "all_nine_present": true,
+  "checkpoints": [
+    {
+      "label": "ready_before_engine",
+      "guid": "0x3",
+      "trace_interval": [
+        466037038450,
+        466037165915
+      ],
+      "processes": [
+        {
+          "pid": 50968,
+          "targets": [
+            "service_worker",
+            "page"
+          ],
+          "allocator_events": 1,
+          "separate_global_entries": 0,
+          "categories": {
+            "blink_gc": {
+              "effective_size": 1445289,
+              "size": 4325376
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 2237120
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 2237120,
+              "committed_size": 3145728,
+              "effective_size": 908592,
+              "pooled_size": 0,
+              "size": 3145728
+            },
+            "malloc": {
+              "effective_size": 21013116,
+              "size": 21309168,
+              "virtual_size": 17839360
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 15691709,
+              "size": 15987721
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 30379,
+              "size": 30379
+            },
+            "partition_alloc": {
+              "effective_size": 6560509,
+              "size": 6565888
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 5919379,
+              "size": 5924703
+            },
+            "partition_alloc/partitions/array_buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 2239071,
+              "allocated_size": 2270320,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 0,
+              "discardable_size": 24576,
+              "effective_size": 223979,
+              "intended_leak_size": 0,
+              "max_allocated_size": 2270320,
+              "max_committed_size": 2293760,
+              "size": 2293760,
+              "virtual_committed_size": 2293760,
+              "virtual_size": 4194304,
+              "wasted": 54689
+            },
+            "partition_alloc/partitions/buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 3685632,
+              "allocated_size": 3795856,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 253952,
+              "discardable_size": 208896,
+              "effective_size": 417151,
+              "intended_leak_size": 0,
+              "max_allocated_size": 4533808,
+              "max_committed_size": 4882432,
+              "size": 4272128,
+              "virtual_committed_size": 4272128,
+              "virtual_size": 10485760,
+              "wasted": 586496
+            },
+            "v8": {
+              "effective_size": 6630444,
+              "size": 6630444
+            },
+            "v8/main/heap": {
+              "effective_size": 4255744,
+              "size": 4255744
+            }
+          }
+        },
+        {
+          "pid": 10696,
+          "targets": [
+            "browser_ui",
+            "browser_ui"
+          ],
+          "allocator_events": 2,
+          "separate_global_entries": 110,
+          "categories": {
+            "blink_gc": {
+              "effective_size": 794376,
+              "size": 5767168
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 4972776
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 4972776,
+              "committed_size": 5767168,
+              "effective_size": 794376,
+              "pooled_size": 0,
+              "size": 5767168
+            },
+            "malloc": {
+              "effective_size": 14176803,
+              "size": 14355584,
+              "virtual_size": 13532368
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 11141267,
+              "size": 11320007
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 30017,
+              "size": 30017
+            },
+            "partition_alloc": {
+              "effective_size": 4129805,
+              "size": 6844416
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 3546818,
+              "size": 6261389
+            },
+            "partition_alloc/partitions/array_buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 7136,
+              "allocated_size": 7136,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 0,
+              "discardable_size": 0,
+              "effective_size": 3828,
+              "intended_leak_size": 0,
+              "max_allocated_size": 7136,
+              "max_committed_size": 45056,
+              "size": 45056,
+              "virtual_committed_size": 45056,
+              "virtual_size": 2097152,
+              "wasted": 37920
+            },
+            "partition_alloc/partitions/buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 6254253,
+              "allocated_size": 6256848,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 393216,
+              "discardable_size": 69632,
+              "effective_size": 579159,
+              "intended_leak_size": 0,
+              "max_allocated_size": 11065264,
+              "max_committed_size": 11481088,
+              "size": 6799360,
+              "virtual_committed_size": 6799360,
+              "virtual_size": 14680064,
+              "wasted": 545107
+            },
+            "v8": {
+              "effective_size": 11711524,
+              "size": 11711524
+            },
+            "v8/main/heap": {
+              "effective_size": 11534336,
+              "size": 11534336
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "loaded_1",
+      "guid": "0x5",
+      "trace_interval": [
+        466038824200,
+        466038963401
+      ],
+      "processes": [
+        {
+          "pid": 50968,
+          "targets": [
+            "service_worker",
+            "worker",
+            "page"
+          ],
+          "allocator_events": 1,
+          "separate_global_entries": 0,
+          "categories": {
+            "blink_gc": {
+              "effective_size": 2199348,
+              "size": 9043968
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 6110216
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 6110216,
+              "committed_size": 7077888,
+              "effective_size": 967626,
+              "pooled_size": 0,
+              "size": 7077888
+            },
+            "malloc": {
+              "effective_size": 32254425,
+              "size": 32660016,
+              "virtual_size": 26914624
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 24302026,
+              "size": 24707574
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 36505,
+              "size": 36505
+            },
+            "partition_alloc": {
+              "effective_size": 13589259,
+              "size": 13594624
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 12946052,
+              "size": 12951376
+            },
+            "partition_alloc/partitions/array_buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 7329472,
+              "allocated_size": 7425232,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 98304,
+              "discardable_size": 86016,
+              "effective_size": 357176,
+              "intended_leak_size": 0,
+              "max_allocated_size": 7425232,
+              "max_committed_size": 7548928,
+              "size": 7548928,
+              "virtual_committed_size": 7548928,
+              "virtual_size": 10485760,
+              "wasted": 219456
+            },
+            "partition_alloc/partitions/buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 5621904,
+              "allocated_size": 5702144,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 147456,
+              "discardable_size": 159744,
+              "effective_size": 286031,
+              "intended_leak_size": 0,
+              "max_allocated_size": 5706720,
+              "max_committed_size": 6283264,
+              "size": 6045696,
+              "virtual_committed_size": 6045696,
+              "virtual_size": 12582912,
+              "wasted": 423792
+            },
+            "v8": {
+              "effective_size": 9680940,
+              "size": 9680940
+            },
+            "v8/main/heap": {
+              "effective_size": 6152192,
+              "size": 6152192
+            }
+          }
+        },
+        {
+          "pid": 10696,
+          "targets": [
+            "browser_ui",
+            "browser_ui"
+          ],
+          "allocator_events": 2,
+          "separate_global_entries": 113,
+          "categories": {
+            "blink_gc": {
+              "effective_size": 902970,
+              "size": 5898240
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 4995240
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 4995240,
+              "committed_size": 5898240,
+              "effective_size": 902970,
+              "pooled_size": 0,
+              "size": 5898240
+            },
+            "malloc": {
+              "effective_size": 13753684,
+              "size": 13932464,
+              "virtual_size": 13110480
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 11186195,
+              "size": 11364935
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 30017,
+              "size": 30017
+            },
+            "partition_alloc": {
+              "effective_size": 4146200,
+              "size": 6860800
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 3558802,
+              "size": 6273373
+            },
+            "partition_alloc/partitions/array_buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 7200,
+              "allocated_size": 7200,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 0,
+              "discardable_size": 0,
+              "effective_size": 3850,
+              "intended_leak_size": 0,
+              "max_allocated_size": 7200,
+              "max_committed_size": 45056,
+              "size": 45056,
+              "virtual_committed_size": 45056,
+              "virtual_size": 2097152,
+              "wasted": 37856
+            },
+            "partition_alloc/partitions/buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 6266173,
+              "allocated_size": 6268768,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 393216,
+              "discardable_size": 69632,
+              "effective_size": 583548,
+              "intended_leak_size": 0,
+              "max_allocated_size": 11065264,
+              "max_committed_size": 11481088,
+              "size": 6815744,
+              "virtual_committed_size": 6815744,
+              "virtual_size": 14680064,
+              "wasted": 549571
+            },
+            "v8": {
+              "effective_size": 11711524,
+              "size": 11711524
+            },
+            "v8/main/heap": {
+              "effective_size": 11534336,
+              "size": 11534336
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "loaded_8",
+      "guid": "0x6",
+      "trace_interval": [
+        466045096020,
+        466045262453
+      ],
+      "processes": [
+        {
+          "pid": 50968,
+          "targets": [
+            "service_worker",
+            "worker",
+            "page"
+          ],
+          "allocator_events": 1,
+          "separate_global_entries": 0,
+          "categories": {
+            "blink_gc": {
+              "effective_size": 3073017,
+              "size": 29302864
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 25436168
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 25436168,
+              "committed_size": 27205712,
+              "effective_size": 1769475,
+              "pooled_size": 0,
+              "size": 27205712
+            },
+            "malloc": {
+              "effective_size": 39753626,
+              "size": 40232512,
+              "virtual_size": 32685888
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 29368850,
+              "size": 29847686
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 36505,
+              "size": 36505
+            },
+            "partition_alloc": {
+              "effective_size": 43682566,
+              "size": 43687936
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 42606103,
+              "size": 42611427
+            },
+            "partition_alloc/partitions/array_buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 32332927,
+              "allocated_size": 32482160,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 98304,
+              "discardable_size": 135168,
+              "effective_size": 803477,
+              "intended_leak_size": 0,
+              "max_allocated_size": 32482160,
+              "max_committed_size": 32608256,
+              "size": 32608256,
+              "virtual_committed_size": 32608256,
+              "virtual_size": 41943040,
+              "wasted": 275329
+            },
+            "partition_alloc/partitions/buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 10278500,
+              "allocated_size": 10381904,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 475136,
+              "discardable_size": 217088,
+              "effective_size": 272986,
+              "intended_leak_size": 0,
+              "max_allocated_size": 10407920,
+              "max_committed_size": 11079680,
+              "size": 11079680,
+              "virtual_committed_size": 11079680,
+              "virtual_size": 16777216,
+              "wasted": 801180
+            },
+            "v8": {
+              "effective_size": 14734292,
+              "size": 14734292
+            },
+            "v8/main/heap": {
+              "effective_size": 10084352,
+              "size": 10084352
+            }
+          }
+        },
+        {
+          "pid": 10696,
+          "targets": [
+            "browser_ui",
+            "browser_ui"
+          ],
+          "allocator_events": 2,
+          "separate_global_entries": 108,
+          "categories": {
+            "blink_gc": {
+              "effective_size": 879255,
+              "size": 5898240
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 5018952
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 5018952,
+              "committed_size": 5898240,
+              "effective_size": 879255,
+              "pooled_size": 0,
+              "size": 5898240
+            },
+            "malloc": {
+              "effective_size": 13063035,
+              "size": 13241824,
+              "virtual_size": 12786896
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 11047419,
+              "size": 11226159
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 30017,
+              "size": 30017
+            },
+            "partition_alloc": {
+              "effective_size": 3691546,
+              "size": 6406144
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 3573717,
+              "size": 6288288
+            },
+            "partition_alloc/partitions/array_buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 7648,
+              "allocated_size": 7648,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 0,
+              "discardable_size": 0,
+              "effective_size": 825,
+              "intended_leak_size": 0,
+              "max_allocated_size": 7648,
+              "max_committed_size": 45056,
+              "size": 45056,
+              "virtual_committed_size": 45056,
+              "virtual_size": 2097152,
+              "wasted": 37408
+            },
+            "partition_alloc/partitions/buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 6280640,
+              "allocated_size": 6280640,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 0,
+              "discardable_size": 0,
+              "effective_size": 117004,
+              "intended_leak_size": 0,
+              "max_allocated_size": 11065264,
+              "max_committed_size": 11481088,
+              "size": 6361088,
+              "virtual_committed_size": 6361088,
+              "virtual_size": 14680064,
+              "wasted": 80448
+            },
+            "v8": {
+              "effective_size": 11711524,
+              "size": 11711524
+            },
+            "v8/main/heap": {
+              "effective_size": 11534336,
+              "size": 11534336
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "loaded_10",
+      "guid": "0x7",
+      "trace_interval": [
+        466047558587,
+        466047673557
+      ],
+      "processes": [
+        {
+          "pid": 50968,
+          "targets": [
+            "service_worker",
+            "worker",
+            "page"
+          ],
+          "allocator_events": 1,
+          "separate_global_entries": 0,
+          "categories": {
+            "blink_gc": {
+              "effective_size": 31482120,
+              "size": 34807888
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 2509456
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 2509456,
+              "committed_size": 32710736,
+              "effective_size": 30201192,
+              "pooled_size": 13762560,
+              "size": 32710736
+            },
+            "malloc": {
+              "effective_size": 37960764,
+              "size": 38413984,
+              "virtual_size": 30871360
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 25637338,
+              "size": 26090510
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 36505,
+              "size": 36505
+            },
+            "partition_alloc": {
+              "effective_size": 25656083,
+              "size": 25661440
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 21576637,
+              "size": 21581961
+            },
+            "partition_alloc/partitions/array_buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 13926773,
+              "allocated_size": 13952112,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 1015808,
+              "discardable_size": 49152,
+              "effective_size": 2387118,
+              "intended_leak_size": 0,
+              "max_allocated_size": 39061808,
+              "max_committed_size": 39190528,
+              "size": 15015936,
+              "virtual_committed_size": 15015936,
+              "virtual_size": 46137344,
+              "wasted": 1089163
+            },
+            "partition_alloc/partitions/buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 7655188,
+              "allocated_size": 7771760,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 1318912,
+              "discardable_size": 491520,
+              "effective_size": 1692328,
+              "intended_leak_size": 0,
+              "max_allocated_size": 11676800,
+              "max_committed_size": 12451840,
+              "size": 10645504,
+              "virtual_committed_size": 10645504,
+              "virtual_size": 16777216,
+              "wasted": 2990316
+            },
+            "v8": {
+              "effective_size": 10776468,
+              "size": 10776468
+            },
+            "v8/main/heap": {
+              "effective_size": 6676480,
+              "size": 6676480
+            }
+          }
+        },
+        {
+          "pid": 10696,
+          "targets": [
+            "browser_ui",
+            "browser_ui"
+          ],
+          "allocator_events": 2,
+          "separate_global_entries": 108,
+          "categories": {
+            "blink_gc": {
+              "effective_size": 856575,
+              "size": 5898240
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 5041624
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 5041624,
+              "committed_size": 5898240,
+              "effective_size": 856575,
+              "pooled_size": 0,
+              "size": 5898240
+            },
+            "malloc": {
+              "effective_size": 13202241,
+              "size": 13381024,
+              "virtual_size": 12913872
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 11063755,
+              "size": 11242495
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 30017,
+              "size": 30017
+            },
+            "partition_alloc": {
+              "effective_size": 3712030,
+              "size": 6426624
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 3585717,
+              "size": 6300288
+            },
+            "partition_alloc/partitions/array_buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 7776,
+              "allocated_size": 7776,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 0,
+              "discardable_size": 0,
+              "effective_size": 880,
+              "intended_leak_size": 0,
+              "max_allocated_size": 7776,
+              "max_committed_size": 45056,
+              "size": 45056,
+              "virtual_committed_size": 45056,
+              "virtual_size": 2097152,
+              "wasted": 37280
+            },
+            "partition_alloc/partitions/buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 6292512,
+              "allocated_size": 6292512,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 0,
+              "discardable_size": 8192,
+              "effective_size": 125433,
+              "intended_leak_size": 0,
+              "max_allocated_size": 11065264,
+              "max_committed_size": 11481088,
+              "size": 6381568,
+              "virtual_committed_size": 6381568,
+              "virtual_size": 14680064,
+              "wasted": 89056
+            },
+            "v8": {
+              "effective_size": 11711524,
+              "size": 11711524
+            },
+            "v8/main/heap": {
+              "effective_size": 11534336,
+              "size": 11534336
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "loaded_11",
+      "guid": "0x8",
+      "trace_interval": [
+        466049248675,
+        466049387195
+      ],
+      "processes": [
+        {
+          "pid": 50968,
+          "targets": [
+            "service_worker",
+            "worker",
+            "page"
+          ],
+          "allocator_events": 1,
+          "separate_global_entries": 0,
+          "categories": {
+            "blink_gc": {
+              "effective_size": 28687590,
+              "size": 34734080
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 5214680
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 5214680,
+              "committed_size": 32636928,
+              "effective_size": 27422174,
+              "pooled_size": 13762560,
+              "size": 32636928
+            },
+            "malloc": {
+              "effective_size": 37245450,
+              "size": 37698672,
+              "virtual_size": 30150464
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 26506675,
+              "size": 26959847
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 36505,
+              "size": 36505
+            },
+            "partition_alloc": {
+              "effective_size": 27077386,
+              "size": 27082752
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 23641109,
+              "size": 23646433
+            },
+            "partition_alloc/partitions/array_buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 15532525,
+              "allocated_size": 15623392,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 1015808,
+              "discardable_size": 110592,
+              "effective_size": 2117283,
+              "intended_leak_size": 0,
+              "max_allocated_size": 39061808,
+              "max_committed_size": 39190528,
+              "size": 16687104,
+              "virtual_committed_size": 16687104,
+              "virtual_size": 46137344,
+              "wasted": 1154579
+            },
+            "partition_alloc/partitions/buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 8113908,
+              "allocated_size": 8230480,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 847872,
+              "discardable_size": 425984,
+              "effective_size": 1318994,
+              "intended_leak_size": 0,
+              "max_allocated_size": 11676800,
+              "max_committed_size": 12451840,
+              "size": 10395648,
+              "virtual_committed_size": 10395648,
+              "virtual_size": 16777216,
+              "wasted": 2281740
+            },
+            "v8": {
+              "effective_size": 10776468,
+              "size": 10776468
+            },
+            "v8/main/heap": {
+              "effective_size": 6676480,
+              "size": 6676480
+            }
+          }
+        },
+        {
+          "pid": 10696,
+          "targets": [
+            "browser_ui",
+            "browser_ui"
+          ],
+          "allocator_events": 2,
+          "separate_global_entries": 108,
+          "categories": {
+            "blink_gc": {
+              "effective_size": 834120,
+              "size": 5898240
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 5064088
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 5064088,
+              "committed_size": 5898240,
+              "effective_size": 834120,
+              "pooled_size": 0,
+              "size": 5898240
+            },
+            "malloc": {
+              "effective_size": 13297919,
+              "size": 13476688,
+              "virtual_size": 12999888
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 11075691,
+              "size": 11254431
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 30017,
+              "size": 30017
+            },
+            "partition_alloc": {
+              "effective_size": 3720231,
+              "size": 6434816
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 3597653,
+              "size": 6312224
+            },
+            "partition_alloc/partitions/array_buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 7840,
+              "allocated_size": 7840,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 0,
+              "discardable_size": 0,
+              "effective_size": 858,
+              "intended_leak_size": 0,
+              "max_allocated_size": 7840,
+              "max_committed_size": 45056,
+              "size": 45056,
+              "virtual_committed_size": 45056,
+              "virtual_size": 2097152,
+              "wasted": 37216
+            },
+            "partition_alloc/partitions/buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 6304384,
+              "allocated_size": 6304384,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 0,
+              "discardable_size": 4096,
+              "effective_size": 121720,
+              "intended_leak_size": 0,
+              "max_allocated_size": 11065264,
+              "max_committed_size": 11481088,
+              "size": 6389760,
+              "virtual_committed_size": 6389760,
+              "virtual_size": 14680064,
+              "wasted": 85376
+            },
+            "v8": {
+              "effective_size": 11711524,
+              "size": 11711524
+            },
+            "v8/main/heap": {
+              "effective_size": 11534336,
+              "size": 11534336
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "loaded_26",
+      "guid": "0x9",
+      "trace_interval": [
+        466064137265,
+        466064254729
+      ],
+      "processes": [
+        {
+          "pid": 50968,
+          "targets": [
+            "service_worker",
+            "worker",
+            "page"
+          ],
+          "allocator_events": 1,
+          "separate_global_entries": 0,
+          "categories": {
+            "blink_gc": {
+              "effective_size": 25835067,
+              "size": 34873504
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 8091456
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 8091456,
+              "committed_size": 32776352,
+              "effective_size": 24684839,
+              "pooled_size": 15466496,
+              "size": 32776352
+            },
+            "malloc": {
+              "effective_size": 39787772,
+              "size": 40240992,
+              "virtual_size": 32194368
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 27685987,
+              "size": 28139159
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 36505,
+              "size": 36505
+            },
+            "partition_alloc": {
+              "effective_size": 43809539,
+              "size": 43814912
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 41354813,
+              "size": 41360137
+            },
+            "partition_alloc/partitions/array_buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 28891721,
+              "allocated_size": 29098288,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 0,
+              "discardable_size": 253952,
+              "effective_size": 1634587,
+              "intended_leak_size": 0,
+              "max_allocated_size": 39061808,
+              "max_committed_size": 39190528,
+              "size": 29175808,
+              "virtual_committed_size": 29175808,
+              "virtual_size": 56623104,
+              "wasted": 284087
+            },
+            "partition_alloc/partitions/buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 12468416,
+              "allocated_size": 12583760,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 1200128,
+              "discardable_size": 286720,
+              "effective_size": 820139,
+              "intended_leak_size": 0,
+              "max_allocated_size": 12609776,
+              "max_committed_size": 14639104,
+              "size": 14639104,
+              "virtual_committed_size": 14639104,
+              "virtual_size": 20971520,
+              "wasted": 2170688
+            },
+            "v8": {
+              "effective_size": 12611476,
+              "size": 12611476
+            },
+            "v8/main/heap": {
+              "effective_size": 7987200,
+              "size": 7987200
+            }
+          }
+        },
+        {
+          "pid": 10696,
+          "targets": [
+            "browser_ui",
+            "browser_ui"
+          ],
+          "allocator_events": 2,
+          "separate_global_entries": 108,
+          "categories": {
+            "blink_gc": {
+              "effective_size": 3199640,
+              "size": 5373952
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 2174272
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 2174272,
+              "committed_size": 5373952,
+              "effective_size": 3199640,
+              "pooled_size": 0,
+              "size": 5373952
+            },
+            "malloc": {
+              "effective_size": 12703092,
+              "size": 12840880,
+              "virtual_size": 12433200
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 9824023,
+              "size": 9961763
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 32093,
+              "size": 32093
+            },
+            "partition_alloc": {
+              "effective_size": 3927519,
+              "size": 3997696
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 3430844,
+              "size": 3500992
+            },
+            "partition_alloc/partitions/array_buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 128,
+              "allocated_size": 128,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 0,
+              "discardable_size": 0,
+              "effective_size": 508,
+              "intended_leak_size": 0,
+              "max_allocated_size": 8608,
+              "max_committed_size": 45056,
+              "size": 4096,
+              "virtual_committed_size": 4096,
+              "virtual_size": 2097152,
+              "wasted": 3968
+            },
+            "partition_alloc/partitions/buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 3500864,
+              "allocated_size": 3500864,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 245760,
+              "discardable_size": 86016,
+              "effective_size": 496167,
+              "intended_leak_size": 0,
+              "max_allocated_size": 11065264,
+              "max_committed_size": 11481088,
+              "size": 3993600,
+              "virtual_committed_size": 3993600,
+              "virtual_size": 12582912,
+              "wasted": 492736
+            },
+            "v8": {
+              "effective_size": 5379068,
+              "size": 5379068
+            },
+            "v8/main/heap": {
+              "effective_size": 5242880,
+              "size": 5242880
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "loaded_75",
+      "guid": "0xc",
+      "trace_interval": [
+        466111726203,
+        466111848720
+      ],
+      "processes": [
+        {
+          "pid": 50968,
+          "targets": [
+            "service_worker",
+            "worker",
+            "page"
+          ],
+          "allocator_events": 1,
+          "separate_global_entries": 0,
+          "categories": {
+            "blink_gc": {
+              "effective_size": 28459750,
+              "size": 35061840
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 5426848
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 5426848,
+              "committed_size": 32702544,
+              "effective_size": 27275674,
+              "pooled_size": 14811136,
+              "size": 32702544
+            },
+            "malloc": {
+              "effective_size": 27005062,
+              "size": 27455312,
+              "virtual_size": 24699568
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 20884663,
+              "size": 21334879
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 36433,
+              "size": 36433
+            },
+            "partition_alloc": {
+              "effective_size": 23673610,
+              "size": 23678976
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 22588529,
+              "size": 22593853
+            },
+            "partition_alloc/partitions/array_buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 9284446,
+              "allocated_size": 9327824,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 0,
+              "discardable_size": 40960,
+              "effective_size": 428519,
+              "intended_leak_size": 0,
+              "max_allocated_size": 39061808,
+              "max_committed_size": 39190528,
+              "size": 9351168,
+              "virtual_committed_size": 9351168,
+              "virtual_size": 79691776,
+              "wasted": 66722
+            },
+            "partition_alloc/partitions/buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 13309407,
+              "allocated_size": 13347008,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 98304,
+              "discardable_size": 233472,
+              "effective_size": 656562,
+              "intended_leak_size": 0,
+              "max_allocated_size": 14987008,
+              "max_committed_size": 16113664,
+              "size": 14327808,
+              "virtual_committed_size": 14327808,
+              "virtual_size": 27262976,
+              "wasted": 1018401
+            },
+            "v8": {
+              "effective_size": 12084088,
+              "size": 12084088
+            },
+            "v8/main/heap": {
+              "effective_size": 8249344,
+              "size": 8249344
+            }
+          }
+        },
+        {
+          "pid": 10696,
+          "targets": [
+            "browser_ui",
+            "browser_ui"
+          ],
+          "allocator_events": 2,
+          "separate_global_entries": 108,
+          "categories": {
+            "blink_gc": {
+              "effective_size": 3167209,
+              "size": 5373952
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 2206720
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 2206720,
+              "committed_size": 5373952,
+              "effective_size": 3167209,
+              "pooled_size": 0,
+              "size": 5373952
+            },
+            "malloc": {
+              "effective_size": 11949391,
+              "size": 12087168,
+              "virtual_size": 11770528
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 9742623,
+              "size": 9880363
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 32021,
+              "size": 32021
+            },
+            "partition_alloc": {
+              "effective_size": 3931622,
+              "size": 4001792
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 3445852,
+              "size": 3516000
+            },
+            "partition_alloc/partitions/array_buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 3264,
+              "allocated_size": 3264,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 0,
+              "discardable_size": 0,
+              "effective_size": 497,
+              "intended_leak_size": 0,
+              "max_allocated_size": 8608,
+              "max_committed_size": 45056,
+              "size": 4096,
+              "virtual_committed_size": 4096,
+              "virtual_size": 2097152,
+              "wasted": 832
+            },
+            "partition_alloc/partitions/buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 3512736,
+              "allocated_size": 3512736,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 245760,
+              "discardable_size": 86016,
+              "effective_size": 485273,
+              "intended_leak_size": 0,
+              "max_allocated_size": 11065264,
+              "max_committed_size": 11481088,
+              "size": 3997696,
+              "virtual_committed_size": 3997696,
+              "virtual_size": 12582912,
+              "wasted": 484960
+            },
+            "v8": {
+              "effective_size": 5379068,
+              "size": 5379068
+            },
+            "v8/main/heap": {
+              "effective_size": 5242880,
+              "size": 5242880
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "after_twenty_queries",
+      "guid": "0xd",
+      "trace_interval": [
+        466118121491,
+        466118261146
+      ],
+      "processes": [
+        {
+          "pid": 50968,
+          "targets": [
+            "service_worker",
+            "worker",
+            "page"
+          ],
+          "allocator_events": 1,
+          "separate_global_entries": 0,
+          "categories": {
+            "blink_gc": {
+              "effective_size": 31128478,
+              "size": 35127296
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 2718880
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 2718880,
+              "committed_size": 32636928,
+              "effective_size": 29917933,
+              "pooled_size": 14024704,
+              "size": 32636928
+            },
+            "malloc": {
+              "effective_size": 26230573,
+              "size": 26691104,
+              "virtual_size": 24629936
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 19807815,
+              "size": 20268303
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 36433,
+              "size": 36433
+            },
+            "partition_alloc": {
+              "effective_size": 24988420,
+              "size": 24993792
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 21664676,
+              "size": 21670000
+            },
+            "partition_alloc/partitions/array_buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 8481360,
+              "allocated_size": 8481360,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 589824,
+              "discardable_size": 0,
+              "effective_size": 1210864,
+              "intended_leak_size": 0,
+              "max_allocated_size": 39061808,
+              "max_committed_size": 39190528,
+              "size": 9105408,
+              "virtual_committed_size": 9105408,
+              "virtual_size": 81788928,
+              "wasted": 624048
+            },
+            "partition_alloc/partitions/buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 13188640,
+              "allocated_size": 13188640,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 1654784,
+              "discardable_size": 212992,
+              "effective_size": 2112880,
+              "intended_leak_size": 0,
+              "max_allocated_size": 19381248,
+              "max_committed_size": 22032384,
+              "size": 15888384,
+              "virtual_committed_size": 15888384,
+              "virtual_size": 35651584,
+              "wasted": 2699744
+            },
+            "v8": {
+              "effective_size": 16288616,
+              "size": 16288616
+            },
+            "v8/main/heap": {
+              "effective_size": 10870784,
+              "size": 10870784
+            }
+          }
+        },
+        {
+          "pid": 10696,
+          "targets": [
+            "browser_ui",
+            "browser_ui"
+          ],
+          "allocator_events": 2,
+          "separate_global_entries": 99,
+          "categories": {
+            "blink_gc": {
+              "effective_size": 3140395,
+              "size": 5373952
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 2233552
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 2233552,
+              "committed_size": 5373952,
+              "effective_size": 3140395,
+              "pooled_size": 0,
+              "size": 5373952
+            },
+            "malloc": {
+              "effective_size": 12104374,
+              "size": 12242160,
+              "virtual_size": 11913888
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 9772895,
+              "size": 9910635
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 32021,
+              "size": 32021
+            },
+            "partition_alloc": {
+              "effective_size": 3943908,
+              "size": 4014080
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 3459132,
+              "size": 3529280
+            },
+            "partition_alloc/partitions/array_buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 4672,
+              "allocated_size": 4672,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 0,
+              "discardable_size": 0,
+              "effective_size": 989,
+              "intended_leak_size": 0,
+              "max_allocated_size": 8608,
+              "max_committed_size": 45056,
+              "size": 8192,
+              "virtual_committed_size": 8192,
+              "virtual_size": 2097152,
+              "wasted": 3520
+            },
+            "partition_alloc/partitions/buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 3524608,
+              "allocated_size": 3524608,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 245760,
+              "discardable_size": 86016,
+              "effective_size": 483787,
+              "intended_leak_size": 0,
+              "max_allocated_size": 11065264,
+              "max_committed_size": 11481088,
+              "size": 4005888,
+              "virtual_committed_size": 4005888,
+              "virtual_size": 12582912,
+              "wasted": 481280
+            },
+            "v8": {
+              "effective_size": 5379068,
+              "size": 5379068
+            },
+            "v8/main/heap": {
+              "effective_size": 5242880,
+              "size": 5242880
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "after_restart",
+      "guid": "0xe",
+      "trace_interval": [
+        466121059596,
+        466121212019
+      ],
+      "processes": [
+        {
+          "pid": 50968,
+          "targets": [
+            "service_worker",
+            "worker",
+            "page"
+          ],
+          "allocator_events": 1,
+          "separate_global_entries": 0,
+          "categories": {
+            "blink_gc": {
+              "effective_size": 30603685,
+              "size": 35127296
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 3206600
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 3206600,
+              "committed_size": 32636928,
+              "effective_size": 29430315,
+              "pooled_size": 14024704,
+              "size": 32636928
+            },
+            "malloc": {
+              "effective_size": 26852096,
+              "size": 27310704,
+              "virtual_size": 24785584
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 21764563,
+              "size": 22223135
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 36433,
+              "size": 36433
+            },
+            "partition_alloc": {
+              "effective_size": 19827489,
+              "size": 19832832
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 18849332,
+              "size": 18854656
+            },
+            "partition_alloc/partitions/array_buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 6202480,
+              "allocated_size": 6202480,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 0,
+              "discardable_size": 0,
+              "effective_size": 307064,
+              "intended_leak_size": 0,
+              "max_allocated_size": 39061808,
+              "max_committed_size": 39190528,
+              "size": 6225920,
+              "virtual_committed_size": 6225920,
+              "virtual_size": 81788928,
+              "wasted": 23440
+            },
+            "partition_alloc/partitions/buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 12652176,
+              "allocated_size": 12652176,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 0,
+              "discardable_size": 126976,
+              "effective_size": 671093,
+              "intended_leak_size": 0,
+              "max_allocated_size": 19381248,
+              "max_committed_size": 22032384,
+              "size": 13606912,
+              "virtual_committed_size": 13606912,
+              "virtual_size": 35651584,
+              "wasted": 954736
+            },
+            "v8": {
+              "effective_size": 14451596,
+              "size": 14451596
+            },
+            "v8/main/heap": {
+              "effective_size": 10870784,
+              "size": 10870784
+            }
+          }
+        },
+        {
+          "pid": 10696,
+          "targets": [
+            "browser_ui",
+            "browser_ui"
+          ],
+          "allocator_events": 2,
+          "separate_global_entries": 100,
+          "categories": {
+            "blink_gc": {
+              "effective_size": 3118132,
+              "size": 5373952
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 2255808
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 2255808,
+              "committed_size": 5373952,
+              "effective_size": 3118132,
+              "pooled_size": 0,
+              "size": 5373952
+            },
+            "malloc": {
+              "effective_size": 12119611,
+              "size": 12257392,
+              "virtual_size": 11917984
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 9839727,
+              "size": 9977467
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 32021,
+              "size": 32021
+            },
+            "partition_alloc": {
+              "effective_size": 3952094,
+              "size": 4022272
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 3471004,
+              "size": 3541152
+            },
+            "partition_alloc/partitions/array_buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 4672,
+              "allocated_size": 4672,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 0,
+              "discardable_size": 0,
+              "effective_size": 979,
+              "intended_leak_size": 0,
+              "max_allocated_size": 8608,
+              "max_committed_size": 45056,
+              "size": 8192,
+              "virtual_committed_size": 8192,
+              "virtual_size": 2097152,
+              "wasted": 3520
+            },
+            "partition_alloc/partitions/buffer": {
+              "aligned_alloc_wasted_size": 0,
+              "allocated_objects_size": 3536480,
+              "allocated_size": 3536480,
+              "brp_quarantined_size": 0,
+              "decommittable_size": 245760,
+              "discardable_size": 81920,
+              "effective_size": 480111,
+              "intended_leak_size": 0,
+              "max_allocated_size": 11065264,
+              "max_committed_size": 11481088,
+              "size": 4014080,
+              "virtual_committed_size": 4014080,
+              "virtual_size": 12582912,
+              "wasted": 477600
+            },
+            "v8": {
+              "effective_size": 5379068,
+              "size": 5379068
+            },
+            "v8/main/heap": {
+              "effective_size": 5242880,
+              "size": 5242880
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
