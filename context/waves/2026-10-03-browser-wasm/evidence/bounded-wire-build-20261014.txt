@@ -1,0 +1,5 @@
+    Finished `browser-release` profile [optimized] target(s) in 0.32s
+Published 75 browser packages to C:\Users\giodl\.codex\worktrees\browser-wasm\icelines\icelines-browser\public
+IceLines browser 0.26.0 built in dist/; offline shell c84792542afe, 289263 bytes gzip (summed assets)
+Verified 27 shell assets, four hand-audited count sorts, eight-window residency and 75 public packages with actual WASM loading and queries. Largest app plus single-package gzip sum: 423342 bytes (10 MiB budget).
+Browser distribution built and verified; publication is a separate workflow action.

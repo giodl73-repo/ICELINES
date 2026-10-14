@@ -1,0 +1,97 @@
+{
+  "decision": "Do not adopt as a memory optimization. One matched full-workload pair shows no saving; no reverse pair, CI or publication is claimed. This does not establish a universal regression.",
+  "candidate_source": "b1bba1c76ab452e5190235e4b3e0e0eaad32f41d",
+  "build_info": {
+    "schema_version": 1,
+    "commit": "b1bba1c76ab452e5190235e4b3e0e0eaad32f41d",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "782009af96f7a4c5fbd17a46e0716d4b6a300d4e85286a65c2b92e5cdd7f12ed"
+  },
+  "shell_build": "c84792542afead5dad54c1bb4c7506e92d0f06d5bfba668a71c2b74b01c09b10",
+  "evidence": {
+    "candidate-memory": {
+      "file": "bounded-wire-candidate-memory-20261014.json",
+      "sha256": "3af5adc5a30ada27d4d1c286dd82c2f1b0e259099a9e95e7cc75c9b679d5bbe4"
+    },
+    "control-memory": {
+      "file": "bounded-wire-control-memory-20261014.json",
+      "sha256": "cb9c63e650ff4dbbca5a9ba2038c19c6ad464c6fb8f44c54e9907922cbf9fea8"
+    },
+    "refusal": {
+      "file": "bounded-wire-refusal-20261014.json",
+      "sha256": "0298819de1e1127ebe4e4ba2be1085156296f6b3e8eb0debab8199927c1064e7"
+    },
+    "context": {
+      "file": "bounded-wire-context-20261014.json",
+      "sha256": "bda494378d7e9b5281431bc185c45b47f99c259e23451c411872102b787585a8"
+    },
+    "offline": {
+      "file": "bounded-wire-offline-20261014.json",
+      "sha256": "fda5c8a05cfe5c7847ba1f3acddbdd7711df56a073229221c701ba0896b3aa1c"
+    },
+    "viewport": {
+      "file": "bounded-wire-viewport-20261014.json",
+      "sha256": "e5a14618c3a11cf22aa66e96314991eb658d721c2ad4111f5f02616a6af09acd"
+    },
+    "print": {
+      "file": "bounded-wire-print-20261014.json",
+      "sha256": "034e6a6f001df023da3a247f5faafa881dcdea9655ebba471f6bbc504a704d85"
+    },
+    "pdf": {
+      "file": "bounded-wire-pdf-20261014.pdf",
+      "sha256": "66b3b28f9105a43b8c18623eb3b550d955bd03de227fbf27617f2f836f3d7be9"
+    },
+    "print-reference": {
+      "file": "bounded-wire-print-reference-20261014.json",
+      "sha256": "11040639dcccbf5a7aaa565b03a4346c419b64c4f7728feefac605c040a1140e"
+    },
+    "units": {
+      "file": "bounded-wire-units-20261014.txt",
+      "sha256": "4cfbc9e9065c10e3b5d6d70da9d6812d9bd8a2507bff4e772f6e42ae4af3927c"
+    },
+    "baseline-regression": {
+      "file": "bounded-wire-baseline-regression-20261014.txt",
+      "sha256": "c2659d8fc8667cb1e66e1a9313865ac6f9669ba0e941e00c90455c47b9b5fdb5"
+    },
+    "build": {
+      "file": "bounded-wire-build-20261014.txt",
+      "sha256": "e74ac57aac317bf365d3fd3b81efbebafeb05d4b66db97d77014412980295009"
+    }
+  },
+  "measurements": [
+    {
+      "run": "candidate-memory",
+      "peak_private_mib": 389.35546875,
+      "blank_private_mib": 226.58984375,
+      "warm_median_ms": 72.1169000000009,
+      "warm_max_ms": 92.02649999999267
+    },
+    {
+      "run": "control-memory",
+      "peak_private_mib": 385.51953125,
+      "blank_private_mib": 232.3125,
+      "warm_median_ms": 66.45854999999574,
+      "warm_max_ms": 95.00260000000708
+    }
+  ],
+  "candidate_minus_control_mib": 3.8359375,
+  "matching_control": "target/chunked-decoder-input-artifact, source807e2adcd31cdd8cd31a74f87fdeec05247b7ef0.182 files match except src/network.js and3 build identity files; identical Windows WASM/data/UI/metadata/decoder.",
+  "scope": "75 packages/eight residents/two905/332 archive imports/20 committed queries/restart, original flags/sampler/network observer/no forced GC.250 MiB fails both runs.",
+  "baseline_regression": "Original compiled reader fails1 of7 targeted tests: a synthetic producer reusing an offset view loses earlier chunks. It is not proof that native Fetch currently reuses chunk storage. Candidate preserves chunks and empty/short bodies; all165 units pass.",
+  "limitations": [
+    "Preallocation can allocate more than received data for a short body with a large advertised maximum; digest/size mismatch is still refused by downloadPackage.",
+    "Source comment calls the bound authenticated; more precisely it is numerically validated before reading, while exact bytes/hashes are verified after reading. No newly signed catalog claim.",
+    "No adoption/PR/merge/CI/public change. Runtime reports apply to b1bba1c7 candidate artifact only."
+  ],
+  "remaining": [
+    "250 MiB whole-browser acceptance unmet",
+    "Physical Android deferred by user"
+  ],
+  "production_unchanged": true
+}
