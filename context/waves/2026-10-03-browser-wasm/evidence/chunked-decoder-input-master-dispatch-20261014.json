@@ -1,0 +1,13 @@
+{
+  "conclusion": "",
+  "databaseId": 38571406174,
+  "event": "workflow_dispatch",
+  "headSha": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+  "status": "in_progress",
+  "workflowName": "Browser WASM / Pages",
+  "publish": false,
+  "master_preview_identical_git_tree": "1bc42ba61dabcdb9b5509e50346bc9736473f717",
+  "tested_preview": "3b61f10e186339dbe29ec761eebdc9b63a6dd3e1",
+  "native_scope": "29 PR checks passed against the identical source tree; no automatic native master run exists. Do not label this as a native master CI run.",
+  "reason": "No master run/check suite appeared after merge despite matching paths and active workflows. Dispatch a nonpublishing browser build; not a restart of a live handle."
+}
