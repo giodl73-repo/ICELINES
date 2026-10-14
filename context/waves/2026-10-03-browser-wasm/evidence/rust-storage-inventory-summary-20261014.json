@@ -1,0 +1,98 @@
+{
+  "verified": true,
+  "scope": "Partial requested Rust storage at8 instrumented checkpoints, not normal memory acceptance or a complete/additive allocator/OS partition. Source array row counts checked against exact retained bytes when revisions match the catalog. Imported revisions are not relabeled as catalog bytes.",
+  "source_windows_checked": 54,
+  "imported_windows_without_catalog_revision_match": [
+    {
+      "load": 76,
+      "season": 20242025,
+      "season_type": "regular"
+    },
+    {
+      "load": 77,
+      "season": 20242025,
+      "season_type": "regular"
+    },
+    {
+      "load": 77,
+      "season": 20242025,
+      "season_type": "playoff"
+    }
+  ],
+  "measurements": [
+    {
+      "load": 1,
+      "windows": 1,
+      "wasm_linear_memory_bytes": 4325376,
+      "source_vec_spare_bytes": 30072,
+      "stint_vec_spare_bytes": 201528,
+      "combined_vec_spare_bytes": 231600,
+      "stats_row_payload_bytes": 717576
+    },
+    {
+      "load": 8,
+      "windows": 8,
+      "wasm_linear_memory_bytes": 15335424,
+      "source_vec_spare_bytes": 298956,
+      "stint_vec_spare_bytes": 1230552,
+      "combined_vec_spare_bytes": 1529508,
+      "stats_row_payload_bytes": 4387584
+    },
+    {
+      "load": 10,
+      "windows": 8,
+      "wasm_linear_memory_bytes": 16318464,
+      "source_vec_spare_bytes": 326536,
+      "stint_vec_spare_bytes": 1101168,
+      "combined_vec_spare_bytes": 1427704,
+      "stats_row_payload_bytes": 3919872
+    },
+    {
+      "load": 11,
+      "windows": 8,
+      "wasm_linear_memory_bytes": 16318464,
+      "source_vec_spare_bytes": 325416,
+      "stint_vec_spare_bytes": 1102248,
+      "combined_vec_spare_bytes": 1427664,
+      "stats_row_payload_bytes": 3921264
+    },
+    {
+      "load": 26,
+      "windows": 8,
+      "wasm_linear_memory_bytes": 17563648,
+      "source_vec_spare_bytes": 416164,
+      "stint_vec_spare_bytes": 1040904,
+      "combined_vec_spare_bytes": 1457068,
+      "stats_row_payload_bytes": 3679752
+    },
+    {
+      "load": 75,
+      "windows": 8,
+      "wasm_linear_memory_bytes": 17563648,
+      "source_vec_spare_bytes": 662340,
+      "stint_vec_spare_bytes": 873504,
+      "combined_vec_spare_bytes": 1535844,
+      "stats_row_payload_bytes": 3092328
+    },
+    {
+      "load": 76,
+      "windows": 8,
+      "wasm_linear_memory_bytes": 17563648,
+      "source_vec_spare_bytes": 578312,
+      "stint_vec_spare_bytes": 929016,
+      "combined_vec_spare_bytes": 1507328,
+      "stats_row_payload_bytes": 3289296
+    },
+    {
+      "load": 77,
+      "windows": 8,
+      "wasm_linear_memory_bytes": 17563648,
+      "source_vec_spare_bytes": 585508,
+      "stint_vec_spare_bytes": 924264,
+      "combined_vec_spare_bytes": 1509772,
+      "stats_row_payload_bytes": 3271896
+    }
+  ],
+  "maximum_combined_vec_spare_bytes": 1535844,
+  "decision": "Do not run a vector shrinking trial: measured source/stint spare storage is at most about1.46 MiB and does not explain the whole-browser budget gap. Focus subsequent investigation outside WASM. No implementation adopted;250 MiB still unmet, Android deferred."
+}

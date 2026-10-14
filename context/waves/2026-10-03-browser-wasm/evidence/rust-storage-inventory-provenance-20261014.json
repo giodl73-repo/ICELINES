@@ -1,0 +1,44 @@
+{
+  "scope": "One full-workload diagnostic with read-only Rust storage exports and8 additional worker response observations. No normal-memory acceptance, causal private-byte saving, CI, adoption or publication claim.",
+  "source_commit": "336cfd5231ad3d371866636c90b2d191dba29ee4",
+  "working_tree_dirty": false,
+  "wasm_sha256": "9c26d2aff506c01aaa8241599950666332e689a72e40aa796411c4711e82e8a2",
+  "shell_build": "94894bf15ee93a5d5c862e685d5660f9bfa79e41951032cf2babf0f89684d943",
+  "evidence": {
+    "report": {
+      "file": "rust-storage-inventory-report-20261014.json",
+      "sha256": "17039613414b77f32e3d404fadd80d5a8bb6c818d9a5060a9bdf7cfc991a9cc4"
+    },
+    "summary": {
+      "file": "rust-storage-inventory-summary-20261014.json",
+      "sha256": "2bcc442ba1e2c5eb2de5c87323e2861486b0355e54a7b5866607ec332059d248"
+    },
+    "runner-recipe": {
+      "file": "rust-storage-inventory-runner-recipe-20261014.py",
+      "sha256": "6b94500c230565f64fdb52eb9bc2527cbecfabbae3834c480f563f296fc5af22"
+    },
+    "summary-recipe": {
+      "file": "rust-storage-inventory-summary-recipe-20261014.py",
+      "sha256": "de14e1818e5bf1ad3749ec2f6280ee8d86474c3b752a552a47ee6fdfe72245fe"
+    }
+  },
+  "checkpoints": [
+    1,
+    8,
+    10,
+    11,
+    26,
+    75,
+    76,
+    77
+  ],
+  "independent_validation": "All6 catalog checkpoints have the exact expected last8 revision sequence;54 observed catalog-window source row counts match digest-verified retained raw packages.3 imported-window observations with2 unique revisions are kept separate from catalog bytes.",
+  "unchanged_workload": "75 packages/eight resident windows/two905/332 imports/20 committed queries/restart, original Chromium flags and OS sampler/network observer, no forced GC. Null acceptance target. Extra diagnostic export/serialization/observer can affect private bytes and timings.",
+  "inventory_limits": "Vec capacities and row payload size, partial requested Rust storage only. HashMap capacity times slot size is an estimate; excludes extra/control buckets, String buffers, other nested heaps, allocator metadata/free blocks, compiled code and JS/native allocations. Do not sum into an OS-memory partition.",
+  "decision": "At most1.4647 MiB source/stint spare capacity does not explain the roughly140 MiB whole-browser acceptance gap. Deprioritize shrinking these vectors; investigate allocations outside WASM. Instrumentation remains local/unadopted.",
+  "remaining": [
+    "250 MiB whole-browser target unmet",
+    "Physical Android deferred by user"
+  ],
+  "production_unchanged": true
+}

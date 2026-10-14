@@ -1,0 +1,3345 @@
+{
+  "started_at": "2026-10-14T16:27:26.989Z",
+  "completed": true,
+  "host": {
+    "platform": "win32",
+    "arch": "x64",
+    "os_release": "10.0.26310",
+    "cpu": "12th Gen Intel(R) Core(TM) i7-12800HX",
+    "logical_cpus": 24,
+    "ram_bytes": 34042929152
+  },
+  "scope": "Single isolated headless Chromium on this Windows workstation. Includes owned browser/renderer/GPU/utility processes; excludes Node runner, local HTTP server and sampler. Working-set sums may count shared pages more than once. Private-byte sums measure private allocations, not just resident RAM. Sample maxima may miss transient spikes; lifetime working-set peaks are per-process, not concurrent group peaks. No physical-phone or remote-rollback claim.",
+  "sampling": {
+    "requested_interval_ms": 100,
+    "tree_discovery_interval_ms": 500,
+    "actual_median_interval_ms": 198,
+    "actual_max_interval_ms": 923
+  },
+  "packages": [
+    {
+      "id": "20252026-regular",
+      "bytes": 926515,
+      "load_and_render_ms": 171.17529999999897,
+      "rows": 933,
+      "resident_windows": 1
+    },
+    {
+      "id": "20242025-regular",
+      "bytes": 908625,
+      "load_and_render_ms": 151.23400000000038,
+      "rows": 905,
+      "resident_windows": 2
+    },
+    {
+      "id": "20242025-playoff",
+      "bytes": 259978,
+      "load_and_render_ms": 114.4997000000003,
+      "rows": 332,
+      "resident_windows": 3
+    },
+    {
+      "id": "20232024-regular",
+      "bytes": 909591,
+      "load_and_render_ms": 118.05370000000039,
+      "rows": 911,
+      "resident_windows": 4
+    },
+    {
+      "id": "20232024-playoff",
+      "bytes": 264960,
+      "load_and_render_ms": 80.50730000000112,
+      "rows": 339,
+      "resident_windows": 5
+    },
+    {
+      "id": "20222023-regular",
+      "bytes": 936534,
+      "load_and_render_ms": 140.89819999999963,
+      "rows": 939,
+      "resident_windows": 6
+    },
+    {
+      "id": "20222023-playoff",
+      "bytes": 262089,
+      "load_and_render_ms": 80.20709999999963,
+      "rows": 334,
+      "resident_windows": 7
+    },
+    {
+      "id": "20212022-regular",
+      "bytes": 988849,
+      "load_and_render_ms": 141.77479999999923,
+      "rows": 1004,
+      "resident_windows": 8
+    },
+    {
+      "id": "20212022-playoff",
+      "bytes": 263293,
+      "load_and_render_ms": 95.36839999999938,
+      "rows": 335,
+      "resident_windows": 8
+    },
+    {
+      "id": "20202021-regular",
+      "bytes": 892768,
+      "load_and_render_ms": 141.98839999999836,
+      "rows": 904,
+      "resident_windows": 8
+    },
+    {
+      "id": "20202021-playoff",
+      "bytes": 262152,
+      "load_and_render_ms": 116.37190000000192,
+      "rows": 337,
+      "resident_windows": 8
+    },
+    {
+      "id": "20192020-regular",
+      "bytes": 860817,
+      "load_and_render_ms": 135.78780000000188,
+      "rows": 861,
+      "resident_windows": 8
+    },
+    {
+      "id": "20192020-playoff",
+      "bytes": 402760,
+      "load_and_render_ms": 74.97370000000228,
+      "rows": 516,
+      "resident_windows": 8
+    },
+    {
+      "id": "20182019-regular",
+      "bytes": 884461,
+      "load_and_render_ms": 137.11469999999827,
+      "rows": 906,
+      "resident_windows": 8
+    },
+    {
+      "id": "20182019-playoff",
+      "bytes": 258349,
+      "load_and_render_ms": 120.1877999999997,
+      "rows": 333,
+      "resident_windows": 8
+    },
+    {
+      "id": "20172018-regular",
+      "bytes": 869271,
+      "load_and_render_ms": 143.60610000000088,
+      "rows": 871,
+      "resident_windows": 8
+    },
+    {
+      "id": "20172018-playoff",
+      "bytes": 260915,
+      "load_and_render_ms": 91.44629999999961,
+      "rows": 333,
+      "resident_windows": 8
+    },
+    {
+      "id": "20162017-regular",
+      "bytes": 865646,
+      "load_and_render_ms": 148.48249999999825,
+      "rows": 885,
+      "resident_windows": 8
+    },
+    {
+      "id": "20162017-playoff",
+      "bytes": 266101,
+      "load_and_render_ms": 77.86699999999837,
+      "rows": 343,
+      "resident_windows": 8
+    },
+    {
+      "id": "20152016-regular",
+      "bytes": 872850,
+      "load_and_render_ms": 99.61409999999887,
+      "rows": 890,
+      "resident_windows": 8
+    },
+    {
+      "id": "20152016-playoff",
+      "bytes": 265706,
+      "load_and_render_ms": 91.1909999999989,
+      "rows": 340,
+      "resident_windows": 8
+    },
+    {
+      "id": "20142015-regular",
+      "bytes": 857046,
+      "load_and_render_ms": 120.44049999999697,
+      "rows": 859,
+      "resident_windows": 8
+    },
+    {
+      "id": "20142015-playoff",
+      "bytes": 264283,
+      "load_and_render_ms": 82.24579999999696,
+      "rows": 339,
+      "resident_windows": 8
+    },
+    {
+      "id": "20132014-regular",
+      "bytes": 862203,
+      "load_and_render_ms": 141.23660000000382,
+      "rows": 878,
+      "resident_windows": 8
+    },
+    {
+      "id": "20132014-playoff",
+      "bytes": 269000,
+      "load_and_render_ms": 78.95849999999336,
+      "rows": 344,
+      "resident_windows": 8
+    },
+    {
+      "id": "20122013-regular",
+      "bytes": 809752,
+      "load_and_render_ms": 149.95840000000317,
+      "rows": 826,
+      "resident_windows": 8
+    },
+    {
+      "id": "20122013-playoff",
+      "bytes": 270604,
+      "load_and_render_ms": 109.64010000000417,
+      "rows": 349,
+      "resident_windows": 8
+    },
+    {
+      "id": "20112012-regular",
+      "bytes": 865276,
+      "load_and_render_ms": 117.42229999999836,
+      "rows": 877,
+      "resident_windows": 8
+    },
+    {
+      "id": "20112012-playoff",
+      "bytes": 268863,
+      "load_and_render_ms": 82.32540000000154,
+      "rows": 347,
+      "resident_windows": 8
+    },
+    {
+      "id": "20102011-regular",
+      "bytes": 861262,
+      "load_and_render_ms": 112.15430000000197,
+      "rows": 886,
+      "resident_windows": 8
+    },
+    {
+      "id": "20102011-playoff",
+      "bytes": 263962,
+      "load_and_render_ms": 73.7045999999973,
+      "rows": 339,
+      "resident_windows": 8
+    },
+    {
+      "id": "20092010-regular",
+      "bytes": 848598,
+      "load_and_render_ms": 137.29360000000452,
+      "rows": 855,
+      "resident_windows": 8
+    },
+    {
+      "id": "20092010-playoff",
+      "bytes": 267154,
+      "load_and_render_ms": 74.20549999999639,
+      "rows": 342,
+      "resident_windows": 8
+    },
+    {
+      "id": "20082009-regular",
+      "bytes": 856255,
+      "load_and_render_ms": 132.94249999999738,
+      "rows": 870,
+      "resident_windows": 8
+    },
+    {
+      "id": "20082009-playoff",
+      "bytes": 259274,
+      "load_and_render_ms": 72.58389999999781,
+      "rows": 333,
+      "resident_windows": 8
+    },
+    {
+      "id": "20072008-regular",
+      "bytes": 825438,
+      "load_and_render_ms": 138.09270000000106,
+      "rows": 851,
+      "resident_windows": 8
+    },
+    {
+      "id": "20072008-playoff",
+      "bytes": 263177,
+      "load_and_render_ms": 76.0573000000004,
+      "rows": 340,
+      "resident_windows": 8
+    },
+    {
+      "id": "20062007-regular",
+      "bytes": 829179,
+      "load_and_render_ms": 141.82850000000326,
+      "rows": 847,
+      "resident_windows": 8
+    },
+    {
+      "id": "20062007-playoff",
+      "bytes": 256138,
+      "load_and_render_ms": 72.7132999999958,
+      "rows": 331,
+      "resident_windows": 8
+    },
+    {
+      "id": "20052006-regular",
+      "bytes": 843241,
+      "load_and_render_ms": 131.18380000000616,
+      "rows": 853,
+      "resident_windows": 8
+    },
+    {
+      "id": "20052006-playoff",
+      "bytes": 259019,
+      "load_and_render_ms": 77.63560000000143,
+      "rows": 333,
+      "resident_windows": 8
+    },
+    {
+      "id": "20032004-regular",
+      "bytes": 886180,
+      "load_and_render_ms": 139.8365999999951,
+      "rows": 909,
+      "resident_windows": 8
+    },
+    {
+      "id": "20032004-playoff",
+      "bytes": 267212,
+      "load_and_render_ms": 72.32719999999972,
+      "rows": 343,
+      "resident_windows": 8
+    },
+    {
+      "id": "20022003-regular",
+      "bytes": 859084,
+      "load_and_render_ms": 100.07570000000123,
+      "rows": 885,
+      "resident_windows": 8
+    },
+    {
+      "id": "20022003-playoff",
+      "bytes": 262138,
+      "load_and_render_ms": 80.57890000000043,
+      "rows": 337,
+      "resident_windows": 8
+    },
+    {
+      "id": "20012002-regular",
+      "bytes": 845117,
+      "load_and_render_ms": 139.32800000000134,
+      "rows": 871,
+      "resident_windows": 8
+    },
+    {
+      "id": "20012002-playoff",
+      "bytes": 268188,
+      "load_and_render_ms": 76.08879999999772,
+      "rows": 344,
+      "resident_windows": 8
+    },
+    {
+      "id": "20002001-regular",
+      "bytes": 854477,
+      "load_and_render_ms": 141.29249999999593,
+      "rows": 876,
+      "resident_windows": 8
+    },
+    {
+      "id": "20002001-playoff",
+      "bytes": 261769,
+      "load_and_render_ms": 78.92369999999937,
+      "rows": 338,
+      "resident_windows": 8
+    },
+    {
+      "id": "19992000-regular",
+      "bytes": 809404,
+      "load_and_render_ms": 113.41549999999552,
+      "rows": 828,
+      "resident_windows": 8
+    },
+    {
+      "id": "19992000-playoff",
+      "bytes": 257832,
+      "load_and_render_ms": 81.45560000000114,
+      "rows": 334,
+      "resident_windows": 8
+    },
+    {
+      "id": "19981999-regular",
+      "bytes": 787336,
+      "load_and_render_ms": 139.60160000000178,
+      "rows": 804,
+      "resident_windows": 8
+    },
+    {
+      "id": "19981999-playoff",
+      "bytes": 277483,
+      "load_and_render_ms": 76.48790000000008,
+      "rows": 358,
+      "resident_windows": 8
+    },
+    {
+      "id": "19971998-regular",
+      "bytes": 734809,
+      "load_and_render_ms": 94.34429999999702,
+      "rows": 750,
+      "resident_windows": 8
+    },
+    {
+      "id": "19971998-playoff",
+      "bytes": 265265,
+      "load_and_render_ms": 78.3099000000002,
+      "rows": 340,
+      "resident_windows": 8
+    },
+    {
+      "id": "19961997-regular",
+      "bytes": 739627,
+      "load_and_render_ms": 85.18669999999838,
+      "rows": 752,
+      "resident_windows": 8
+    },
+    {
+      "id": "19961997-playoff",
+      "bytes": 264916,
+      "load_and_render_ms": 76.26320000000123,
+      "rows": 343,
+      "resident_windows": 8
+    },
+    {
+      "id": "19951996-regular",
+      "bytes": 747478,
+      "load_and_render_ms": 87.51640000000043,
+      "rows": 767,
+      "resident_windows": 8
+    },
+    {
+      "id": "19951996-playoff",
+      "bytes": 270316,
+      "load_and_render_ms": 84.59679999999935,
+      "rows": 347,
+      "resident_windows": 8
+    },
+    {
+      "id": "19941995-regular",
+      "bytes": 705563,
+      "load_and_render_ms": 128.04699999999139,
+      "rows": 717,
+      "resident_windows": 8
+    },
+    {
+      "id": "19941995-playoff",
+      "bytes": 268354,
+      "load_and_render_ms": 109.00929999999062,
+      "rows": 344,
+      "resident_windows": 8
+    },
+    {
+      "id": "19931994-regular",
+      "bytes": 760939,
+      "load_and_render_ms": 119.24020000000019,
+      "rows": 775,
+      "resident_windows": 8
+    },
+    {
+      "id": "19931994-playoff",
+      "bytes": 265306,
+      "load_and_render_ms": 86.51009999999951,
+      "rows": 342,
+      "resident_windows": 8
+    },
+    {
+      "id": "19921993-regular",
+      "bytes": 687976,
+      "load_and_render_ms": 109.93379999999888,
+      "rows": 696,
+      "resident_windows": 8
+    },
+    {
+      "id": "19921993-playoff",
+      "bytes": 261498,
+      "load_and_render_ms": 83.73750000000291,
+      "rows": 337,
+      "resident_windows": 8
+    },
+    {
+      "id": "19911992-regular",
+      "bytes": 681944,
+      "load_and_render_ms": 93.37020000000484,
+      "rows": 695,
+      "resident_windows": 8
+    },
+    {
+      "id": "19911992-playoff",
+      "bytes": 276696,
+      "load_and_render_ms": 94.43499999999767,
+      "rows": 358,
+      "resident_windows": 8
+    },
+    {
+      "id": "19901991-regular",
+      "bytes": 637269,
+      "load_and_render_ms": 139.58750000000873,
+      "rows": 648,
+      "resident_windows": 8
+    },
+    {
+      "id": "19901991-playoff",
+      "bytes": 275451,
+      "load_and_render_ms": 74.70179999999527,
+      "rows": 354,
+      "resident_windows": 8
+    },
+    {
+      "id": "19891990-regular",
+      "bytes": 631007,
+      "load_and_render_ms": 78.82089999999152,
+      "rows": 652,
+      "resident_windows": 8
+    },
+    {
+      "id": "19891990-playoff",
+      "bytes": 274505,
+      "load_and_render_ms": 74.04230000000098,
+      "rows": 352,
+      "resident_windows": 8
+    },
+    {
+      "id": "19881989-regular",
+      "bytes": 637726,
+      "load_and_render_ms": 91.01980000000913,
+      "rows": 648,
+      "resident_windows": 8
+    },
+    {
+      "id": "19881989-playoff",
+      "bytes": 273661,
+      "load_and_render_ms": 74.398199999996,
+      "rows": 352,
+      "resident_windows": 8
+    },
+    {
+      "id": "19871988-regular",
+      "bytes": 644102,
+      "load_and_render_ms": 83.20419999999285,
+      "rows": 671,
+      "resident_windows": 8
+    },
+    {
+      "id": "19871988-playoff",
+      "bytes": 284302,
+      "load_and_render_ms": 78.86559999999008,
+      "rows": 367,
+      "resident_windows": 8
+    }
+  ],
+  "imports": [
+    {
+      "season_type": "regular",
+      "import_and_render_ms": 155.2893999999942,
+      "rows": 905
+    },
+    {
+      "season_type": "playoff",
+      "import_and_render_ms": 76.84399999999732,
+      "rows": 332
+    }
+  ],
+  "warm_query_ms": [
+    93.94219999999041,
+    60.48369999999704,
+    78.48139999998966,
+    66.01610000000801,
+    75.04660000000149,
+    66.88840000001073,
+    60.39440000000468,
+    60.437999999994645,
+    78.80960000000778,
+    59.70380000000296,
+    78.64609999999811,
+    77.99049999999988,
+    63.357300000003306,
+    79.07150000000547,
+    63.35779999999795,
+    75.12170000000333,
+    63.19070000000647,
+    77.78179999999702,
+    62.39879999999539,
+    79.81949999999779
+  ],
+  "artifact": {
+    "commit": "336cfd5231ad3d371866636c90b2d191dba29ee4",
+    "shell_build": "94894bf15ee93a5d5c862e685d5660f9bfa79e41951032cf2babf0f89684d943",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "archive": {
+    "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca",
+    "bytes": 149672
+  },
+  "browser": "153.0.8010.12",
+  "query_completion": "Complete result count (and query summary for viewport rendering), then pending tbody.inert cleared before starting the next query.",
+  "renderer": "Viewport rows; complete engine result retained, at most 44 mounted players at 1280x800.",
+  "memory": [
+    {
+      "phase": "blank_browser",
+      "samples": 6,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 237031424,
+      "last_private_bytes": 238723072,
+      "peak_private_bytes": 238723072,
+      "peak_working_set_bytes": 484577280,
+      "peak_sum_lifetime_working_set_bytes": 495697920
+    },
+    {
+      "phase": "startup",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 291864576,
+      "last_private_bytes": 293974016,
+      "peak_private_bytes": 293974016,
+      "peak_working_set_bytes": 568721408,
+      "peak_sum_lifetime_working_set_bytes": 575680512
+    },
+    {
+      "phase": "package_20252026-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 329052160,
+      "last_private_bytes": 329138176,
+      "peak_private_bytes": 329138176,
+      "peak_working_set_bytes": 609538048,
+      "peak_sum_lifetime_working_set_bytes": 619937792
+    },
+    {
+      "phase": "package_20242025-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 342106112,
+      "last_private_bytes": 342110208,
+      "peak_private_bytes": 342110208,
+      "peak_working_set_bytes": 622739456,
+      "peak_sum_lifetime_working_set_bytes": 630722560
+    },
+    {
+      "phase": "package_20242025-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 349507584,
+      "last_private_bytes": 349507584,
+      "peak_private_bytes": 349528064,
+      "peak_working_set_bytes": 628957184,
+      "peak_sum_lifetime_working_set_bytes": 636907520
+    },
+    {
+      "phase": "package_20232024-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 351461376,
+      "last_private_bytes": 364126208,
+      "peak_private_bytes": 364126208,
+      "peak_working_set_bytes": 643948544,
+      "peak_sum_lifetime_working_set_bytes": 651706368
+    },
+    {
+      "phase": "package_20232024-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 364150784,
+      "last_private_bytes": 370008064,
+      "peak_private_bytes": 370008064,
+      "peak_working_set_bytes": 649691136,
+      "peak_sum_lifetime_working_set_bytes": 657399808
+    },
+    {
+      "phase": "package_20222023-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 381038592,
+      "last_private_bytes": 381042688,
+      "peak_private_bytes": 381042688,
+      "peak_working_set_bytes": 660905984,
+      "peak_sum_lifetime_working_set_bytes": 669880320
+    },
+    {
+      "phase": "package_20222023-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 385445888,
+      "last_private_bytes": 385449984,
+      "peak_private_bytes": 385449984,
+      "peak_working_set_bytes": 665718784,
+      "peak_sum_lifetime_working_set_bytes": 676143104
+    },
+    {
+      "phase": "package_20212022-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 385449984,
+      "last_private_bytes": 398974976,
+      "peak_private_bytes": 398974976,
+      "peak_working_set_bytes": 678985728,
+      "peak_sum_lifetime_working_set_bytes": 687820800
+    },
+    {
+      "phase": "package_20212022-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 404676608,
+      "last_private_bytes": 404676608,
+      "peak_private_bytes": 404684800,
+      "peak_working_set_bytes": 686235648,
+      "peak_sum_lifetime_working_set_bytes": 695128064
+    },
+    {
+      "phase": "package_20202021-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 388173824,
+      "last_private_bytes": 388173824,
+      "peak_private_bytes": 405180416,
+      "peak_working_set_bytes": 686809088,
+      "peak_sum_lifetime_working_set_bytes": 706805760
+    },
+    {
+      "phase": "package_20202021-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 390270976,
+      "last_private_bytes": 390275072,
+      "peak_private_bytes": 390275072,
+      "peak_working_set_bytes": 674779136,
+      "peak_sum_lifetime_working_set_bytes": 706805760
+    },
+    {
+      "phase": "package_20192020-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 390103040,
+      "last_private_bytes": 395448320,
+      "peak_private_bytes": 395448320,
+      "peak_working_set_bytes": 680026112,
+      "peak_sum_lifetime_working_set_bytes": 706805760
+    },
+    {
+      "phase": "package_20192020-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 395456512,
+      "last_private_bytes": 399286272,
+      "peak_private_bytes": 399286272,
+      "peak_working_set_bytes": 683913216,
+      "peak_sum_lifetime_working_set_bytes": 706805760
+    },
+    {
+      "phase": "package_20182019-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 406470656,
+      "last_private_bytes": 406470656,
+      "peak_private_bytes": 406470656,
+      "peak_working_set_bytes": 691113984,
+      "peak_sum_lifetime_working_set_bytes": 706805760
+    },
+    {
+      "phase": "package_20182019-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 394461184,
+      "last_private_bytes": 394883072,
+      "peak_private_bytes": 394883072,
+      "peak_working_set_bytes": 679854080,
+      "peak_sum_lifetime_working_set_bytes": 706805760
+    },
+    {
+      "phase": "package_20172018-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 394899456,
+      "last_private_bytes": 400494592,
+      "peak_private_bytes": 400494592,
+      "peak_working_set_bytes": 685383680,
+      "peak_sum_lifetime_working_set_bytes": 706805760
+    },
+    {
+      "phase": "package_20172018-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 402272256,
+      "last_private_bytes": 402272256,
+      "peak_private_bytes": 402272256,
+      "peak_working_set_bytes": 687132672,
+      "peak_sum_lifetime_working_set_bytes": 706805760
+    },
+    {
+      "phase": "package_20162017-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 398422016,
+      "last_private_bytes": 398422016,
+      "peak_private_bytes": 398422016,
+      "peak_working_set_bytes": 683614208,
+      "peak_sum_lifetime_working_set_bytes": 706805760
+    },
+    {
+      "phase": "package_20162017-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 398426112,
+      "last_private_bytes": 398557184,
+      "peak_private_bytes": 398557184,
+      "peak_working_set_bytes": 683790336,
+      "peak_sum_lifetime_working_set_bytes": 706805760
+    },
+    {
+      "phase": "package_20152016-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 398557184,
+      "last_private_bytes": 405032960,
+      "peak_private_bytes": 405032960,
+      "peak_working_set_bytes": 690061312,
+      "peak_sum_lifetime_working_set_bytes": 706805760
+    },
+    {
+      "phase": "package_20152016-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 406798336,
+      "last_private_bytes": 406798336,
+      "peak_private_bytes": 406798336,
+      "peak_working_set_bytes": 691949568,
+      "peak_sum_lifetime_working_set_bytes": 706805760
+    },
+    {
+      "phase": "package_20142015-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 404615168,
+      "last_private_bytes": 404615168,
+      "peak_private_bytes": 406810624,
+      "peak_working_set_bytes": 691961856,
+      "peak_sum_lifetime_working_set_bytes": 706805760
+    },
+    {
+      "phase": "package_20142015-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 406147072,
+      "last_private_bytes": 406163456,
+      "peak_private_bytes": 406163456,
+      "peak_working_set_bytes": 691482624,
+      "peak_sum_lifetime_working_set_bytes": 706805760
+    },
+    {
+      "phase": "package_20132014-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 409694208,
+      "last_private_bytes": 409698304,
+      "peak_private_bytes": 409698304,
+      "peak_working_set_bytes": 694804480,
+      "peak_sum_lifetime_working_set_bytes": 706809856
+    },
+    {
+      "phase": "package_20132014-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 411590656,
+      "last_private_bytes": 411590656,
+      "peak_private_bytes": 411590656,
+      "peak_working_set_bytes": 696717312,
+      "peak_sum_lifetime_working_set_bytes": 706813952
+    },
+    {
+      "phase": "package_20122013-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 408965120,
+      "last_private_bytes": 408965120,
+      "peak_private_bytes": 416624640,
+      "peak_working_set_bytes": 701353984,
+      "peak_sum_lifetime_working_set_bytes": 710402048
+    },
+    {
+      "phase": "package_20122013-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 408854528,
+      "last_private_bytes": 408862720,
+      "peak_private_bytes": 408862720,
+      "peak_working_set_bytes": 693800960,
+      "peak_sum_lifetime_working_set_bytes": 710402048
+    },
+    {
+      "phase": "package_20112012-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 9,
+      "minimum_private_bytes": 405962752,
+      "last_private_bytes": 405962752,
+      "peak_private_bytes": 416165888,
+      "peak_working_set_bytes": 717770752,
+      "peak_sum_lifetime_working_set_bytes": 736149504
+    },
+    {
+      "phase": "package_20112012-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 404959232,
+      "last_private_bytes": 404959232,
+      "peak_private_bytes": 404959232,
+      "peak_working_set_bytes": 694374400,
+      "peak_sum_lifetime_working_set_bytes": 712941568
+    },
+    {
+      "phase": "package_20102011-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 404963328,
+      "last_private_bytes": 408338432,
+      "peak_private_bytes": 408338432,
+      "peak_working_set_bytes": 697696256,
+      "peak_sum_lifetime_working_set_bytes": 712998912
+    },
+    {
+      "phase": "package_20102011-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 403152896,
+      "last_private_bytes": 403152896,
+      "peak_private_bytes": 408342528,
+      "peak_working_set_bytes": 697774080,
+      "peak_sum_lifetime_working_set_bytes": 712998912
+    },
+    {
+      "phase": "package_20092010-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 406233088,
+      "last_private_bytes": 406233088,
+      "peak_private_bytes": 406233088,
+      "peak_working_set_bytes": 695894016,
+      "peak_sum_lifetime_working_set_bytes": 713068544
+    },
+    {
+      "phase": "package_20092010-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 404406272,
+      "last_private_bytes": 404406272,
+      "peak_private_bytes": 404406272,
+      "peak_working_set_bytes": 694145024,
+      "peak_sum_lifetime_working_set_bytes": 713068544
+    },
+    {
+      "phase": "package_20082009-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 376725504,
+      "last_private_bytes": 376725504,
+      "peak_private_bytes": 407330816,
+      "peak_working_set_bytes": 697040896,
+      "peak_sum_lifetime_working_set_bytes": 713080832
+    },
+    {
+      "phase": "package_20082009-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 376832000,
+      "last_private_bytes": 378683392,
+      "peak_private_bytes": 378683392,
+      "peak_working_set_bytes": 670470144,
+      "peak_sum_lifetime_working_set_bytes": 713084928
+    },
+    {
+      "phase": "package_20072008-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 373284864,
+      "last_private_bytes": 377724928,
+      "peak_private_bytes": 377724928,
+      "peak_working_set_bytes": 669290496,
+      "peak_sum_lifetime_working_set_bytes": 713089024
+    },
+    {
+      "phase": "package_20072008-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 375996416,
+      "last_private_bytes": 375996416,
+      "peak_private_bytes": 375996416,
+      "peak_working_set_bytes": 668041216,
+      "peak_sum_lifetime_working_set_bytes": 713093120
+    },
+    {
+      "phase": "package_20062007-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 375996416,
+      "last_private_bytes": 380436480,
+      "peak_private_bytes": 380436480,
+      "peak_working_set_bytes": 672198656,
+      "peak_sum_lifetime_working_set_bytes": 713097216
+    },
+    {
+      "phase": "package_20062007-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 377675776,
+      "last_private_bytes": 377675776,
+      "peak_private_bytes": 380436480,
+      "peak_working_set_bytes": 672198656,
+      "peak_sum_lifetime_working_set_bytes": 713105408
+    },
+    {
+      "phase": "package_20052006-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 377675776,
+      "last_private_bytes": 382472192,
+      "peak_private_bytes": 382472192,
+      "peak_working_set_bytes": 674422784,
+      "peak_sum_lifetime_working_set_bytes": 713256960
+    },
+    {
+      "phase": "package_20052006-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 384905216,
+      "last_private_bytes": 384905216,
+      "peak_private_bytes": 384905216,
+      "peak_working_set_bytes": 676642816,
+      "peak_sum_lifetime_working_set_bytes": 713256960
+    },
+    {
+      "phase": "package_20032004-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 381947904,
+      "last_private_bytes": 381947904,
+      "peak_private_bytes": 384905216,
+      "peak_working_set_bytes": 676659200,
+      "peak_sum_lifetime_working_set_bytes": 713265152
+    },
+    {
+      "phase": "package_20032004-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 381956096,
+      "last_private_bytes": 383705088,
+      "peak_private_bytes": 383705088,
+      "peak_working_set_bytes": 675352576,
+      "peak_sum_lifetime_working_set_bytes": 713273344
+    },
+    {
+      "phase": "package_20022003-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 383705088,
+      "last_private_bytes": 384020480,
+      "peak_private_bytes": 384020480,
+      "peak_working_set_bytes": 675774464,
+      "peak_sum_lifetime_working_set_bytes": 713273344
+    },
+    {
+      "phase": "package_20022003-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 384339968,
+      "last_private_bytes": 384339968,
+      "peak_private_bytes": 384339968,
+      "peak_working_set_bytes": 676184064,
+      "peak_sum_lifetime_working_set_bytes": 713277440
+    },
+    {
+      "phase": "package_20012002-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 382574592,
+      "last_private_bytes": 382574592,
+      "peak_private_bytes": 382574592,
+      "peak_working_set_bytes": 674738176,
+      "peak_sum_lifetime_working_set_bytes": 713281536
+    },
+    {
+      "phase": "package_20012002-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 376463360,
+      "last_private_bytes": 376463360,
+      "peak_private_bytes": 382529536,
+      "peak_working_set_bytes": 674693120,
+      "peak_sum_lifetime_working_set_bytes": 713281536
+    },
+    {
+      "phase": "package_20002001-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 376463360,
+      "last_private_bytes": 381648896,
+      "peak_private_bytes": 381648896,
+      "peak_working_set_bytes": 673968128,
+      "peak_sum_lifetime_working_set_bytes": 713281536
+    },
+    {
+      "phase": "package_20002001-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 383074304,
+      "last_private_bytes": 383074304,
+      "peak_private_bytes": 383074304,
+      "peak_working_set_bytes": 675409920,
+      "peak_sum_lifetime_working_set_bytes": 713285632
+    },
+    {
+      "phase": "package_19992000-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 380391424,
+      "last_private_bytes": 380391424,
+      "peak_private_bytes": 383074304,
+      "peak_working_set_bytes": 675409920,
+      "peak_sum_lifetime_working_set_bytes": 713289728
+    },
+    {
+      "phase": "package_19992000-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 380391424,
+      "last_private_bytes": 380993536,
+      "peak_private_bytes": 380993536,
+      "peak_working_set_bytes": 673214464,
+      "peak_sum_lifetime_working_set_bytes": 713293824
+    },
+    {
+      "phase": "package_19981999-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 386400256,
+      "last_private_bytes": 386400256,
+      "peak_private_bytes": 386400256,
+      "peak_working_set_bytes": 678203392,
+      "peak_sum_lifetime_working_set_bytes": 713293824
+    },
+    {
+      "phase": "package_19981999-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 383459328,
+      "last_private_bytes": 383459328,
+      "peak_private_bytes": 386400256,
+      "peak_working_set_bytes": 678203392,
+      "peak_sum_lifetime_working_set_bytes": 713297920
+    },
+    {
+      "phase": "package_19971998-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 385937408,
+      "last_private_bytes": 385937408,
+      "peak_private_bytes": 385953792,
+      "peak_working_set_bytes": 677838848,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19971998-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 385937408,
+      "last_private_bytes": 388100096,
+      "peak_private_bytes": 388100096,
+      "peak_working_set_bytes": 679874560,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19961997-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 384077824,
+      "last_private_bytes": 384077824,
+      "peak_private_bytes": 384077824,
+      "peak_working_set_bytes": 676122624,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19961997-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 384077824,
+      "last_private_bytes": 386039808,
+      "peak_private_bytes": 386039808,
+      "peak_working_set_bytes": 677978112,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19951996-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 389681152,
+      "last_private_bytes": 390672384,
+      "peak_private_bytes": 390672384,
+      "peak_working_set_bytes": 681914368,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19951996-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 377630720,
+      "last_private_bytes": 377630720,
+      "peak_private_bytes": 392380416,
+      "peak_working_set_bytes": 683556864,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19941995-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 381980672,
+      "last_private_bytes": 381980672,
+      "peak_private_bytes": 382119936,
+      "peak_working_set_bytes": 674050048,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19941995-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 379990016,
+      "last_private_bytes": 379990016,
+      "peak_private_bytes": 379990016,
+      "peak_working_set_bytes": 672591872,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19931994-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 371212288,
+      "last_private_bytes": 371212288,
+      "peak_private_bytes": 375472128,
+      "peak_working_set_bytes": 667873280,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19931994-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 371613696,
+      "last_private_bytes": 373735424,
+      "peak_private_bytes": 373735424,
+      "peak_working_set_bytes": 666480640,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19921993-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 377532416,
+      "last_private_bytes": 377532416,
+      "peak_private_bytes": 377532416,
+      "peak_working_set_bytes": 670089216,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19921993-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 372334592,
+      "last_private_bytes": 372334592,
+      "peak_private_bytes": 377532416,
+      "peak_working_set_bytes": 670089216,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19911992-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 377753600,
+      "last_private_bytes": 377753600,
+      "peak_private_bytes": 378007552,
+      "peak_working_set_bytes": 670703616,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19911992-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 376266752,
+      "last_private_bytes": 376291328,
+      "peak_private_bytes": 376291328,
+      "peak_working_set_bytes": 668692480,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19901991-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 377131008,
+      "last_private_bytes": 377131008,
+      "peak_private_bytes": 377131008,
+      "peak_working_set_bytes": 669540352,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19901991-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 377880576,
+      "last_private_bytes": 377880576,
+      "peak_private_bytes": 378429440,
+      "peak_working_set_bytes": 670781440,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19891990-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 377962496,
+      "last_private_bytes": 381775872,
+      "peak_private_bytes": 381775872,
+      "peak_working_set_bytes": 674004992,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19891990-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 381816832,
+      "last_private_bytes": 384548864,
+      "peak_private_bytes": 384548864,
+      "peak_working_set_bytes": 676974592,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19881989-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 381181952,
+      "last_private_bytes": 381181952,
+      "peak_private_bytes": 381181952,
+      "peak_working_set_bytes": 673587200,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19881989-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 374255616,
+      "last_private_bytes": 374255616,
+      "peak_private_bytes": 381181952,
+      "peak_working_set_bytes": 673587200,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19871988-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 374255616,
+      "last_private_bytes": 378408960,
+      "peak_private_bytes": 378408960,
+      "peak_working_set_bytes": 671293440,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "package_19871988-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 379961344,
+      "last_private_bytes": 379981824,
+      "peak_private_bytes": 379981824,
+      "peak_working_set_bytes": 672993280,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "archive_regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 380063744,
+      "last_private_bytes": 384663552,
+      "peak_private_bytes": 384663552,
+      "peak_working_set_bytes": 677605376,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "archive_playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 380010496,
+      "last_private_bytes": 380313600,
+      "peak_private_bytes": 380313600,
+      "peak_working_set_bytes": 673615872,
+      "peak_sum_lifetime_working_set_bytes": 713302016
+    },
+    {
+      "phase": "warm_query",
+      "samples": 4,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 383512576,
+      "last_private_bytes": 389746688,
+      "peak_private_bytes": 390377472,
+      "peak_working_set_bytes": 683872256,
+      "peak_sum_lifetime_working_set_bytes": 717598720
+    },
+    {
+      "phase": "resident_settled",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 386965504,
+      "last_private_bytes": 386965504,
+      "peak_private_bytes": 387002368,
+      "peak_working_set_bytes": 681238528,
+      "peak_sum_lifetime_working_set_bytes": 717611008
+    },
+    {
+      "phase": "engine_restarted",
+      "samples": 7,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 369266688,
+      "last_private_bytes": 369266688,
+      "peak_private_bytes": 370348032,
+      "peak_working_set_bytes": 664453120,
+      "peak_sum_lifetime_working_set_bytes": 721702912
+    }
+  ],
+  "missing_sampled_phases": [],
+  "target_scope": "Diagnostic instrumented Rust/worker plus extra response observer. Full75/eight/two/20/restart workload and original flags/sampler/network observer, no forced GC. Partial Rust requested-capacity inventory, not complete/additive OS memory or acceptance.",
+  "sampled_peak_private_bytes": 416624640,
+  "sampled_peak_working_set_bytes": 717770752,
+  "sampled_private_bytes_over_blank_baseline": 177901568,
+  "provisional_250_mib_target": null,
+  "rust_storage_snapshots": [
+    {
+      "load": 1,
+      "wasm_linear_memory_bytes": 4325376,
+      "storage": {
+        "scope": "Partial Rust storage inventory. Vec capacities and row sizes; HashMap capacity times slot size is an estimate excluding extra buckets/control bytes. Excludes Strings, other nested heaps, allocator metadata/free space, JS/native buffers and compiled code. Categories must not be used as a complete/additive OS-memory partition.",
+        "windows": [
+          {
+            "repository": {
+              "identity_rows": 1031,
+              "identity_slot_capacity": 1792,
+              "identity_slot_payload_estimate": 279552,
+              "roster_vec_capacity_bytes": 12320,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 717576,
+              "stats_rows": 1031,
+              "stats_slot_capacity": 1792,
+              "stats_slot_payload_estimate": 28672,
+              "stint_vec_capacity_bytes": 275904,
+              "stint_vec_used_bytes": 74376,
+              "team_stint_size": 72
+            },
+            "revision": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+            "season": 20252026,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              940,
+              940,
+              98
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 303240
+          }
+        ]
+      }
+    },
+    {
+      "load": 8,
+      "wasm_linear_memory_bytes": 15335424,
+      "storage": {
+        "scope": "Partial Rust storage inventory. Vec capacities and row sizes; HashMap capacity times slot size is an estimate excluding extra buckets/control bytes. Excludes Strings, other nested heaps, allocator metadata/free space, JS/native buffers and compiled code. Categories must not be used as a complete/additive OS-memory partition.",
+        "windows": [
+          {
+            "repository": {
+              "identity_rows": 1031,
+              "identity_slot_capacity": 1792,
+              "identity_slot_payload_estimate": 279552,
+              "roster_vec_capacity_bytes": 12320,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 717576,
+              "stats_rows": 1031,
+              "stats_slot_capacity": 1792,
+              "stats_slot_payload_estimate": 28672,
+              "stint_vec_capacity_bytes": 275904,
+              "stint_vec_used_bytes": 74376,
+              "team_stint_size": 72
+            },
+            "revision": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+            "season": 20252026,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              940,
+              940,
+              98
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 303240
+          },
+          {
+            "repository": {
+              "identity_rows": 1008,
+              "identity_slot_capacity": 1792,
+              "identity_slot_payload_estimate": 279552,
+              "roster_vec_capacity_bytes": 11296,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 701568,
+              "stats_rows": 1008,
+              "stats_slot_capacity": 1792,
+              "stats_slot_payload_estimate": 28672,
+              "stint_vec_capacity_bytes": 268704,
+              "stint_vec_used_bytes": 73224,
+              "team_stint_size": 72
+            },
+            "revision": "ba4f8b9ab5e8882652099025360d8409b214a917d03ccc3c326a603a7ab86479",
+            "season": 20242025,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              920,
+              920,
+              103
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 297780
+          },
+          {
+            "repository": {
+              "identity_rows": 359,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 4352,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 249864,
+              "stats_rows": 359,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 97560,
+              "stint_vec_used_bytes": 25848,
+              "team_stint_size": 72
+            },
+            "revision": "fa8e36ef6f77c7fa6a2c4f67ad4fb0624c764fcb5aee4fdb07d63ebf840d5024",
+            "season": 20242025,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              332,
+              332,
+              27
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 106036
+          },
+          {
+            "repository": {
+              "identity_rows": 1009,
+              "identity_slot_capacity": 1792,
+              "identity_slot_payload_estimate": 279552,
+              "roster_vec_capacity_bytes": 11840,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 702264,
+              "stats_rows": 1009,
+              "stats_slot_capacity": 1792,
+              "stats_slot_payload_estimate": 28672,
+              "stint_vec_capacity_bytes": 269640,
+              "stint_vec_used_bytes": 72864,
+              "team_stint_size": 72
+            },
+            "revision": "84adc3c1c4791483adcb2ca9c8758334c56059aa95585ee2880773f9feb03adc",
+            "season": 20232024,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              924,
+              924,
+              98
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 298312
+          },
+          {
+            "repository": {
+              "identity_rows": 366,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 4160,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 254736,
+              "stats_rows": 366,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 99576,
+              "stint_vec_used_bytes": 26352,
+              "team_stint_size": 72
+            },
+            "revision": "cc059ed1b4fd0e288a0655301884c369dbbfc20a0dd3f5a2eb9928b68658ceed",
+            "season": 20232024,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              339,
+              339,
+              27
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 108192
+          },
+          {
+            "repository": {
+              "identity_rows": 1046,
+              "identity_slot_capacity": 1792,
+              "identity_slot_payload_estimate": 279552,
+              "roster_vec_capacity_bytes": 12160,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 728016,
+              "stats_rows": 1046,
+              "stats_slot_capacity": 1792,
+              "stats_slot_payload_estimate": 28672,
+              "stint_vec_capacity_bytes": 278424,
+              "stint_vec_used_bytes": 75600,
+              "team_stint_size": 72
+            },
+            "revision": "158e8ff69270ed273eaee30b68fd308f4e4eb0ca96cce06fce452c9519c4c33a",
+            "season": 20222023,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              951,
+              951,
+              107
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 307888
+          },
+          {
+            "repository": {
+              "identity_rows": 362,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 3840,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 251952,
+              "stats_rows": 362,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 98208,
+              "stint_vec_used_bytes": 26064,
+              "team_stint_size": 72
+            },
+            "revision": "c1a9d2b5a588872d129081c88a405230aeda18e1e8b1f62e1c69b276a22eb056",
+            "season": 20222023,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              334,
+              334,
+              28
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 106792
+          },
+          {
+            "repository": {
+              "identity_rows": 1123,
+              "identity_slot_capacity": 1792,
+              "identity_slot_payload_estimate": 279552,
+              "roster_vec_capacity_bytes": 14944,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 781608,
+              "stats_rows": 1123,
+              "stats_slot_capacity": 1792,
+              "stats_slot_payload_estimate": 28672,
+              "stint_vec_capacity_bytes": 298224,
+              "stint_vec_used_bytes": 81360,
+              "team_stint_size": 72
+            },
+            "revision": "32bbcdf0dbfb6567ff6d9d29216aa34823a0bfcb4796dd88d8256772d37f14bd",
+            "season": 20212022,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              1004,
+              1004,
+              119
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 325892
+          }
+        ]
+      }
+    },
+    {
+      "load": 10,
+      "wasm_linear_memory_bytes": 16318464,
+      "storage": {
+        "scope": "Partial Rust storage inventory. Vec capacities and row sizes; HashMap capacity times slot size is an estimate excluding extra buckets/control bytes. Excludes Strings, other nested heaps, allocator metadata/free space, JS/native buffers and compiled code. Categories must not be used as a complete/additive OS-memory partition.",
+        "windows": [
+          {
+            "repository": {
+              "identity_rows": 359,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 4352,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 249864,
+              "stats_rows": 359,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 97560,
+              "stint_vec_used_bytes": 25848,
+              "team_stint_size": 72
+            },
+            "revision": "fa8e36ef6f77c7fa6a2c4f67ad4fb0624c764fcb5aee4fdb07d63ebf840d5024",
+            "season": 20242025,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              332,
+              332,
+              27
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 106036
+          },
+          {
+            "repository": {
+              "identity_rows": 1009,
+              "identity_slot_capacity": 1792,
+              "identity_slot_payload_estimate": 279552,
+              "roster_vec_capacity_bytes": 11840,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 702264,
+              "stats_rows": 1009,
+              "stats_slot_capacity": 1792,
+              "stats_slot_payload_estimate": 28672,
+              "stint_vec_capacity_bytes": 269640,
+              "stint_vec_used_bytes": 72864,
+              "team_stint_size": 72
+            },
+            "revision": "84adc3c1c4791483adcb2ca9c8758334c56059aa95585ee2880773f9feb03adc",
+            "season": 20232024,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              924,
+              924,
+              98
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 298312
+          },
+          {
+            "repository": {
+              "identity_rows": 366,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 4160,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 254736,
+              "stats_rows": 366,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 99576,
+              "stint_vec_used_bytes": 26352,
+              "team_stint_size": 72
+            },
+            "revision": "cc059ed1b4fd0e288a0655301884c369dbbfc20a0dd3f5a2eb9928b68658ceed",
+            "season": 20232024,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              339,
+              339,
+              27
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 108192
+          },
+          {
+            "repository": {
+              "identity_rows": 1046,
+              "identity_slot_capacity": 1792,
+              "identity_slot_payload_estimate": 279552,
+              "roster_vec_capacity_bytes": 12160,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 728016,
+              "stats_rows": 1046,
+              "stats_slot_capacity": 1792,
+              "stats_slot_payload_estimate": 28672,
+              "stint_vec_capacity_bytes": 278424,
+              "stint_vec_used_bytes": 75600,
+              "team_stint_size": 72
+            },
+            "revision": "158e8ff69270ed273eaee30b68fd308f4e4eb0ca96cce06fce452c9519c4c33a",
+            "season": 20222023,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              951,
+              951,
+              107
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 307888
+          },
+          {
+            "repository": {
+              "identity_rows": 362,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 3840,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 251952,
+              "stats_rows": 362,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 98208,
+              "stint_vec_used_bytes": 26064,
+              "team_stint_size": 72
+            },
+            "revision": "c1a9d2b5a588872d129081c88a405230aeda18e1e8b1f62e1c69b276a22eb056",
+            "season": 20222023,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              334,
+              334,
+              28
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 106792
+          },
+          {
+            "repository": {
+              "identity_rows": 1123,
+              "identity_slot_capacity": 1792,
+              "identity_slot_payload_estimate": 279552,
+              "roster_vec_capacity_bytes": 14944,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 781608,
+              "stats_rows": 1123,
+              "stats_slot_capacity": 1792,
+              "stats_slot_payload_estimate": 28672,
+              "stint_vec_capacity_bytes": 298224,
+              "stint_vec_used_bytes": 81360,
+              "team_stint_size": 72
+            },
+            "revision": "32bbcdf0dbfb6567ff6d9d29216aa34823a0bfcb4796dd88d8256772d37f14bd",
+            "season": 20212022,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              1004,
+              1004,
+              119
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 325892
+          },
+          {
+            "repository": {
+              "identity_rows": 365,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 4096,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 254040,
+              "stats_rows": 365,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 98640,
+              "stint_vec_used_bytes": 26280,
+              "team_stint_size": 72
+            },
+            "revision": "d4f278799b3a92f617e3702c726725009348dea538b75bc1eeb75b79ddd7aedf",
+            "season": 20212022,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              335,
+              335,
+              30
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 107380
+          },
+          {
+            "repository": {
+              "identity_rows": 1002,
+              "identity_slot_capacity": 1792,
+              "identity_slot_payload_estimate": 279552,
+              "roster_vec_capacity_bytes": 11616,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 697392,
+              "stats_rows": 1002,
+              "stats_slot_capacity": 1792,
+              "stats_slot_payload_estimate": 28672,
+              "stint_vec_capacity_bytes": 267624,
+              "stint_vec_used_bytes": 72360,
+              "team_stint_size": 72
+            },
+            "revision": "c47f0fc7d685ff43bb63e1496c690b1eece42f9e87695c9d86b84e5aa019aab3",
+            "season": 20202021,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              913,
+              913,
+              98
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 294924
+          }
+        ]
+      }
+    },
+    {
+      "load": 11,
+      "wasm_linear_memory_bytes": 16318464,
+      "storage": {
+        "scope": "Partial Rust storage inventory. Vec capacities and row sizes; HashMap capacity times slot size is an estimate excluding extra buckets/control bytes. Excludes Strings, other nested heaps, allocator metadata/free space, JS/native buffers and compiled code. Categories must not be used as a complete/additive OS-memory partition.",
+        "windows": [
+          {
+            "repository": {
+              "identity_rows": 1009,
+              "identity_slot_capacity": 1792,
+              "identity_slot_payload_estimate": 279552,
+              "roster_vec_capacity_bytes": 11840,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 702264,
+              "stats_rows": 1009,
+              "stats_slot_capacity": 1792,
+              "stats_slot_payload_estimate": 28672,
+              "stint_vec_capacity_bytes": 269640,
+              "stint_vec_used_bytes": 72864,
+              "team_stint_size": 72
+            },
+            "revision": "84adc3c1c4791483adcb2ca9c8758334c56059aa95585ee2880773f9feb03adc",
+            "season": 20232024,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              924,
+              924,
+              98
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 298312
+          },
+          {
+            "repository": {
+              "identity_rows": 366,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 4160,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 254736,
+              "stats_rows": 366,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 99576,
+              "stint_vec_used_bytes": 26352,
+              "team_stint_size": 72
+            },
+            "revision": "cc059ed1b4fd0e288a0655301884c369dbbfc20a0dd3f5a2eb9928b68658ceed",
+            "season": 20232024,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              339,
+              339,
+              27
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 108192
+          },
+          {
+            "repository": {
+              "identity_rows": 1046,
+              "identity_slot_capacity": 1792,
+              "identity_slot_payload_estimate": 279552,
+              "roster_vec_capacity_bytes": 12160,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 728016,
+              "stats_rows": 1046,
+              "stats_slot_capacity": 1792,
+              "stats_slot_payload_estimate": 28672,
+              "stint_vec_capacity_bytes": 278424,
+              "stint_vec_used_bytes": 75600,
+              "team_stint_size": 72
+            },
+            "revision": "158e8ff69270ed273eaee30b68fd308f4e4eb0ca96cce06fce452c9519c4c33a",
+            "season": 20222023,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              951,
+              951,
+              107
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 307888
+          },
+          {
+            "repository": {
+              "identity_rows": 362,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 3840,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 251952,
+              "stats_rows": 362,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 98208,
+              "stint_vec_used_bytes": 26064,
+              "team_stint_size": 72
+            },
+            "revision": "c1a9d2b5a588872d129081c88a405230aeda18e1e8b1f62e1c69b276a22eb056",
+            "season": 20222023,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              334,
+              334,
+              28
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 106792
+          },
+          {
+            "repository": {
+              "identity_rows": 1123,
+              "identity_slot_capacity": 1792,
+              "identity_slot_payload_estimate": 279552,
+              "roster_vec_capacity_bytes": 14944,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 781608,
+              "stats_rows": 1123,
+              "stats_slot_capacity": 1792,
+              "stats_slot_payload_estimate": 28672,
+              "stint_vec_capacity_bytes": 298224,
+              "stint_vec_used_bytes": 81360,
+              "team_stint_size": 72
+            },
+            "revision": "32bbcdf0dbfb6567ff6d9d29216aa34823a0bfcb4796dd88d8256772d37f14bd",
+            "season": 20212022,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              1004,
+              1004,
+              119
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 325892
+          },
+          {
+            "repository": {
+              "identity_rows": 365,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 4096,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 254040,
+              "stats_rows": 365,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 98640,
+              "stint_vec_used_bytes": 26280,
+              "team_stint_size": 72
+            },
+            "revision": "d4f278799b3a92f617e3702c726725009348dea538b75bc1eeb75b79ddd7aedf",
+            "season": 20212022,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              335,
+              335,
+              30
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 107380
+          },
+          {
+            "repository": {
+              "identity_rows": 1002,
+              "identity_slot_capacity": 1792,
+              "identity_slot_payload_estimate": 279552,
+              "roster_vec_capacity_bytes": 11616,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 697392,
+              "stats_rows": 1002,
+              "stats_slot_capacity": 1792,
+              "stats_slot_payload_estimate": 28672,
+              "stint_vec_capacity_bytes": 267624,
+              "stint_vec_used_bytes": 72360,
+              "team_stint_size": 72
+            },
+            "revision": "c47f0fc7d685ff43bb63e1496c690b1eece42f9e87695c9d86b84e5aa019aab3",
+            "season": 20202021,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              913,
+              913,
+              98
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 294924
+          },
+          {
+            "repository": {
+              "identity_rows": 361,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 3808,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 251256,
+              "stats_rows": 361,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 98784,
+              "stint_vec_used_bytes": 25992,
+              "team_stint_size": 72
+            },
+            "revision": "749b8bdc92ef93e04fcd15d5024c6e0fe8203ed211aeca9b1fe69139ad90e794",
+            "season": 20202021,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              337,
+              337,
+              24
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 107156
+          }
+        ]
+      }
+    },
+    {
+      "load": 26,
+      "wasm_linear_memory_bytes": 17563648,
+      "storage": {
+        "scope": "Partial Rust storage inventory. Vec capacities and row sizes; HashMap capacity times slot size is an estimate excluding extra buckets/control bytes. Excludes Strings, other nested heaps, allocator metadata/free space, JS/native buffers and compiled code. Categories must not be used as a complete/additive OS-memory partition.",
+        "windows": [
+          {
+            "repository": {
+              "identity_rows": 366,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 3648,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 254736,
+              "stats_rows": 366,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 100440,
+              "stint_vec_used_bytes": 26352,
+              "team_stint_size": 72
+            },
+            "revision": "6a310b643850fb8f37e7896f1db5e475036ad309b7243f19662c9de65f281eef",
+            "season": 20162017,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              343,
+              343,
+              23
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 108864
+          },
+          {
+            "repository": {
+              "identity_rows": 982,
+              "identity_slot_capacity": 1792,
+              "identity_slot_payload_estimate": 279552,
+              "roster_vec_capacity_bytes": 11232,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 683472,
+              "stats_rows": 982,
+              "stats_slot_capacity": 1792,
+              "stats_slot_payload_estimate": 28672,
+              "stint_vec_capacity_bytes": 263088,
+              "stint_vec_used_bytes": 70848,
+              "team_stint_size": 72
+            },
+            "revision": "766e8d9e6c9decbe52a1127c163b48984a144f3124d0527aff9d2d953c2f0836",
+            "season": 20152016,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              898,
+              898,
+              92
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 289464
+          },
+          {
+            "repository": {
+              "identity_rows": 368,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 3616,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 256128,
+              "stats_rows": 368,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 99936,
+              "stint_vec_used_bytes": 26496,
+              "team_stint_size": 72
+            },
+            "revision": "edc48e4fbbd917ec00154abc2cca9829999d481cf6779fba0a9dd3f209943e7b",
+            "season": 20152016,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              340,
+              340,
+              28
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 108640
+          },
+          {
+            "repository": {
+              "identity_rows": 951,
+              "identity_slot_capacity": 1792,
+              "identity_slot_payload_estimate": 279552,
+              "roster_vec_capacity_bytes": 10528,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 661896,
+              "stats_rows": 951,
+              "stats_slot_capacity": 1792,
+              "stats_slot_payload_estimate": 28672,
+              "stint_vec_capacity_bytes": 254304,
+              "stint_vec_used_bytes": 68760,
+              "team_stint_size": 72
+            },
+            "revision": "d4ed3a3a15778385bf998f866a055b667267f41191cabaf7aed4d823bf8dc571",
+            "season": 20142015,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              882,
+              882,
+              92
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 284536
+          },
+          {
+            "repository": {
+              "identity_rows": 365,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 5440,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 254040,
+              "stats_rows": 365,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 99504,
+              "stint_vec_used_bytes": 26280,
+              "team_stint_size": 72
+            },
+            "revision": "a4e3bfc162e64d1ddaf9876468a1c7a265a47646709e9cb8e06510c46c7d4a29",
+            "season": 20142015,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              339,
+              339,
+              26
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 108052
+          },
+          {
+            "repository": {
+              "identity_rows": 975,
+              "identity_slot_capacity": 1792,
+              "identity_slot_payload_estimate": 279552,
+              "roster_vec_capacity_bytes": 11584,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 678600,
+              "stats_rows": 975,
+              "stats_slot_capacity": 1792,
+              "stats_slot_payload_estimate": 28672,
+              "stint_vec_capacity_bytes": 260712,
+              "stint_vec_used_bytes": 71064,
+              "team_stint_size": 72
+            },
+            "revision": "8ae56553db63447a7dd7e54c8706fc24ee68c9be27eabdc0a109e7ac1deb6782",
+            "season": 20132014,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              886,
+              886,
+              97
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 286468
+          },
+          {
+            "repository": {
+              "identity_rows": 372,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 5184,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 258912,
+              "stats_rows": 372,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 101088,
+              "stint_vec_used_bytes": 26784,
+              "team_stint_size": 72
+            },
+            "revision": "b51a9dad95a1dec4bef34c4d12ac6a1883db6575f91bca9c8b45e10ceb2ad5c1",
+            "season": 20132014,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              344,
+              344,
+              28
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 109872
+          },
+          {
+            "repository": {
+              "identity_rows": 908,
+              "identity_slot_capacity": 1792,
+              "identity_slot_payload_estimate": 279552,
+              "roster_vec_capacity_bytes": 10272,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 631968,
+              "stats_rows": 908,
+              "stats_slot_capacity": 1792,
+              "stats_slot_payload_estimate": 28672,
+              "stint_vec_capacity_bytes": 243936,
+              "stint_vec_used_bytes": 65520,
+              "team_stint_size": 72
+            },
+            "revision": "62cf411e302a89923d219ec788c9b2bd914d4effc6e7b223800503dd077b70c0",
+            "season": 20122013,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              839,
+              839,
+              82
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 269892
+          }
+        ]
+      }
+    },
+    {
+      "load": 75,
+      "wasm_linear_memory_bytes": 17563648,
+      "storage": {
+        "scope": "Partial Rust storage inventory. Vec capacities and row sizes; HashMap capacity times slot size is an estimate excluding extra buckets/control bytes. Excludes Strings, other nested heaps, allocator metadata/free space, JS/native buffers and compiled code. Categories must not be used as a complete/additive OS-memory partition.",
+        "windows": [
+          {
+            "repository": {
+              "identity_rows": 725,
+              "identity_slot_capacity": 896,
+              "identity_slot_payload_estimate": 139776,
+              "roster_vec_capacity_bytes": 8960,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 504600,
+              "stats_rows": 725,
+              "stats_slot_capacity": 896,
+              "stats_slot_payload_estimate": 14336,
+              "stint_vec_capacity_bytes": 192384,
+              "stint_vec_used_bytes": 52416,
+              "team_stint_size": 72
+            },
+            "revision": "6498bfcd4e98ff2493937bfc000e76baf73fa88857f78e7e60eb3b98a830cdd3",
+            "season": 19901991,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              659,
+              659,
+              77
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 213752
+          },
+          {
+            "repository": {
+              "identity_rows": 384,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 4608,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 267264,
+              "stats_rows": 384,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 104112,
+              "stint_vec_used_bytes": 27648,
+              "team_stint_size": 72
+            },
+            "revision": "b55ae582bad9aa16e69306e7daa6779396b181eaa40e75c89b495893b4d6e236",
+            "season": 19901991,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              354,
+              354,
+              30
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 113232
+          },
+          {
+            "repository": {
+              "identity_rows": 722,
+              "identity_slot_capacity": 896,
+              "identity_slot_payload_estimate": 139776,
+              "roster_vec_capacity_bytes": 8960,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 502512,
+              "stats_rows": 722,
+              "stats_slot_capacity": 896,
+              "stats_slot_payload_estimate": 14336,
+              "stint_vec_capacity_bytes": 193176,
+              "stint_vec_used_bytes": 52344,
+              "team_stint_size": 72
+            },
+            "revision": "762ddb947aadc7d4bb6f38a1b9e77298c6b6620aed77f91679f34462c8db4f3c",
+            "season": 19891990,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              655,
+              655,
+              70
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 211540
+          },
+          {
+            "repository": {
+              "identity_rows": 384,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 4608,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 267264,
+              "stats_rows": 384,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 103680,
+              "stint_vec_used_bytes": 27648,
+              "team_stint_size": 72
+            },
+            "revision": "13c4f7f785a95c4d28f39efc6f36791a2b2d03bd38f657d0c1a7974050704483",
+            "season": 19891990,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              352,
+              352,
+              32
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 112896
+          },
+          {
+            "repository": {
+              "identity_rows": 716,
+              "identity_slot_capacity": 896,
+              "identity_slot_payload_estimate": 139776,
+              "roster_vec_capacity_bytes": 9120,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 498336,
+              "stats_rows": 716,
+              "stats_slot_capacity": 896,
+              "stats_slot_payload_estimate": 14336,
+              "stint_vec_capacity_bytes": 192024,
+              "stint_vec_used_bytes": 52056,
+              "team_stint_size": 72
+            },
+            "revision": "a8d9a7eb4c717d93d05b7a3dc0a667c5642f64d0328d57bc21d1f99266ae84d3",
+            "season": 19881989,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              663,
+              663,
+              68
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 213724
+          },
+          {
+            "repository": {
+              "identity_rows": 382,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 4608,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 265872,
+              "stats_rows": 382,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 103536,
+              "stint_vec_used_bytes": 27504,
+              "team_stint_size": 72
+            },
+            "revision": "bdab941946b3469e8488987bb5abaa261361377b959aab64de39dabb0a837da1",
+            "season": 19881989,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              352,
+              352,
+              30
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 112616
+          },
+          {
+            "repository": {
+              "identity_rows": 734,
+              "identity_slot_capacity": 896,
+              "identity_slot_payload_estimate": 139776,
+              "roster_vec_capacity_bytes": 8960,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 510864,
+              "stats_rows": 734,
+              "stats_slot_capacity": 896,
+              "stats_slot_payload_estimate": 14336,
+              "stint_vec_capacity_bytes": 198000,
+              "stint_vec_used_bytes": 53064,
+              "team_stint_size": 72
+            },
+            "revision": "b898df00ab7902cbc2f2e8526a87eefee5951fe59adac666e347a8a85ba0c06f",
+            "season": 19871988,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              64
+            ],
+            "source_rows": [
+              672,
+              672,
+              63
+            ],
+            "source_vec_reserved_bytes": 324352,
+            "source_vec_used_bytes": 215796
+          },
+          {
+            "repository": {
+              "identity_rows": 396,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 4608,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 275616,
+              "stats_rows": 396,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 107784,
+              "stint_vec_used_bytes": 28512,
+              "team_stint_size": 72
+            },
+            "revision": "7681f9fe03c06a09c634ab24909c48da6d96a38432898630a4dd2e1112c01b73",
+            "season": 19871988,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              367,
+              367,
+              29
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 117096
+          }
+        ]
+      }
+    },
+    {
+      "load": 76,
+      "wasm_linear_memory_bytes": 17563648,
+      "storage": {
+        "scope": "Partial Rust storage inventory. Vec capacities and row sizes; HashMap capacity times slot size is an estimate excluding extra buckets/control bytes. Excludes Strings, other nested heaps, allocator metadata/free space, JS/native buffers and compiled code. Categories must not be used as a complete/additive OS-memory partition.",
+        "windows": [
+          {
+            "repository": {
+              "identity_rows": 384,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 4608,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 267264,
+              "stats_rows": 384,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 104112,
+              "stint_vec_used_bytes": 27648,
+              "team_stint_size": 72
+            },
+            "revision": "b55ae582bad9aa16e69306e7daa6779396b181eaa40e75c89b495893b4d6e236",
+            "season": 19901991,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              354,
+              354,
+              30
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 113232
+          },
+          {
+            "repository": {
+              "identity_rows": 722,
+              "identity_slot_capacity": 896,
+              "identity_slot_payload_estimate": 139776,
+              "roster_vec_capacity_bytes": 8960,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 502512,
+              "stats_rows": 722,
+              "stats_slot_capacity": 896,
+              "stats_slot_payload_estimate": 14336,
+              "stint_vec_capacity_bytes": 193176,
+              "stint_vec_used_bytes": 52344,
+              "team_stint_size": 72
+            },
+            "revision": "762ddb947aadc7d4bb6f38a1b9e77298c6b6620aed77f91679f34462c8db4f3c",
+            "season": 19891990,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              655,
+              655,
+              70
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 211540
+          },
+          {
+            "repository": {
+              "identity_rows": 384,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 4608,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 267264,
+              "stats_rows": 384,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 103680,
+              "stint_vec_used_bytes": 27648,
+              "team_stint_size": 72
+            },
+            "revision": "13c4f7f785a95c4d28f39efc6f36791a2b2d03bd38f657d0c1a7974050704483",
+            "season": 19891990,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              352,
+              352,
+              32
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 112896
+          },
+          {
+            "repository": {
+              "identity_rows": 716,
+              "identity_slot_capacity": 896,
+              "identity_slot_payload_estimate": 139776,
+              "roster_vec_capacity_bytes": 9120,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 498336,
+              "stats_rows": 716,
+              "stats_slot_capacity": 896,
+              "stats_slot_payload_estimate": 14336,
+              "stint_vec_capacity_bytes": 192024,
+              "stint_vec_used_bytes": 52056,
+              "team_stint_size": 72
+            },
+            "revision": "a8d9a7eb4c717d93d05b7a3dc0a667c5642f64d0328d57bc21d1f99266ae84d3",
+            "season": 19881989,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              663,
+              663,
+              68
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 213724
+          },
+          {
+            "repository": {
+              "identity_rows": 382,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 4608,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 265872,
+              "stats_rows": 382,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 103536,
+              "stint_vec_used_bytes": 27504,
+              "team_stint_size": 72
+            },
+            "revision": "bdab941946b3469e8488987bb5abaa261361377b959aab64de39dabb0a837da1",
+            "season": 19881989,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              352,
+              352,
+              30
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 112616
+          },
+          {
+            "repository": {
+              "identity_rows": 734,
+              "identity_slot_capacity": 896,
+              "identity_slot_payload_estimate": 139776,
+              "roster_vec_capacity_bytes": 8960,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 510864,
+              "stats_rows": 734,
+              "stats_slot_capacity": 896,
+              "stats_slot_payload_estimate": 14336,
+              "stint_vec_capacity_bytes": 198000,
+              "stint_vec_used_bytes": 53064,
+              "team_stint_size": 72
+            },
+            "revision": "b898df00ab7902cbc2f2e8526a87eefee5951fe59adac666e347a8a85ba0c06f",
+            "season": 19871988,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              64
+            ],
+            "source_rows": [
+              672,
+              672,
+              63
+            ],
+            "source_vec_reserved_bytes": 324352,
+            "source_vec_used_bytes": 215796
+          },
+          {
+            "repository": {
+              "identity_rows": 396,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 4608,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 275616,
+              "stats_rows": 396,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 107784,
+              "stint_vec_used_bytes": 28512,
+              "team_stint_size": 72
+            },
+            "revision": "7681f9fe03c06a09c634ab24909c48da6d96a38432898630a4dd2e1112c01b73",
+            "season": 19871988,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              367,
+              367,
+              29
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 117096
+          },
+          {
+            "repository": {
+              "identity_rows": 1008,
+              "identity_slot_capacity": 1792,
+              "identity_slot_payload_estimate": 279552,
+              "roster_vec_capacity_bytes": 11296,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 701568,
+              "stats_rows": 1008,
+              "stats_slot_capacity": 1792,
+              "stats_slot_payload_estimate": 28672,
+              "stint_vec_capacity_bytes": 268704,
+              "stint_vec_used_bytes": 73224,
+              "team_stint_size": 72
+            },
+            "revision": "24960a89a39d6180b097093e9fc64420cdc5e670dd843a7383ff84f2288b0f47",
+            "season": 20242025,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              920,
+              920,
+              103
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 297780
+          }
+        ]
+      }
+    },
+    {
+      "load": 77,
+      "wasm_linear_memory_bytes": 17563648,
+      "storage": {
+        "scope": "Partial Rust storage inventory. Vec capacities and row sizes; HashMap capacity times slot size is an estimate excluding extra buckets/control bytes. Excludes Strings, other nested heaps, allocator metadata/free space, JS/native buffers and compiled code. Categories must not be used as a complete/additive OS-memory partition.",
+        "windows": [
+          {
+            "repository": {
+              "identity_rows": 722,
+              "identity_slot_capacity": 896,
+              "identity_slot_payload_estimate": 139776,
+              "roster_vec_capacity_bytes": 8960,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 502512,
+              "stats_rows": 722,
+              "stats_slot_capacity": 896,
+              "stats_slot_payload_estimate": 14336,
+              "stint_vec_capacity_bytes": 193176,
+              "stint_vec_used_bytes": 52344,
+              "team_stint_size": 72
+            },
+            "revision": "762ddb947aadc7d4bb6f38a1b9e77298c6b6620aed77f91679f34462c8db4f3c",
+            "season": 19891990,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              655,
+              655,
+              70
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 211540
+          },
+          {
+            "repository": {
+              "identity_rows": 384,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 4608,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 267264,
+              "stats_rows": 384,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 103680,
+              "stint_vec_used_bytes": 27648,
+              "team_stint_size": 72
+            },
+            "revision": "13c4f7f785a95c4d28f39efc6f36791a2b2d03bd38f657d0c1a7974050704483",
+            "season": 19891990,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              352,
+              352,
+              32
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 112896
+          },
+          {
+            "repository": {
+              "identity_rows": 716,
+              "identity_slot_capacity": 896,
+              "identity_slot_payload_estimate": 139776,
+              "roster_vec_capacity_bytes": 9120,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 498336,
+              "stats_rows": 716,
+              "stats_slot_capacity": 896,
+              "stats_slot_payload_estimate": 14336,
+              "stint_vec_capacity_bytes": 192024,
+              "stint_vec_used_bytes": 52056,
+              "team_stint_size": 72
+            },
+            "revision": "a8d9a7eb4c717d93d05b7a3dc0a667c5642f64d0328d57bc21d1f99266ae84d3",
+            "season": 19881989,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              663,
+              663,
+              68
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 213724
+          },
+          {
+            "repository": {
+              "identity_rows": 382,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 4608,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 265872,
+              "stats_rows": 382,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 103536,
+              "stint_vec_used_bytes": 27504,
+              "team_stint_size": 72
+            },
+            "revision": "bdab941946b3469e8488987bb5abaa261361377b959aab64de39dabb0a837da1",
+            "season": 19881989,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              352,
+              352,
+              30
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 112616
+          },
+          {
+            "repository": {
+              "identity_rows": 734,
+              "identity_slot_capacity": 896,
+              "identity_slot_payload_estimate": 139776,
+              "roster_vec_capacity_bytes": 8960,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 510864,
+              "stats_rows": 734,
+              "stats_slot_capacity": 896,
+              "stats_slot_payload_estimate": 14336,
+              "stint_vec_capacity_bytes": 198000,
+              "stint_vec_used_bytes": 53064,
+              "team_stint_size": 72
+            },
+            "revision": "b898df00ab7902cbc2f2e8526a87eefee5951fe59adac666e347a8a85ba0c06f",
+            "season": 19871988,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              64
+            ],
+            "source_rows": [
+              672,
+              672,
+              63
+            ],
+            "source_vec_reserved_bytes": 324352,
+            "source_vec_used_bytes": 215796
+          },
+          {
+            "repository": {
+              "identity_rows": 396,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 4608,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 275616,
+              "stats_rows": 396,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 107784,
+              "stint_vec_used_bytes": 28512,
+              "team_stint_size": 72
+            },
+            "revision": "7681f9fe03c06a09c634ab24909c48da6d96a38432898630a4dd2e1112c01b73",
+            "season": 19871988,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              367,
+              367,
+              29
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 117096
+          },
+          {
+            "repository": {
+              "identity_rows": 1008,
+              "identity_slot_capacity": 1792,
+              "identity_slot_payload_estimate": 279552,
+              "roster_vec_capacity_bytes": 11296,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 701568,
+              "stats_rows": 1008,
+              "stats_slot_capacity": 1792,
+              "stats_slot_payload_estimate": 28672,
+              "stint_vec_capacity_bytes": 268704,
+              "stint_vec_used_bytes": 73224,
+              "team_stint_size": 72
+            },
+            "revision": "24960a89a39d6180b097093e9fc64420cdc5e670dd843a7383ff84f2288b0f47",
+            "season": 20242025,
+            "season_type": "regular",
+            "source_capacities": [
+              1024,
+              1024,
+              128
+            ],
+            "source_rows": [
+              920,
+              920,
+              103
+            ],
+            "source_vec_reserved_bytes": 333312,
+            "source_vec_used_bytes": 297780
+          },
+          {
+            "repository": {
+              "identity_rows": 359,
+              "identity_slot_capacity": 448,
+              "identity_slot_payload_estimate": 69888,
+              "roster_vec_capacity_bytes": 4352,
+              "season_stats_size": 696,
+              "stats_row_payload_bytes": 249864,
+              "stats_rows": 359,
+              "stats_slot_capacity": 448,
+              "stats_slot_payload_estimate": 7168,
+              "stint_vec_capacity_bytes": 97560,
+              "stint_vec_used_bytes": 25848,
+              "team_stint_size": 72
+            },
+            "revision": "5299ebee4cd234ff350b65dfd62051577bb513ad84a816a56aae09e36977799c",
+            "season": 20242025,
+            "season_type": "playoff",
+            "source_capacities": [
+              512,
+              512,
+              32
+            ],
+            "source_rows": [
+              332,
+              332,
+              27
+            ],
+            "source_vec_reserved_bytes": 162176,
+            "source_vec_used_bytes": 106036
+          }
+        ]
+      }
+    }
+  ],
+  "finished_at": "2026-10-14T16:28:54.093Z"
+}
