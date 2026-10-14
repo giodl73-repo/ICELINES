@@ -43,3 +43,9 @@ capability. Android remains deferred. Full validation remains incomplete.
 Reports, traces and sibling hashes are retained in
 evidence/target-process-provenance-20261014.json. Local helper/sample hashes are
 recorded separately. No production source, PR or publication changes.
+
+The runtime reports preserve their original local trace filename. Startup and
+full traces have distinct archival filenames mapped explicitly by provenance.
+The flat archival sibling audit therefore reports two external local trace
+references; the118 archival sibling descriptors have zero worktree/Git/clean
+checkout mismatches. Original trace hashes separately match both runtime reports.

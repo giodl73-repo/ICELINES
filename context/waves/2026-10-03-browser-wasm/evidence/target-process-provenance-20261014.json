@@ -149,6 +149,7 @@
       "warm_max_ms": 90.46429999999236
     }
   },
+  "archive_trace_reference_note": "Byte-preserved runtime reports name their original local sibling target-process-markers-trace.json. The two traces are archived under distinct startup/full names; this provenance explicitly maps each archive name and SHA. Those two local runtime filenames are intentionally outside the flat archival sibling audit, not mismatched hashes.",
   "scope": "Trace timestamps evaluated separately in each owned target after normal measurement; exact trace PID and OS counter PID matched. No forced GC or acceptance flag changes. All browser processes retained. Full diagnostic executes75/eight/two imports/20 queries/restart, but tracing before restart invalidates subsequent counters as normal controls. Both target flags explicitly null.",
   "interpretation": "Page, service worker and engine worker share one renderer; two Chromium omnibox UI targets share another renderer. Do not sum per-target copies of the same PID, attribute all application-renderer bytes to WASM, exclude browser UI/GPU/unmapped processes or equate process private allocation to resident RAM.",
   "helper_sha256": {
