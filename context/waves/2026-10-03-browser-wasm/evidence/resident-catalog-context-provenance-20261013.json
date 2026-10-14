@@ -1,0 +1,12 @@
+{
+  "source": "f64f33d98b06291b10be8a024d9aecd91be65367",
+  "wasm_unchanged": true,
+  "wasm_sha256": "2e4c853309a32d8366c282afe113626fde5c25b26349bd9194ceafe59123f57b",
+  "scope": "Frontend cached-catalog guard only; reject wrong season/type/source before selecting resident data, matching existing downloaded-package context check. No native API, normalization, persistence/schema or memory-budget change.",
+  "regression_command": "node icelines-browser/e2e/catalog-context.mjs --artifact <retained distribution>",
+  "fixture_scope": "Unsigned two-entry catalog; handler-driven reload for fixture swaps. Not offline/mobile/normal memory acceptance.",
+  "baseline_fails_cached_rejection": true,
+  "fixed_six_cases_pass": true,
+  "unit_tests": 154,
+  "memory_experiment_adopted": false
+}
