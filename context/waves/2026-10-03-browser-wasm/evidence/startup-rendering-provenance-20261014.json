@@ -1,0 +1,65 @@
+{
+  "status": "Read-only startup attribution; no implementation or acceptance change",
+  "source": "5ef015c4d47ebbcee8234eb92f1fe83716b45054",
+  "scope": "Five fresh sequential owned Chromium processes; original launch flags/OS sampler, no forced GC. Transformed controls deliberately omit essential functionality; none can close full-workload acceptance. One observation per configuration; baseline variation prevents exact causal subtraction.",
+  "reports": {
+    "minimal": {
+      "file": "startup-rendering-minimal-20261014.json",
+      "sha256": "51a7ef88c08b27c9236866f1267804173e174c55323eca1ab4ec5d43e30787dc"
+    },
+    "unstyled": {
+      "file": "startup-rendering-unstyled-20261014.json",
+      "sha256": "8b7cf8f3f2a91cf8aa0450ccc3ab43924dd2290aa0f9534089d1325a35a5a289"
+    },
+    "scriptless": {
+      "file": "startup-rendering-scriptless-20261014.json",
+      "sha256": "950981de41b2cc20e2ffe5c75fed618596f927015c1bfc6384fa313da5590661"
+    },
+    "full-workbench": {
+      "file": "startup-rendering-full-workbench-20261014.json",
+      "sha256": "3b1856ff44d0910bd0c6fdedfbfadb8726e50b03f6738bff3b494bde341ef3d1"
+    },
+    "no-offline-shell": {
+      "file": "startup-rendering-no-offline-shell-20261014.json",
+      "sha256": "af7ad24b8cd439d8ed92373adfcd8e30791b0830f31c3e6522283eab14fc012d"
+    }
+  },
+  "measurements": {
+    "minimal": {
+      "private_mib": 242.95703125,
+      "blank_mib": 230.140625,
+      "control": "minimal HTML, no scripts or styles",
+      "engine_workers": 0
+    },
+    "unstyled": {
+      "private_mib": 244.875,
+      "blank_mib": 223.5703125,
+      "control": "workbench markup with scripts and stylesheet removed",
+      "engine_workers": 0
+    },
+    "scriptless": {
+      "private_mib": 250.84765625,
+      "blank_mib": 229.05859375,
+      "control": "styled workbench markup with scripts removed",
+      "engine_workers": 0
+    },
+    "full-workbench": {
+      "private_mib": 278.18359375,
+      "blank_mib": 231.8046875,
+      "control": "retained empty workbench, offline shell ready",
+      "engine_workers": 0
+    },
+    "no-offline-shell": {
+      "private_mib": 264.2421875,
+      "blank_mib": 233.2421875,
+      "control": "workbench scripts with offline registration suppressed",
+      "engine_workers": 0
+    }
+  },
+  "next_investigation": "Reduce startup allocation while preserving automatic offline preparation, saved restoration and the full query/data workload. Do not adopt script/style/offline suppression as an optimization.",
+  "open_gates": [
+    "250 MiB whole-browser target",
+    "Physical Android deferred"
+  ],
+  "observer_script_sha256": "9e7960e91d64ee81344cdadb14d793cc9afe5a67b5d2f154cefc5118917dbe90"
+}
