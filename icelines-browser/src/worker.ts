@@ -55,6 +55,13 @@ self.onmessage = (event: MessageEvent<EngineRequest>) => {
       const kind = error instanceof WebAssembly.RuntimeError ? 'engine_failure' : message.includes('cancelled') ? 'cancelled' : message.includes('missing data') ? 'missing_data' : 'engine_error';
       response.error = { kind, message };
     }
+    if (request.operation === 'load' && request.payload instanceof ArrayBuffer) {
+      // Rust's synchronous loader has finished with this worker-owned staging
+      // copy. The UI retains separate canonical bytes for export and recovery.
+      const staging = request.payload as ArrayBuffer & { transfer?: (length: number) => ArrayBuffer };
+      try { staging.transfer?.(0); } catch { /* Optional release must not change the engine result. */ }
+      request.payload = null;
+    }
     self.postMessage(response, { transfer: response.value instanceof ArrayBuffer ? [response.value] : [] });
   });
 };
