@@ -2,9 +2,9 @@
 
 ## Merged single-buffer gzip expansion (2026-10-13)
 
-Clean master b29ba81c includes the merged PR93 catalog-context guard.
-Public release remains 2e265236; neither this prototype nor PR93 is published here.
-Candidate c0154ac6 decodes authenticated gzip into one bounded output buffer,
+Base b29ba81c includes the merged PR93 catalog-context guard. Published master
+e58a3bfc includes that guard and the single-buffer decoder from PR94.
+Initial candidate c0154ac6 decodes authenticated gzip into one bounded output buffer,
 removing retained decoded chunks and final complete concatenation.
 WASM, raw package files and compressed catalog match the control exactly.
 

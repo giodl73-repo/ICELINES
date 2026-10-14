@@ -217,7 +217,7 @@ Current public e0741daa release and its publication/rollback evidence are unchan
 See viewport-provenance-20261013.json and MEMORY-ATTRIBUTION.md for limits and the
 retained failed anchoring/height probes. No claim of full first-release readiness.
 
-### Candidate print/AX follow-up
+### Historical candidate print/AX follow-up
 
 680a89cb adds actual print preparation/restoration and readable print-only layout.
 All 933 player-button names are exposed in engine order in Chromium's AX tree.
