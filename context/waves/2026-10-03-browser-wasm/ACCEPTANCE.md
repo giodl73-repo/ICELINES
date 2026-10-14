@@ -6,6 +6,51 @@ It does not declare the full plan complete.
 
 ## Current release
 
+Public source is75e6ba9709e31e2cdeed633958f923f0ae36c01d (merged PR102).
+Authenticated catalog gzip input now uses pull-based writes of at most8 KiB.
+Canonical bytes, hashes, context, cancellation/deadlines, raw fallback, eight
+residents and engine/schema remain unchanged. This bounds individual writes,
+not all native decoder allocations or total browser memory.
+
+All29 PR checks pass. Master/preview Git tree is identical
+1bc42ba61dabcdb9b5509e50346bc9736473f717. Automatic master checks did not appear;
+nonpublishing dispatch38571406174 succeeds, retaining artifact11897464859.
+No native master run is claimed. Exact182 files/75 packages/27 shell assets
+verify;179 non-metadata files match reviewed preview3b61f10e. Shell is
+e575ec099d635615476610b46ec106b97e83d28b66fc3980bbdcbbf4292c1a36;
+engine remains8482c9fd825f773eb3fc0956e42f67f0931caf871d2bab89c76b01a4738aab3a.
+163 browser units and native/WASM parity pass in CI. Exact master corruption,
+catalog-context, viewport/keyboard/AX, offline reopening and24-page/two-parser
+PDF checks pass; every933 name/rank remains complete, with no out-of-page text.
+Actual executing WASM fingerprints match; first/last PDF pages look readable.
+
+Independent opposite-order Windows pairs show raw7.18/6.75 MiB lower peaks;
+baselines differ3.11/3.34. One Linux-built CI pair shows392.25/394.16 MiB with
+228.21/233.79 baselines; it is not independent opposite-order replication or
+exact causal saving. Control102.92 ms warm maximum is retained. Exact master
+387.24/389.67 MiB has228.74/229.77 baselines. First101.06 ms warm maximum remains
+in evidence; repeat93.81 ms is a new observation, not a relabeled pass or waiver.
+All75/eight/two905/332 imports/20 queries/restart preserve original flags/sampler/
+network observer, no forced GC and every sampled phase.250 MiB still FAILS.
+
+Retained-byte publication38574453158, rollback38575692853 to5ef015c4 and restore
+38576162667 succeed without rebuild.273 served files match each completed phase;
+all95 documentation hashes are identical. Rollback's first static read had one
+HTTP503 (272 matches); the original failure remains, and a new check matches273.
+The original owned profile completes consent-driven5ef->75->5ef->75 transitions,
+preserving saved season/schedule bytes, revisions, metadata and settings. Gzip
+905-player acquisition exports exact raw JSON without requesting its raw route.
+Offline process reopening runs a fresh eight-player query/detail with uncached
+probes blocked before/after debugger inspection. Executing decoder/module and
+WASM hashes match every phase. The schedule remains a frozen fixture, not live
+NHL proof. Physical Android remains explicitly deferred.
+
+Evidence: chunked-decoder-input-ci/master/public-* and publication provenance
+dated20261014. This is an incremental validation release. Full resource/mobile
+acceptance remains incomplete.
+
+## Historical5ef015c4 release
+
 Public source is5ef015c4d47ebbcee8234eb92f1fe83716b45054, merged PR99's wasm32-only
 repository stats allocation change. Large SeasonStats rows use unique Box
 ownership behind smaller hash slots; native rows remain inline. Public borrowed

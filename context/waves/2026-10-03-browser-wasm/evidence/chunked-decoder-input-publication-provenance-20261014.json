@@ -1,0 +1,92 @@
+{
+  "status": "Published75e6ba97; retained-byte forward/rollback/restore validated; full resource/mobile acceptance still open",
+  "source": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+  "previous_good_source": "5ef015c4d47ebbcee8234eb92f1fe83716b45054",
+  "first_run": 38574453158,
+  "rollback_run": 38575692853,
+  "restore_run": 38576162667,
+  "source_master_build": 38571406174,
+  "source_master_artifact": 11897464859,
+  "shell": "e575ec099d635615476610b46ec106b97e83d28b66fc3980bbdcbbf4292c1a36",
+  "reports": {
+    "first-static": {
+      "file": "chunked-decoder-input-public-first-static-20261014.json",
+      "sha256": "f4aa6e3c38631b3758251d3d6add33f36e6b2e72d42ecb29dce353115a752082"
+    },
+    "first-preservation": {
+      "file": "chunked-decoder-input-public-first-preservation-20261014.json",
+      "sha256": "6f15961c7f054144f466f244f2c9bd3cc2201ebc1f2dce73af14d636b3b1f4e5"
+    },
+    "first-history": {
+      "file": "chunked-decoder-input-public-first-history-20261014.json",
+      "sha256": "985f6f53d2424fc796cc13083b753c63e58a10c86d1b1b50ac3a3300013e5737"
+    },
+    "first-update": {
+      "file": "chunked-decoder-input-public-first-update-20261014.json",
+      "sha256": "6e248fef5e32f01744bde47aa3bfeea9e3899f80b222c5691bb5a37a17d4247d"
+    },
+    "first-offline": {
+      "file": "chunked-decoder-input-public-first-offline-20261014.json",
+      "sha256": "eaa3217a2f46fff00d728792d3af6fb895a28946d72edea00a78f5d6b1613343"
+    },
+    "rollback-static": {
+      "file": "chunked-decoder-input-public-rollback-static-20261014.json",
+      "sha256": "b7d54be92c7a3f564afa45574255fb1b96933e0fc37efdc888a27cf69f5989ac"
+    },
+    "rollback-preservation": {
+      "file": "chunked-decoder-input-public-rollback-preservation-20261014.json",
+      "sha256": "6f15961c7f054144f466f244f2c9bd3cc2201ebc1f2dce73af14d636b3b1f4e5"
+    },
+    "rollback-history": {
+      "file": "chunked-decoder-input-public-rollback-history-20261014.json",
+      "sha256": "df1b61c2e4c14a40597f5cd4e9a6af769da2594c01f5a91cb619ac64b14105d7"
+    },
+    "rollback-update": {
+      "file": "chunked-decoder-input-public-rollback-update-20261014.json",
+      "sha256": "42b6cb1f4373db2016e5b5c1468df7337187f2037de2e86d5b435df0b8138077"
+    },
+    "rollback-offline": {
+      "file": "chunked-decoder-input-public-rollback-offline-20261014.json",
+      "sha256": "4a27f990a4e4d933a5ed6cbacb86745797a70539c5605af73ad1877b43cd0b4d"
+    },
+    "restore-static": {
+      "file": "chunked-decoder-input-public-restore-static-20261014.json",
+      "sha256": "1901e6bd8034fd2635fd40053ee5372d872fe920d06ef23f92aaae48dda9dac5"
+    },
+    "restore-preservation": {
+      "file": "chunked-decoder-input-public-restore-preservation-20261014.json",
+      "sha256": "6f15961c7f054144f466f244f2c9bd3cc2201ebc1f2dce73af14d636b3b1f4e5"
+    },
+    "restore-history": {
+      "file": "chunked-decoder-input-public-restore-history-20261014.json",
+      "sha256": "5b3baf166d56683dd2dd7a11be899d2d67dc230e724f691cad42164b1b506781"
+    },
+    "restore-update": {
+      "file": "chunked-decoder-input-public-restore-update-20261014.json",
+      "sha256": "d1f8750569eab744354f2b4254011cc7b795bf65f3e9ffab451685f4fe49917c"
+    },
+    "restore-offline": {
+      "file": "chunked-decoder-input-public-restore-offline-20261014.json",
+      "sha256": "cf395b39a5ba0167b384355ebb118f90c6a4cd360d5b0158e644beb2895c578b"
+    },
+    "rollback-static-first-failure": {
+      "file": "chunked-decoder-input-public-rollback-static-first-failure-20261014.json",
+      "sha256": "eeb7e42e7497e9bee98a7feb3332fd2205919529b62076f4333312be6e00473c"
+    }
+  },
+  "scope": "All three deployments use retained reviewed bytes, no rebuild.273 served files match each phase; all95 documentation hashes identical. Same original owned profile direct5ef->75->5ef->75 consent-driven transitions preserve saved season/schedule bytes/revisions/metadata/settings. Online gzip905 raw export exact, no raw request. Offline process reopening fresh8-player query/detail, uncached probes blocked before/after debugger; executing modules and WASM fingerprint match each phase. Frozen schedule fixture, not live NHL/physical phone/whole-browser memory proof.",
+  "retained_failure": "Rollback first static check matched272 with one HTTP503. Original failure preserved; one new full check matched273, then same-profile rollback/offline passed. No evidence overwritten or deployment rerun for the transient read failure.",
+  "profile": "target/public-rehearsal-wLiGtK/profile",
+  "saved_season_sha256": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+  "saved_schedule_sha256": "0142670ebe87b8d584a9fda0575e742fc43ce652ad2c2f297d7c48e73060222a",
+  "helper_sha256": {
+    "target/public-gzip-release-rehearsal.mjs": "bedbca5acb9b102395dbf86fced18b71b6438d2f7693a2e9b4b6f45f630f4f82",
+    "target/verify-deployed-retained.py": "97cd70eaa5413a2e8672965d43485acc6a8991e861c594704f1be8ab2eb7681f",
+    "target/reset-owned-download-history.py": "c46916681ba25dfae07804d2f5278162b97eaa6691fba1fa203c290ef4f0431c"
+  },
+  "memory": "Exact master387.24/389.67 MiB; first101.06 ms warm max retained and repeat93.81 ms is a separate observation, not a waiver.250 MiB remains FAILED.",
+  "open_gates": [
+    "250 MiB whole-browser resource acceptance",
+    "Physical Android explicitly deferred"
+  ]
+}

@@ -38,3 +38,26 @@ BENCH/KEEL consensus: repeated lower local peaks justify a candidate, not exact
 causal savings or full acceptance. Amendments incorporated: original workload
 and baselines retained; narrow allocation-bound language; CI/exact artifact and
 publication/recovery conditions remain explicit. No250 MiB or Android approval.
+
+## Final reconciliation after publication
+
+PR102 is merged/published as75e6ba97 after29 PR checks. Master/preview Git trees
+match; no automatic native master run exists or is claimed. Nonpublishing master
+dispatch38571406174 succeeds, with exact182-file retained artifact11897464859;
+all179 non-metadata files match reviewed CI. Actual master corruption/context,
+offline/viewport/keyboard/AX and24-page/two-parser933-name/rank print checks pass.
+Executing WASM bytecode matches the retained binary. First master101.06 ms warm
+max remains in evidence; repeat93.81 is separate. Neither replaces the original
+nor waives the resource/latency evidence.
+
+Retained-byte forward/rollback/restore all succeed without rebuild, with273
+served files and95 identical documentation hashes in each completed phase.
+First rollback static check had one HTTP503; failure remains, a new full check
+passes. Original owned profile5ef->75->5ef->75 transitions preserve saved data,
+metadata/revisions/settings, exact gzip export and offline fresh queries/detail.
+Executing decoder/module/WASM fingerprints and blocked network probes match.
+
+BENCH/WIRE/KEEL conditions for the incremental validation release are satisfied;
+records explicitly preserve failures and scope limits. Full acceptance remains
+NEEDS-WORK:250 MiB fails and physical Android remains deferred. This review does
+not approve a budget waiver, physical-device claim or completed full goal.

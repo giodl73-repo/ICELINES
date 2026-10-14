@@ -1,0 +1,82 @@
+{
+  "status": "Exact master75e6ba97 published; retained-byte forward/rollback/restore verified; full resource/mobile acceptance remains open",
+  "source": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+  "browser_run": 38571406174,
+  "event": "workflow_dispatch",
+  "publish": false,
+  "artifact_id": 11897464859,
+  "shell": "e575ec099d635615476610b46ec106b97e83d28b66fc3980bbdcbbf4292c1a36",
+  "engine_sha256": "8482c9fd825f773eb3fc0956e42f67f0931caf871d2bab89c76b01a4738aab3a",
+  "native_scope": "29 PR checks passed; whole Git tree1bc42ba61dabcdb9b5509e50346bc9736473f717 identical master/preview. No automatic native master run exists or is claimed.",
+  "reports": {
+    "verification": {
+      "file": "chunked-decoder-input-master-verification-20261014.json",
+      "sha256": "8538d53e3bb0ae1f4a9b6b63fa826eec39b7eef3f1cc1409129e79a6e81d31bf"
+    },
+    "memory-first": {
+      "file": "chunked-decoder-input-master-memory-first-20261014.json",
+      "sha256": "7caf28a8155592da8227254faa072ab764637ba71beded718fe6027930897021"
+    },
+    "memory-repeat": {
+      "file": "chunked-decoder-input-master-memory-repeat-20261014.json",
+      "sha256": "379a3b7de35440bf96bf8823c527bfbc3692c7aa8be062c306f7096ab92e2277"
+    },
+    "refusal": {
+      "file": "chunked-decoder-input-master-refusal-20261014.json",
+      "sha256": "ea5640683d265b18cecf491b92dd4049367717d23ae58cbc7c068bb5048d322a"
+    },
+    "context": {
+      "file": "chunked-decoder-input-master-context-20261014.json",
+      "sha256": "1f11b78640c01023364d97ce44453f4ef505cdcac8fd27f3b1a594c206a4634c"
+    },
+    "offline": {
+      "file": "chunked-decoder-input-master-offline-20261014.json",
+      "sha256": "10830a433bd3c9e762c16b5f316f0d9ae1c8dbf2502c415665a8612f80f56aab"
+    },
+    "viewport": {
+      "file": "chunked-decoder-input-master-viewport-20261014.json",
+      "sha256": "c2552fdb0f85e17e694e4d9fe760c24bf8b8074b0ea7b84a8415acdd8ef3ef88"
+    },
+    "print": {
+      "file": "chunked-decoder-input-master-print-20261014.json",
+      "sha256": "2ba3c644062084c178481edfda2e35b1c5aa4196d9ba7b7eb129b7d76d9a99d6"
+    },
+    "print-reference": {
+      "file": "chunked-decoder-input-master-print-reference-20261014.json",
+      "sha256": "11040639dcccbf5a7aaa565b03a4346c419b64c4f7728feefac605c040a1140e"
+    },
+    "executing-wasm": {
+      "file": "chunked-decoder-input-master-executing-wasm-20261014.json",
+      "sha256": "de99768924418c0f5c4d4138517828f9604adff94ef11dd3d2bf7443cf6a7f7f"
+    },
+    "pdf": {
+      "file": "chunked-decoder-input-master-print-20261014.pdf",
+      "sha256": "e88b76cab7f9f4ec95952ce1d9dfe7a4d61cea8249710bf20f8aab8dabc95c8a"
+    }
+  },
+  "measurements": {
+    "memory-first": {
+      "private_peak_mib": 387.2421875,
+      "blank_mib": 228.7421875,
+      "warm_max_ms": 101.056700000001
+    },
+    "memory-repeat": {
+      "private_peak_mib": 389.671875,
+      "blank_mib": 229.76953125,
+      "warm_max_ms": 93.80809999999474
+    }
+  },
+  "scope": "Both complete normal75/eight/two905/332/20/restart measurements; all required phases, original flags/sampler/network observer, no forced GC. Unpaired master versus earlier reports is not a universal saving.",
+  "latency": "First101.06 ms maximum retained, not relabeled as passing. New observation93.81 ms; repeat addresses variability without deleting first or changing flags. No latency/budget waiver.",
+  "functional": "Exact182 files/75 packages;179 non-metadata files match reviewed CI. Corruption/exact export, six fresh/cached context refusals, offline reopening,933-player viewport/keyboard/AX/print transitions and24-page/two-parser PDF pass. First/last PDF pages visually inspected; executing WASM bytecode matches retained binary. Not physical printer/screen-reader/phone or memory acceptance.",
+  "publication": "Retained-byte first38574453158, rollback38575692853 and restore38576162667 verified; all95 docs hashes identical; same-profile saved data preserved. First rollback static HTTP503 retained; new full check passed.",
+  "published_source": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+  "open_gates": [
+    "250 MiB whole-browser FAILED",
+    "Physical Android explicitly deferred"
+  ],
+  "final_provenance": [
+    "chunked-decoder-input-master-provenance-20261014.json",
+    "chunked-decoder-input-publication-provenance-20261014.json"
+  ]
+}
