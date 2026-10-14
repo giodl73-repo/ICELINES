@@ -3,6 +3,8 @@ import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { buildOfflineShell } from './offline-build.mjs';
+import { gzipSync } from 'node:zlib';
+import { createHash } from 'node:crypto';
 const root = fileURLToPath(new URL('.', import.meta.url));
 const expectedDist = resolve(await realpath(root), 'dist');
 try {
@@ -16,12 +18,15 @@ await mkdir(new URL('./dist/', import.meta.url), { recursive: true });
 for (const name of ['index.html', 'style.css']) await cp(new URL(name, import.meta.url), new URL('dist/' + name, import.meta.url));
 await cp(new URL('public/pkg/', import.meta.url), new URL('dist/pkg/', import.meta.url), { recursive: true });
 const catalog = JSON.parse(await readFile(new URL('public/catalog.json', import.meta.url), 'utf8'));
-await cp(new URL('public/catalog.json', import.meta.url), new URL('dist/catalog.json', import.meta.url));
 await mkdir(new URL('dist/data/', import.meta.url), { recursive: true });
 for (const entry of catalog.packages) {
   if (!/^data\/[a-f0-9]{64}\.json$/.test(entry.url)) throw new Error('Unsafe publication package path');
   await cp(new URL('public/' + entry.url, import.meta.url), new URL('dist/' + entry.url, import.meta.url));
+  const compressed = gzipSync(await readFile(new URL('public/' + entry.url, import.meta.url)));
+  entry.transport = {encoding:'gzip',url:entry.url + '.gz',bytes:compressed.length,sha256:createHash('sha256').update(compressed).digest('hex')};
+  await writeFile(new URL('dist/' + entry.transport.url, import.meta.url),compressed);
 }
+await writeFile(new URL('dist/catalog.json', import.meta.url),JSON.stringify(catalog,null,2) + '\n');
 try { await cp(new URL('public/build-info.json', import.meta.url), new URL('dist/build-info.json', import.meta.url)); }
 catch (error) { if (error.code !== 'ENOENT') throw error; }
 await writeFile(new URL('dist/.nojekyll', import.meta.url), '');

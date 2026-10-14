@@ -1007,3 +1007,15 @@ L0: model/season/null/normalization fixtures. L1: native/WASM portable parity.
 L2: browser source probes separately recorded, not CI live upstream calls.
 Status: active foundation; remaining acquisition/environment gates pending.
 Execution: context/waves/2026-10-03-browser-wasm/pulses/pulse-01.md.
+
+## Browser delivery optimization — CHG-120
+
+WP-BW-06 adds deterministic authenticated gzip files alongside every canonical
+JSON package; artifact checks verify envelope bytes and bounded byte-identical
+expansion. WP-BW-05 selects supported gzip transport before existing context and
+engine validation, retaining raw-package compatibility and previous-good recovery.
+The offline verifier now distinguishes full result count from mounted viewport
+rows, using Show all players for complete baseline/filter comparisons.
+Local functional/resource evidence passes within its measured scope. Reviewed CI,
+exact master artifact, public gzip transfer/execution and update/rollback proof
+remain pending. Full resource and physical-device acceptance remain open.

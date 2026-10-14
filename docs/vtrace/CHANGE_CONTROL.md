@@ -177,3 +177,19 @@ application build, explicit session versus IndexedDB persistence.
 Affected: REQ-BROWSER-001, IF-BROWSER-001, IF-FETCH-001, IF-BUILD-001, WP-BW-01.
 Existing native capability and lean/standalone statuses are unchanged.
 The build-step/JavaScript exception applies only to the new static browser surface.
+
+## CHG-120: Authenticated gzip browser catalog delivery (2026-10-13)
+
+Decision: accepted for scoped implementation and CI review, not full release acceptance.
+Reason: reduce public season transfer and browser allocation without changing data.
+Affected: IF-BROWSER-001, REQ-BROWSER-001, WP-BW-05, WP-BW-06; browser artifact
+verification and viewport-aware offline process reopening.
+The version1 catalog may add an optional gzip transport descriptor while raw JSON
+URLs, dataset revisions, local storage, recovery and exports stay unchanged.
+Review: BENCH / WIRE / KEEL / FORGE / EDGE; one agent applying five lenses.
+Local prototype evidence passes; two opposite-order full-workload pairs show about
+44–45 MiB lower private peaks. The fixed 250 MiB target and physical Android gate
+remain open. CI/master/public-origin transfer and update/rollback evidence are
+required before promoting the delivery implementation.
+Trace updates: INTERFACES, WORK_PACKAGES, TRACE, VERIFICATION and VALIDATION.
+No resource waiver, native dependency change or hockey semantics change.

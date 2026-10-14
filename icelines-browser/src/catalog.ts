@@ -23,7 +23,15 @@ export function validateCatalog(value: unknown): CatalogEntry[] {
     const context = `${season}:${season_type}`;
     if (ids.has(id) || contexts.has(context)) throw new Error('Ambiguous catalog identity or season context');
     ids.add(id); contexts.add(context);
-    return {id,season:season as number,season_type,source,url:url as string,sha256,bytes,skaters:skaters as number,goalies:goalies as number};
+    let transport: CatalogEntry['transport'];
+    if (entry.transport !== undefined) {
+      const wire = entry.transport;
+      if (!object(wire) || wire.encoding !== 'gzip' || wire.url !== `data/${sha256}.json.gz`
+        || typeof wire.sha256 !== 'string' || !/^[a-f0-9]{64}$/.test(wire.sha256)
+        || typeof wire.bytes !== 'number' || !Number.isSafeInteger(wire.bytes) || wire.bytes <= 0 || wire.bytes > MAX_BYTES) throw new Error('Invalid catalog transport');
+      transport = {encoding:'gzip', url:wire.url as string, sha256:wire.sha256, bytes:wire.bytes};
+    }
+    return {id,season:season as number,season_type,source,url:url as string,sha256,bytes,skaters:skaters as number,goalies:goalies as number,...(transport ? {transport} : {})};
   });
 }
 

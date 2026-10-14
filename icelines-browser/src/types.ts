@@ -1,6 +1,7 @@
 export interface CatalogEntry {
   id: string; season: number; season_type: 'regular' | 'playoff'; source: string;
   url: string; sha256: string; bytes: number; skaters: number; goalies: number;
+  transport?: { encoding: 'gzip'; url: string; sha256: string; bytes: number };
 }
 export interface PackageData {
   schema_version: number; season: number; season_type: 'regular' | 'playoff';

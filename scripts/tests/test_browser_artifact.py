@@ -1,6 +1,7 @@
 """Retained artifact integrity/refusal cases, using synthetic bytes only."""
 import importlib.util
 import json
+import gzip
 from pathlib import Path
 import tempfile
 import unittest
@@ -85,6 +86,47 @@ class BrowserArtifactTests(unittest.TestCase):
     def test_refuses_extra_file(self):
         (self.root / "unexpected.txt").write_text("extra")
         with self.assertRaisesRegex(ValueError,"unexpected"):
+            artifact.verify(self.root,self.commit,self.build)
+
+    def add_transport(self, payload=None, **changes):
+        catalog_path = self.root / 'catalog.json'
+        catalog = json.loads(catalog_path.read_bytes())
+        entry = catalog['packages'][0]
+        raw = (self.root / entry['url']).read_bytes()
+        compressed = gzip.compress(raw if payload is None else payload, mtime=0)
+        wire = {'encoding':'gzip', 'url':entry['url'] + '.gz',
+                'bytes':len(compressed), 'sha256':artifact.digest(compressed)}
+        (self.root / wire['url']).write_bytes(compressed)
+        entry['transport'] = {**wire, **changes}
+        catalog_path.write_bytes(json.dumps(catalog).encode())
+        # Reseal the shell so tests reach transport validation, not a stale
+        # catalog digest failure.
+        shell_path = self.root / 'shell-manifest.json'
+        shell = json.loads(shell_path.read_bytes())
+        for asset in shell['assets']:
+            if asset['path'] == 'catalog.json':
+                asset.update(bytes=catalog_path.stat().st_size,
+                             sha256=artifact.digest(catalog_path.read_bytes()))
+        identity = {'assets':shell['assets'], 'worker_sha256':shell['worker_sha256']}
+        self.build = artifact.digest(json.dumps(identity,separators=(',', ':')).encode())
+        shell['build'] = self.build
+        shell_path.write_bytes(json.dumps(shell).encode())
+        (self.root / 'sw.js').write_bytes(('const manifest = ' + json.dumps(shell) + ';\n').encode())
+        return self.root / wire['url']
+
+    def test_accepts_and_authenticates_compressed_transport(self):
+        wire = self.add_transport()
+        self.assertEqual(artifact.verify(self.root,self.commit,self.build)['packages'],1)
+        wire.write_bytes(wire.read_bytes() + b'corrupt')
+        with self.assertRaisesRegex(ValueError,'compressed package integrity'):
+            artifact.verify(self.root,self.commit,self.build)
+
+    def test_refuses_transport_redirect_and_wrong_expansion(self):
+        self.add_transport(url='../outside.gz')
+        with self.assertRaisesRegex(ValueError,'unsafe compressed'):
+            artifact.verify(self.root,self.commit,self.build)
+        self.add_transport(payload=b'wrong expanded JSON')
+        with self.assertRaisesRegex(ValueError,'expansion mismatch'):
             artifact.verify(self.root,self.commit,self.build)
 
 

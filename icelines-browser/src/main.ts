@@ -8,7 +8,7 @@ import { liveReads } from './live-coordination.js';
 import { queryExport, queryCsv } from './query-export.js';
 import { readCatalog } from './catalog.js';
 import { reconcileSavePolicy } from './save-policy.js';
-import { readPublicBytes } from './network.js';
+import { downloadPackage } from './package-download.js';
 import { MAX_ARCHIVE_BYTES } from './archive.js';
 import { digest, MAX_BYTES, refreshStats } from './acquisition.js';
 import { listSaved, loadSaved, onLibraryChange, packageMetadata, removeSaved, savedActiveId, saveDataset, MAX_SCHEDULE_BYTES } from './library.js';
@@ -265,7 +265,7 @@ async function loadCatalog(entry: CatalogEntry): Promise<void> {
   try {
   const retained = saved.find(item => item.id === entry.id && item.revision === entry.sha256);
   const stored = retained ? await loadSaved(retained.id, retained.revision) : undefined;
-  const bytes = stored ? stored.bytes : await readPublicBytes(new URL(entry.url, location.href.split('#')[0]), entry.bytes,
+  const bytes = stored ? stored.bytes : await downloadPackage(entry, new URL(location.href.split('#')[0]),
     {signal:controller.signal,deadline:Date.now() + 120000});
   if (bytes.length !== entry.bytes || await digest(bytes) !== entry.sha256) throw new Error('Package size or checksum mismatch');
   const context = packageMetadata(JSON.parse(textDecoder.decode(bytes)) as PackageData);

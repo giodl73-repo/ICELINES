@@ -11,8 +11,17 @@ test('published historical catalog validates all entries and projects only runti
   const entries = validateCatalog(published);
   assert.equal(entries.length,75);
   assert.equal(entries[0].url,`data/${entries[0].sha256}.json`);
-  assert.deepEqual(Object.keys(entries[0]).sort(),['bytes','goalies','id','season','season_type','sha256','skaters','source','url'].sort());
+  assert.deepEqual(Object.keys(entries[0]).sort(),['bytes','goalies','id','season','season_type','sha256','skaters','source','url','transport'].sort());
   assert.deepEqual(validateCatalog({schema_version:1,packages:[]}),[]);
+});
+
+test('gzip transport stays on the canonical deployment path and validates its own budget/hash', () => {
+  for (const change of [{url:'https://example.test/data.gz'},{url:'../data.gz'},{url:first.url},{encoding:'zip'},{bytes:0},{bytes:100*1024*1024+1},{sha256:'x'}]) {
+    assert.throws(()=>validateCatalog(catalog({...first,transport:{...first.transport,...change}})),/transport/);
+  }
+  const {transport,...legacy}=first;
+  const {transport: projectedTransport,...projected}=validateCatalog(catalog(first))[0];
+  assert.deepEqual(validateCatalog(catalog(legacy)),[projected]);
 });
 
 test('catalog cannot redirect package reads outside the exact content-addressed deployment path', () => {
