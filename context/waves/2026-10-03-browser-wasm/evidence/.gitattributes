@@ -1,3 +1,6 @@
 # Reports are archival bytes; provenance hashes must survive every checkout.
 # Some original reporters emit LF and others CRLF. Preserve both exactly.
 *.json -text whitespace=cr-at-eol
+static-package-routing-*.py -text
+static-package-routing-*.mjs -text
+static-package-routing-*.txt -text whitespace=cr-at-eol

@@ -209,3 +209,7 @@ proof before adoption.250 MiB and Android remain open; no budget waiver.
 
 Optional route registration is bounded to2 seconds inside the existing120-second
 shell install deadline; a stalled routing promise cannot prevent verified fallback.
+
+CHG-123 disposition: not adopted2026-10-14. Actual route/fallback/offline/integrity
+behavior passes locally, but419.86/396.07 MiB matched comparison shows no memory
+saving. No PR/CI/publication or resource-budget revision.

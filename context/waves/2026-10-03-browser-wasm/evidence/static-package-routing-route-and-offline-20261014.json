@@ -1,0 +1,107 @@
+{
+  "started_at": "2026-10-14T18:27:56.785Z",
+  "verified": true,
+  "scope": "Isolated Chromium process close/reopen with offline network control; saved versus unsaved seasons, fresh query and player detail. Not physical-phone, total-memory or remote-rollback proof.",
+  "evidence": {
+    "saved_unfiltered_rows": 933,
+    "actual_network_rule_matched": true,
+    "shell_cache_path_preserved": true,
+    "browser_process_closed": true,
+    "local_server_stopped": true,
+    "offline_viewport_rows": 42,
+    "offline": {
+      "online": false,
+      "probe_failed": true
+    },
+    "pending_table": {
+      "visibility": "hidden",
+      "inert": true,
+      "rows": 933
+    },
+    "fresh_filtered_rows": 835,
+    "attached_rows": {
+      "common_rows_unchanged": true,
+      "added": 0,
+      "removed": 98,
+      "rows": 835,
+      "previous_rows": 933
+    },
+    "player_detail": "Connor McDavid",
+    "failed_requests": [
+      {
+        "url": "http://127.0.0.1:59848/ICELINES/workbench/uncached-acceptance-probe-1792002488398",
+        "error": "net::ERR_INTERNET_DISCONNECTED"
+      }
+    ],
+    "failed_query_cleared_rows": true,
+    "retry_query_rows": 835
+  },
+  "profile_retained": "C:\\Users\\giodl\\AppData\\Local\\Temp\\icelines-acceptance-N6VWFf",
+  "retained_artifact": {
+    "commit": "736717149c4aa4696a1f204a8716a0b70269fadf",
+    "shell_build": "b02b81cba7fe7c3f60f7c49016d62a9f9dcdff884b11ed647009d36f9e154ce0",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "url": "http://127.0.0.1:59848/ICELINES/workbench/",
+  "browser": "153.0.8010.12",
+  "build": {
+    "schema_version": 1,
+    "commit": "736717149c4aa4696a1f204a8716a0b70269fadf",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "782009af96f7a4c5fbd17a46e0716d4b6a300d4e85286a65c2b92e5cdd7f12ed",
+    "reused_engine": {
+      "source_commit": "807e2adcd31cdd8cd31a74f87fdeec05247b7ef0",
+      "wasm_sha256": "782009af96f7a4c5fbd17a46e0716d4b6a300d4e85286a65c2b92e5cdd7f12ed",
+      "scope": "Controlled frontend-only local experiment. Exact verified retained engine; Rust source subtrees/workspace manifest match. No claim Rust was recompiled for this frontend candidate; normal CI build required before adoption."
+    }
+  },
+  "saved_package": "20252026-regular",
+  "unsaved_package": "20242025-regular",
+  "static_routing_observer": {
+    "scope": "Additional page Network observer for actual Chrome route source, not memory acceptance.",
+    "responses": [
+      {
+        "url": "http://127.0.0.1:59848/ICELINES/workbench/style.css",
+        "status": 200,
+        "from_service_worker": false,
+        "router": null
+      },
+      {
+        "url": "http://127.0.0.1:59848/ICELINES/workbench/data/93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44.json.gz",
+        "status": 200,
+        "from_service_worker": false,
+        "router": {
+          "ruleIdMatched": 1,
+          "matchedSourceType": "network",
+          "actualSourceType": "network"
+        }
+      },
+      {
+        "url": "http://127.0.0.1:59848/ICELINES/workbench/style.css",
+        "status": 200,
+        "from_service_worker": true,
+        "router": {
+          "ruleIdMatched": 0
+        }
+      },
+      {
+        "url": "http://127.0.0.1:59848/ICELINES/workbench/data/ba4f8b9ab5e8882652099025360d8409b214a917d03ccc3c326a603a7ab86479.json.gz",
+        "status": 200,
+        "from_service_worker": false,
+        "router": {
+          "ruleIdMatched": 1,
+          "matchedSourceType": "network",
+          "actualSourceType": "network"
+        }
+      }
+    ]
+  },
+  "finished_at": "2026-10-14T18:28:09.591Z"
+}

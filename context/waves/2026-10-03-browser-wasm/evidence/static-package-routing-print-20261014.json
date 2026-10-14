@@ -1,0 +1,14 @@
+{
+  "verified": true,
+  "pages": 24,
+  "expected_rows": 933,
+  "ranks_in_order": true,
+  "unicode_names_in_order": true,
+  "independent_extractor_missing_names": [],
+  "first_pace_complete": true,
+  "out_of_page_text": [],
+  "reference_encoding": "utf-8",
+  "pdf_sha256": "1e49c0869a2f89361ad25f304a268be07febd19c88f2e0427b2f8bb252f5c49a",
+  "reference_sha256": "11040639dcccbf5a7aaa565b03a4346c419b64c4f7728feefac605c040a1140e",
+  "scope": "Exact browser PDF text/order/bounds inspection with two parsers; not physical printer, screen-reader, phone or memory acceptance."
+}

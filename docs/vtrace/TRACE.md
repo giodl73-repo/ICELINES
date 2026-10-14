@@ -5,6 +5,10 @@ service-worker.template.js optional package routing and offline tests. Actual
 route, integrity/offline/viewport and full-workload/CI gates pending;250 MiB and
 physical Android remain open. No implementation is promoted by this row.
 
+CHG-123 disposition: not adopted; static-package-routing-provenance-20261014.json
+retains real network/cache routing, correctness and negative resource comparison.
+Production stays75e6ba97;250 MiB/Android remain open.
+
 ## Scope
 
 Repo or feature: `icelines` repo-baseline VTRACE adoption.
