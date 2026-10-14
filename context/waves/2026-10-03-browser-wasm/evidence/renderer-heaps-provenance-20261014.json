@@ -1,0 +1,383 @@
+{
+  "status": "Supplemental full-workload heap evidence only; no production changes or acceptance claim",
+  "published_source_unchanged": "5ef015c4d47ebbcee8234eb92f1fe83716b45054",
+  "reports": {
+    "report": {
+      "file": "renderer-heaps-report-20261014.json",
+      "sha256": "735dcbf533079f91ba3e01740e9896f163fd00d08cea2b8c74ab1d82649eb7b6"
+    },
+    "ready_before_engine": {
+      "file": "renderer-heaps-ready_before_engine-trace-20261014.json",
+      "sha256": "86c13ad5151408b9e6b2a4eb76c189ddc41f7192bebd96612b042664dbecde44"
+    },
+    "loaded_1": {
+      "file": "renderer-heaps-loaded_1-trace-20261014.json",
+      "sha256": "fe9bbbd218f84a668e0f007531d3d04d9c58ce568ef79448c4d6f40c176c1044"
+    },
+    "loaded_8": {
+      "file": "renderer-heaps-loaded_8-trace-20261014.json",
+      "sha256": "65ef41d4f184250747898941bda0eebef398859e8cf118a3a38e65ef4664cdb2"
+    },
+    "loaded_10": {
+      "file": "renderer-heaps-loaded_10-trace-20261014.json",
+      "sha256": "2ff8da2da2904a4448806b0f02a370f17ef5fd2354bc4b6010e2763c528af38b"
+    },
+    "loaded_11": {
+      "file": "renderer-heaps-loaded_11-trace-20261014.json",
+      "sha256": "08ec4cffe3d39b5231b6b827765f0b4eb340b07377e905398fede6b66944cfb3"
+    },
+    "loaded_26": {
+      "file": "renderer-heaps-loaded_26-trace-20261014.json",
+      "sha256": "ee8fb25987244e97ed251d65bc98bbb7809e31cda45397b0bba44d3adf00fffa"
+    },
+    "loaded_75": {
+      "file": "renderer-heaps-loaded_75-trace-20261014.json",
+      "sha256": "4c306b646fe41334cf811be79155517b29a2b8b1083c3713977d4f5c076afb99"
+    },
+    "after_twenty_queries": {
+      "file": "renderer-heaps-after_twenty_queries-trace-20261014.json",
+      "sha256": "094fdbdc88f889aa24153e088a0d12422c711ca42d21f814219f23ef5b670753"
+    },
+    "after_restart": {
+      "file": "renderer-heaps-after_restart-trace-20261014.json",
+      "sha256": "a584f85b99689df3afe1a865094e0f1c3e78c4c8e1f6664e0f6fe50a8ab765a1"
+    }
+  },
+  "checkpoints": [
+    {
+      "label": "ready_before_engine",
+      "targets": [
+        {
+          "type": "service_worker",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 706680,
+            "totalSize": 2097152,
+            "embedderHeapUsedSize": 1115312,
+            "backingStorageSize": 1979395
+          }
+        },
+        {
+          "type": "page",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 2843644,
+            "totalSize": 3993600,
+            "embedderHeapUsedSize": 2940680,
+            "backingStorageSize": 433328
+          }
+        }
+      ]
+    },
+    {
+      "label": "loaded_1",
+      "targets": [
+        {
+          "type": "service_worker",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 724180,
+            "totalSize": 2097152,
+            "embedderHeapUsedSize": 1115312,
+            "backingStorageSize": 1979517
+          }
+        },
+        {
+          "type": "worker",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 574292,
+            "totalSize": 1048576,
+            "embedderHeapUsedSize": 773712,
+            "backingStorageSize": 1155255
+          },
+          "wasm_linear_bytes": 4325376
+        },
+        {
+          "type": "page",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 3818892,
+            "totalSize": 5890048,
+            "embedderHeapUsedSize": 6695808,
+            "backingStorageSize": 4407296
+          }
+        }
+      ]
+    },
+    {
+      "label": "loaded_8",
+      "targets": [
+        {
+          "type": "service_worker",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 726860,
+            "totalSize": 2097152,
+            "embedderHeapUsedSize": 1243568,
+            "backingStorageSize": 1980350
+          }
+        },
+        {
+          "type": "worker",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 1121396,
+            "totalSize": 2359296,
+            "embedderHeapUsedSize": 773712,
+            "backingStorageSize": 6723639
+          },
+          "wasm_linear_bytes": 15335424
+        },
+        {
+          "type": "page",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 5295112,
+            "totalSize": 9560064,
+            "embedderHeapUsedSize": 26065344,
+            "backingStorageSize": 24267244
+          }
+        }
+      ]
+    },
+    {
+      "label": "loaded_10",
+      "targets": [
+        {
+          "type": "service_worker",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 727144,
+            "totalSize": 2097152,
+            "embedderHeapUsedSize": 1243568,
+            "backingStorageSize": 1980588
+          }
+        },
+        {
+          "type": "worker",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 496552,
+            "totalSize": 1835008,
+            "embedderHeapUsedSize": 773712,
+            "backingStorageSize": 8149253
+          },
+          "wasm_linear_bytes": 16318464
+        },
+        {
+          "type": "page",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 3588380,
+            "totalSize": 10084352,
+            "embedderHeapUsedSize": 3154128,
+            "backingStorageSize": 29215095
+          }
+        }
+      ]
+    },
+    {
+      "label": "loaded_11",
+      "targets": [
+        {
+          "type": "service_worker",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 727340,
+            "totalSize": 2097152,
+            "embedderHeapUsedSize": 1243568,
+            "backingStorageSize": 1980707
+          }
+        },
+        {
+          "type": "worker",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 535696,
+            "totalSize": 1835008,
+            "embedderHeapUsedSize": 773712,
+            "backingStorageSize": 8483540
+          },
+          "wasm_linear_bytes": 16318464
+        },
+        {
+          "type": "page",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 4358104,
+            "totalSize": 10084352,
+            "embedderHeapUsedSize": 5907024,
+            "backingStorageSize": 6063432
+          }
+        }
+      ]
+    },
+    {
+      "label": "loaded_26",
+      "targets": [
+        {
+          "type": "service_worker",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 728768,
+            "totalSize": 2097152,
+            "embedderHeapUsedSize": 1243568,
+            "backingStorageSize": 1982492
+          }
+        },
+        {
+          "type": "worker",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 855264,
+            "totalSize": 2359296,
+            "embedderHeapUsedSize": 773712,
+            "backingStorageSize": 19424682
+          },
+          "wasm_linear_bytes": 17563648
+        },
+        {
+          "type": "page",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 3688208,
+            "totalSize": 6152192,
+            "embedderHeapUsedSize": 3014080,
+            "backingStorageSize": 14294113
+          }
+        }
+      ]
+    },
+    {
+      "label": "loaded_75",
+      "targets": [
+        {
+          "type": "service_worker",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 733188,
+            "totalSize": 2097152,
+            "embedderHeapUsedSize": 1487904,
+            "backingStorageSize": 1988323
+          }
+        },
+        {
+          "type": "worker",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 637152,
+            "totalSize": 1572864,
+            "embedderHeapUsedSize": 747360,
+            "backingStorageSize": 2306556
+          },
+          "wasm_linear_bytes": 17563648
+        },
+        {
+          "type": "page",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 3843808,
+            "totalSize": 8249344,
+            "embedderHeapUsedSize": 2940008,
+            "backingStorageSize": 9023522
+          }
+        }
+      ]
+    },
+    {
+      "label": "after_twenty_queries",
+      "targets": [
+        {
+          "type": "service_worker",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 733296,
+            "totalSize": 2097152,
+            "embedderHeapUsedSize": 1610352,
+            "backingStorageSize": 1988323
+          }
+        },
+        {
+          "type": "worker",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 1260216,
+            "totalSize": 2883584,
+            "embedderHeapUsedSize": 578176,
+            "backingStorageSize": 2610322
+          },
+          "wasm_linear_bytes": 17563648
+        },
+        {
+          "type": "page",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 4239376,
+            "totalSize": 15589376,
+            "embedderHeapUsedSize": 3079552,
+            "backingStorageSize": 6144582
+          }
+        }
+      ]
+    },
+    {
+      "label": "after_restart",
+      "targets": [
+        {
+          "type": "service_worker",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 740572,
+            "totalSize": 2097152,
+            "embedderHeapUsedSize": 1610352,
+            "backingStorageSize": 1988323
+          }
+        },
+        {
+          "type": "worker",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 436884,
+            "totalSize": 1048576,
+            "embedderHeapUsedSize": 773712,
+            "backingStorageSize": 24942
+          },
+          "wasm_linear_bytes": 1245184
+        },
+        {
+          "type": "page",
+          "pid": 63716,
+          "heap": {
+            "usedSize": 4553000,
+            "totalSize": 15589376,
+            "embedderHeapUsedSize": 3592792,
+            "backingStorageSize": 6145190
+          }
+        }
+      ]
+    }
+  ],
+  "scope": "Nine additional trace/heap observers throughout full75/eight/two905/332 imports/20 committed queries/restart. Original flags/sampler, no forced GC. Later counters affected by prior observers; all target flags null. Per-target heap/backing/embedder/WASM metrics are not an exact partition of renderer private bytes; do not add them.",
+  "observations": [
+    "WASM linear allocation4.125 MiB first package,14.625 after eight,15.5625 after ten/eleven,16.75 after26/75/queries,1.1875 in fresh worker after restart.",
+    "Page backing storage23.14 MiB after eight and27.86 after ten, then5.78 after eleven. Engine-worker backing reaches18.52 after26 and2.20 after75. This is nonmonotonic, not evidence of an unbounded leak or exact reclaimable bytes.",
+    "Page embedder heap24.86 MiB after eight then3.01 after ten. Used JS heaps are much smaller at these checkpoints. Natural allocation/reclamation timing and observer effects remain uncontrolled.",
+    "After queries, page allocated JS heap14.87 MiB with4.04 used; restart retains14.87 allocated. No forced-GC requirement is waived."
+  ],
+  "diagnostic_private_peak_mib": 400.51171875,
+  "warm_max_ms": 96.34290000000328,
+  "archive_trace_reference_note": "Runtime report keeps nine original local sibling trace filenames. Provenance maps each separately named archived trace and SHA; local trace references are intentionally external to flat archival audit.",
+  "helpers_sha256": {
+    "target/prepare-renderer-heap-checkpoints.py": "7365834225fcebc3e8f0734604036cf0d0dab2e677b41fe184668f2d5c4166d9",
+    "target/renderer-heap-checkpoints.mjs": "3d730596321ccc79e7c98a8b95218e27ecc48005143e7e4a499527ad90995510",
+    "target/target-heap-markers.mjs": "55046e405c34d7e997fe7b793cc1751acd70ff20e45e52d2572d9712890785ed"
+  },
+  "samples_sha256": "51ef045a9bc22ed53d869e0e9fc44b8bd20a2d6f41b8acffd852b96c8077fad1",
+  "retained_output": "target\\renderer-heap-checkpoints-S2l4es",
+  "next_hypothesis": "Investigate redundant main-thread raw-byte verification after downloadPackage/loadSaved already authenticate exact bytes; preserve integrity/refusal/context contracts and test original full workload before adopting any saving.",
+  "open_gates": [
+    "250 MiB whole-browser target FAILED",
+    "Physical Android explicitly deferred"
+  ]
+}
