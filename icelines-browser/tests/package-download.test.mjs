@@ -51,3 +51,42 @@ test('multi-chunk expansion preserves an offset input view and the exact output 
   await assert.rejects(expandPackage(view,large.length-1,options()),/Expanded package/);
   assert.deepEqual(view,wire);
 });
+
+test('successful decoding disposes temporary buffers without detaching canonical output or input',async()=>{
+  const original=ArrayBuffer.prototype.transfer; const disposed=[];
+  try {
+    ArrayBuffer.prototype.transfer=function(length){disposed.push({buffer:this,length:this.byteLength});return original.call(this,length);};
+    const decoded=await downloadPackage(entry,base,options());
+    assert.deepEqual(decoded,raw);assert.equal(decoded.buffer.byteLength,raw.length);
+    assert.ok(disposed.some(item=>item.length===compressed.length));
+    assert.ok(disposed.length>=2);assert.ok(disposed.every(item=>item.buffer.byteLength===0));
+    assert.deepEqual(compressed,new Uint8Array(gzipSync(raw)));
+  }finally{ArrayBuffer.prototype.transfer=original;}
+});
+
+test('decoder waits for EOF before disposing shared queued output views',async()=>{
+  const originalDecoder=globalThis.DecompressionStream;
+  const originalTransfer=ArrayBuffer.prototype.transfer;
+  const shared=new Uint8Array([1,2,3,4,5,6]);let flushComplete=false;
+  try {
+    globalThis.DecompressionStream=class {
+      constructor(){return new TransformStream({transform(_,controller){controller.enqueue(shared.subarray(0,3));controller.enqueue(shared.subarray(3));},flush(){flushComplete=true;}});}
+    };
+    ArrayBuffer.prototype.transfer=function(length){assert.equal(flushComplete,true);return originalTransfer.call(this,length);};
+    const input=new Uint8Array([7,8]);
+    const decoded=await expandPackage(input,6,options());
+    assert.deepEqual(decoded,new Uint8Array([1,2,3,4,5,6]));
+    assert.equal(shared.buffer.byteLength,0);assert.deepEqual(input,new Uint8Array([7,8]));
+  }finally{globalThis.DecompressionStream=originalDecoder;ArrayBuffer.prototype.transfer=originalTransfer;}
+});
+
+test('missing or throwing optional disposal preserves exact acquisition and corrupt-data refusal',async()=>{
+  const original=ArrayBuffer.prototype.transfer;
+  try {
+    for(const replacement of [undefined,function(){throw new Error('disposal unavailable');}]){
+      ArrayBuffer.prototype.transfer=replacement;
+      assert.deepEqual(await downloadPackage(entry,base,options()),raw);
+      await assert.rejects(downloadPackage({...entry,sha256:'0'.repeat(64)},base,options()),/Package size or checksum/);
+    }
+  }finally{ArrayBuffer.prototype.transfer=original;}
+});
