@@ -67,16 +67,17 @@ test('successful decoding disposes temporary buffers without detaching canonical
 test('decoder waits for EOF before disposing shared queued output views',async()=>{
   const originalDecoder=globalThis.DecompressionStream;
   const originalTransfer=ArrayBuffer.prototype.transfer;
-  const shared=new Uint8Array([1,2,3,4,5,6]);let flushComplete=false;
+  const shared=new Uint8Array([1,2,3,4,5,6]);let flushComplete=false;const disposalAfterFlush=[];
   try {
     globalThis.DecompressionStream=class {
       constructor(){return new TransformStream({transform(_,controller){controller.enqueue(shared.subarray(0,3));controller.enqueue(shared.subarray(3));},flush(){flushComplete=true;}});}
     };
-    ArrayBuffer.prototype.transfer=function(length){assert.equal(flushComplete,true);return originalTransfer.call(this,length);};
+    ArrayBuffer.prototype.transfer=function(length){disposalAfterFlush.push(flushComplete);return originalTransfer.call(this,length);};
     const input=new Uint8Array([7,8]);
     const decoded=await expandPackage(input,6,options());
     assert.deepEqual(decoded,new Uint8Array([1,2,3,4,5,6]));
     assert.equal(shared.buffer.byteLength,0);assert.deepEqual(input,new Uint8Array([7,8]));
+    assert.deepEqual(disposalAfterFlush,[true]);
   }finally{globalThis.DecompressionStream=originalDecoder;ArrayBuffer.prototype.transfer=originalTransfer;}
 });
 
