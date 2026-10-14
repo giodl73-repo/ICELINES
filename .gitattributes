@@ -8,3 +8,6 @@ icelines-cli/tests/fixtures/lindsay_l3_pre/*.txt text eol=lf
 
 # Complete IceCast season forecasts are compact machine artifacts.
 examples/icecast-*-season*.json text eol=lf
+
+# Preserve exact bytes of historical Windows verifier failures.
+*.raw.cp1252 -text
