@@ -1,0 +1,629 @@
+{
+  "scope": "Exact sibling {file,sha256} descriptors only; not every archive/module/PDF/source hash field. Strict UTF-8 JSON parsing. checkout-index materializes current index with Windows autocrlf/attributes; Git blob comparison uses HEAD.",
+  "json_files": 227,
+  "descriptors": 62,
+  "external_or_unresolved": [],
+  "results": [
+    {
+      "provenance": "catalog-metadata-index-ci-provenance-20261013.json",
+      "file": "catalog-metadata-index-ci-context-20261013.json",
+      "expected": "4817d84bc2705e26eb6ea549c388402897dc8c60b57efdaa700da48ee64e4807",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-ci-provenance-20261013.json",
+      "file": "catalog-metadata-index-ci-viewport-20261013.json",
+      "expected": "eee9d7018767186d3e48c288e476e9f3ae69565f52c410e0842b6c20cf9c9a5a",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-ci-provenance-20261013.json",
+      "file": "catalog-metadata-index-ci-offline-20261013.json",
+      "expected": "6d9cba09c6462bc91240986d7d9150a4764d5c9873d4af04b6f6c808075351f5",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-ci-provenance-20261013.json",
+      "file": "catalog-metadata-index-ci-refusal-20261013.json",
+      "expected": "136e24c76e076cca09d324b16ca6d8cb315c8a7938156e3ad754913e8379296f",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-master-provenance-20261014.json",
+      "file": "catalog-metadata-index-master-context-20261014.json",
+      "expected": "3a96d7a9799e44905d112ef08a9f66742d4a93c7f33cb2137140f8a75876f8f6",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-master-provenance-20261014.json",
+      "file": "catalog-metadata-index-master-viewport-20261014.json",
+      "expected": "2c5942d860455313609bacb851eb953366bfa6a10860386c8c87ef9381e97530",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-master-provenance-20261014.json",
+      "file": "catalog-metadata-index-master-offline-20261014.json",
+      "expected": "47d2e4463371e501a515fe9c1c2fce10f1aabc6e0d85cabb810dd9c6216bd11d",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-master-provenance-20261014.json",
+      "file": "catalog-metadata-index-master-refusal-20261014.json",
+      "expected": "834fb1793f43068fc8d332985911a5b626dd0ad838debe555525fff435e52e3a",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-master-provenance-20261014.json",
+      "file": "catalog-metadata-index-master-print-20261014.json",
+      "expected": "296914e8e7b2c9a6507ccb13ec94cd91838423fac30389d2ee25d475be9ceff3",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 14,
+      "checkout_crlf": 14
+    },
+    {
+      "provenance": "catalog-metadata-index-master-provenance-20261014.json",
+      "file": "catalog-metadata-index-master-memory-20261014.json",
+      "expected": "8045787da7a824616a69f600fad99e88400b12b23fce08e97137e33ae5b83617",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-provenance-20261013.json",
+      "file": "catalog-metadata-index-candidate-first-20261013.json",
+      "expected": "9fc167d2e84435351a987032116aee8b3944bdd267e04dba25b61423cd5ad13b",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-provenance-20261013.json",
+      "file": "catalog-metadata-index-control-second-20261013.json",
+      "expected": "f5f33403253df608c8fc24aeae2a821cf085ce785e7b5fbc87ee279e03e4094c",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-provenance-20261013.json",
+      "file": "catalog-metadata-index-control-first-20261013.json",
+      "expected": "817efee9d2fb419c492d8adc8a806f6d121c230111130e39fc205b5fa8ca0374",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-provenance-20261013.json",
+      "file": "catalog-metadata-index-candidate-second-20261013.json",
+      "expected": "5f3816ef8d871bdb96853bced83f53c962cb0be882e570630a032f1294623af9",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-provenance-20261013.json",
+      "file": "catalog-metadata-index-context-20261013.json",
+      "expected": "ac1fd95307836d810ba77ddf5b98d4f7f8ccd99fa39adbca17ebcd229e41b682",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-provenance-20261013.json",
+      "file": "catalog-metadata-index-viewport-20261013.json",
+      "expected": "94c1480d773ebc564f982e47b9a599d2d8b067768802f24f193979b93875208f",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-provenance-20261013.json",
+      "file": "catalog-metadata-index-offline-20261013.json",
+      "expected": "a9d3f736cd9a241a98e33952d139f6cf905ca7cab7de95e1c81e42f0e8b5eaef",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-provenance-20261013.json",
+      "file": "catalog-metadata-index-refusal-20261013.json",
+      "expected": "3de5507096568f131f1df5da310af33f0377fb333b8bb932d2118e7f9880940b",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-publication-provenance-20261014.json",
+      "file": "catalog-metadata-index-public-first-static-20261014.json",
+      "expected": "76b70ae91e93161b8abd5b891cbc39bec7583fe69e0562bb3aa5cd2cf13fac99",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 1928,
+      "checkout_crlf": 1928
+    },
+    {
+      "provenance": "catalog-metadata-index-publication-provenance-20261014.json",
+      "file": "catalog-metadata-index-public-first-update-20261014.json",
+      "expected": "ec92112a005f93673b621537941a200dc58770959c02856b0d0a157defded7e3",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-publication-provenance-20261014.json",
+      "file": "catalog-metadata-index-public-first-offline-20261014.json",
+      "expected": "59366033b48cdbe9e4ef63bc7b17efa8868556eddb9ccab7edd3309c280aab0c",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-publication-provenance-20261014.json",
+      "file": "catalog-metadata-index-public-first-history-workaround-20261014.json",
+      "expected": "d6487cebe434eec47e64b7644bf405cbd2328545cccf1bc3253af16f057d9561",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 14,
+      "checkout_crlf": 14
+    },
+    {
+      "provenance": "catalog-metadata-index-publication-provenance-20261014.json",
+      "file": "catalog-metadata-index-public-rollback-static-20261014.json",
+      "expected": "9cae84805931f6d378a6eb0bd37cb7d2cb838c4b5a6a5538aaf1ce7fb693ecef",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 1921,
+      "checkout_crlf": 1921
+    },
+    {
+      "provenance": "catalog-metadata-index-publication-provenance-20261014.json",
+      "file": "catalog-metadata-index-public-rollback-update-20261014.json",
+      "expected": "f1ca861704c3a29fb03c45adc4f8eab40fe5410b0a741ea54d72863a31bb92a6",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-publication-provenance-20261014.json",
+      "file": "catalog-metadata-index-public-rollback-offline-20261014.json",
+      "expected": "d5decc4d46c18e381b5dea3467fe6733d592b694ab477ed8f787266e7e1bd535",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-publication-provenance-20261014.json",
+      "file": "catalog-metadata-index-public-rollback-history-workaround-20261014.json",
+      "expected": "dc81b59b2488aa88c81018185a14b343bbfdb0ecba8aa0364b1b07a4a737c727",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 14,
+      "checkout_crlf": 14
+    },
+    {
+      "provenance": "catalog-metadata-index-publication-provenance-20261014.json",
+      "file": "catalog-metadata-index-public-restore-static-20261014.json",
+      "expected": "42be37706cfd8929544c58d334f1632bd3e97b5f6709b2be85d7f7f25425dfd0",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 1928,
+      "checkout_crlf": 1928
+    },
+    {
+      "provenance": "catalog-metadata-index-publication-provenance-20261014.json",
+      "file": "catalog-metadata-index-public-restore-update-20261014.json",
+      "expected": "804f53bd47bb6640279e13a2b5b112f27573b7294086168a74a7ab170216e156",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-publication-provenance-20261014.json",
+      "file": "catalog-metadata-index-public-restore-offline-20261014.json",
+      "expected": "5dce11527a2be073399d8010aef5851c842d930467a1e926cd2c1a6572140de8",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "catalog-metadata-index-publication-provenance-20261014.json",
+      "file": "catalog-metadata-index-public-restore-history-workaround-20261014.json",
+      "expected": "b0c968eeebfffb6b8e2e60cfa19d839c4bae62e1221e0a431db879bba340f94b",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 14,
+      "checkout_crlf": 14
+    },
+    {
+      "provenance": "resident-catalog-context-master-provenance-20261013.json",
+      "file": "resident-catalog-context-master-offline-20261013.json",
+      "expected": "e694ee80108db0189cc440edc3ece9860c06a1d92e3b95676d8c383be728f48e",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "resident-catalog-context-master-provenance-20261013.json",
+      "file": "resident-catalog-context-master-viewport-20261013.json",
+      "expected": "f6dc2d509ef4df0b0e0e6d391b59cbf18b8b1065cd7a51b73a7d21f0195a2b60",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "resident-catalog-context-master-provenance-20261013.json",
+      "file": "resident-catalog-context-master-catalog-context-20261013.json",
+      "expected": "2db887e449427a68201e9e42442617252378ffe7f6d5192ddc4701c78a8a6883",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-ci-provenance-20261013.json",
+      "file": "stream-expansion-ci-viewport-20261013.json",
+      "expected": "6d68dcda82a8e99596d0fc1dde6842c0600453bffeb689359760bc56a9570e93",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-ci-provenance-20261013.json",
+      "file": "stream-expansion-ci-offline-20261013.json",
+      "expected": "65f530d812558a098fa4a9b807b9bd479200668549ecb0b6a5947c4494084cb4",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-ci-provenance-20261013.json",
+      "file": "stream-expansion-ci-refusal-20261013.json",
+      "expected": "b2d960acfc28b134341dcadce6245f932030117bed6f9ca4b72b6dd883c8d568",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-ci-provenance-20261013.json",
+      "file": "stream-expansion-ci-memory-candidate-20261013.json",
+      "expected": "60319cac5a97a10c773d4d8a39d05c4534eda04e510ab1ed35887c48c5cd2bad",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-ci-provenance-20261013.json",
+      "file": "stream-expansion-ci-memory-control-20261013.json",
+      "expected": "631394630137a8feaebe442a9e2fb864b6075a3d22040c487307c8947a2df548",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-master-provenance-20261013.json",
+      "file": "stream-expansion-master-browser-20261013.json",
+      "expected": "97e026d8e8cb3a85986a5a4a11e68b0c37c5163418c39df8631b6bd2299d66b2",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-master-provenance-20261013.json",
+      "file": "stream-expansion-master-offline-20261013.json",
+      "expected": "64d0216a285ed2b36e36694dbe12b54dfa62c0b40072e196251d744bc8232722",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-master-provenance-20261013.json",
+      "file": "stream-expansion-master-refusal-20261013.json",
+      "expected": "6562cf3b9997139e9b09763503795ffb80d89382dad8998c72f567e2738e34c9",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-master-provenance-20261013.json",
+      "file": "stream-expansion-master-print-20261013.json",
+      "expected": "0d14d76b63541630b178ba373560668db54877714e4dfe0e00891d7cd83e66e9",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 14,
+      "checkout_crlf": 14
+    },
+    {
+      "provenance": "stream-expansion-master-provenance-20261013.json",
+      "file": "stream-expansion-master-memory-20261013.json",
+      "expected": "e9db520d0056a6da5d59e0573f4a814c83c48eec32ae1fb508ef5ad616f9380b",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-provenance-20261013.json",
+      "file": "stream-expansion-candidate-first-20261013.json",
+      "expected": "37d11db910e45b43c5bbe581eab18af4db5f78f21131eb6e6d40bdef0a661e9d",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-provenance-20261013.json",
+      "file": "stream-expansion-control-first-20261013.json",
+      "expected": "3b1e05d8dd8bc5eca03cef1134b7b4bdad1a662aeb4badbe41f578a9b9023427",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-provenance-20261013.json",
+      "file": "stream-expansion-control-repeat-20261013.json",
+      "expected": "6046c5cc9ea0ec5056258bffe4115189c9b1c2b03fd270c752106d068878c722",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-provenance-20261013.json",
+      "file": "stream-expansion-candidate-repeat-20261013.json",
+      "expected": "1a5cf73545b963c6ace367b4b024b96bf2676c9d07f5798a31e248efc3bb17bb",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-provenance-20261013.json",
+      "file": "stream-expansion-browser-20261013.json",
+      "expected": "6df01383cc22bde5c9433152d53e6564449f3ad2adb71579f4c88cab464e3ccc",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-provenance-20261013.json",
+      "file": "stream-expansion-refusal-20261013.json",
+      "expected": "2dce129528689d08caf36fb54c50f48d7d507c4361e5440130c5a1779d21d24c",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-provenance-20261013.json",
+      "file": "stream-expansion-offline-20261013.json",
+      "expected": "864aefd9b933431ceeaa42386c998d836881934c295633dfb4b1c302e7dbc37d",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-publication-provenance-20261013.json",
+      "file": "stream-expansion-public-first-static-20261013.json",
+      "expected": "3d067ce3c3feb0603bbcb4d15180022c26ca1724aa74e8cb656ed59f5be98627",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 1921,
+      "checkout_crlf": 1921
+    },
+    {
+      "provenance": "stream-expansion-publication-provenance-20261013.json",
+      "file": "stream-expansion-public-first-update-20261013.json",
+      "expected": "9300793c8917a6d1da760816ddbbfa190bb35d552bf4b178cded9cd2960ad2cb",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-publication-provenance-20261013.json",
+      "file": "stream-expansion-public-first-offline-20261013.json",
+      "expected": "dffdd9a071109760a4fb9f602416fe071d425a4a4dc1c6f5349cd2ef36773cae",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-publication-provenance-20261013.json",
+      "file": "stream-expansion-public-first-history-workaround-20261013.json",
+      "expected": "414ba59d37839ac89daab9247eb0e056d0ae40b5e7d7cba842a73dee12892296",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 14,
+      "checkout_crlf": 14
+    },
+    {
+      "provenance": "stream-expansion-publication-provenance-20261013.json",
+      "file": "stream-expansion-public-rollback-static-20261013.json",
+      "expected": "a469e33b067e3ada22d7fa24a781b805d563d8480acc795d7581ab6ab9e55b14",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 1921,
+      "checkout_crlf": 1921
+    },
+    {
+      "provenance": "stream-expansion-publication-provenance-20261013.json",
+      "file": "stream-expansion-public-rollback-update-20261013.json",
+      "expected": "f771dd8dc56e19ae6290483b5635ea786f51109e3e40e0d65da0de09481fe9e1",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-publication-provenance-20261013.json",
+      "file": "stream-expansion-public-rollback-offline-20261013.json",
+      "expected": "7f2615841c0befa0f9fea2243a8a0d06e0cc837f4560f9adf79c11b5fb7d3d99",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-publication-provenance-20261013.json",
+      "file": "stream-expansion-public-rollback-history-workaround-20261013.json",
+      "expected": "dc9473c5b41972c601aa597f959fd0a60c47cba5928ea08cdcf6d6dbe9ad39f5",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 14,
+      "checkout_crlf": 14
+    },
+    {
+      "provenance": "stream-expansion-publication-provenance-20261013.json",
+      "file": "stream-expansion-public-restore-static-20261013.json",
+      "expected": "a76da5881cba55ddf45f23079cd4a99fcc7b2a4722c24f041110ed1e1b4f8294",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 1921,
+      "checkout_crlf": 1921
+    },
+    {
+      "provenance": "stream-expansion-publication-provenance-20261013.json",
+      "file": "stream-expansion-public-restore-update-20261013.json",
+      "expected": "1c24b81840b03061f79418c4f623d633d1388b04ae123955dc64374c23ece591",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-publication-provenance-20261013.json",
+      "file": "stream-expansion-public-restore-offline-20261013.json",
+      "expected": "45fa60d965586acf85b437355c46ff27c6f81c46c94a0af5f7509d4ae373e3af",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 0,
+      "checkout_crlf": 0
+    },
+    {
+      "provenance": "stream-expansion-publication-provenance-20261013.json",
+      "file": "stream-expansion-public-restore-history-workaround-20261013.json",
+      "expected": "b00f089923e758bbac0063366bead85f0f7a15b78bbdae08117def9ab5a1dd9d",
+      "working_match": true,
+      "git_blob_match": true,
+      "clean_checkout_match": true,
+      "working_crlf": 14,
+      "checkout_crlf": 14
+    }
+  ],
+  "checkout_directory": "C:\\Users\\giodl\\.codex\\worktrees\\browser-wasm\\icelines\\target\\evidence-checkout-i8jiyp8o"
+}
