@@ -197,6 +197,38 @@ impl StatsRepository {
         self.lru_cap
     }
 
+    /// Local diagnostic branch only: requested capacities, not allocator totals.
+    pub fn diagnostic_storage_inventory(&self) -> serde_json::Value {
+        use std::mem::size_of;
+        let stint_capacity_bytes: usize = self
+            .stats
+            .values()
+            .map(|row| row.team_stints.capacity() * size_of::<crate::season_stats::TeamStint>())
+            .sum();
+        let stint_used_bytes: usize = self
+            .stats
+            .values()
+            .map(|row| row.team_stints.len() * size_of::<crate::season_stats::TeamStint>())
+            .sum();
+        let roster_capacity_bytes: usize = self
+            .rosters_last_stint
+            .values()
+            .chain(self.rosters_all_stints.values())
+            .chain(self.rosters_current.values())
+            .map(|ids| ids.capacity() * size_of::<PlayerId>())
+            .sum();
+        serde_json::json!({
+            "identity_rows": self.identities.len(), "identity_slot_capacity": self.identities.capacity(),
+            "identity_slot_payload_estimate": self.identities.capacity() * size_of::<(PlayerId, PlayerIdentity)>(),
+            "stats_rows": self.stats.len(), "stats_slot_capacity": self.stats.capacity(),
+            "stats_slot_payload_estimate": self.stats.capacity() * size_of::<((PlayerId, Season, SeasonType), StoredSeasonStats)>(),
+            "stats_row_payload_bytes": self.stats.len() * size_of::<SeasonStats>(),
+            "stint_vec_capacity_bytes": stint_capacity_bytes, "stint_vec_used_bytes": stint_used_bytes,
+            "roster_vec_capacity_bytes": roster_capacity_bytes,
+            "season_stats_size": size_of::<SeasonStats>(), "team_stint_size": size_of::<crate::season_stats::TeamStint>()
+        })
+    }
+
     /// Number of resident (season, type) windows.
     pub fn resident_windows(&self) -> usize {
         self.window_lru.len()

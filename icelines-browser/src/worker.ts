@@ -1,15 +1,19 @@
 import type { EngineRequest, EngineResponse, QueryRequest } from './types.js';
 import { importArchive } from './archive.js';
 interface Engine {
+  diagnostic_storage_inventory(): string;
   load_package(bytes: Uint8Array): string; package_metadata(): string; query(request: string): string;
   player_detail(id: number): string; current_season(): number; free(): void;
   schedule_week(bytes: Uint8Array): string;
   select_resident(revision: string): void; resident_revisions(): string; unload_active(): void;
 }
 interface Bindings { default(): Promise<unknown>; BrowserEngine: new () => Engine; }
+let diagnosticMemory: WebAssembly.Memory | undefined;
+let diagnosticLoads = 0;
+const diagnosticCheckpoints = new Set([1,8,10,11,26,75,76,77]);
 const ready = (async () => {
   const bindings = await import(new URL('../pkg/icelines_wasm.js', import.meta.url).href) as Bindings;
-  await bindings.default();
+  diagnosticMemory = (await bindings.default() as {memory:WebAssembly.Memory}).memory;
   return bindings;
 })();
 // Keep initialization rejection handled until a request can receive a typed error.
@@ -39,7 +43,8 @@ self.onmessage = (event: MessageEvent<EngineRequest>) => {
         }
         case 'load': {
           const revision = engine.load_package(new Uint8Array(request.payload as ArrayBuffer));
-          response.value = { revision, residents: JSON.parse(engine.resident_revisions()), metadata: JSON.parse(engine.package_metadata()) }; break;
+          const diagnostic = diagnosticCheckpoints.has(++diagnosticLoads) ? {load:diagnosticLoads,wasm_linear_memory_bytes:diagnosticMemory!.buffer.byteLength,storage:JSON.parse(engine.diagnostic_storage_inventory())} : undefined;
+          response.value = { revision, residents: JSON.parse(engine.resident_revisions()), metadata: JSON.parse(engine.package_metadata()), diagnostic }; break;
         }
         case 'query': response.value = JSON.parse(engine.query(JSON.stringify(request.payload as QueryRequest))); break;
         case 'detail': response.value = JSON.parse(engine.player_detail(Number(request.payload))); break;

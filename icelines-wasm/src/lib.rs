@@ -172,6 +172,28 @@ impl BrowserEngine {
         serde_json::to_string(&metadata).map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
+    /// Local diagnostic only; shallow/requested storage, not a heap partition.
+    pub fn diagnostic_storage_inventory(&self) -> String {
+        use std::mem::size_of;
+        let windows: Vec<_> = self.resident.iter().chain(self.active.iter()).map(|window| {
+            let package = &window.package;
+            let reserved = package.bios.capacity() * size_of::<SkaterBio>()
+                + package.stats.capacity() * size_of::<SkaterStats>()
+                + package.goalies.capacity() * size_of::<GoalieStats>();
+            let used = package.bios.len() * size_of::<SkaterBio>()
+                + package.stats.len() * size_of::<SkaterStats>()
+                + package.goalies.len() * size_of::<GoalieStats>();
+            serde_json::json!({
+                "season":package.season,"season_type":package.season_type,"revision":window.revision,
+                "source_rows":[package.bios.len(),package.stats.len(),package.goalies.len()],
+                "source_capacities":[package.bios.capacity(),package.stats.capacity(),package.goalies.capacity()],
+                "source_vec_reserved_bytes":reserved,"source_vec_used_bytes":used,
+                "repository":window.repository.diagnostic_storage_inventory()
+            })
+        }).collect();
+        serde_json::json!({"scope":"Partial Rust storage inventory. Vec capacities and row sizes; HashMap capacity times slot size is an estimate excluding extra buckets/control bytes. Excludes Strings, other nested heaps, allocator metadata/free space, JS/native buffers and compiled code. Categories must not be used as a complete/additive OS-memory partition.","windows":windows}).to_string()
+    }
+
     pub fn export_package(&self) -> Result<Vec<u8>, JsValue> {
         let active = self
             .active
