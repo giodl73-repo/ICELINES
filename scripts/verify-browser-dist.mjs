@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile, readdir, lstat } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { gzipSync } from 'node:zlib';
+import { gzipSync, gunzipSync } from 'node:zlib';
 import init, { BrowserEngine } from '../icelines-browser/dist/pkg/icelines_wasm.js';
 const dist = new URL('../icelines-browser/dist/', import.meta.url);
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -67,6 +67,14 @@ for (const entry of catalog.packages) {
   assert.ok(!identities.has(entry.id), 'Duplicate catalog identity'); identities.add(entry.id);
   const bytes = await readFile(new URL(entry.url, dist));
   assert.equal(bytes.length, entry.bytes); assert.equal(hash(bytes), entry.sha256);
+  if (entry.transport) {
+    const wire = entry.transport;
+    assert.equal(wire.encoding,'gzip'); assert.equal(wire.url,entry.url + '.gz');
+    const compressed = await readFile(new URL(wire.url,dist));
+    assert.equal(compressed.length,wire.bytes); assert.equal(hash(compressed),wire.sha256);
+    assert.deepEqual(gunzipSync(compressed,{maxOutputLength:entry.bytes}),bytes);
+    allowed.add(wire.url);
+  }
   largestStarterGzipBytes = Math.max(largestStarterGzipBytes, runtimeGzipBytes + gzipSync(bytes).length);
   const engine = new BrowserEngine();
   try {

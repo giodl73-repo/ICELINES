@@ -1,6 +1,8 @@
 """Validate retained distribution bytes without running the artifact's code."""
 import argparse
 import hashlib
+import gzip
+import io
 import json
 from pathlib import Path
 import re
@@ -58,6 +60,20 @@ def verify(root: Path, commit: str, build: str) -> dict:
         if len(payload) != entry["bytes"] or digest(payload) != entry["sha256"]:
             raise ValueError("package integrity mismatch")
         allowed.add(entry["url"])
+        if "transport" in entry:
+            wire = entry["transport"]
+            if (not isinstance(wire, dict) or wire.get("encoding") != "gzip"
+                or wire.get("url") != entry["url"] + ".gz"
+                or not re.fullmatch(r"[a-f0-9]{64}", str(wire.get("sha256")))
+                or not isinstance(wire.get("bytes"), int) or not 0 < wire["bytes"] <= 100 * 1024 * 1024):
+                raise ValueError("unsafe compressed package transport")
+            compressed = (root / wire["url"]).read_bytes()
+            if len(compressed) != wire["bytes"] or digest(compressed) != wire["sha256"]:
+                raise ValueError("compressed package integrity mismatch")
+            with gzip.GzipFile(fileobj=io.BytesIO(compressed)) as stream:
+                if stream.read(len(payload) + 1) != payload:
+                    raise ValueError("compressed package expansion mismatch")
+            allowed.add(wire["url"])
     if any(path.relative_to(root).as_posix() not in allowed for path in paths if path.is_file()):
         raise ValueError("unexpected artifact file")
     if (root / ".nojekyll").read_bytes() != b"":
