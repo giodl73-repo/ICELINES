@@ -1,0 +1,53 @@
+{
+  "scope": "Availability probe of exact historical Chromium153.0.8010.12 native-profile module IDs; uncompressed PDB, compressed extension and pointer forms. No browser workload rerun, no mismatched symbols, no OS/library/application modifications.404 means absent at this exact public URL now; not unavailable everywhere or forever.",
+  "recorded_browser": "153.0.8010.12",
+  "profile_sha256": "06f741b9cecadfa3ea48fa9f7398327b085e1c34e188986f3eb11777764db834",
+  "primary_sources": [
+    "https://www.chromium.org/developers/how-tos/debugging-on-windows/",
+    "https://learn.microsoft.com/en-us/windows/win32/debug/using-symstore"
+  ],
+  "results": [
+    {
+      "module": "chrome.exe.pdb",
+      "uuid": "3752FDEEB21DC2C34C4C44205044422E1",
+      "representation": "chrome.exe.pdb",
+      "url": "https://chromium-browser-symsrv.commondatastorage.googleapis.com/chrome.exe.pdb/3752FDEEB21DC2C34C4C44205044422E1/chrome.exe.pdb",
+      "status": 404
+    },
+    {
+      "module": "chrome.exe.pdb",
+      "uuid": "3752FDEEB21DC2C34C4C44205044422E1",
+      "representation": "chrome.exe.pd_",
+      "url": "https://chromium-browser-symsrv.commondatastorage.googleapis.com/chrome.exe.pdb/3752FDEEB21DC2C34C4C44205044422E1/chrome.exe.pd_",
+      "status": 404
+    },
+    {
+      "module": "chrome.exe.pdb",
+      "uuid": "3752FDEEB21DC2C34C4C44205044422E1",
+      "representation": "file.ptr",
+      "url": "https://chromium-browser-symsrv.commondatastorage.googleapis.com/chrome.exe.pdb/3752FDEEB21DC2C34C4C44205044422E1/file.ptr",
+      "status": 404
+    },
+    {
+      "module": "chrome.dll.pdb",
+      "uuid": "A1FB22D59518C5D74C4C44205044422E1",
+      "representation": "chrome.dll.pdb",
+      "url": "https://chromium-browser-symsrv.commondatastorage.googleapis.com/chrome.dll.pdb/A1FB22D59518C5D74C4C44205044422E1/chrome.dll.pdb",
+      "status": 404
+    },
+    {
+      "module": "chrome.dll.pdb",
+      "uuid": "A1FB22D59518C5D74C4C44205044422E1",
+      "representation": "chrome.dll.pd_",
+      "url": "https://chromium-browser-symsrv.commondatastorage.googleapis.com/chrome.dll.pdb/A1FB22D59518C5D74C4C44205044422E1/chrome.dll.pd_",
+      "status": 404
+    },
+    {
+      "module": "chrome.dll.pdb",
+      "uuid": "A1FB22D59518C5D74C4C44205044422E1",
+      "representation": "file.ptr",
+      "url": "https://chromium-browser-symsrv.commondatastorage.googleapis.com/chrome.dll.pdb/A1FB22D59518C5D74C4C44205044422E1/file.ptr",
+      "status": 404
+    }
+  ]
+}

@@ -1,0 +1,7154 @@
+{
+  "scope": "Read-only exact PE debug-ID/image-size verification and export/unwind boundary inspection for historical native profile. No mismatched symbol use. Unnamed function boundaries are not function identities or allocation ownership; nearest export offsets are deliberately not used.",
+  "profile_sha256": "06f741b9cecadfa3ea48fa9f7398327b085e1c34e188986f3eb11777764db834",
+  "modules": [
+    {
+      "name": "chrome.exe",
+      "sha256": "9b07943f834485b43c9d54caea2951c78715f9f07070a80ab6658465ebd3e711",
+      "image_size": 4603904,
+      "expected_uuid": "3752FDEEB21DC2C34C4C44205044422E1",
+      "debug_ids": [
+        {
+          "uuid": "3752FDEEB21DC2C34C4C44205044422E1",
+          "pdb": "chrome.exe.pdb"
+        }
+      ],
+      "exact_match": true,
+      "named_exports": [
+        {
+          "name": "GetHandleVerifier",
+          "rva": 832176,
+          "forwarded": false
+        },
+        {
+          "name": "IsSandboxedProcess",
+          "rva": 1043184,
+          "forwarded": false
+        }
+      ],
+      "runtime_function_count": 7498,
+      "sampled_frame_count": 3,
+      "frames_in_unwind_ranges": 3,
+      "frames_with_exported_function_start": 0,
+      "frames": [
+        {
+          "rva": 232340,
+          "runtime_function_range": [
+            231744,
+            235138
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 236558,
+          "runtime_function_range": [
+            235840,
+            237490
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 2307257,
+          "runtime_function_range": [
+            2306992,
+            2307364
+          ],
+          "export_at_function_start": []
+        }
+      ]
+    },
+    {
+      "name": "chrome.dll",
+      "sha256": "0b69d34d08e1112d5e7de94e389d20e209a890e931863c734378b39b7394da13",
+      "image_size": 304005120,
+      "expected_uuid": "A1FB22D59518C5D74C4C44205044422E1",
+      "debug_ids": [
+        {
+          "uuid": "A1FB22D59518C5D74C4C44205044422E1",
+          "pdb": "chrome.dll.pdb"
+        }
+      ],
+      "exact_match": true,
+      "named_exports": [
+        {
+          "name": "ChromeMain",
+          "rva": 2997872,
+          "forwarded": false
+        },
+        {
+          "name": "CrashForExceptionInNonABICompliantCodeRange",
+          "rva": 122715504,
+          "forwarded": false
+        },
+        {
+          "name": "GetHandleVerifier",
+          "rva": 49562512,
+          "forwarded": false
+        },
+        {
+          "name": "IsSandboxedProcess",
+          "rva": 54485936,
+          "forwarded": false
+        },
+        {
+          "name": "RelaunchChromeBrowserWithNewCommandLineIfNeeded",
+          "rva": 7543136,
+          "forwarded": false
+        },
+        {
+          "name": "sqlite3_dbdata_init",
+          "rva": 195149872,
+          "forwarded": false
+        }
+      ],
+      "runtime_function_count": 608114,
+      "sampled_frame_count": 880,
+      "frames_in_unwind_ranges": 880,
+      "frames_with_exported_function_start": 1,
+      "frames": [
+        {
+          "rva": 256013,
+          "runtime_function_range": [
+            255600,
+            257604
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 258371,
+          "runtime_function_range": [
+            257616,
+            259004
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 315783,
+          "runtime_function_range": [
+            315584,
+            316034
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 323999,
+          "runtime_function_range": [
+            323600,
+            326042
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 327162,
+          "runtime_function_range": [
+            326816,
+            327434
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 327177,
+          "runtime_function_range": [
+            326816,
+            327434
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 402280,
+          "runtime_function_range": [
+            402256,
+            402335
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 507315,
+          "runtime_function_range": [
+            507120,
+            507489
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 510063,
+          "runtime_function_range": [
+            509088,
+            510243
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 533496,
+          "runtime_function_range": [
+            533328,
+            533687
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 533825,
+          "runtime_function_range": [
+            533696,
+            534489
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 534984,
+          "runtime_function_range": [
+            534496,
+            535673
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 535867,
+          "runtime_function_range": [
+            535680,
+            536081
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 636605,
+          "runtime_function_range": [
+            636432,
+            636853
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 636735,
+          "runtime_function_range": [
+            636432,
+            636853
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 745789,
+          "runtime_function_range": [
+            745664,
+            745914
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 798594,
+          "runtime_function_range": [
+            798416,
+            799145
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 800281,
+          "runtime_function_range": [
+            800032,
+            800780
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 1674411,
+          "runtime_function_range": [
+            1673792,
+            1675567
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 1674433,
+          "runtime_function_range": [
+            1673792,
+            1675567
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 2322541,
+          "runtime_function_range": [
+            2322224,
+            2322690
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 2467354,
+          "runtime_function_range": [
+            2467280,
+            2467421
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 2467722,
+          "runtime_function_range": [
+            2467648,
+            2467789
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 2467883,
+          "runtime_function_range": [
+            2467792,
+            2467950
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 2487144,
+          "runtime_function_range": [
+            2486672,
+            2487427
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 2505604,
+          "runtime_function_range": [
+            2505184,
+            2506516
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 2518106,
+          "runtime_function_range": [
+            2517888,
+            2518248
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 2789629,
+          "runtime_function_range": [
+            2789408,
+            2790210
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 2790510,
+          "runtime_function_range": [
+            2790384,
+            2791329
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 2972067,
+          "runtime_function_range": [
+            2971936,
+            2974323
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 2978721,
+          "runtime_function_range": [
+            2977600,
+            2983740
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 2998702,
+          "runtime_function_range": [
+            2997872,
+            2999531
+          ],
+          "export_at_function_start": [
+            "ChromeMain"
+          ]
+        },
+        {
+          "rva": 3005639,
+          "runtime_function_range": [
+            3004816,
+            3006560
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 3007827,
+          "runtime_function_range": [
+            3007232,
+            3008132
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 3016058,
+          "runtime_function_range": [
+            3015648,
+            3016581
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 3102994,
+          "runtime_function_range": [
+            3101280,
+            3103955
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 3267778,
+          "runtime_function_range": [
+            3267216,
+            3268854
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 3649585,
+          "runtime_function_range": [
+            3648736,
+            3649853
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 3980462,
+          "runtime_function_range": [
+            3980448,
+            3980566
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 3986645,
+          "runtime_function_range": [
+            3986256,
+            3986832
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 4004363,
+          "runtime_function_range": [
+            4004192,
+            4009853
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 4006566,
+          "runtime_function_range": [
+            4004192,
+            4009853
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 4013320,
+          "runtime_function_range": [
+            4011248,
+            4014804
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 4019466,
+          "runtime_function_range": [
+            4018736,
+            4020048
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 4061690,
+          "runtime_function_range": [
+            4061648,
+            4061813
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 4125164,
+          "runtime_function_range": [
+            4125008,
+            4125406
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 4125487,
+          "runtime_function_range": [
+            4125408,
+            4126010
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 4130379,
+          "runtime_function_range": [
+            4129792,
+            4132302
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 4167480,
+          "runtime_function_range": [
+            4167280,
+            4167554
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 4262607,
+          "runtime_function_range": [
+            4262576,
+            4262640
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 4782454,
+          "runtime_function_range": [
+            4780560,
+            4784057
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 4868707,
+          "runtime_function_range": [
+            4868576,
+            4870218
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 4886737,
+          "runtime_function_range": [
+            4886464,
+            4887138
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 4887744,
+          "runtime_function_range": [
+            4887392,
+            4887804
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 4900551,
+          "runtime_function_range": [
+            4900416,
+            4900696
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 4903015,
+          "runtime_function_range": [
+            4902912,
+            4903458
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 4903747,
+          "runtime_function_range": [
+            4903472,
+            4905054
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 4904157,
+          "runtime_function_range": [
+            4903472,
+            4905054
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 4905133,
+          "runtime_function_range": [
+            4905056,
+            4905221
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5106743,
+          "runtime_function_range": [
+            5106608,
+            5106893
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5171601,
+          "runtime_function_range": [
+            5171408,
+            5171767
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5172420,
+          "runtime_function_range": [
+            5171776,
+            5173039
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5196305,
+          "runtime_function_range": [
+            5196128,
+            5196528
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5217455,
+          "runtime_function_range": [
+            5217136,
+            5217966
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5218977,
+          "runtime_function_range": [
+            5218160,
+            5221629
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5219957,
+          "runtime_function_range": [
+            5218160,
+            5221629
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5225723,
+          "runtime_function_range": [
+            5225408,
+            5227151
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5423328,
+          "runtime_function_range": [
+            5423088,
+            5424050
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5424726,
+          "runtime_function_range": [
+            5424064,
+            5425445
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5437141,
+          "runtime_function_range": [
+            5436992,
+            5437185
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5437899,
+          "runtime_function_range": [
+            5437200,
+            5438414
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5438875,
+          "runtime_function_range": [
+            5438624,
+            5439223
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5440868,
+          "runtime_function_range": [
+            5440800,
+            5440874
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5441626,
+          "runtime_function_range": [
+            5441344,
+            5442352
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5441681,
+          "runtime_function_range": [
+            5441344,
+            5442352
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5441807,
+          "runtime_function_range": [
+            5441344,
+            5442352
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5443054,
+          "runtime_function_range": [
+            5442864,
+            5443400
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5451173,
+          "runtime_function_range": [
+            5451072,
+            5451382
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5454994,
+          "runtime_function_range": [
+            5454176,
+            5455471
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5869195,
+          "runtime_function_range": [
+            5866944,
+            5876938
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 5883394,
+          "runtime_function_range": [
+            5882896,
+            5884548
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 6461069,
+          "runtime_function_range": [
+            6460704,
+            6461447
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 6465150,
+          "runtime_function_range": [
+            6465120,
+            6465188
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 6546206,
+          "runtime_function_range": [
+            6545856,
+            6546531
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 6546980,
+          "runtime_function_range": [
+            6546544,
+            6547528
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 6547897,
+          "runtime_function_range": [
+            6547536,
+            6548328
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 6549224,
+          "runtime_function_range": [
+            6548720,
+            6549735
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 6551083,
+          "runtime_function_range": [
+            6550784,
+            6551413
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 6551467,
+          "runtime_function_range": [
+            6551424,
+            6551662
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 6634815,
+          "runtime_function_range": [
+            6634256,
+            6635464
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 6653732,
+          "runtime_function_range": [
+            6653344,
+            6654252
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 6862895,
+          "runtime_function_range": [
+            6862688,
+            6863965
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 6996029,
+          "runtime_function_range": [
+            6995904,
+            6996290
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 7023413,
+          "runtime_function_range": [
+            7023344,
+            7023454
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 7397932,
+          "runtime_function_range": [
+            7397808,
+            7399681
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 7398508,
+          "runtime_function_range": [
+            7397808,
+            7399681
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 7401166,
+          "runtime_function_range": [
+            7400800,
+            7401550
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 7404702,
+          "runtime_function_range": [
+            7404080,
+            7406302
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 7410116,
+          "runtime_function_range": [
+            7406304,
+            7412007
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 7413102,
+          "runtime_function_range": [
+            7412768,
+            7413821
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 7415039,
+          "runtime_function_range": [
+            7414832,
+            7415928
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 8835738,
+          "runtime_function_range": [
+            8835408,
+            8836028
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9154852,
+          "runtime_function_range": [
+            9154704,
+            9154904
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9155276,
+          "runtime_function_range": [
+            9154912,
+            9155459
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9155629,
+          "runtime_function_range": [
+            9155504,
+            9155756
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9354239,
+          "runtime_function_range": [
+            9354144,
+            9354281
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9354903,
+          "runtime_function_range": [
+            9354288,
+            9359663
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9354967,
+          "runtime_function_range": [
+            9354288,
+            9359663
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9356858,
+          "runtime_function_range": [
+            9354288,
+            9359663
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9356965,
+          "runtime_function_range": [
+            9354288,
+            9359663
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9359884,
+          "runtime_function_range": [
+            9359840,
+            9360101
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9360517,
+          "runtime_function_range": [
+            9360416,
+            9360747
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9378658,
+          "runtime_function_range": [
+            9378400,
+            9379218
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9421980,
+          "runtime_function_range": [
+            9421904,
+            9422020
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9423229,
+          "runtime_function_range": [
+            9423008,
+            9424271
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9428950,
+          "runtime_function_range": [
+            9428704,
+            9430023
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9430463,
+          "runtime_function_range": [
+            9430272,
+            9430561
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9431858,
+          "runtime_function_range": [
+            9431536,
+            9432221
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9434022,
+          "runtime_function_range": [
+            9433712,
+            9434681
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9435474,
+          "runtime_function_range": [
+            9434992,
+            9435884
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9441753,
+          "runtime_function_range": [
+            9440928,
+            9443691
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9444183,
+          "runtime_function_range": [
+            9443696,
+            9444656
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9444724,
+          "runtime_function_range": [
+            9444656,
+            9445761
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9546446,
+          "runtime_function_range": [
+            9546272,
+            9546766
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9568283,
+          "runtime_function_range": [
+            9568128,
+            9568325
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9568457,
+          "runtime_function_range": [
+            9568336,
+            9568850
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9568954,
+          "runtime_function_range": [
+            9568864,
+            9569623
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 9745567,
+          "runtime_function_range": [
+            9745232,
+            9746455
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10236796,
+          "runtime_function_range": [
+            10236768,
+            10236810
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10237191,
+          "runtime_function_range": [
+            10237120,
+            10237302
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10240435,
+          "runtime_function_range": [
+            10240272,
+            10241215
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10251013,
+          "runtime_function_range": [
+            10250320,
+            10254512
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10253155,
+          "runtime_function_range": [
+            10250320,
+            10254512
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10301648,
+          "runtime_function_range": [
+            10301536,
+            10304919
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10301729,
+          "runtime_function_range": [
+            10301536,
+            10304919
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10301779,
+          "runtime_function_range": [
+            10301536,
+            10304919
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10306413,
+          "runtime_function_range": [
+            10305248,
+            10308067
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10307854,
+          "runtime_function_range": [
+            10305248,
+            10308067
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10310384,
+          "runtime_function_range": [
+            10308080,
+            10313359
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10312327,
+          "runtime_function_range": [
+            10308080,
+            10313359
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10314987,
+          "runtime_function_range": [
+            10314752,
+            10315531
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10403852,
+          "runtime_function_range": [
+            10403280,
+            10404225
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10404712,
+          "runtime_function_range": [
+            10404240,
+            10405314
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10405472,
+          "runtime_function_range": [
+            10405328,
+            10406597
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10750354,
+          "runtime_function_range": [
+            10750064,
+            10750690
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10750381,
+          "runtime_function_range": [
+            10750064,
+            10750690
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10750744,
+          "runtime_function_range": [
+            10750704,
+            10750894
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10751255,
+          "runtime_function_range": [
+            10751232,
+            10751457
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10752143,
+          "runtime_function_range": [
+            10751744,
+            10754272
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10757147,
+          "runtime_function_range": [
+            10756864,
+            10757552
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10757707,
+          "runtime_function_range": [
+            10757552,
+            10758722
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10757796,
+          "runtime_function_range": [
+            10757552,
+            10758722
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10762112,
+          "runtime_function_range": [
+            10761536,
+            10763047
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10762206,
+          "runtime_function_range": [
+            10761536,
+            10763047
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10776241,
+          "runtime_function_range": [
+            10775520,
+            10777076
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 10777726,
+          "runtime_function_range": [
+            10777584,
+            10777891
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 11036041,
+          "runtime_function_range": [
+            11035664,
+            11037712
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 11037788,
+          "runtime_function_range": [
+            11037712,
+            11037839
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 11049891,
+          "runtime_function_range": [
+            11046528,
+            11051469
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 11473234,
+          "runtime_function_range": [
+            11473056,
+            11473236
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 11597818,
+          "runtime_function_range": [
+            11596896,
+            11597891
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 11632070,
+          "runtime_function_range": [
+            11631536,
+            11632923
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 11646597,
+          "runtime_function_range": [
+            11646512,
+            11646705
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 11676083,
+          "runtime_function_range": [
+            11676032,
+            11676253
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 11730041,
+          "runtime_function_range": [
+            11729584,
+            11730246
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 11832290,
+          "runtime_function_range": [
+            11832000,
+            11832566
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 11832656,
+          "runtime_function_range": [
+            11832576,
+            11832749
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 12241653,
+          "runtime_function_range": [
+            12241536,
+            12241863
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 12243277,
+          "runtime_function_range": [
+            12242544,
+            12244829
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 12243440,
+          "runtime_function_range": [
+            12242544,
+            12244829
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 12243451,
+          "runtime_function_range": [
+            12242544,
+            12244829
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 12244895,
+          "runtime_function_range": [
+            12244832,
+            12245122
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 12245349,
+          "runtime_function_range": [
+            12245136,
+            12245791
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 12246135,
+          "runtime_function_range": [
+            12245792,
+            12246906
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 12249494,
+          "runtime_function_range": [
+            12249456,
+            12250029
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 12249900,
+          "runtime_function_range": [
+            12249456,
+            12250029
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 12250569,
+          "runtime_function_range": [
+            12250032,
+            12252700
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 12254866,
+          "runtime_function_range": [
+            12254112,
+            12257485
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 12262081,
+          "runtime_function_range": [
+            12261696,
+            12262867
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 12460360,
+          "runtime_function_range": [
+            12459168,
+            12461413
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 13306523,
+          "runtime_function_range": [
+            13306464,
+            13306562
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 13306668,
+          "runtime_function_range": [
+            13306576,
+            13306946
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 13325143,
+          "runtime_function_range": [
+            13324976,
+            13326074
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 13325594,
+          "runtime_function_range": [
+            13324976,
+            13326074
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 13327107,
+          "runtime_function_range": [
+            13326560,
+            13328023
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 13327622,
+          "runtime_function_range": [
+            13326560,
+            13328023
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 13329528,
+          "runtime_function_range": [
+            13329424,
+            13329668
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 13420081,
+          "runtime_function_range": [
+            13419856,
+            13421897
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 13422071,
+          "runtime_function_range": [
+            13421904,
+            13422252
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 13896970,
+          "runtime_function_range": [
+            13896080,
+            13901059
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 13901127,
+          "runtime_function_range": [
+            13901072,
+            13901442
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 13903084,
+          "runtime_function_range": [
+            13902752,
+            13905741
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 13904522,
+          "runtime_function_range": [
+            13902752,
+            13905741
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 13904601,
+          "runtime_function_range": [
+            13902752,
+            13905741
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 13909650,
+          "runtime_function_range": [
+            13908320,
+            13912252
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 13945206,
+          "runtime_function_range": [
+            13943808,
+            13945929
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 14123574,
+          "runtime_function_range": [
+            14123440,
+            14123792
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 14243529,
+          "runtime_function_range": [
+            14243376,
+            14243729
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 14324381,
+          "runtime_function_range": [
+            14323984,
+            14325047
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 14324574,
+          "runtime_function_range": [
+            14323984,
+            14325047
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 14393425,
+          "runtime_function_range": [
+            14392896,
+            14393579
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 14768450,
+          "runtime_function_range": [
+            14768224,
+            14769438
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 14770400,
+          "runtime_function_range": [
+            14769888,
+            14770771
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 14846970,
+          "runtime_function_range": [
+            14846736,
+            14847795
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 15106209,
+          "runtime_function_range": [
+            15105648,
+            15106568
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 15106617,
+          "runtime_function_range": [
+            15106576,
+            15106700
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 15107380,
+          "runtime_function_range": [
+            15106704,
+            15107659
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 15109304,
+          "runtime_function_range": [
+            15109232,
+            15109343
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 15109679,
+          "runtime_function_range": [
+            15109344,
+            15110686
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 15159342,
+          "runtime_function_range": [
+            15158672,
+            15159412
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 15544386,
+          "runtime_function_range": [
+            15544240,
+            15544469
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 15544646,
+          "runtime_function_range": [
+            15544480,
+            15545093
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 15545336,
+          "runtime_function_range": [
+            15545200,
+            15545526
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 16671060,
+          "runtime_function_range": [
+            16670368,
+            16671478
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 16673727,
+          "runtime_function_range": [
+            16673360,
+            16675298
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 16956751,
+          "runtime_function_range": [
+            16955280,
+            16973184
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 16958347,
+          "runtime_function_range": [
+            16955280,
+            16973184
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 16959972,
+          "runtime_function_range": [
+            16955280,
+            16973184
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 16982304,
+          "runtime_function_range": [
+            16980912,
+            16986076
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 17562521,
+          "runtime_function_range": [
+            17562128,
+            17562963
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 17664890,
+          "runtime_function_range": [
+            17662576,
+            17671588
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 17668483,
+          "runtime_function_range": [
+            17662576,
+            17671588
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 17708762,
+          "runtime_function_range": [
+            17708688,
+            17708801
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 17709197,
+          "runtime_function_range": [
+            17708816,
+            17709637
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 17711701,
+          "runtime_function_range": [
+            17710960,
+            17712165
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 17725994,
+          "runtime_function_range": [
+            17725664,
+            17726900
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 17727239,
+          "runtime_function_range": [
+            17726912,
+            17727433
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 17895308,
+          "runtime_function_range": [
+            17895024,
+            17895738
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 17895910,
+          "runtime_function_range": [
+            17895744,
+            17896230
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 17897537,
+          "runtime_function_range": [
+            17896240,
+            17900412
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 17958562,
+          "runtime_function_range": [
+            17958464,
+            17958619
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 18930420,
+          "runtime_function_range": [
+            18930400,
+            18930674
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 19324234,
+          "runtime_function_range": [
+            19324144,
+            19324370
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 19459632,
+          "runtime_function_range": [
+            19459264,
+            19461952
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 20361527,
+          "runtime_function_range": [
+            20361456,
+            20362242
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 20362616,
+          "runtime_function_range": [
+            20362256,
+            20363103
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 20439541,
+          "runtime_function_range": [
+            20439376,
+            20439645
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 20439803,
+          "runtime_function_range": [
+            20439648,
+            20441563
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 20439953,
+          "runtime_function_range": [
+            20439648,
+            20441563
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 20442031,
+          "runtime_function_range": [
+            20441568,
+            20442286
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 20716371,
+          "runtime_function_range": [
+            20716336,
+            20716489
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 20940779,
+          "runtime_function_range": [
+            20940464,
+            20941675
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 20971518,
+          "runtime_function_range": [
+            20971376,
+            20971718
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 21020721,
+          "runtime_function_range": [
+            21020336,
+            21021350
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 21022522,
+          "runtime_function_range": [
+            21022272,
+            21023203
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 21387737,
+          "runtime_function_range": [
+            21387584,
+            21387946
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 21436798,
+          "runtime_function_range": [
+            21436336,
+            21437375
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 22562888,
+          "runtime_function_range": [
+            22562656,
+            22563357
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 23176628,
+          "runtime_function_range": [
+            23175424,
+            23178955
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 23241141,
+          "runtime_function_range": [
+            23239792,
+            23241949
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 23321097,
+          "runtime_function_range": [
+            23320672,
+            23321449
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 23321764,
+          "runtime_function_range": [
+            23321456,
+            23322063
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 23580394,
+          "runtime_function_range": [
+            23580288,
+            23580591
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 23580944,
+          "runtime_function_range": [
+            23580592,
+            23581794
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 23581380,
+          "runtime_function_range": [
+            23580592,
+            23581794
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 23582623,
+          "runtime_function_range": [
+            23582080,
+            23583401
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 23584103,
+          "runtime_function_range": [
+            23583408,
+            23584399
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 23780577,
+          "runtime_function_range": [
+            23780128,
+            23781276
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 23781660,
+          "runtime_function_range": [
+            23781536,
+            23781881
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 24233564,
+          "runtime_function_range": [
+            24233456,
+            24233800
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 24389657,
+          "runtime_function_range": [
+            24388224,
+            24391917
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 24795805,
+          "runtime_function_range": [
+            24795632,
+            24796076
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 24811495,
+          "runtime_function_range": [
+            24811344,
+            24812200
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 24855042,
+          "runtime_function_range": [
+            24854848,
+            24855171
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 24978416,
+          "runtime_function_range": [
+            24978272,
+            24978588
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 25442218,
+          "runtime_function_range": [
+            25441888,
+            25442395
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 25443289,
+          "runtime_function_range": [
+            25442400,
+            25444442
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 25675224,
+          "runtime_function_range": [
+            25674864,
+            25675724
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 25675892,
+          "runtime_function_range": [
+            25675728,
+            25676133
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 25676697,
+          "runtime_function_range": [
+            25676144,
+            25677512
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 25677972,
+          "runtime_function_range": [
+            25677616,
+            25678244
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 25683009,
+          "runtime_function_range": [
+            25682096,
+            25684848
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 25783021,
+          "runtime_function_range": [
+            25782624,
+            25784036
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 26885572,
+          "runtime_function_range": [
+            26885280,
+            26885753
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 26887618,
+          "runtime_function_range": [
+            26885760,
+            26888193
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 26968992,
+          "runtime_function_range": [
+            26968736,
+            26970126
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 27047579,
+          "runtime_function_range": [
+            27046400,
+            27048774
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 27049097,
+          "runtime_function_range": [
+            27048784,
+            27049992
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 27049858,
+          "runtime_function_range": [
+            27048784,
+            27049992
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 27296416,
+          "runtime_function_range": [
+            27296240,
+            27296665
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 27629855,
+          "runtime_function_range": [
+            27628896,
+            27630763
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 27630911,
+          "runtime_function_range": [
+            27630768,
+            27631652
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 27786739,
+          "runtime_function_range": [
+            27786432,
+            27786940
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 27987902,
+          "runtime_function_range": [
+            27987792,
+            27988315
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 28456478,
+          "runtime_function_range": [
+            28455824,
+            28457099
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 28457278,
+          "runtime_function_range": [
+            28457104,
+            28457673
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 28690935,
+          "runtime_function_range": [
+            28689456,
+            28691031
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 28902314,
+          "runtime_function_range": [
+            28902256,
+            28902389
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 28903447,
+          "runtime_function_range": [
+            28902400,
+            28903576
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 29234531,
+          "runtime_function_range": [
+            29232000,
+            29235258
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 29236482,
+          "runtime_function_range": [
+            29236176,
+            29237383
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 29236651,
+          "runtime_function_range": [
+            29236176,
+            29237383
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 29238075,
+          "runtime_function_range": [
+            29237872,
+            29238308
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 29239866,
+          "runtime_function_range": [
+            29239504,
+            29240165
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 29241039,
+          "runtime_function_range": [
+            29240384,
+            29241377
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 29259218,
+          "runtime_function_range": [
+            29256736,
+            29259883
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 29965239,
+          "runtime_function_range": [
+            29965136,
+            29965281
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 29965425,
+          "runtime_function_range": [
+            29965296,
+            29965880
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 30767480,
+          "runtime_function_range": [
+            30767344,
+            30768053
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 30767500,
+          "runtime_function_range": [
+            30767344,
+            30768053
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 30770024,
+          "runtime_function_range": [
+            30769920,
+            30770402
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 30770538,
+          "runtime_function_range": [
+            30770416,
+            30770820
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 30772341,
+          "runtime_function_range": [
+            30772048,
+            30772721
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 30777968,
+          "runtime_function_range": [
+            30777728,
+            30779431
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 30780078,
+          "runtime_function_range": [
+            30779856,
+            30781715
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 30782227,
+          "runtime_function_range": [
+            30781728,
+            30783613
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 31026385,
+          "runtime_function_range": [
+            31018608,
+            31032518
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 31037969,
+          "runtime_function_range": [
+            31037696,
+            31038097
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 31053120,
+          "runtime_function_range": [
+            31052000,
+            31053844
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 31053943,
+          "runtime_function_range": [
+            31053856,
+            31055789
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 31055512,
+          "runtime_function_range": [
+            31053856,
+            31055789
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 31056019,
+          "runtime_function_range": [
+            31055792,
+            31056223
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 31056130,
+          "runtime_function_range": [
+            31055792,
+            31056223
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 31056388,
+          "runtime_function_range": [
+            31056224,
+            31056575
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 31359147,
+          "runtime_function_range": [
+            31358848,
+            31360932
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 31359760,
+          "runtime_function_range": [
+            31358848,
+            31360932
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 31361346,
+          "runtime_function_range": [
+            31360944,
+            31361499
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 31363344,
+          "runtime_function_range": [
+            31361504,
+            31364990
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 32259529,
+          "runtime_function_range": [
+            32253520,
+            32262171
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 32811120,
+          "runtime_function_range": [
+            32810800,
+            32811563
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 32900377,
+          "runtime_function_range": [
+            32900272,
+            32901473
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 32902615,
+          "runtime_function_range": [
+            32901664,
+            32903506
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 32903583,
+          "runtime_function_range": [
+            32903520,
+            32903673
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 32903818,
+          "runtime_function_range": [
+            32903680,
+            32903841
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 32904108,
+          "runtime_function_range": [
+            32903856,
+            32904246
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 34025004,
+          "runtime_function_range": [
+            34024816,
+            34025583
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 34026970,
+          "runtime_function_range": [
+            34026816,
+            34028304
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 34027979,
+          "runtime_function_range": [
+            34026816,
+            34028304
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 34036555,
+          "runtime_function_range": [
+            34034960,
+            34040478
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 34037020,
+          "runtime_function_range": [
+            34034960,
+            34040478
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 34041942,
+          "runtime_function_range": [
+            34041712,
+            34042545
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 34042955,
+          "runtime_function_range": [
+            34042832,
+            34043782
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 34045096,
+          "runtime_function_range": [
+            34044768,
+            34045638
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 35854212,
+          "runtime_function_range": [
+            35854000,
+            35854424
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 35854527,
+          "runtime_function_range": [
+            35854432,
+            35854738
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 35854995,
+          "runtime_function_range": [
+            35854752,
+            35856357
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 35857024,
+          "runtime_function_range": [
+            35856624,
+            35857720
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 35858109,
+          "runtime_function_range": [
+            35857728,
+            35858350
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 37498011,
+          "runtime_function_range": [
+            37497280,
+            37498654
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 37498842,
+          "runtime_function_range": [
+            37498656,
+            37498919
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 37706509,
+          "runtime_function_range": [
+            37706416,
+            37707383
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 38270422,
+          "runtime_function_range": [
+            38270384,
+            38270436
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 38270875,
+          "runtime_function_range": [
+            38270448,
+            38271098
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 39872786,
+          "runtime_function_range": [
+            39868192,
+            39876879
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 39873155,
+          "runtime_function_range": [
+            39868192,
+            39876879
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 39877911,
+          "runtime_function_range": [
+            39877360,
+            39878178
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 40328068,
+          "runtime_function_range": [
+            40327632,
+            40328599
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 40329483,
+          "runtime_function_range": [
+            40328608,
+            40330736
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 40337303,
+          "runtime_function_range": [
+            40332160,
+            40339837
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 41626691,
+          "runtime_function_range": [
+            41626656,
+            41626707
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 44077090,
+          "runtime_function_range": [
+            44076672,
+            44077811
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 46041509,
+          "runtime_function_range": [
+            46041312,
+            46042588
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 46478419,
+          "runtime_function_range": [
+            46477808,
+            46479299
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 47237754,
+          "runtime_function_range": [
+            47237440,
+            47238501
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 47252625,
+          "runtime_function_range": [
+            47252464,
+            47253019
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 47277297,
+          "runtime_function_range": [
+            47277120,
+            47277568
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 47284587,
+          "runtime_function_range": [
+            47284400,
+            47284648
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 47980014,
+          "runtime_function_range": [
+            47979632,
+            47980397
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 47980622,
+          "runtime_function_range": [
+            47980400,
+            47981011
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 47984034,
+          "runtime_function_range": [
+            47983376,
+            47984202
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 48901248,
+          "runtime_function_range": [
+            48901200,
+            48901346
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 48901277,
+          "runtime_function_range": [
+            48901200,
+            48901346
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 48901294,
+          "runtime_function_range": [
+            48901200,
+            48901346
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 49351581,
+          "runtime_function_range": [
+            49350880,
+            49352345
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 49351843,
+          "runtime_function_range": [
+            49350880,
+            49352345
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 49801973,
+          "runtime_function_range": [
+            49801920,
+            49802008
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 50391563,
+          "runtime_function_range": [
+            50391376,
+            50392016
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 50446810,
+          "runtime_function_range": [
+            50446656,
+            50446931
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 50815360,
+          "runtime_function_range": [
+            50815280,
+            50815491
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 50965875,
+          "runtime_function_range": [
+            50965808,
+            50965881
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 54584447,
+          "runtime_function_range": [
+            54584416,
+            54584489
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 61438138,
+          "runtime_function_range": [
+            61437600,
+            61438256
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 61666382,
+          "runtime_function_range": [
+            61665968,
+            61666986
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 61697022,
+          "runtime_function_range": [
+            61696880,
+            61697340
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 61706737,
+          "runtime_function_range": [
+            61704752,
+            61711062
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 61739442,
+          "runtime_function_range": [
+            61739392,
+            61739620
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 61741569,
+          "runtime_function_range": [
+            61740224,
+            61742484
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 61832363,
+          "runtime_function_range": [
+            61830288,
+            61835053
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 61836165,
+          "runtime_function_range": [
+            61836048,
+            61837438
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 61838038,
+          "runtime_function_range": [
+            61837440,
+            61840561
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 61841468,
+          "runtime_function_range": [
+            61841408,
+            61841668
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 61888142,
+          "runtime_function_range": [
+            61887328,
+            61889929
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 61889204,
+          "runtime_function_range": [
+            61887328,
+            61889929
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 61907337,
+          "runtime_function_range": [
+            61906816,
+            61907423
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 61915683,
+          "runtime_function_range": [
+            61915584,
+            61915874
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 61916748,
+          "runtime_function_range": [
+            61915888,
+            61919749
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 61916881,
+          "runtime_function_range": [
+            61915888,
+            61919749
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 61933055,
+          "runtime_function_range": [
+            61932832,
+            61933261
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 61933427,
+          "runtime_function_range": [
+            61933264,
+            61934113
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 61934594,
+          "runtime_function_range": [
+            61934128,
+            61934816
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62016456,
+          "runtime_function_range": [
+            62016000,
+            62023028
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62017340,
+          "runtime_function_range": [
+            62016000,
+            62023028
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62026150,
+          "runtime_function_range": [
+            62026144,
+            62026163
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62027612,
+          "runtime_function_range": [
+            62026176,
+            62027862
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62083033,
+          "runtime_function_range": [
+            62082416,
+            62086525
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62619446,
+          "runtime_function_range": [
+            62618528,
+            62619498
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62630961,
+          "runtime_function_range": [
+            62629824,
+            62634973
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62637709,
+          "runtime_function_range": [
+            62634976,
+            62644993
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62645495,
+          "runtime_function_range": [
+            62645008,
+            62647111
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62646275,
+          "runtime_function_range": [
+            62645008,
+            62647111
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62738079,
+          "runtime_function_range": [
+            62738000,
+            62739039
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62740014,
+          "runtime_function_range": [
+            62739040,
+            62741932
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62742693,
+          "runtime_function_range": [
+            62741936,
+            62744514
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62767978,
+          "runtime_function_range": [
+            62767312,
+            62775327
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62781808,
+          "runtime_function_range": [
+            62781232,
+            62783505
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62793518,
+          "runtime_function_range": [
+            62792864,
+            62797672
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62800880,
+          "runtime_function_range": [
+            62799632,
+            62803894
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62816132,
+          "runtime_function_range": [
+            62815216,
+            62820181
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62830150,
+          "runtime_function_range": [
+            62820192,
+            62843561
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62871710,
+          "runtime_function_range": [
+            62870960,
+            62872548
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62986217,
+          "runtime_function_range": [
+            62985680,
+            62986303
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 62995946,
+          "runtime_function_range": [
+            62991632,
+            63003256
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63080596,
+          "runtime_function_range": [
+            63079024,
+            63089644
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63081777,
+          "runtime_function_range": [
+            63079024,
+            63089644
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63090024,
+          "runtime_function_range": [
+            63089648,
+            63091789
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63090433,
+          "runtime_function_range": [
+            63089648,
+            63091789
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63134456,
+          "runtime_function_range": [
+            63133856,
+            63137877
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63256139,
+          "runtime_function_range": [
+            63254464,
+            63258876
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63261502,
+          "runtime_function_range": [
+            63261408,
+            63261953
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63270015,
+          "runtime_function_range": [
+            63269664,
+            63270320
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63271493,
+          "runtime_function_range": [
+            63271440,
+            63271528
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63272754,
+          "runtime_function_range": [
+            63271536,
+            63273881
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63280938,
+          "runtime_function_range": [
+            63277824,
+            63287894
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63290295,
+          "runtime_function_range": [
+            63287904,
+            63300475
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63303232,
+          "runtime_function_range": [
+            63302864,
+            63304554
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63305930,
+          "runtime_function_range": [
+            63305040,
+            63307331
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63311738,
+          "runtime_function_range": [
+            63309632,
+            63324092
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63313820,
+          "runtime_function_range": [
+            63309632,
+            63324092
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63313868,
+          "runtime_function_range": [
+            63309632,
+            63324092
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63328022,
+          "runtime_function_range": [
+            63326608,
+            63329318
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63341401,
+          "runtime_function_range": [
+            63339952,
+            63350759
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63341717,
+          "runtime_function_range": [
+            63339952,
+            63350759
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63438809,
+          "runtime_function_range": [
+            63433504,
+            63443677
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63478591,
+          "runtime_function_range": [
+            63476992,
+            63483877
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63487563,
+          "runtime_function_range": [
+            63486448,
+            63498688
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63488612,
+          "runtime_function_range": [
+            63486448,
+            63498688
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63502723,
+          "runtime_function_range": [
+            63498688,
+            63542932
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63509442,
+          "runtime_function_range": [
+            63498688,
+            63542932
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63544995,
+          "runtime_function_range": [
+            63542944,
+            63547718
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63833772,
+          "runtime_function_range": [
+            63830512,
+            63835907
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63879413,
+          "runtime_function_range": [
+            63870624,
+            63891929
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 63925178,
+          "runtime_function_range": [
+            63921568,
+            63945222
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 64109186,
+          "runtime_function_range": [
+            64108608,
+            64112857
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 64308877,
+          "runtime_function_range": [
+            64308592,
+            64310245
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 64311694,
+          "runtime_function_range": [
+            64310256,
+            64312467
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 65676259,
+          "runtime_function_range": [
+            65676064,
+            65676347
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 65688469,
+          "runtime_function_range": [
+            65686496,
+            65692217
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 65689320,
+          "runtime_function_range": [
+            65686496,
+            65692217
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 65692894,
+          "runtime_function_range": [
+            65692224,
+            65694687
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 65777332,
+          "runtime_function_range": [
+            65777248,
+            65777964
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 65822051,
+          "runtime_function_range": [
+            65821024,
+            65832991
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 65822094,
+          "runtime_function_range": [
+            65821024,
+            65832991
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 65823156,
+          "runtime_function_range": [
+            65821024,
+            65832991
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 65823287,
+          "runtime_function_range": [
+            65821024,
+            65832991
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 65827642,
+          "runtime_function_range": [
+            65821024,
+            65832991
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 65828528,
+          "runtime_function_range": [
+            65821024,
+            65832991
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 65896972,
+          "runtime_function_range": [
+            65893552,
+            65905933
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 65912066,
+          "runtime_function_range": [
+            65910784,
+            65916362
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 65920626,
+          "runtime_function_range": [
+            65916368,
+            65929860
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 65964226,
+          "runtime_function_range": [
+            65963104,
+            65966406
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 66091544,
+          "runtime_function_range": [
+            66090896,
+            66091930
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 66988221,
+          "runtime_function_range": [
+            66987792,
+            66990626
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 66991367,
+          "runtime_function_range": [
+            66990640,
+            66994500
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 66991840,
+          "runtime_function_range": [
+            66990640,
+            66994500
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 67019513,
+          "runtime_function_range": [
+            67015328,
+            67032151
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 67106677,
+          "runtime_function_range": [
+            67105344,
+            67113072
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 67453140,
+          "runtime_function_range": [
+            67451824,
+            67455682
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 67453797,
+          "runtime_function_range": [
+            67451824,
+            67455682
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 67989975,
+          "runtime_function_range": [
+            67989520,
+            67990504
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 68033650,
+          "runtime_function_range": [
+            68030272,
+            68038916
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 68034943,
+          "runtime_function_range": [
+            68030272,
+            68038916
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 68106431,
+          "runtime_function_range": [
+            68104960,
+            68120742
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 68106764,
+          "runtime_function_range": [
+            68104960,
+            68120742
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 68108608,
+          "runtime_function_range": [
+            68104960,
+            68120742
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 68124458,
+          "runtime_function_range": [
+            68123600,
+            68129352
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 68124502,
+          "runtime_function_range": [
+            68123600,
+            68129352
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 68130389,
+          "runtime_function_range": [
+            68129360,
+            68133264
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 68135318,
+          "runtime_function_range": [
+            68133264,
+            68137789
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 68182718,
+          "runtime_function_range": [
+            68182336,
+            68188276
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 68241799,
+          "runtime_function_range": [
+            68241328,
+            68243318
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 68276997,
+          "runtime_function_range": [
+            68276672,
+            68278597
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 68277638,
+          "runtime_function_range": [
+            68276672,
+            68278597
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69322891,
+          "runtime_function_range": [
+            69311568,
+            69344443
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69384572,
+          "runtime_function_range": [
+            69384112,
+            69405418
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69385285,
+          "runtime_function_range": [
+            69384112,
+            69405418
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69416666,
+          "runtime_function_range": [
+            69416592,
+            69418280
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69432358,
+          "runtime_function_range": [
+            69431760,
+            69435163
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69432383,
+          "runtime_function_range": [
+            69431760,
+            69435163
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69433037,
+          "runtime_function_range": [
+            69431760,
+            69435163
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69439869,
+          "runtime_function_range": [
+            69439792,
+            69442098
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69481377,
+          "runtime_function_range": [
+            69460656,
+            69504536
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69505687,
+          "runtime_function_range": [
+            69504544,
+            69508805
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69506897,
+          "runtime_function_range": [
+            69504544,
+            69508805
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69577697,
+          "runtime_function_range": [
+            69576048,
+            69589298
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69590182,
+          "runtime_function_range": [
+            69590096,
+            69591788
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69600519,
+          "runtime_function_range": [
+            69600176,
+            69605333
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69664973,
+          "runtime_function_range": [
+            69660016,
+            69720798
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69670124,
+          "runtime_function_range": [
+            69660016,
+            69720798
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69670897,
+          "runtime_function_range": [
+            69660016,
+            69720798
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69677462,
+          "runtime_function_range": [
+            69660016,
+            69720798
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69722855,
+          "runtime_function_range": [
+            69721840,
+            69723952
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69724096,
+          "runtime_function_range": [
+            69723952,
+            69725833
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69738034,
+          "runtime_function_range": [
+            69734096,
+            69744426
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69750338,
+          "runtime_function_range": [
+            69749504,
+            69753732
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69761084,
+          "runtime_function_range": [
+            69758416,
+            69784479
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69861434,
+          "runtime_function_range": [
+            69848464,
+            69881753
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69944331,
+          "runtime_function_range": [
+            69943344,
+            69946873
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 69977392,
+          "runtime_function_range": [
+            69975168,
+            69986005
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 70045574,
+          "runtime_function_range": [
+            70043040,
+            70059450
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 70092634,
+          "runtime_function_range": [
+            70080784,
+            70095991
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 70292629,
+          "runtime_function_range": [
+            70292432,
+            70292717
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 70503896,
+          "runtime_function_range": [
+            70500768,
+            70539016
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 70505304,
+          "runtime_function_range": [
+            70500768,
+            70539016
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 70511838,
+          "runtime_function_range": [
+            70500768,
+            70539016
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 70539124,
+          "runtime_function_range": [
+            70539024,
+            70539315
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 70541562,
+          "runtime_function_range": [
+            70539712,
+            70545109
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 70891848,
+          "runtime_function_range": [
+            70891200,
+            70894722
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 70973831,
+          "runtime_function_range": [
+            70969264,
+            70977984
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 71018585,
+          "runtime_function_range": [
+            71018160,
+            71020310
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 71030547,
+          "runtime_function_range": [
+            71029600,
+            71031983
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 71070210,
+          "runtime_function_range": [
+            71069024,
+            71073073
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 71076160,
+          "runtime_function_range": [
+            71076128,
+            71076214
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 71078245,
+          "runtime_function_range": [
+            71076224,
+            71080144
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 71081111,
+          "runtime_function_range": [
+            71080960,
+            71081345
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 71101016,
+          "runtime_function_range": [
+            71100592,
+            71105809
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 72180941,
+          "runtime_function_range": [
+            72179632,
+            72183417
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 72181509,
+          "runtime_function_range": [
+            72179632,
+            72183417
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 72209381,
+          "runtime_function_range": [
+            72209328,
+            72209402
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 72746839,
+          "runtime_function_range": [
+            72743008,
+            72751515
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 73003742,
+          "runtime_function_range": [
+            73003280,
+            73004010
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 73872922,
+          "runtime_function_range": [
+            73872736,
+            73885597
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 73872984,
+          "runtime_function_range": [
+            73872736,
+            73885597
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 73875383,
+          "runtime_function_range": [
+            73872736,
+            73885597
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 73875718,
+          "runtime_function_range": [
+            73872736,
+            73885597
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 73875995,
+          "runtime_function_range": [
+            73872736,
+            73885597
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 73876419,
+          "runtime_function_range": [
+            73872736,
+            73885597
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 73885675,
+          "runtime_function_range": [
+            73885600,
+            73889089
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 73919776,
+          "runtime_function_range": [
+            73919584,
+            73919804
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74092742,
+          "runtime_function_range": [
+            74092608,
+            74092920
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74356659,
+          "runtime_function_range": [
+            74356240,
+            74356834
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74356890,
+          "runtime_function_range": [
+            74356848,
+            74357505
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74374197,
+          "runtime_function_range": [
+            74368800,
+            74379601
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74483247,
+          "runtime_function_range": [
+            74480704,
+            74494320
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74500804,
+          "runtime_function_range": [
+            74500608,
+            74502648
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74509855,
+          "runtime_function_range": [
+            74508960,
+            74513072
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74511194,
+          "runtime_function_range": [
+            74508960,
+            74513072
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74515527,
+          "runtime_function_range": [
+            74515120,
+            74516095
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74515628,
+          "runtime_function_range": [
+            74515120,
+            74516095
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74536077,
+          "runtime_function_range": [
+            74531696,
+            74540443
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74550305,
+          "runtime_function_range": [
+            74544176,
+            74556026
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74557757,
+          "runtime_function_range": [
+            74556384,
+            74559236
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74561089,
+          "runtime_function_range": [
+            74560512,
+            74564286
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74563154,
+          "runtime_function_range": [
+            74560512,
+            74564286
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74750486,
+          "runtime_function_range": [
+            74750384,
+            74750593
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74750867,
+          "runtime_function_range": [
+            74750608,
+            74754806
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74755986,
+          "runtime_function_range": [
+            74755696,
+            74756076
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74765291,
+          "runtime_function_range": [
+            74756288,
+            74778456
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74944231,
+          "runtime_function_range": [
+            74943840,
+            74944436
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74947497,
+          "runtime_function_range": [
+            74944448,
+            74948455
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74948179,
+          "runtime_function_range": [
+            74944448,
+            74948455
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 74948817,
+          "runtime_function_range": [
+            74948464,
+            74948885
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75054510,
+          "runtime_function_range": [
+            75053888,
+            75056985
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75061662,
+          "runtime_function_range": [
+            75060720,
+            75062738
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75063614,
+          "runtime_function_range": [
+            75062752,
+            75071821
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75074505,
+          "runtime_function_range": [
+            75074416,
+            75077292
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75629390,
+          "runtime_function_range": [
+            75625072,
+            75656237
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75631743,
+          "runtime_function_range": [
+            75625072,
+            75656237
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75633020,
+          "runtime_function_range": [
+            75625072,
+            75656237
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75660045,
+          "runtime_function_range": [
+            75656576,
+            75668682
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75661872,
+          "runtime_function_range": [
+            75656576,
+            75668682
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75662667,
+          "runtime_function_range": [
+            75656576,
+            75668682
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75679766,
+          "runtime_function_range": [
+            75676880,
+            75694819
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75680121,
+          "runtime_function_range": [
+            75676880,
+            75694819
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75683779,
+          "runtime_function_range": [
+            75676880,
+            75694819
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75685956,
+          "runtime_function_range": [
+            75676880,
+            75694819
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75698779,
+          "runtime_function_range": [
+            75697904,
+            75701434
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75699789,
+          "runtime_function_range": [
+            75697904,
+            75701434
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75708758,
+          "runtime_function_range": [
+            75707104,
+            75720129
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75710813,
+          "runtime_function_range": [
+            75707104,
+            75720129
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75712675,
+          "runtime_function_range": [
+            75707104,
+            75720129
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75712729,
+          "runtime_function_range": [
+            75707104,
+            75720129
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75721906,
+          "runtime_function_range": [
+            75721040,
+            75722665
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75722036,
+          "runtime_function_range": [
+            75721040,
+            75722665
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75724197,
+          "runtime_function_range": [
+            75722672,
+            75744492
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75727910,
+          "runtime_function_range": [
+            75722672,
+            75744492
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75728006,
+          "runtime_function_range": [
+            75722672,
+            75744492
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75747043,
+          "runtime_function_range": [
+            75744496,
+            75752579
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75747928,
+          "runtime_function_range": [
+            75744496,
+            75752579
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75771683,
+          "runtime_function_range": [
+            75767328,
+            75785350
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75771967,
+          "runtime_function_range": [
+            75767328,
+            75785350
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75773414,
+          "runtime_function_range": [
+            75767328,
+            75785350
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75794171,
+          "runtime_function_range": [
+            75793536,
+            75797773
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75796259,
+          "runtime_function_range": [
+            75793536,
+            75797773
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75797286,
+          "runtime_function_range": [
+            75793536,
+            75797773
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75810976,
+          "runtime_function_range": [
+            75808768,
+            75817931
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75841377,
+          "runtime_function_range": [
+            75841040,
+            75844367
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 75847877,
+          "runtime_function_range": [
+            75844368,
+            75848718
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 76212194,
+          "runtime_function_range": [
+            76210672,
+            76213884
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 76398516,
+          "runtime_function_range": [
+            76396672,
+            76405798
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 76406660,
+          "runtime_function_range": [
+            76405936,
+            76407748
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 76478933,
+          "runtime_function_range": [
+            76477952,
+            76481371
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 76479042,
+          "runtime_function_range": [
+            76477952,
+            76481371
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 76485678,
+          "runtime_function_range": [
+            76482000,
+            76508943
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 76512104,
+          "runtime_function_range": [
+            76508944,
+            76522531
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 76518463,
+          "runtime_function_range": [
+            76508944,
+            76522531
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 76535353,
+          "runtime_function_range": [
+            76534928,
+            76537329
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 76538819,
+          "runtime_function_range": [
+            76538320,
+            76543255
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 76552517,
+          "runtime_function_range": [
+            76550000,
+            76725602
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 76558386,
+          "runtime_function_range": [
+            76550000,
+            76725602
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 76747334,
+          "runtime_function_range": [
+            76743296,
+            76749973
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 76750067,
+          "runtime_function_range": [
+            76749984,
+            76754607
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 76763165,
+          "runtime_function_range": [
+            76754608,
+            76766363
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 76767722,
+          "runtime_function_range": [
+            76767424,
+            76769334
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 76768367,
+          "runtime_function_range": [
+            76767424,
+            76769334
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 77525126,
+          "runtime_function_range": [
+            77524256,
+            77548877
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 77526487,
+          "runtime_function_range": [
+            77524256,
+            77548877
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 77526861,
+          "runtime_function_range": [
+            77524256,
+            77548877
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 77533165,
+          "runtime_function_range": [
+            77524256,
+            77548877
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 77634737,
+          "runtime_function_range": [
+            77633728,
+            77635388
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 77636075,
+          "runtime_function_range": [
+            77635392,
+            77637603
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 77636095,
+          "runtime_function_range": [
+            77635392,
+            77637603
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 78123274,
+          "runtime_function_range": [
+            78122592,
+            78123403
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 78127042,
+          "runtime_function_range": [
+            78125984,
+            78129701
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 78127573,
+          "runtime_function_range": [
+            78125984,
+            78129701
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 78329076,
+          "runtime_function_range": [
+            78328224,
+            78334077
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 78343782,
+          "runtime_function_range": [
+            78336304,
+            78350521
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 78616874,
+          "runtime_function_range": [
+            78616704,
+            78617412
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 79104619,
+          "runtime_function_range": [
+            79104448,
+            79104832
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 79229065,
+          "runtime_function_range": [
+            79228992,
+            79233566
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 79235573,
+          "runtime_function_range": [
+            79233568,
+            79237466
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 79350527,
+          "runtime_function_range": [
+            79349232,
+            79355865
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 79358280,
+          "runtime_function_range": [
+            79355872,
+            79370007
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 79394897,
+          "runtime_function_range": [
+            79394704,
+            79397207
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 79396111,
+          "runtime_function_range": [
+            79394704,
+            79397207
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 79611651,
+          "runtime_function_range": [
+            79611440,
+            79611729
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 79943552,
+          "runtime_function_range": [
+            79943136,
+            79944528
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 79958898,
+          "runtime_function_range": [
+            79958144,
+            79963295
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 80114002,
+          "runtime_function_range": [
+            80113456,
+            80115406
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 80115528,
+          "runtime_function_range": [
+            80115408,
+            80115917
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 80601800,
+          "runtime_function_range": [
+            80600992,
+            80602622
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 81125432,
+          "runtime_function_range": [
+            81124672,
+            81125532
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 81356640,
+          "runtime_function_range": [
+            81356480,
+            81358058
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 81427717,
+          "runtime_function_range": [
+            81427680,
+            81427770
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 81430612,
+          "runtime_function_range": [
+            81427776,
+            81431846
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 82039770,
+          "runtime_function_range": [
+            82037920,
+            82042520
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 82310830,
+          "runtime_function_range": [
+            82310512,
+            82312285
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 82313930,
+          "runtime_function_range": [
+            82312288,
+            82317298
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 82404778,
+          "runtime_function_range": [
+            82404720,
+            82404878
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 82715839,
+          "runtime_function_range": [
+            82715552,
+            82716212
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 82923467,
+          "runtime_function_range": [
+            82923264,
+            82923846
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 82923592,
+          "runtime_function_range": [
+            82923264,
+            82923846
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 82924696,
+          "runtime_function_range": [
+            82923856,
+            82926697
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 82927820,
+          "runtime_function_range": [
+            82926800,
+            82929978
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 83108208,
+          "runtime_function_range": [
+            83106544,
+            83113583
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 83109747,
+          "runtime_function_range": [
+            83106544,
+            83113583
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 83179897,
+          "runtime_function_range": [
+            83179680,
+            83182497
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 83180365,
+          "runtime_function_range": [
+            83179680,
+            83182497
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 83182780,
+          "runtime_function_range": [
+            83182512,
+            83183018
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 83320525,
+          "runtime_function_range": [
+            83318800,
+            83325210
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 83327975,
+          "runtime_function_range": [
+            83327008,
+            83330362
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 83406167,
+          "runtime_function_range": [
+            83405968,
+            83407788
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 83406593,
+          "runtime_function_range": [
+            83405968,
+            83407788
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 83541076,
+          "runtime_function_range": [
+            83540400,
+            83541574
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 83967652,
+          "runtime_function_range": [
+            83966944,
+            83984447
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 83968528,
+          "runtime_function_range": [
+            83966944,
+            83984447
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 83969042,
+          "runtime_function_range": [
+            83966944,
+            83984447
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 83975795,
+          "runtime_function_range": [
+            83966944,
+            83984447
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 83994400,
+          "runtime_function_range": [
+            83993808,
+            83994993
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 84005162,
+          "runtime_function_range": [
+            84001280,
+            84018300
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 84035206,
+          "runtime_function_range": [
+            84035120,
+            84037448
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 84037779,
+          "runtime_function_range": [
+            84037488,
+            84037948
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 84383135,
+          "runtime_function_range": [
+            84382816,
+            84384085
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 84469197,
+          "runtime_function_range": [
+            84465472,
+            84471307
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 84515009,
+          "runtime_function_range": [
+            84514224,
+            84520808
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 84515056,
+          "runtime_function_range": [
+            84514224,
+            84520808
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 84517072,
+          "runtime_function_range": [
+            84514224,
+            84520808
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 84713379,
+          "runtime_function_range": [
+            84712864,
+            84713715
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 84874418,
+          "runtime_function_range": [
+            84872848,
+            84876340
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 84954436,
+          "runtime_function_range": [
+            84953904,
+            84954965
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 84954801,
+          "runtime_function_range": [
+            84953904,
+            84954965
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 85241271,
+          "runtime_function_range": [
+            85240864,
+            85241659
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 85259646,
+          "runtime_function_range": [
+            85259376,
+            85260046
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 85530062,
+          "runtime_function_range": [
+            85528976,
+            85533913
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 85530484,
+          "runtime_function_range": [
+            85528976,
+            85533913
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 85531668,
+          "runtime_function_range": [
+            85528976,
+            85533913
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 85538000,
+          "runtime_function_range": [
+            85533920,
+            85543823
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 85738845,
+          "runtime_function_range": [
+            85736112,
+            85752985
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 85741130,
+          "runtime_function_range": [
+            85736112,
+            85752985
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 85761246,
+          "runtime_function_range": [
+            85761136,
+            85761386
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 85763593,
+          "runtime_function_range": [
+            85761392,
+            85770727
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 86419120,
+          "runtime_function_range": [
+            86418992,
+            86419227
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 86465650,
+          "runtime_function_range": [
+            86464656,
+            86465836
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 86838940,
+          "runtime_function_range": [
+            86838544,
+            86839620
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 86846343,
+          "runtime_function_range": [
+            86846176,
+            86847057
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 87166172,
+          "runtime_function_range": [
+            87166080,
+            87166386
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 87175721,
+          "runtime_function_range": [
+            87175296,
+            87176330
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 87341159,
+          "runtime_function_range": [
+            87340624,
+            87341605
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 87420733,
+          "runtime_function_range": [
+            87420048,
+            87421439
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 87430578,
+          "runtime_function_range": [
+            87427728,
+            87432383
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 87430779,
+          "runtime_function_range": [
+            87427728,
+            87432383
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 87434710,
+          "runtime_function_range": [
+            87434672,
+            87435413
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 87677810,
+          "runtime_function_range": [
+            87677664,
+            87678134
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 88419637,
+          "runtime_function_range": [
+            88419216,
+            88420166
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 88508091,
+          "runtime_function_range": [
+            88507888,
+            88512571
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 88509026,
+          "runtime_function_range": [
+            88507888,
+            88512571
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 88633534,
+          "runtime_function_range": [
+            88631008,
+            88635163
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 88635286,
+          "runtime_function_range": [
+            88635168,
+            88635989
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 89007305,
+          "runtime_function_range": [
+            89006832,
+            89007463
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 89345924,
+          "runtime_function_range": [
+            89344960,
+            89347708
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 89559088,
+          "runtime_function_range": [
+            89558336,
+            89560477
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 89768721,
+          "runtime_function_range": [
+            89766272,
+            89774984
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 89798766,
+          "runtime_function_range": [
+            89797760,
+            89799612
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 89798984,
+          "runtime_function_range": [
+            89797760,
+            89799612
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 89812603,
+          "runtime_function_range": [
+            89812032,
+            89812797
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 89909734,
+          "runtime_function_range": [
+            89909136,
+            89910397
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 90270316,
+          "runtime_function_range": [
+            90269808,
+            90270722
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 90410794,
+          "runtime_function_range": [
+            90410624,
+            90414881
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 90412816,
+          "runtime_function_range": [
+            90410624,
+            90414881
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 90774932,
+          "runtime_function_range": [
+            90774614,
+            90775236
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 90783557,
+          "runtime_function_range": [
+            90783521,
+            90783619
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 90920164,
+          "runtime_function_range": [
+            90919136,
+            90922216
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 90920323,
+          "runtime_function_range": [
+            90919136,
+            90922216
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 90931961,
+          "runtime_function_range": [
+            90931264,
+            90935024
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 90932350,
+          "runtime_function_range": [
+            90931264,
+            90935024
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 90939272,
+          "runtime_function_range": [
+            90939200,
+            90939656
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 90967532,
+          "runtime_function_range": [
+            90967432,
+            90968133
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 90998865,
+          "runtime_function_range": [
+            90996672,
+            91001456
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 90998907,
+          "runtime_function_range": [
+            90996672,
+            91001456
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 91140330,
+          "runtime_function_range": [
+            91139925,
+            91140681
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 91157229,
+          "runtime_function_range": [
+            91157184,
+            91157288
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 91201255,
+          "runtime_function_range": [
+            91201152,
+            91201408
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 91204819,
+          "runtime_function_range": [
+            91201472,
+            91214400
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 91205373,
+          "runtime_function_range": [
+            91201472,
+            91214400
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 91237229,
+          "runtime_function_range": [
+            91237120,
+            91237272
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 91544251,
+          "runtime_function_range": [
+            91544064,
+            91545148
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 92449457,
+          "runtime_function_range": [
+            92448896,
+            92452872
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 92502116,
+          "runtime_function_range": [
+            92501248,
+            92504692
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 93022533,
+          "runtime_function_range": [
+            93022292,
+            93022601
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 93022911,
+          "runtime_function_range": [
+            93022656,
+            93023064
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 93023807,
+          "runtime_function_range": [
+            93023552,
+            93023960
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 93024092,
+          "runtime_function_range": [
+            93024005,
+            93024100
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 93024961,
+          "runtime_function_range": [
+            93024845,
+            93025183
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 93026927,
+          "runtime_function_range": [
+            93026598,
+            93027328
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 93029908,
+          "runtime_function_range": [
+            93029831,
+            93030048
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 93030170,
+          "runtime_function_range": [
+            93030104,
+            93030296
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 93030437,
+          "runtime_function_range": [
+            93030360,
+            93030576
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 93031381,
+          "runtime_function_range": [
+            93031248,
+            93031516
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 93046601,
+          "runtime_function_range": [
+            93046464,
+            93046680
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 93050517,
+          "runtime_function_range": [
+            93050437,
+            93050588
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 93052794,
+          "runtime_function_range": [
+            93052736,
+            93052924
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 93052986,
+          "runtime_function_range": [
+            93052928,
+            93053116
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 93053776,
+          "runtime_function_range": [
+            93053632,
+            93053960
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 93154948,
+          "runtime_function_range": [
+            93154784,
+            93155055
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 93377806,
+          "runtime_function_range": [
+            93377792,
+            93377860
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 93395021,
+          "runtime_function_range": [
+            93394912,
+            93395030
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 93838534,
+          "runtime_function_range": [
+            93817488,
+            93893325
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 94108940,
+          "runtime_function_range": [
+            94108032,
+            94123228
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 94490077,
+          "runtime_function_range": [
+            94490016,
+            94490119
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 94490206,
+          "runtime_function_range": [
+            94490128,
+            94490258
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 94490325,
+          "runtime_function_range": [
+            94490272,
+            94490363
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 94490578,
+          "runtime_function_range": [
+            94490496,
+            94490622
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 94490683,
+          "runtime_function_range": [
+            94490624,
+            94490733
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 94492330,
+          "runtime_function_range": [
+            94492144,
+            94492453
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 94734173,
+          "runtime_function_range": [
+            94734016,
+            94734571
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 115427874,
+          "runtime_function_range": [
+            115426800,
+            115428176
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 122250565,
+          "runtime_function_range": [
+            122250384,
+            122250699
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 122263288,
+          "runtime_function_range": [
+            122263248,
+            122263327
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 122337318,
+          "runtime_function_range": [
+            122336848,
+            122337766
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 122338518,
+          "runtime_function_range": [
+            122338096,
+            122338933
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 122341271,
+          "runtime_function_range": [
+            122341168,
+            122341354
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 122341384,
+          "runtime_function_range": [
+            122341360,
+            122341446
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 122493466,
+          "runtime_function_range": [
+            122493392,
+            122493632
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 122493715,
+          "runtime_function_range": [
+            122493632,
+            122493850
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 122885668,
+          "runtime_function_range": [
+            122884368,
+            122885766
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 122893425,
+          "runtime_function_range": [
+            122893328,
+            122893544
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 122927040,
+          "runtime_function_range": [
+            122926576,
+            122927174
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 122941644,
+          "runtime_function_range": [
+            122941440,
+            122941674
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 122943319,
+          "runtime_function_range": [
+            122942496,
+            122943602
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 123155146,
+          "runtime_function_range": [
+            123153360,
+            123155650
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 123157554,
+          "runtime_function_range": [
+            123155664,
+            123157637
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 141240966,
+          "runtime_function_range": [
+            141240480,
+            141240991
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 141241457,
+          "runtime_function_range": [
+            141241248,
+            141241746
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 141241719,
+          "runtime_function_range": [
+            141241248,
+            141241746
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 141248062,
+          "runtime_function_range": [
+            141248016,
+            141248147
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 141501262,
+          "runtime_function_range": [
+            141501216,
+            141501347
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 141611411,
+          "runtime_function_range": [
+            141611040,
+            141611983
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 141612289,
+          "runtime_function_range": [
+            141612208,
+            141612521
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 141864749,
+          "runtime_function_range": [
+            141864624,
+            141865118
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 141864786,
+          "runtime_function_range": [
+            141864624,
+            141865118
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 141952349,
+          "runtime_function_range": [
+            141952256,
+            141952357
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 142630445,
+          "runtime_function_range": [
+            142630336,
+            142630637
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 142660657,
+          "runtime_function_range": [
+            142660240,
+            142661128
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 174468101,
+          "runtime_function_range": [
+            174467184,
+            174468431
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 187371828,
+          "runtime_function_range": [
+            187371552,
+            187372046
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 202727138,
+          "runtime_function_range": [
+            202727120,
+            202727212
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 203167900,
+          "runtime_function_range": [
+            203166896,
+            203168525
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 203425324,
+          "runtime_function_range": [
+            203425264,
+            203425444
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 203511136,
+          "runtime_function_range": [
+            203510064,
+            203511825
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 203572184,
+          "runtime_function_range": [
+            203571952,
+            203572259
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 203881592,
+          "runtime_function_range": [
+            203881408,
+            203881631
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 203886414,
+          "runtime_function_range": [
+            203886240,
+            203886558
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 204094846,
+          "runtime_function_range": [
+            204092736,
+            204097373
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 204119450,
+          "runtime_function_range": [
+            204119168,
+            204119817
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 204120435,
+          "runtime_function_range": [
+            204120288,
+            204120539
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 204120720,
+          "runtime_function_range": [
+            204120544,
+            204120775
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 204120925,
+          "runtime_function_range": [
+            204120784,
+            204121030
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 215347853,
+          "runtime_function_range": [
+            215347568,
+            215348172
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 215356132,
+          "runtime_function_range": [
+            215355904,
+            215356153
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 215356695,
+          "runtime_function_range": [
+            215356160,
+            215356755
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 215876867,
+          "runtime_function_range": [
+            215876480,
+            215878065
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 215877412,
+          "runtime_function_range": [
+            215876480,
+            215878065
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 216939103,
+          "runtime_function_range": [
+            216939008,
+            216939146
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 217595685,
+          "runtime_function_range": [
+            217595440,
+            217595825
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 217988478,
+          "runtime_function_range": [
+            217988368,
+            217988529
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 218325221,
+          "runtime_function_range": [
+            218325136,
+            218325316
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 218325382,
+          "runtime_function_range": [
+            218325328,
+            218325446
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 218328707,
+          "runtime_function_range": [
+            218328592,
+            218329116
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 219000933,
+          "runtime_function_range": [
+            219000688,
+            219001342
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 219002013,
+          "runtime_function_range": [
+            219001344,
+            219002108
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 219554125,
+          "runtime_function_range": [
+            219553936,
+            219554147
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 219554420,
+          "runtime_function_range": [
+            219554160,
+            219554480
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 219568145,
+          "runtime_function_range": [
+            219566384,
+            219569186
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 219569318,
+          "runtime_function_range": [
+            219569200,
+            219569572
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 219638225,
+          "runtime_function_range": [
+            219637808,
+            219638435
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 219638258,
+          "runtime_function_range": [
+            219637808,
+            219638435
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 219723556,
+          "runtime_function_range": [
+            219723104,
+            219723668
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 220663978,
+          "runtime_function_range": [
+            220663696,
+            220664957
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 220665622,
+          "runtime_function_range": [
+            220665488,
+            220666040
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 220666829,
+          "runtime_function_range": [
+            220666544,
+            220667549
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 220757143,
+          "runtime_function_range": [
+            220756784,
+            220757313
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 221420023,
+          "runtime_function_range": [
+            221419536,
+            221420135
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 221424211,
+          "runtime_function_range": [
+            221424128,
+            221424366
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 221671365,
+          "runtime_function_range": [
+            221671296,
+            221671663
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 223623413,
+          "runtime_function_range": [
+            223623040,
+            223623473
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 223625023,
+          "runtime_function_range": [
+            223624736,
+            223625115
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 228445598,
+          "runtime_function_range": [
+            228444080,
+            228445892
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 229160558,
+          "runtime_function_range": [
+            229160384,
+            229161040
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 229160680,
+          "runtime_function_range": [
+            229160384,
+            229161040
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 229160876,
+          "runtime_function_range": [
+            229160384,
+            229161040
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 229161895,
+          "runtime_function_range": [
+            229161744,
+            229162036
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 229164706,
+          "runtime_function_range": [
+            229164560,
+            229164846
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 232074167,
+          "runtime_function_range": [
+            232073904,
+            232074200
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 232076025,
+          "runtime_function_range": [
+            232075920,
+            232076159
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 232080752,
+          "runtime_function_range": [
+            232080560,
+            232080867
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 232474064,
+          "runtime_function_range": [
+            232473456,
+            232474249
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 233009956,
+          "runtime_function_range": [
+            233009440,
+            233010692
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 233010766,
+          "runtime_function_range": [
+            233010704,
+            233010920
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 233495172,
+          "runtime_function_range": [
+            233495120,
+            233495312
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 233495722,
+          "runtime_function_range": [
+            233495648,
+            233495789
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 233496469,
+          "runtime_function_range": [
+            233496352,
+            233496583
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 233497392,
+          "runtime_function_range": [
+            233497360,
+            233497458
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 233501254,
+          "runtime_function_range": [
+            233501168,
+            233501421
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 235095681,
+          "runtime_function_range": [
+            235094800,
+            235095793
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 235097056,
+          "runtime_function_range": [
+            235096896,
+            235097140
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 235098128,
+          "runtime_function_range": [
+            235097968,
+            235098269
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 237832177,
+          "runtime_function_range": [
+            237832032,
+            237832352
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 240749578,
+          "runtime_function_range": [
+            240749520,
+            240749783
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 240763301,
+          "runtime_function_range": [
+            240763120,
+            240763409
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 240765616,
+          "runtime_function_range": [
+            240765568,
+            240765678
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 240784192,
+          "runtime_function_range": [
+            240783328,
+            240784736
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 240784436,
+          "runtime_function_range": [
+            240783328,
+            240784736
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 240786357,
+          "runtime_function_range": [
+            240785904,
+            240787528
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 240786800,
+          "runtime_function_range": [
+            240785904,
+            240787528
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 240788272,
+          "runtime_function_range": [
+            240787824,
+            240788560
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 240821456,
+          "runtime_function_range": [
+            240821360,
+            240821497
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 240834802,
+          "runtime_function_range": [
+            240834672,
+            240834907
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 240835062,
+          "runtime_function_range": [
+            240834912,
+            240835215
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 240835313,
+          "runtime_function_range": [
+            240835216,
+            240835408
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 240835494,
+          "runtime_function_range": [
+            240835408,
+            240835549
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 240835626,
+          "runtime_function_range": [
+            240835552,
+            240835640
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 240835722,
+          "runtime_function_range": [
+            240835664,
+            240835796
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 240835996,
+          "runtime_function_range": [
+            240835808,
+            240836147
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 240839958,
+          "runtime_function_range": [
+            240839808,
+            240840036
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 240848678,
+          "runtime_function_range": [
+            240848592,
+            240848713
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 241613760,
+          "runtime_function_range": [
+            241613504,
+            241613871
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 246931188,
+          "runtime_function_range": [
+            246930656,
+            246933825
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 246942063,
+          "runtime_function_range": [
+            246941952,
+            246942187
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 246942348,
+          "runtime_function_range": [
+            246942192,
+            246942410
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 246942806,
+          "runtime_function_range": [
+            246942416,
+            246942866
+          ],
+          "export_at_function_start": []
+        },
+        {
+          "rva": 246943168,
+          "runtime_function_range": [
+            246943104,
+            246943227
+          ],
+          "export_at_function_start": []
+        }
+      ]
+    }
+  ]
+}

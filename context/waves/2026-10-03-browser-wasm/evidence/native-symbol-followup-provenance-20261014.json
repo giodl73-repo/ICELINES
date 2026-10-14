@@ -1,0 +1,34 @@
+{
+  "scope": "Read-only follow-up of historical native sampling profile on Chromium153.0.8010.12. No browser rerun, production/source/schema/tool installation or acceptance change.",
+  "evidence": {
+    "availability": {
+      "file": "native-symbol-followup-availability-20261014.json",
+      "sha256": "1a2366399e2882205474f2e006962eb7eed36139f9b3288ed80c11003f837f5b"
+    },
+    "pe-inspection": {
+      "file": "native-symbol-followup-pe-inspection-20261014.json",
+      "sha256": "b8452b4fd1fd26ec78f313eca1c7f86ef4c08e8187be6116d0e2659a70dffcb6"
+    },
+    "availability-recipe": {
+      "file": "native-symbol-followup-availability-recipe-20261014.py",
+      "sha256": "fdc42475fe7d1f5d2bd4b33fa805f4326fd899b5292384eaae6578eaf330e17b"
+    },
+    "pe-recipe": {
+      "file": "native-symbol-followup-pe-recipe-20261014.py",
+      "sha256": "f551f92060a639bccf364fa54de0047ddfc5b78161cd10792d0ee999b1b32fc8"
+    }
+  },
+  "observations": "Exact uncompressed/compressed/pointer forms for both profile PDB IDs return404 at the documented Chromium server. Installed chrome.exe/chrome.dll debug IDs and image sizes match profile descriptors.883 unique sampled module frames lie in unwind function ranges; only1 unique frame range has an exported name, ChromeMain. Other internal routines remain unnamed.",
+  "identity_limits": "Current whole-file SHA recorded. Historical profile contains module debug UUID and image size, not a whole-file SHA, so no historical byte-for-byte binary comparison is claimed. Export/unwind ranges give boundaries, not names/ownership for internal allocation routines; nearest-export offsets are not used.404 is availability at these6 exact URLs now, not everywhere/forever.",
+  "primary_sources": [
+    "https://www.chromium.org/developers/how-tos/debugging-on-windows/",
+    "https://learn.microsoft.com/en-us/windows/win32/debug/using-symstore",
+    "https://learn.microsoft.com/en-us/windows/win32/debug/pe-format"
+  ],
+  "decision": "Do not rerun unresolved native sampling or guess internal symbols. A future controlled-operation/native-callsite fingerprint could provide category correlations using matching debug IDs/RVAs, but is not yet evidence or a leak/owner finding.",
+  "remaining": [
+    "250 MiB whole-browser target unmet",
+    "Physical Android deferred by user"
+  ],
+  "production_unchanged": true
+}
