@@ -1,0 +1,51 @@
+{
+  "status": "PR104 merged; refreshed audit zero vulnerabilities; native/browser compatibility validated",
+  "pr": "https://github.com/giodl73-repo/ICELINES/pull/104",
+  "reviewed_head": "1c465c081c933917d1752f73f372d9a8ffa7dc5d",
+  "preview": "4c3f195f814316a014f1800d58a66979e859e43d",
+  "master": "da434fae45fd745883236af1233bcb1e0098a2b1",
+  "reports": {
+    "audit": {
+      "file": "rustls-security-audit-20261014.json",
+      "sha256": "b6615f71a3e41e23905b59347dbc15421a81f491304448495bd64dfee997f833"
+    },
+    "checks": {
+      "file": "rustls-security-checks-20261014.json",
+      "sha256": "b6da487bff2fc17d905ffeedbcdf835d7cd32786de641c37a59a04340721520b"
+    },
+    "browser-verification": {
+      "file": "rustls-security-browser-verification-20261014.json",
+      "sha256": "21fc0da643a9fe6c8cbc97e798f9a7eaf9e0c34bc1eb230f9b7c6c65e53f54e2"
+    }
+  },
+  "changed_dependency": "rustls0.23.45->0.23.46; only version/checksum changed; other498-package lock entries/features unchanged",
+  "advisories": [
+    "RUSTSEC-2026-0346",
+    "RUSTSEC-2026-0347",
+    "RUSTSEC-2026-0348",
+    "RUSTSEC-2026-0349"
+  ],
+  "native_local_tests": {
+    "fetch": 585,
+    "web": 106
+  },
+  "ci": {
+    "native_run": 38579794443,
+    "browser_run": 38579793928,
+    "artifact": 11904485236,
+    "success_checks": 29
+  },
+  "scope": "No advisory exception added; existing async-std maintenance warning unchanged. Master/preview Git trees identical. Active WASM graph excludesrustls; exact182-file patch CI artifact verifies and179 non-metadata files are byte-identical to published75e6ba97. No browser republish or resource/mobile acceptance claim.",
+  "logs_sha256": {
+    "target/rustls-02346-fetch-tests.log": "10455503ab0aa34fa22995e261fc08f7f16b9f631d6ef1e06d1212cdb087ef29",
+    "target/rustls-02346-web-tests.log": "e6512cff66b49a525668bb44155e7866b8ad473ae167cb95e6fb087198b83cde",
+    "target/rustls-02346-wasm-tree.log": "b82cc83d0a02e8eefa9358753618c533755d1ff9b44fe7f3c3e5b27c14b38cb0",
+    "target/chunked-decoder-validation-audit-failure.log": "44384e6911cd91a4c70f698957526deb6f388757cbee188303f2f95f9e1f0beb"
+  },
+  "upstream": "https://github.com/rustls/rustls/releases/tag/v%2F0.23.46",
+  "published_source": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+  "open_gates": [
+    "250 MiB whole-browser FAILED",
+    "Physical Android explicitly deferred"
+  ]
+}
