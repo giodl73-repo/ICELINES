@@ -1,0 +1,85 @@
+{
+  "status": "Local candidate; modest repeated lower private peaks, not published or fully accepted",
+  "measured_source": "3bfbb49974009711b535b4cda73b0070f8c9a6b2",
+  "final_generator_source": "2a085dac",
+  "units": 160,
+  "typecheck": true,
+  "scope": "Opposite-order Windows full-workload pairs, original flags/sampler/observer; no forced GC. Unknown digests use the unchanged full parser. Raw/baseline variation remains explicit.",
+  "reports": {
+    "candidate-first": {
+      "file": "catalog-metadata-index-candidate-first-20261013.json",
+      "sha256": "9fc167d2e84435351a987032116aee8b3944bdd267e04dba25b61423cd5ad13b"
+    },
+    "control-second": {
+      "file": "catalog-metadata-index-control-second-20261013.json",
+      "sha256": "f5f33403253df608c8fc24aeae2a821cf085ce785e7b5fbc87ee279e03e4094c"
+    },
+    "control-first": {
+      "file": "catalog-metadata-index-control-first-20261013.json",
+      "sha256": "817efee9d2fb419c492d8adc8a806f6d121c230111130e39fc205b5fa8ca0374"
+    },
+    "candidate-second": {
+      "file": "catalog-metadata-index-candidate-second-20261013.json",
+      "sha256": "5f3816ef8d871bdb96853bced83f53c962cb0be882e570630a032f1294623af9"
+    },
+    "context": {
+      "file": "catalog-metadata-index-context-20261013.json",
+      "sha256": "ac1fd95307836d810ba77ddf5b98d4f7f8ccd99fa39adbca17ebcd229e41b682"
+    },
+    "viewport": {
+      "file": "catalog-metadata-index-viewport-20261013.json",
+      "sha256": "94c1480d773ebc564f982e47b9a599d2d8b067768802f24f193979b93875208f"
+    },
+    "offline": {
+      "file": "catalog-metadata-index-offline-20261013.json",
+      "sha256": "a9d3f736cd9a241a98e33952d139f6cf905ca7cab7de95e1c81e42f0e8b5eaef"
+    },
+    "refusal": {
+      "file": "catalog-metadata-index-refusal-20261013.json",
+      "sha256": "3de5507096568f131f1df5da310af33f0377fb333b8bb932d2118e7f9880940b"
+    }
+  },
+  "measurements": {
+    "candidate-first": {
+      "private_peak_mib": 399.1171875,
+      "blank_mib": 231.61328125,
+      "warm_max_ms": 93.54970000000321
+    },
+    "control-second": {
+      "private_peak_mib": 401.8046875,
+      "blank_mib": 226.3515625,
+      "warm_max_ms": 92.35380000001169
+    },
+    "control-first": {
+      "private_peak_mib": 400.66796875,
+      "blank_mib": 231.59765625,
+      "warm_max_ms": 98.36410000000615
+    },
+    "candidate-second": {
+      "private_peak_mib": 395.4921875,
+      "blank_mib": 230.37109375,
+      "warm_max_ms": 92.86350000000675
+    }
+  },
+  "open_gates": [
+    "250 MiB whole-browser target",
+    "Physical Android deferred"
+  ],
+  "final_generator_hardening_keeps_measured_modules_engine_catalog_byte_identical": true,
+  "final_artifact": {
+    "info": {
+      "schema_version": 1,
+      "commit": "2a085dac1036b358f18351cab8b7788ee521f001",
+      "working_tree_dirty": false,
+      "tools": {
+        "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+        "node": "v22.22.3",
+        "python": "Python 3.14.2",
+        "wasm_bindgen": "wasm-bindgen 0.2.118"
+      },
+      "wasm_sha256": "4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee"
+    },
+    "shell": "a91318faa7f1fd730ad5923bc3aafec22773b2c8c7ec93aa43267762f5e9eaad"
+  },
+  "original_runner_sampler_phase_classifier_unchanged": true
+}

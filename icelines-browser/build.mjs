@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { buildOfflineShell } from './offline-build.mjs';
 import { gzipSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
+import { injectCatalogMetadata } from './metadata-build.mjs';
 const root = fileURLToPath(new URL('.', import.meta.url));
 const expectedDist = resolve(await realpath(root), 'dist');
 try {
@@ -18,15 +19,24 @@ await mkdir(new URL('./dist/', import.meta.url), { recursive: true });
 for (const name of ['index.html', 'style.css']) await cp(new URL(name, import.meta.url), new URL('dist/' + name, import.meta.url));
 await cp(new URL('public/pkg/', import.meta.url), new URL('dist/pkg/', import.meta.url), { recursive: true });
 const catalog = JSON.parse(await readFile(new URL('public/catalog.json', import.meta.url), 'utf8'));
+const headers = {};
 await mkdir(new URL('dist/data/', import.meta.url), { recursive: true });
 for (const entry of catalog.packages) {
   if (!/^data\/[a-f0-9]{64}\.json$/.test(entry.url)) throw new Error('Unsafe publication package path');
   await cp(new URL('public/' + entry.url, import.meta.url), new URL('dist/' + entry.url, import.meta.url));
-  const compressed = gzipSync(await readFile(new URL('public/' + entry.url, import.meta.url)));
+  const raw = await readFile(new URL('public/' + entry.url, import.meta.url));
+  if (raw.length !== entry.bytes || createHash('sha256').update(raw).digest('hex') !== entry.sha256) throw new Error('Catalog metadata index requires exact authenticated bytes');
+  const {schema_version,season,season_type,source,observed_at,fetched_at} = JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(raw));
+  if (schema_version !== 1 || season !== entry.season || season_type !== entry.season_type || source !== entry.source) throw new Error('Catalog metadata index context mismatch');
+  headers[entry.sha256] = {schema_version,season,season_type,source,observed_at,fetched_at};
+  const compressed = gzipSync(raw);
   entry.transport = {encoding:'gzip',url:entry.url + '.gz',bytes:compressed.length,sha256:createHash('sha256').update(compressed).digest('hex')};
   await writeFile(new URL('dist/' + entry.transport.url, import.meta.url),compressed);
 }
 await writeFile(new URL('dist/catalog.json', import.meta.url),JSON.stringify(catalog,null,2) + '\n');
+const metadataModule = new URL('dist/src/catalog-metadata.js',import.meta.url);
+const metadataSource = await readFile(metadataModule,'utf8');
+await writeFile(metadataModule,injectCatalogMetadata(metadataSource,headers));
 try { await cp(new URL('public/build-info.json', import.meta.url), new URL('dist/build-info.json', import.meta.url)); }
 catch (error) { if (error.code !== 'ENOENT') throw error; }
 await writeFile(new URL('dist/.nojekyll', import.meta.url), '');

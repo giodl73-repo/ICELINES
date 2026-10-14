@@ -9,12 +9,13 @@ import { queryExport, queryCsv } from './query-export.js';
 import { readCatalog } from './catalog.js';
 import { reconcileSavePolicy } from './save-policy.js';
 import { downloadPackage } from './package-download.js';
+import { metadataForVerifiedCatalogBytes } from './catalog-metadata.js';
 import { MAX_ARCHIVE_BYTES } from './archive.js';
 import { digest, MAX_BYTES, refreshStats } from './acquisition.js';
-import { listSaved, loadSaved, onLibraryChange, packageMetadata, removeSaved, savedActiveId, saveDataset, MAX_SCHEDULE_BYTES } from './library.js';
+import { listSaved, loadSaved, onLibraryChange, removeSaved, savedActiveId, saveDataset, MAX_SCHEDULE_BYTES } from './library.js';
 import { SORT_OPTIONS, parseViewHash, serializeViewHash, isPublicDataset, localDatasetForView } from './view-state.js';
 import type { ViewState } from './view-state.js';
-import type { CatalogEntry, Dataset, PackageData, PackageMetadata, PlayerRow, QueryRequest, QueryResult, SavedDatasetEntry, ScheduledGame } from './types.js';
+import type { CatalogEntry, Dataset, PackageMetadata, PlayerRow, QueryRequest, QueryResult, SavedDatasetEntry, ScheduledGame } from './types.js';
 
 initializeAppearance();
 const playerTable = new ViewportTable(element('rows'), element('head'), row => { void perform(() => player(row)); }, element<HTMLSelectElement>('table-view'));
@@ -26,7 +27,6 @@ const sort = element<HTMLSelectElement>('sort');
 const filter = element<HTMLInputElement>('filter');
 const minimumGames = element<HTMLInputElement>('minimum-games');
 const keepUpdated = element<HTMLInputElement>('keep-updated');
-const textDecoder = new TextDecoder('utf-8', { fatal: true });
 let catalog: CatalogEntry[] = [];
 let active: Dataset | undefined;
 const resident = new Map<string, Dataset>();
@@ -271,7 +271,7 @@ async function loadCatalog(entry: CatalogEntry): Promise<void> {
   const bytes = stored ? stored.bytes : await downloadPackage(entry, new URL(location.href.split('#')[0]),
     {signal:controller.signal,deadline:Date.now() + 120000});
   if (bytes.length !== entry.bytes || await digest(bytes) !== entry.sha256) throw new Error('Package size or checksum mismatch');
-  const context = packageMetadata(JSON.parse(textDecoder.decode(bytes)) as PackageData);
+  const context = metadataForVerifiedCatalogBytes(bytes,entry.sha256);
   if (context.season !== entry.season || context.season_type !== entry.season_type || context.source !== entry.source) throw new Error('Package does not match catalog context');
   requireCurrentAcquisition(sequence, controller.signal);
   await activate(bytes, entry.id, stored?.keepUpdated); status(retained ? 'Loaded your saved public season.' : 'Season loaded in memory. Save locally to keep it.');
