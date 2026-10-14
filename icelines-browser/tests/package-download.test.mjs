@@ -84,3 +84,26 @@ test('cancellation stops decoder input before forwarding the whole payload',asyn
     assert.ok(forwarded>0&&forwarded<input.length);assert.equal(input.byteLength,32769);
   }finally{globalThis.DecompressionStream=original;}
 });
+
+test('decoder output releases its reader lock after success, limit failure and abort',async()=>{
+  const original=globalThis.DecompressionStream;
+  try{
+    for(const mode of ['success','limit','abort']){
+      let readable;
+      const abort=new AbortController();
+      globalThis.DecompressionStream=class{constructor(){
+        const stream=new TransformStream({transform(chunk,controller){
+          controller.enqueue(chunk);
+          if(mode==='abort')abort.abort(new Error('cancelled during decoding'));
+        }});
+        readable=stream.readable;
+        return stream;
+      }};
+      const input=new Uint8Array(16385);
+      const result=expandPackage(input,mode==='limit'?1:input.length,{...options(),signal:abort.signal});
+      if(mode==='success')assert.deepEqual(await result,input);
+      else await assert.rejects(result,mode==='limit'?/Expanded package/:/cancelled during decoding/);
+      assert.equal(readable.locked,false,mode+' must detach the output reader');
+    }
+  }finally{globalThis.DecompressionStream=original;}
+});

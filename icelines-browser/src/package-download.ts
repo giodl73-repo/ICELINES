@@ -36,7 +36,11 @@ export async function expandPackage(bytes: Uint8Array, maximum: number, options:
       expanded.set(value,length); length += value.length;
     }
     return expanded.subarray(0,length);
-  } finally { clearTimeout(timer); options.signal.removeEventListener('abort',stop); await reader.cancel().catch(() => {}); }
+  } finally {
+    clearTimeout(timer); options.signal.removeEventListener('abort',stop);
+    await reader.cancel().catch(() => {});
+    reader.releaseLock();
+  }
 }
 
 // JSON remains the interchange format and revision source. Transport bytes are
