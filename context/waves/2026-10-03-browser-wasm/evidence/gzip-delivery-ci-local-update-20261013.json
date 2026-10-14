@@ -1,0 +1,136 @@
+{
+  "phase": "verify",
+  "started_at": "2026-10-14T01:17:43.846Z",
+  "verified": true,
+  "scope": "Owned localhost retained-artifact rehearsal, saved season/schedule preservation and gzip acquisition. No production-origin, phone or memory proof.",
+  "browser": "153.0.8010.12",
+  "initial_owned_pages": 0,
+  "extra_owned_pages_closed": 0,
+  "network_build": {
+    "schema_version": 1,
+    "commit": "a59e410c1140ac7838d9e5e3abe39200b146046e",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "2e4c853309a32d8366c282afe113626fde5c25b26349bd9194ceafe59123f57b"
+  },
+  "loaded_before": "4d1f513e29869bceba4fec9bf08d51511ad74207",
+  "registration_before": {
+    "controller": "activated",
+    "active": "activated",
+    "scope": "http://127.0.0.1:58858/ICELINES/workbench/"
+  },
+  "registration_waiting": {
+    "active": "activated",
+    "waiting": "installed"
+  },
+  "update_mode": "inplace",
+  "update_verified": true,
+  "executing_renderer": "viewport",
+  "mounted_players": 42,
+  "storage": {
+    "datasets": [
+      {
+        "id": "20252026-regular",
+        "revision": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+        "sha256": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+        "bytes": 926515,
+        "metadata": {
+          "schema_version": 1,
+          "season": 20252026,
+          "season_type": "regular",
+          "source": "repository:20252026",
+          "observed_at": null,
+          "fetched_at": null
+        },
+        "keepUpdated": false
+      }
+    ],
+    "schedules": [
+      {
+        "id": "nhl-game-week:2026-04-29",
+        "revision": "0142670ebe87b8d584a9fda0575e742fc43ce652ad2c2f297d7c48e73060222a",
+        "sha256": "0142670ebe87b8d584a9fda0575e742fc43ce652ad2c2f297d7c48e73060222a",
+        "bytes": 752,
+        "metadata": {
+          "schema_version": 1,
+          "kind": "nhl-game-week",
+          "requested_date": "2026-04-29",
+          "source": "NHL schedule",
+          "observed_at": null,
+          "fetched_at": "2026-10-13T00:00:00Z"
+        },
+        "keepUpdated": false
+      }
+    ],
+    "settings": [
+      "20252026-regular",
+      "nhl-game-week:2026-04-29"
+    ]
+  },
+  "saved_bytes_unchanged": true,
+  "filtered_rows": 8,
+  "player_detail": "Connor McDavid",
+  "gzip_acquisition": {
+    "id": "20242025-regular",
+    "rows": 905,
+    "wire_bytes": 118304,
+    "wire_sha256": "57e52b132fe4651f3815cff9a561b0e610affab22261c394ab488ce120495293",
+    "raw_export_bytes": 908625,
+    "raw_export_sha256": "ba4f8b9ab5e8882652099025360d8409b214a917d03ccc3c326a603a7ab86479",
+    "headers": {
+      "transfer-encoding": "chunked",
+      "cache-control": "no-store",
+      "keep-alive": "timeout=5",
+      "date": "Wed, 14 Oct 2026 01:17:49 GMT",
+      "content-type": "application/gzip",
+      "connection": "keep-alive"
+    },
+    "raw_json_not_requested": true
+  },
+  "storage_after_gzip": {
+    "datasets": [
+      {
+        "id": "20252026-regular",
+        "revision": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+        "sha256": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+        "bytes": 926515,
+        "metadata": {
+          "schema_version": 1,
+          "season": 20252026,
+          "season_type": "regular",
+          "source": "repository:20252026",
+          "observed_at": null,
+          "fetched_at": null
+        },
+        "keepUpdated": false
+      }
+    ],
+    "schedules": [
+      {
+        "id": "nhl-game-week:2026-04-29",
+        "revision": "0142670ebe87b8d584a9fda0575e742fc43ce652ad2c2f297d7c48e73060222a",
+        "sha256": "0142670ebe87b8d584a9fda0575e742fc43ce652ad2c2f297d7c48e73060222a",
+        "bytes": 752,
+        "metadata": {
+          "schema_version": 1,
+          "kind": "nhl-game-week",
+          "requested_date": "2026-04-29",
+          "source": "NHL schedule",
+          "observed_at": null,
+          "fetched_at": "2026-10-13T00:00:00Z"
+        },
+        "keepUpdated": false
+      }
+    ],
+    "settings": [
+      "20252026-regular",
+      "nhl-game-week:2026-04-29"
+    ]
+  },
+  "finished_at": "2026-10-14T01:17:50.494Z"
+}
