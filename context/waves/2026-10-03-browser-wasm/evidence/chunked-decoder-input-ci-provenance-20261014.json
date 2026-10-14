@@ -1,0 +1,63 @@
+{
+  "status": "PR102 merged as75e6ba97; exact CI preview validated; master/publication/recovery pending;250 MiB not achieved",
+  "pr": "https://github.com/giodl73-repo/ICELINES/pull/102",
+  "reviewed_head": "85122c6e07d06e21b389438e5ce0e087d2ff682f",
+  "ci_preview": "3b61f10e186339dbe29ec761eebdc9b63a6dd3e1",
+  "master": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+  "browser_run": 38567942191,
+  "native_run": 38567942180,
+  "artifact_id": 11897745183,
+  "reports": {
+    "verification": {
+      "file": "chunked-decoder-input-ci-verification-20261014.json",
+      "sha256": "f3688c3917d185f9d9cf82cb0fdc9533c5754162073b0a02808ca23df6de54b6"
+    },
+    "pre-merge-checks": {
+      "file": "chunked-decoder-input-ci-pre-merge-checks-20261014.json",
+      "sha256": "52b40929a747d02868a37c35b8a41711ee49bb9d528ba580361112fa43eb6fea"
+    },
+    "memory-candidate": {
+      "file": "chunked-decoder-input-ci-memory-candidate-20261014.json",
+      "sha256": "eb58f34cc935b08606c2f0c9df1cb730a420817e88e11adc9ac8b06d2fa33007"
+    },
+    "memory-control": {
+      "file": "chunked-decoder-input-ci-memory-control-20261014.json",
+      "sha256": "80299b8a767646510b609130028d39a4234ee87f9d38af8fdfed5132d75aa0dd"
+    },
+    "refusal": {
+      "file": "chunked-decoder-input-ci-refusal-20261014.json",
+      "sha256": "17723ebb2f6db2daf2d99151600def58105dfea4f29cd15a8ea976c58ceaec1e"
+    },
+    "offline": {
+      "file": "chunked-decoder-input-ci-offline-20261014.json",
+      "sha256": "442862a5872df335107ccfbc4dd92fd3f7a120473d6cc83f4293b9042add331e"
+    },
+    "viewport": {
+      "file": "chunked-decoder-input-ci-viewport-20261014.json",
+      "sha256": "f33a6ba2983a5c9b767f04f098a08701c5a4a6d7c5d1c0a901cb48a5f3b078e9"
+    }
+  },
+  "measurements": {
+    "memory-candidate": {
+      "private_peak_mib": 392.25390625,
+      "blank_mib": 228.2109375,
+      "warm_max_ms": 97.49590000000899
+    },
+    "memory-control": {
+      "private_peak_mib": 394.15625,
+      "blank_mib": 233.78515625,
+      "warm_max_ms": 102.91599999999744
+    }
+  },
+  "scope": "One additional Linux-built candidate/control full-workload pair, not independent opposite-order repetitions. Normal75/eight/two905/332/20/restart, every sampled phase, original flags/sampler/network observer, no forced GC. Exact matching Linux WASM/template; decoder matches local reviewed output; other frontend modules unchanged.",
+  "raw_private_peak_saving_mib": 1.90234375,
+  "limitations": "Raw1.90 MiB difference with228.21/233.79 blank baselines is not an exact causal or universal saving. Control102.92 ms warm maximum retained; candidate97.50 ms. Both250 MiB flags fail. No latency/budget waiver.",
+  "engine_sha256": "8482c9fd825f773eb3fc0956e42f67f0931caf871d2bab89c76b01a4738aab3a",
+  "package_download_sha256": "92935d08b51ef5c65f99adac15f763ec85b0e4471366771d41c5fecb4214524a",
+  "master_validation": "Pending exact successful master artifact and required checks; publication must use retained bytes and preserve documentation/original saved-profile data through forward/rollback/restore.",
+  "published_source": "5ef015c4d47ebbcee8234eb92f1fe83716b45054",
+  "open_gates": [
+    "250 MiB whole-browser FAILED",
+    "Physical Android explicitly deferred"
+  ]
+}

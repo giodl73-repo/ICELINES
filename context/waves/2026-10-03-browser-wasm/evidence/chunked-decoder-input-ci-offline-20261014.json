@@ -1,0 +1,61 @@
+{
+  "started_at": "2026-10-14T13:13:07.903Z",
+  "verified": true,
+  "scope": "Isolated Chromium process close/reopen with offline network control; saved versus unsaved seasons, fresh query and player detail. Not physical-phone, total-memory or remote-rollback proof.",
+  "evidence": {
+    "saved_unfiltered_rows": 933,
+    "browser_process_closed": true,
+    "local_server_stopped": true,
+    "offline_viewport_rows": 42,
+    "offline": {
+      "online": false,
+      "probe_failed": true
+    },
+    "pending_table": {
+      "visibility": "hidden",
+      "inert": true,
+      "rows": 933
+    },
+    "fresh_filtered_rows": 835,
+    "attached_rows": {
+      "common_rows_unchanged": true,
+      "added": 0,
+      "removed": 98,
+      "rows": 835,
+      "previous_rows": 933
+    },
+    "player_detail": "Connor McDavid",
+    "failed_requests": [
+      {
+        "url": "http://127.0.0.1:58288/ICELINES/workbench/uncached-acceptance-probe-1791983592552",
+        "error": "net::ERR_INTERNET_DISCONNECTED"
+      }
+    ],
+    "failed_query_cleared_rows": true,
+    "retry_query_rows": 835
+  },
+  "profile_retained": "C:\\Users\\giodl\\AppData\\Local\\Temp\\icelines-acceptance-gxyhwT",
+  "retained_artifact": {
+    "commit": "3b61f10e186339dbe29ec761eebdc9b63a6dd3e1",
+    "shell_build": "3105a193a5ec0db3d4fdd8d456c6a0454c0f95d508c1cf9b2bd89252cd0caa4e",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "url": "http://127.0.0.1:58288/ICELINES/workbench/",
+  "browser": "153.0.8010.12",
+  "build": {
+    "schema_version": 1,
+    "commit": "3b61f10e186339dbe29ec761eebdc9b63a6dd3e1",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "8482c9fd825f773eb3fc0956e42f67f0931caf871d2bab89c76b01a4738aab3a"
+  },
+  "saved_package": "20252026-regular",
+  "unsaved_package": "20242025-regular",
+  "finished_at": "2026-10-14T13:13:13.645Z"
+}
