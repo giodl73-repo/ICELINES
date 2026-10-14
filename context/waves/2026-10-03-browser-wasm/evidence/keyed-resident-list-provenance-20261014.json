@@ -1,0 +1,42 @@
+{
+  "status": "UNADOPTED; one fresh pair shows no whole-browser saving",
+  "source": "c92ef6f0acee4a0cf4a2a845973bd004115764e0",
+  "treatment": "Incremental resident-library DOM reconciliation keyed by revision; preserve unchanged nodes, update labels/disabled state, clear evicted callbacks, resolve data at click time",
+  "scope": "Sequential candidate/control full75 packages/eight residents/two archives/20 committed queries/restart, original flags/sampler/network observer, no forced GC. Both250 MiB flags false. No universal slowdown/saving claim from one pair.",
+  "reports": {
+    "candidate": {
+      "file": "keyed-resident-list-candidate-20261014.json",
+      "sha256": "bb26ee34a0c5b8586435d10bed9645f996998126a67fbcd1e505f26c114ef023"
+    },
+    "control": {
+      "file": "keyed-resident-list-control-20261014.json",
+      "sha256": "4be20a16fbdb5e1b832bf8d57e3231f99f3276726accf50425a988f6616e7d36"
+    }
+  },
+  "measurements": {
+    "candidate": {
+      "private_mib": 407.55078125,
+      "blank_mib": 238.1015625,
+      "warm_max_ms": 95.1640999999945
+    },
+    "control": {
+      "private_mib": 406.7734375,
+      "blank_mib": 233.60546875,
+      "warm_max_ms": 92.84570000000531
+    }
+  },
+  "verification": {
+    "viewport": {
+      "file": "keyed-resident-list-viewport-20261014.json",
+      "sha256": "d13810660ee70a474ef37f2616dd5dc737c86ee65952ac630f83ca335d862ba3"
+    },
+    "lifecycle": {
+      "file": "keyed-resident-list-lifecycle-20261014.json",
+      "sha256": "0ab23a62f6988d3e7471558e08d20c99253b340e1f24bd9e9ca9b317af10a57a"
+    }
+  },
+  "byte_scope": "Only main.js differs among frontend modules; WASM/catalog byte-identical to control. Build info/shell hashes intentionally differ.",
+  "build_log_sha256": "fd7ba327e90cb9c2d302891950c0e9301fde388e658ece5a905b2f5b08c9e96e",
+  "lifecycle_helper_sha256": "9d4d095753484d2dcabd2022c59d697d13446d9c9aa27d2b6c2555eaec65e312",
+  "failed_probes": "Initial lifecycle helper tried focusing inside collapsed session details, then restarting after selection closed the outer library. Both false reports/logs retained locally; corrected helper opens both details. These were probe visibility errors, not app failures."
+}

@@ -1,0 +1,13 @@
+{
+  "verified": true,
+  "scope": "Owned lifecycle diagnostic with retained test node references; not memory acceptance.",
+  "checks": {
+    "reused_across_new_season": true,
+    "ten_queries_preserve_node_and_focus": true,
+    "reused_button_selects_correct_season": true,
+    "evicted_node_detached_and_callback_released": true,
+    "retained_selection_after_lru_eviction": true,
+    "restart_clears_nodes_and_callbacks": true,
+    "reload_after_restart": true
+  }
+}
