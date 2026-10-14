@@ -1,7 +1,7 @@
 # Browser WASM Workbench
 
 **Date:** 2026-10-03
-**Status:** Active partial implementation — first-release features and three appearance themes are deployed. PR #79 pagination and PR #80 resource corrections are included in the 2026-10-08 release. Deployed desktop Chromium offline reopening passed on 2026-10-12. Remote rollback and device/resource acceptance remain open; see the [acceptance ledger](../../context/waves/2026-10-03-browser-wasm/ACCEPTANCE.md).
+**Status:** Active partial implementation — first-release features and three appearance themes are deployed. As of 2026-10-14, the published source is 75e6ba97 (PR #102); deployed desktop offline reopening and retained-byte rollback/restore checks pass for the scoped release path. The fixed 250 MiB desktop memory gate remains unmet; physical Android acceptance is deferred by the user. See the [acceptance ledger](../../context/waves/2026-10-03-browser-wasm/ACCEPTANCE.md).
 **Scope:** A GitHub Pages application running the shared IceLines Rust engine on the user's device, with release packages, imported files, live refresh, and optional local persistence.
 **Review:** [Planning review](../../signals/roles/check/browser-wasm-workbench-roles-check-2026-10-03.md); [implementation handoff review](../../signals/roles/check/browser-wasm-handoff-roles-check-2026-10-04.md) (release needs work).
 
@@ -26,7 +26,8 @@ Public release archives are build inputs for a versioned, lazy-loaded catalog.
 The existing Pages documentation stays at `/ICELINES/`; the browser is composed
 under `/ICELINES/workbench/`. On 2026-10-08, the theme publication moved Pages
 to the existing Actions publication workflow; `gh-pages` remains the documentation
-input for composition. Remote rollback acceptance is still required; see
+input for composition. Scoped remote rollback and forward restore completed;
+their exact release/profile limits are recorded in the acceptance ledger. See
 [rollout](../../icelines-browser/PAGES.md).
 LFS inputs use the same conversion path if actual assets are identified. Live
 stats and schedule acquisition are separate adapters; their browser access must

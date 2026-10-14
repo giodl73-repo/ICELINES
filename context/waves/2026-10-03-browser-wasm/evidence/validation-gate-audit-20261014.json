@@ -1,0 +1,226 @@
+{
+  "audited_at_utc": "2026-10-14T19:26:38.588112+00:00",
+  "scope": "Requirement/evidence reconciliation; no new normal benchmark, runtime change, publication or memory waiver. Public JSON semantic identity only; this read is not a fresh executing-WASM or all-file verifier.",
+  "public_identity": {
+    "build-info.json": {
+      "schema_version": 1,
+      "commit": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+      "working_tree_dirty": false,
+      "tools": {
+        "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+        "node": "v22.22.3",
+        "python": "Python 3.14.2",
+        "wasm_bindgen": "wasm-bindgen 0.2.118"
+      },
+      "wasm_sha256": "8482c9fd825f773eb3fc0956e42f67f0931caf871d2bab89c76b01a4738aab3a"
+    },
+    "shell-manifest.json": {
+      "schema_version": 1,
+      "build": "e575ec099d635615476610b46ec106b97e83d28b66fc3980bbdcbbf4292c1a36",
+      "worker_sha256": "0cf24ac769be0a1e0dfe20dc2b1069b3a23f1fb5596610dbc4debd87363e89b9",
+      "assets": [
+        {
+          "path": "build-info.json",
+          "sha256": "4202f88163a0a4ef7dc21dff6f02df7f30d89e04d738727f192ccd0320528c06",
+          "bytes": 365,
+          "gzip_bytes": 269
+        },
+        {
+          "path": "catalog.json",
+          "sha256": "8d18e4e646d40197bde3048a0d1b3c8dffa7258aeb6d921ebd237088f542dab6",
+          "bytes": 96000,
+          "gzip_bytes": 18194
+        },
+        {
+          "path": "index.html",
+          "sha256": "b8aa49e0a928a0ded0098e937707409fc92d9aceddd0774d6c39694fa94fd57f",
+          "bytes": 10326,
+          "gzip_bytes": 3375
+        },
+        {
+          "path": "pkg/icelines_wasm.js",
+          "sha256": "4b15c2eb21ef2700537fe78d742a04bfcf20723236e1d578ec837a2ae9e8f153",
+          "bytes": 13044,
+          "gzip_bytes": 2971
+        },
+        {
+          "path": "pkg/icelines_wasm_bg.wasm",
+          "sha256": "8482c9fd825f773eb3fc0956e42f67f0931caf871d2bab89c76b01a4738aab3a",
+          "bytes": 630021,
+          "gzip_bytes": 220263
+        },
+        {
+          "path": "src/acquisition.js",
+          "sha256": "0f00abb38bfe32175283bc7941c8a93a4351c57f3fbb8baeaa88710cd3e6cddf",
+          "bytes": 5656,
+          "gzip_bytes": 2011
+        },
+        {
+          "path": "src/appearance.js",
+          "sha256": "0a0c29a70ab7297aee7a9b7449733bc84878be083a37819ff81c11de80c4dd0a",
+          "bytes": 1392,
+          "gzip_bytes": 595
+        },
+        {
+          "path": "src/archive.js",
+          "sha256": "33b02bee6ab4d8bbc62c7ae5a4f74ea276ba15093b1cd933df5d20063187b03a",
+          "bytes": 7736,
+          "gzip_bytes": 2425
+        },
+        {
+          "path": "src/catalog-metadata.js",
+          "sha256": "459ad240d2973f346b94dd36cd3d56c71b721b27e43aaf1381fa09a265f6e2f4",
+          "bytes": 15550,
+          "gzip_bytes": 4088
+        },
+        {
+          "path": "src/catalog.js",
+          "sha256": "bd4a4afc4b6096db68cd91c59f4cfa7fc0a72e1010582bfb58b959d9bf4af741",
+          "bytes": 2925,
+          "gzip_bytes": 1090
+        },
+        {
+          "path": "src/engine-client.js",
+          "sha256": "6530325b756b4daa4b93ef100903e1fb2c9cf8e8143f99ff06252a525fb40072",
+          "bytes": 5018,
+          "gzip_bytes": 1430
+        },
+        {
+          "path": "src/library.js",
+          "sha256": "615924dabebf30e278516a28f4ef7ed1fcd020af8769e98ec5078317ce5671b2",
+          "bytes": 17851,
+          "gzip_bytes": 4134
+        },
+        {
+          "path": "src/live-coordination.js",
+          "sha256": "6ec18259c481b1539e9d0a098756f5e2cc6f61c6460e69009d54b792f9e9e327",
+          "bytes": 2091,
+          "gzip_bytes": 806
+        },
+        {
+          "path": "src/main.js",
+          "sha256": "00f8f0a97c67af01b7edb9c28711cdf2a923b9d08a04a23a412e7ac2671c70ea",
+          "bytes": 37354,
+          "gzip_bytes": 8907
+        },
+        {
+          "path": "src/network.js",
+          "sha256": "8f1102d36e112bd2d571e4e91f9cd8f08c3f4136579aa0909b53433489329d8a",
+          "bytes": 5504,
+          "gzip_bytes": 1663
+        },
+        {
+          "path": "src/offline.js",
+          "sha256": "7b3a90418d5a9877047ef8608ef2669b3da3cf42d25f359fdf62107dbcfecf50",
+          "bytes": 4356,
+          "gzip_bytes": 1337
+        },
+        {
+          "path": "src/package-download.js",
+          "sha256": "92935d08b51ef5c65f99adac15f763ec85b0e4471366771d41c5fecb4214524a",
+          "bytes": 3213,
+          "gzip_bytes": 1258
+        },
+        {
+          "path": "src/player-table.js",
+          "sha256": "67a747b8751f59542e7e907d229980a08cf70f3593f1a53e372f9828b0f7fc34",
+          "bytes": 4641,
+          "gzip_bytes": 1479
+        },
+        {
+          "path": "src/polling.js",
+          "sha256": "5f77d7c9b3d2831e8f7cdaa3e39f48c4d2e6c82157ae4cb069af2d15611e067c",
+          "bytes": 3568,
+          "gzip_bytes": 1099
+        },
+        {
+          "path": "src/query-export.js",
+          "sha256": "2e4113d7c182d4dd4b73cfd05525e058d304e3fe16c1c9c99ca34d3f8c82ef0a",
+          "bytes": 2084,
+          "gzip_bytes": 1037
+        },
+        {
+          "path": "src/save-policy.js",
+          "sha256": "74d49598e1306777ebe19c5823eed6be4358e4dd22f127ff2ef14d96a258e1fe",
+          "bytes": 334,
+          "gzip_bytes": 223
+        },
+        {
+          "path": "src/schedule.js",
+          "sha256": "f103a83ba4befa4646dc17f869ff3e3206f3e180e4c810537204eedf216b492e",
+          "bytes": 10496,
+          "gzip_bytes": 2154
+        },
+        {
+          "path": "src/types.js",
+          "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+          "bytes": 11,
+          "gzip_bytes": 31
+        },
+        {
+          "path": "src/view-state.js",
+          "sha256": "a9496f24e717d31a1a06779bdd08c621fc6f052cac02f9f86ab1129e4746bcbd",
+          "bytes": 3433,
+          "gzip_bytes": 1269
+        },
+        {
+          "path": "src/viewport-table.js",
+          "sha256": "14b857caa013d0a536056af0d838c6e02121c888c4dd10249674f12beca987ce",
+          "bytes": 7727,
+          "gzip_bytes": 2225
+        },
+        {
+          "path": "src/worker.js",
+          "sha256": "12a6c48e58a22f545477760166bc8752a24d8cd7a8977b683df1a98fd0f03e42",
+          "bytes": 3825,
+          "gzip_bytes": 1116
+        },
+        {
+          "path": "style.css",
+          "sha256": "072ed85365289df192ee982aa1734e67db2e3618073fadbb53432977a2199620",
+          "bytes": 10187,
+          "gzip_bytes": 3115
+        }
+      ]
+    }
+  },
+  "plan_requirements": {
+    "desktop_peak_mib": 250,
+    "warm_single_season_filter_ms": 500,
+    "starter_compressed_mib": 10
+  },
+  "master_runs": [
+    {
+      "evidence": {
+        "file": "chunked-decoder-input-master-memory-first-20261014.json",
+        "sha256": "7caf28a8155592da8227254faa072ab764637ba71beded718fe6027930897021"
+      },
+      "warm_max_ms": 101.056700000001,
+      "warm_max_below_plan_500_ms": true,
+      "warm_max_below_stricter_100_ms": false,
+      "peak_private_mib": 387.2421875
+    },
+    {
+      "evidence": {
+        "file": "chunked-decoder-input-master-memory-repeat-20261014.json",
+        "sha256": "379a3b7de35440bf96bf8823c527bfbc3692c7aa8be062c306f7096ab92e2277"
+      },
+      "warm_max_ms": 93.80809999999474,
+      "warm_max_below_plan_500_ms": true,
+      "warm_max_below_stricter_100_ms": true,
+      "peak_private_mib": 389.671875
+    }
+  ],
+  "gate_disposition": {
+    "desktop_memory": "FAILED",
+    "desktop_warm_filter": "Observed normal runs satisfy plan500 ms on this workstation; original101.0567 ms remains above stricter100 ms comparison. No universal latency claim.",
+    "physical_android": "NOT RUN; deferred by user",
+    "full_goal": "INCOMPLETE"
+  },
+  "documentation_fixes": [
+    "Plan release status no longer incorrectly lists scoped remote rollback as pending.",
+    "Phone procedure records current identity and requires recheck at device test time.",
+    "Remaining acceptance list uses current-master387.24/389.67 MiB, not historical388.74 MiB.",
+    "500 ms plan target distinguished from stricter100 ms observations; all raw reports unchanged."
+  ]
+}
