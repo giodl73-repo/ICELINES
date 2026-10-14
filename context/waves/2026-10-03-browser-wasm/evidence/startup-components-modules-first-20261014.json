@@ -1,0 +1,125 @@
+{
+  "started_at": "2026-10-14T11:39:28.988Z",
+  "completed": true,
+  "host": {
+    "platform": "win32",
+    "arch": "x64",
+    "os_release": "10.0.26310",
+    "cpu": "12th Gen Intel(R) Core(TM) i7-12800HX",
+    "logical_cpus": 24,
+    "ram_bytes": 34042929152
+  },
+  "scope": "Single isolated headless Chromium on this Windows workstation. Includes owned browser/renderer/GPU/utility processes; excludes Node runner, local HTTP server and sampler. Working-set sums may count shared pages more than once. Private-byte sums measure private allocations, not just resident RAM. Sample maxima may miss transient spikes; lifetime working-set peaks are per-process, not concurrent group peaks. No physical-phone or remote-rollback claim.",
+  "sampling": {
+    "requested_interval_ms": 100,
+    "tree_discovery_interval_ms": 500,
+    "actual_median_interval_ms": 207,
+    "actual_max_interval_ms": 856
+  },
+  "packages": [],
+  "imports": [],
+  "warm_query_ms": [],
+  "artifact": {
+    "commit": "5ef015c4d47ebbcee8234eb92f1fe83716b45054",
+    "shell_build": "2cd7ec75fbdada2e037c0538b702286dff4a31419f383081bd29d82dc1efb02b",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "archive": {
+    "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca",
+    "bytes": 149672
+  },
+  "browser": "153.0.8010.12",
+  "engine_worker_count": 0,
+  "process_inventory": [
+    {
+      "type": "browser",
+      "id": 64744,
+      "cpuTime": 2.147788
+    },
+    {
+      "type": "renderer",
+      "id": 65512,
+      "cpuTime": 0.675334
+    },
+    {
+      "type": "renderer",
+      "id": 65860,
+      "cpuTime": 0.501726
+    },
+    {
+      "type": "renderer",
+      "id": 67804,
+      "cpuTime": 1.120788
+    },
+    {
+      "type": "GPU",
+      "id": 47592,
+      "cpuTime": 0.962568
+    },
+    {
+      "type": "network.mojom.NetworkService",
+      "id": 57532,
+      "cpuTime": 0.740242
+    },
+    {
+      "type": "storage.mojom.StorageService",
+      "id": 67336,
+      "cpuTime": 0.403159
+    }
+  ],
+  "memory": [
+    {
+      "phase": "blank_browser",
+      "samples": 6,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 239599616,
+      "last_private_bytes": 245583872,
+      "peak_private_bytes": 245583872,
+      "peak_working_set_bytes": 500998144,
+      "peak_sum_lifetime_working_set_bytes": 514555904
+    },
+    {
+      "phase": "startup",
+      "samples": 2,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 273354752,
+      "last_private_bytes": 273408000,
+      "peak_private_bytes": 273408000,
+      "peak_working_set_bytes": 545878016,
+      "peak_sum_lifetime_working_set_bytes": 553562112
+    },
+    {
+      "phase": "idle_settled",
+      "samples": 12,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 272945152,
+      "last_private_bytes": 273100800,
+      "peak_private_bytes": 273563648,
+      "peak_working_set_bytes": 547549184,
+      "peak_sum_lifetime_working_set_bytes": 555278336
+    },
+    {
+      "phase": "diagnostic_target_inventory",
+      "samples": 1,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 273100800,
+      "last_private_bytes": 273100800,
+      "peak_private_bytes": 273100800,
+      "peak_working_set_bytes": 547254272,
+      "peak_sum_lifetime_working_set_bytes": 555319296
+    }
+  ],
+  "missing_sampled_phases": [],
+  "target_scope": "Startup module diagnostic: transformed minimal/scriptless/unstyled controls are nonfunctional attribution treatments; normal control waits for offline readiness. Five seconds idle, target inventory afterward. Not full-workload acceptance. Original flags/sampler, no forced GC; one run per treatment, baseline variation prevents exact causal subtraction.",
+  "sampled_peak_private_bytes": 273563648,
+  "sampled_peak_working_set_bytes": 547549184,
+  "sampled_private_bytes_over_blank_baseline": 27979776,
+  "provisional_250_mib_target": null,
+  "control": "All sixteen original main imports/dependencies executed; application initialization removed, nonfunctional",
+  "finished_at": "2026-10-14T11:39:40.207Z"
+}

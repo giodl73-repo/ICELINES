@@ -1,0 +1,147 @@
+{
+  "started_at": "2026-10-14T11:40:53.739Z",
+  "completed": true,
+  "host": {
+    "platform": "win32",
+    "arch": "x64",
+    "os_release": "10.0.26310",
+    "cpu": "12th Gen Intel(R) Core(TM) i7-12800HX",
+    "logical_cpus": 24,
+    "ram_bytes": 34042929152
+  },
+  "scope": "Single isolated headless Chromium on this Windows workstation. Includes owned browser/renderer/GPU/utility processes; excludes Node runner, local HTTP server and sampler. Working-set sums may count shared pages more than once. Private-byte sums measure private allocations, not just resident RAM. Sample maxima may miss transient spikes; lifetime working-set peaks are per-process, not concurrent group peaks. No physical-phone or remote-rollback claim.",
+  "sampling": {
+    "requested_interval_ms": 100,
+    "tree_discovery_interval_ms": 500,
+    "actual_median_interval_ms": 195,
+    "actual_max_interval_ms": 843
+  },
+  "packages": [],
+  "imports": [],
+  "warm_query_ms": [],
+  "artifact": {
+    "commit": "5ef015c4d47ebbcee8234eb92f1fe83716b45054",
+    "shell_build": "2cd7ec75fbdada2e037c0538b702286dff4a31419f383081bd29d82dc1efb02b",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "archive": {
+    "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca",
+    "bytes": 149672
+  },
+  "browser": "153.0.8010.12",
+  "target_inventory": [
+    {
+      "type": "service_worker",
+      "url": "http://127.0.0.1:64743/ICELINES/workbench/sw.js",
+      "title": "Service Worker http://127.0.0.1:64743/ICELINES/workbench/sw.js"
+    },
+    {
+      "type": "page",
+      "url": "http://127.0.0.1:64743/ICELINES/workbench/",
+      "title": "IceLines · Browser workbench"
+    },
+    {
+      "type": "browser_ui",
+      "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html",
+      "title": "Omnibox Popup"
+    },
+    {
+      "type": "browser_ui",
+      "url": "chrome://omnibox-popup.top-chrome/",
+      "title": "Omnibox Popup"
+    }
+  ],
+  "engine_worker_count": 0,
+  "process_inventory": [
+    {
+      "type": "browser",
+      "id": 56284,
+      "cpuTime": 2.162885
+    },
+    {
+      "type": "renderer",
+      "id": 61776,
+      "cpuTime": 0.689929
+    },
+    {
+      "type": "renderer",
+      "id": 63556,
+      "cpuTime": 0.620238
+    },
+    {
+      "type": "renderer",
+      "id": 30232,
+      "cpuTime": 1.030513
+    },
+    {
+      "type": "GPU",
+      "id": 67632,
+      "cpuTime": 0.875989
+    },
+    {
+      "type": "network.mojom.NetworkService",
+      "id": 64312,
+      "cpuTime": 0.68792
+    },
+    {
+      "type": "storage.mojom.StorageService",
+      "id": 65892,
+      "cpuTime": 0.354232
+    }
+  ],
+  "memory": [
+    {
+      "phase": "blank_browser",
+      "samples": 5,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 240394240,
+      "last_private_bytes": 246079488,
+      "peak_private_bytes": 246079488,
+      "peak_working_set_bytes": 501616640,
+      "peak_sum_lifetime_working_set_bytes": 517455872
+    },
+    {
+      "phase": "startup",
+      "samples": 2,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 287211520,
+      "last_private_bytes": 292327424,
+      "peak_private_bytes": 292327424,
+      "peak_working_set_bytes": 575791104,
+      "peak_sum_lifetime_working_set_bytes": 583102464
+    },
+    {
+      "phase": "idle_settled",
+      "samples": 13,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 292327424,
+      "last_private_bytes": 292720640,
+      "peak_private_bytes": 292786176,
+      "peak_working_set_bytes": 576815104,
+      "peak_sum_lifetime_working_set_bytes": 584011776
+    },
+    {
+      "phase": "diagnostic_target_inventory",
+      "samples": 1,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 292724736,
+      "last_private_bytes": 292724736,
+      "peak_private_bytes": 292724736,
+      "peak_working_set_bytes": 576864256,
+      "peak_sum_lifetime_working_set_bytes": 584065024
+    }
+  ],
+  "missing_sampled_phases": [],
+  "target_scope": "Startup module diagnostic: transformed minimal/scriptless/unstyled controls are nonfunctional attribution treatments; normal control waits for offline readiness. Five seconds idle, target inventory afterward. Not full-workload acceptance. Original flags/sampler, no forced GC; one run per treatment, baseline variation prevents exact causal subtraction.",
+  "sampled_peak_private_bytes": 292786176,
+  "sampled_peak_working_set_bytes": 576815104,
+  "sampled_private_bytes_over_blank_baseline": 46706688,
+  "provisional_250_mib_target": null,
+  "control": "retained empty workbench, offline shell ready",
+  "finished_at": "2026-10-14T11:41:04.366Z"
+}

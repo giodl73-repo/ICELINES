@@ -1,0 +1,125 @@
+{
+  "status": "Diagnostic evidence only; no production changes, no acceptance claim",
+  "source": "5ef015c4d47ebbcee8234eb92f1fe83716b45054",
+  "artifact": "target/wasm-validation-5ef015c4",
+  "scope": "Nine fresh isolated startup controls, five seconds idle, original Chromium flags/OS sampler, no forced GC. No full75 workload. Offline readiness awaited only in normal controls. Nonfunctional controls suppress offline registration or application initialization/scripts; never release candidates. Target/process inventories gathered after measured phases. Null250 MiB target in every report.",
+  "reports": {
+    "offline-normal-first": {
+      "file": "startup-components-offline-normal-first-20261014.json",
+      "sha256": "f62f3fa03a31783cfc81a6033eacf55a979558d19c58a80d3da2969debbed50c"
+    },
+    "offline-suppressed-second": {
+      "file": "startup-components-offline-suppressed-second-20261014.json",
+      "sha256": "b67f5f41164505cbcad779c08b49c935bdf14283b0183aa9047fb7b69ebc0db2"
+    },
+    "offline-suppressed-first": {
+      "file": "startup-components-offline-suppressed-first-20261014.json",
+      "sha256": "71f75fa9a877d905dc34d546d1e1911ec52f7560f4428ba21696663e607fa11a"
+    },
+    "offline-normal-second": {
+      "file": "startup-components-offline-normal-second-20261014.json",
+      "sha256": "de41e40ddee6a4c4849758d6516084ea4812a7cf7bd1434c22bea0f05f58cbda"
+    },
+    "modules-first": {
+      "file": "startup-components-modules-first-20261014.json",
+      "sha256": "e3915b6b1f58861651532746b499dd3e554c4f746aec8277b13c4f27c9002be6"
+    },
+    "scriptless-second": {
+      "file": "startup-components-scriptless-second-20261014.json",
+      "sha256": "050fd81f23342da8c1886e59b9540443762f41add547f7360fd0bfe480981f16"
+    },
+    "scriptless-first": {
+      "file": "startup-components-scriptless-first-20261014.json",
+      "sha256": "72bdc9f0075be28a1fb000516ec4e5bebec1a96aaa68a079977df145616dcb7e"
+    },
+    "modules-second": {
+      "file": "startup-components-modules-second-20261014.json",
+      "sha256": "e06e45bcc2240c5c546aa5b1ca2ed8f625b5e9da0f645a401def357178ce61e8"
+    },
+    "process-inventory": {
+      "file": "startup-components-process-inventory-20261014.json",
+      "sha256": "86373b3c14b1d4f0d7ce2f3b0a64b28715633a3a8f162d671834de1929f56b6a"
+    }
+  },
+  "measurements": {
+    "offline-normal-first": {
+      "private_peak_mib": 284.26953125,
+      "blank_mib": 239.1171875,
+      "samples_sha256": "443b46b62a3b5b1696981e8081d3b4fa0efe9f54f5a12491c684f342ea794b42",
+      "log_sha256": "72860613d8192f63799fee736020759a871f7489616613bf60261087b409ec8c",
+      "retained_output": "C:\\Users\\giodl\\.codex\\worktrees\\browser-wasm\\icelines\\target\\startup-rendering-control-UkLp9X"
+    },
+    "offline-suppressed-second": {
+      "private_peak_mib": 269.5234375,
+      "blank_mib": 236.6796875,
+      "samples_sha256": "44452e4e98c070ae165e0053862ccb574df0b4b245469a7b6c3c7f0f648897e8",
+      "log_sha256": "6d7170becd547fbd247f376c45037149d36e441308fa2fdb567039fc65fe3592",
+      "retained_output": "C:\\Users\\giodl\\.codex\\worktrees\\browser-wasm\\icelines\\target\\startup-rendering-control-Pd0DLM"
+    },
+    "offline-suppressed-first": {
+      "private_peak_mib": 266.546875,
+      "blank_mib": 233.51953125,
+      "samples_sha256": "b72b552139686b243850c9eecc0f06a6be2cfad3b0c4f354d9047f9504cbd91b",
+      "log_sha256": "0d14dbca154d317094021b6134847277619929d6c80fd7424c46ccde1b723399",
+      "retained_output": "C:\\Users\\giodl\\.codex\\worktrees\\browser-wasm\\icelines\\target\\startup-rendering-control-9PTojk"
+    },
+    "offline-normal-second": {
+      "private_peak_mib": 277.1015625,
+      "blank_mib": 230.22265625,
+      "samples_sha256": "c37327c8f34fa2e93e1011f5004528389e043662eb0291dbdd027c9871d2ce41",
+      "log_sha256": "5fdc8b0f3e8802c076231e5a6e7081fa93d69a3c2f47f5583a156682557a38cf",
+      "retained_output": "C:\\Users\\giodl\\.codex\\worktrees\\browser-wasm\\icelines\\target\\startup-rendering-control-kHebpp"
+    },
+    "modules-first": {
+      "private_peak_mib": 260.890625,
+      "blank_mib": 234.20703125,
+      "samples_sha256": "33dfdda1b396bc6205397c378b7d7790680f89a5b9e1130bdf299495c86ae653",
+      "log_sha256": "a09367aa5a7186e75e82603f7a33254f16cd72a01414918e6a98ffff589b11ca",
+      "retained_output": "C:\\Users\\giodl\\.codex\\worktrees\\browser-wasm\\icelines\\target\\startup-module-control-5L54WT"
+    },
+    "scriptless-second": {
+      "private_peak_mib": 249.66796875,
+      "blank_mib": 229.5859375,
+      "samples_sha256": "bf27864ca7341458668f3889b5cc75316d8a3d760746c33cae093d44c2351aef",
+      "log_sha256": "4a45c325ac20a233fdc7bcb96829f5522c5bc6fd0e113cfae7bc88bd3eaf0667",
+      "retained_output": "C:\\Users\\giodl\\.codex\\worktrees\\browser-wasm\\icelines\\target\\startup-module-control-IJifhC"
+    },
+    "scriptless-first": {
+      "private_peak_mib": 252.81640625,
+      "blank_mib": 236.17578125,
+      "samples_sha256": "6afa791f8f436e8744ecfd2c76d02bdcb8aef0500cc20733efe23fc1297105f5",
+      "log_sha256": "05f7a439fe2e8de5964c7d1bf65853ad02d6f435537d9e15289d6a164418b7d9",
+      "retained_output": "C:\\Users\\giodl\\.codex\\worktrees\\browser-wasm\\icelines\\target\\startup-module-control-P3ou4S"
+    },
+    "modules-second": {
+      "private_peak_mib": 258.6953125,
+      "blank_mib": 232.375,
+      "samples_sha256": "7253c3c0f277da9d85f4312782dcfe705d07372f48263c7f44683fff37c09ce5",
+      "log_sha256": "79e755e9c53d9415691772d0ab6dbea6c53efc1c997168460b33a50615c83a08",
+      "retained_output": "C:\\Users\\giodl\\.codex\\worktrees\\browser-wasm\\icelines\\target\\startup-module-control-25Z6GM"
+    },
+    "process-inventory": {
+      "private_peak_mib": 279.22265625,
+      "blank_mib": 234.6796875,
+      "samples_sha256": "76eea7a7655a7fdc1f2f4f89fe67d778e1d65945e970a9e2baa89d45c840d05b",
+      "log_sha256": "8da4281356670d9108400a1cae4787c978e32fc693b54df4f5e990f22d8826cd",
+      "retained_output": "C:\\Users\\giodl\\.codex\\worktrees\\browser-wasm\\icelines\\target\\startup-module-control-kYHrse"
+    }
+  },
+  "observations": [
+    "Normal/suppressed offline preparation raw peaks284.27/269.52 and277.10/266.55 MiB; normal is higher in both opposite-order pairs. Blank baselines239.12/236.68 and230.22/233.52 differ; no exact causal byte saving.",
+    "Modules-only/scriptless raw peaks260.89/249.67 and258.70/252.82 MiB; modules-only is higher in both pairs. Baselines234.21/229.59 and232.38/236.18 differ; controls are nonfunctional.",
+    "Supplemental normal inventory finds page, service_worker, and two browser_ui omnibox targets, with three renderer process IDs and no engine worker. It does not map individual targets to renderer PIDs, attribute their exact memory or justify excluding browser allocations.",
+    "Even suppressed offline preparation still exceeds250 MiB. Shell optimization alone has not demonstrated enough benefit; engine-only changes cannot explain pre-engine startup cost."
+  ],
+  "helper_sha256": {
+    "target/startup-rendering-controls.mjs": "9e7960e91d64ee81344cdadb14d793cc9afe5a67b5d2f154cefc5118917dbe90",
+    "target/prepare-startup-module-controls.py": "a58bce21c856d1309b526a5aedc81f497afa94e453082aa3a6165a2d40ea0b83",
+    "target/startup-module-controls.mjs": "0058302c7d841f1a5fc55dbde934627cc6ffa8cc19b5ecb55baf5f38a9330249"
+  },
+  "next_action": "Attribute per-target renderer allocations and separate application initialization from module loading. Retain browser UI in original whole-browser acceptance; do not change flags, baseline-subtract acceptance, remove offline support or shorten workload.",
+  "open_gates": [
+    "250 MiB whole-browser memory remains FAILED",
+    "Physical Android explicitly deferred"
+  ]
+}
