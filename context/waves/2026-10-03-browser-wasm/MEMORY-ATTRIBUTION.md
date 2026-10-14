@@ -1,5 +1,39 @@
 # Desktop allocation investigation — 2026-10-12
 
+## Latest local candidate: single-buffer gzip expansion (2026-10-13)
+
+Clean master b29ba81c includes the merged PR93 catalog-context guard.
+Public release remains 2e265236; neither this prototype nor PR93 is published here.
+Candidate c0154ac6 decodes authenticated gzip into one bounded output buffer,
+removing retained decoded chunks and final complete concatenation.
+WASM, raw package files and compressed catalog match the control exactly.
+
+| Run order | Private peak MiB | Blank baseline MiB |
+|---|---:|---:|
+| Candidate first | 395.32 | 226.73 |
+| Control second | 406.61 | 233.71 |
+| Control first | 406.43 | 233.85 |
+| Candidate second | 390.40 | 229.58 |
+
+Observed raw differences are 11.29 and 16.03 MiB on this Windows workstation.
+Baselines vary by 4.27–6.98 MiB; these are local observations, not a universal
+saving or baseline-subtracted acceptance. All runs retain 75 packages, eight
+residents, both 905/332-player archive imports, 20 warm queries and engine restart,
+original flags/sampler/network observer, no forced GC, and every sampled phase.
+Maximum warm-query times in table order: 95.50/91.67/98.80/99.47 ms.
+
+Typecheck and 155 browser tests pass, including multi-chunk offset input,
+size/hash refusal, Unicode, cancellation, corrupt gzip and expansion limits.
+Browser checks pass scrolling/export/keyboard/print, corrupt-transport
+previous-good preservation with exact export/retry, and process-close offline
+reopening with fresh query/detail.
+
+Evidence: `evidence/stream-expansion-*-20261013.json` and
+`signals/roles/check/stream-expansion-roles-check-2026-10-13.md`.
+Reviewed-head CI artifact checks remain pending. The 250 MiB whole-browser
+requirement remains unmet. Android is deferred by the user. Sections below
+describe historical artifacts and diagnostics.
+
 The provisional 250 MiB whole-browser target remains exceeded. Measurements
 below are Windows private allocations and summed working sets, not exact
 concurrent physical RAM, phone measurements, or acceptance waivers.

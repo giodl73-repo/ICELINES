@@ -472,3 +472,13 @@ staging with 105.25 MiB allocated WASM and a retained 100 MiB backup. The genera
 binding still copies worker input into WASM; total peak is unmeasured. Returning
 validated Rust header metadata with load removes the UI's subsequent full-package
 JSON decode, without rewriting original backup bytes or data revisions.
+
+## Gzip chunk retention can overlap a full output copy (2026-10-13)
+
+Holding every decoded chunk and then concatenating creates two overlapping
+expanded representations. A bounded destination written chunk by chunk removes
+that overlap. Respect an input view's offset/length: feeding its entire backing
+buffer includes unrelated bytes. Require the full decoder to finish, then validate
+the exact expanded size and checksum before activation. An advertised maximum
+is not permission to accept a shorter response. Local whole-browser reductions
+remain subject to process-baseline variation; this does not close the 250 MiB gate.

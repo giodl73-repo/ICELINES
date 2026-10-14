@@ -1,0 +1,103 @@
+{
+  "scope": "Two opposite-order local Windows pairs; original full workload, sampler, observer and Chromium flags. No forced GC, budget change or physical Android claim.",
+  "status": "Local candidate supported by repeated lower raw private peaks; not published or full acceptance.",
+  "units": 155,
+  "typecheck": true,
+  "reports": {
+    "candidate-first": {
+      "file": "stream-expansion-candidate-first-20261013.json",
+      "sha256": "37d11db910e45b43c5bbe581eab18af4db5f78f21131eb6e6d40bdef0a661e9d"
+    },
+    "control-first": {
+      "file": "stream-expansion-control-first-20261013.json",
+      "sha256": "3b1e05d8dd8bc5eca03cef1134b7b4bdad1a662aeb4badbe41f578a9b9023427"
+    },
+    "control-repeat": {
+      "file": "stream-expansion-control-repeat-20261013.json",
+      "sha256": "6046c5cc9ea0ec5056258bffe4115189c9b1c2b03fd270c752106d068878c722"
+    },
+    "candidate-repeat": {
+      "file": "stream-expansion-candidate-repeat-20261013.json",
+      "sha256": "1a5cf73545b963c6ace367b4b024b96bf2676c9d07f5798a31e248efc3bb17bb"
+    },
+    "browser": {
+      "file": "stream-expansion-browser-20261013.json",
+      "sha256": "6df01383cc22bde5c9433152d53e6564449f3ad2adb71579f4c88cab464e3ccc"
+    },
+    "refusal": {
+      "file": "stream-expansion-refusal-20261013.json",
+      "sha256": "2dce129528689d08caf36fb54c50f48d7d507c4361e5440130c5a1779d21d24c"
+    },
+    "offline": {
+      "file": "stream-expansion-offline-20261013.json",
+      "sha256": "864aefd9b933431ceeaa42386c998d836881934c295633dfb4b1c302e7dbc37d"
+    }
+  },
+  "measurements": {
+    "candidate-first": {
+      "private_peak_mib": 395.31640625,
+      "blank_baseline_mib": 226.73046875,
+      "warm_max_ms": 95.50250000000233,
+      "below_250_mib": false
+    },
+    "control-first": {
+      "private_peak_mib": 406.60546875,
+      "blank_baseline_mib": 233.71484375,
+      "warm_max_ms": 91.6698999999935,
+      "below_250_mib": false
+    },
+    "control-repeat": {
+      "private_peak_mib": 406.42578125,
+      "blank_baseline_mib": 233.84765625,
+      "warm_max_ms": 98.79709999999614,
+      "below_250_mib": false
+    },
+    "candidate-repeat": {
+      "private_peak_mib": 390.3984375,
+      "blank_baseline_mib": 229.578125,
+      "warm_max_ms": 99.46709999999439,
+      "below_250_mib": false
+    }
+  },
+  "artifacts": {
+    "control": {
+      "build_info": {
+        "schema_version": 1,
+        "commit": "b29ba81c544421d3a0111c7bc5cbf32d99855fb0",
+        "working_tree_dirty": false,
+        "tools": {
+          "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+          "node": "v22.22.3",
+          "python": "Python 3.14.2",
+          "wasm_bindgen": "wasm-bindgen 0.2.118"
+        },
+        "wasm_sha256": "4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee"
+      },
+      "shell_build": "990c851dea5df01aaa7d50ae02c54bde59d309f6a1fc0f4f30c9617c9a3b2b30"
+    },
+    "candidate": {
+      "build_info": {
+        "schema_version": 1,
+        "commit": "c0154ac6fe8b4a228e59b4a626c53f3e3abf9785",
+        "working_tree_dirty": false,
+        "tools": {
+          "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+          "node": "v22.22.3",
+          "python": "Python 3.14.2",
+          "wasm_bindgen": "wasm-bindgen 0.2.118"
+        },
+        "wasm_sha256": "4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee"
+      },
+      "shell_build": "f971b38d63026028f232e1972fa0f9a107d48c75296d3893767c0e7349d326fc"
+    }
+  },
+  "unchanged_runner_hashes": {
+    "icelines-browser/e2e/memory.mjs": "f3fdbd700fa4de81bdae18842e13716a851d3a64c856f8dd8c56a59283a8b0f0",
+    "icelines-browser/e2e/sample-browser-memory.ps1": "fef055f0dbbdaee58013089814436f5cd8c8d231c90e9c3fa40e416d4aaa50bc",
+    "icelines-browser/e2e/memory-scope.mjs": "99023e429d7d2aca4847e2e093b5b65b40e2e9022673ff4ca875255bcf6ac330"
+  },
+  "open_gates": [
+    "250 MiB whole-browser desktop requirement",
+    "Physical Android deferred by user"
+  ]
+}
