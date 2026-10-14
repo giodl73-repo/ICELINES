@@ -11,10 +11,10 @@ import { reconcileSavePolicy } from './save-policy.js';
 import { downloadPackage } from './package-download.js';
 import { MAX_ARCHIVE_BYTES } from './archive.js';
 import { digest, MAX_BYTES, refreshStats } from './acquisition.js';
-import { listSaved, loadSaved, onLibraryChange, packageMetadata, removeSaved, savedActiveId, saveDataset, MAX_SCHEDULE_BYTES } from './library.js';
+import { listSaved, loadSaved, onLibraryChange, removeSaved, savedActiveId, saveDataset, MAX_SCHEDULE_BYTES } from './library.js';
 import { SORT_OPTIONS, parseViewHash, serializeViewHash, isPublicDataset, localDatasetForView } from './view-state.js';
 import type { ViewState } from './view-state.js';
-import type { CatalogEntry, Dataset, PackageData, PackageMetadata, PlayerRow, QueryRequest, QueryResult, SavedDatasetEntry, ScheduledGame } from './types.js';
+import type { CatalogContext, CatalogEntry, Dataset, PackageMetadata, PlayerRow, QueryRequest, QueryResult, SavedDatasetEntry, ScheduledGame } from './types.js';
 
 initializeAppearance();
 const playerTable = new ViewportTable(element('rows'), element('head'), row => { void perform(() => player(row)); }, element<HTMLSelectElement>('table-view'));
@@ -26,7 +26,6 @@ const sort = element<HTMLSelectElement>('sort');
 const filter = element<HTMLInputElement>('filter');
 const minimumGames = element<HTMLInputElement>('minimum-games');
 const keepUpdated = element<HTMLInputElement>('keep-updated');
-const textDecoder = new TextDecoder('utf-8', { fatal: true });
 let catalog: CatalogEntry[] = [];
 let active: Dataset | undefined;
 const resident = new Map<string, Dataset>();
@@ -168,11 +167,12 @@ async function perform(action: () => Promise<void>): Promise<void> {
     if (!(error instanceof EngineStoppedError) && !obsolete) status(String(error), true);
   } finally { updateState(); }
 }
-async function activate(bytes: Uint8Array, id: string, policy = false): Promise<void> {
+async function activate(bytes: Uint8Array, id: string, policy = false, expectedCatalog?: CatalogContext): Promise<void> {
   if (bytes.length > MAX_BYTES) throw new Error('Package exceeds 100 MiB');
   const generation = engine.changeContext();
   const staging = bytes.slice().buffer;
-  const { revision, residents: revisions, metadata } = await engine.request<{ revision: string; residents: string[]; metadata: PackageMetadata }>('load', staging, [staging]);
+  const input = expectedCatalog ? {bytes:staging,expectedCatalog} : staging;
+  const { revision, residents: revisions, metadata } = await engine.request<{ revision: string; residents: string[]; metadata: PackageMetadata }>('load', input, [staging]);
   if (generation !== engine.generation) throw new Error('cancelled: context changed');
   active = { id, bytes, revision, metadata, keepUpdated: policy };
   for (const key of resident.keys()) if (!revisions.includes(key)) resident.delete(key);
@@ -259,7 +259,10 @@ element('restart-engine').onclick = () => { void recoverEngine(); };
 element('export-recovery').onclick = () => { if (recoveryCopy) download(recoveryCopy.bytes.slice().buffer, `icelines-${recoveryCopy.metadata.season}-${recoveryCopy.metadata.season_type}-recovery.json`, 'application/json'); };
 async function loadCatalog(entry: CatalogEntry): Promise<void> {
   const memory = resident.get(entry.sha256);
-  if (memory && memory.id === entry.id) { await activateResident(memory); status('Selected in-memory season. Save locally to keep it.'); return; }
+  if (memory && memory.id === entry.id) {
+    if (memory.metadata.season !== entry.season || memory.metadata.season_type !== entry.season_type || memory.metadata.source !== entry.source) throw new Error('Package does not match catalog context');
+    await activateResident(memory); status('Selected in-memory season. Save locally to keep it.'); return;
+  }
   const { controller, sequence } = beginAcquisition(); status('Loading season into memory…');
   element('cancel').hidden = false;
   try {
@@ -268,10 +271,8 @@ async function loadCatalog(entry: CatalogEntry): Promise<void> {
   const bytes = stored ? stored.bytes : await downloadPackage(entry, new URL(location.href.split('#')[0]),
     {signal:controller.signal,deadline:Date.now() + 120000});
   if (bytes.length !== entry.bytes || await digest(bytes) !== entry.sha256) throw new Error('Package size or checksum mismatch');
-  const context = packageMetadata(JSON.parse(textDecoder.decode(bytes)) as PackageData);
-  if (context.season !== entry.season || context.season_type !== entry.season_type || context.source !== entry.source) throw new Error('Package does not match catalog context');
   requireCurrentAcquisition(sequence, controller.signal);
-  await activate(bytes, entry.id, stored?.keepUpdated); status(retained ? 'Loaded your saved public season.' : 'Season loaded in memory. Save locally to keep it.');
+  await activate(bytes, entry.id, stored?.keepUpdated, {season:entry.season,season_type:entry.season_type,source:entry.source}); status(retained ? 'Loaded your saved public season.' : 'Season loaded in memory. Save locally to keep it.');
   } catch (error) {
     if (sequence !== acquisitionSequence) throw new Error('cancelled: context changed');
     if (controller.signal.aborted) { status(active ? 'Season load cancelled. Your previous data remains available.' : 'Season load cancelled. Choose a season or import a package.'); throw new Error('cancelled: season load'); }

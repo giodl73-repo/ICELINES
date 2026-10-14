@@ -3,6 +3,7 @@ export interface CatalogEntry {
   url: string; sha256: string; bytes: number; skaters: number; goalies: number;
   transport?: { encoding: 'gzip'; url: string; sha256: string; bytes: number };
 }
+export type CatalogContext = Pick<CatalogEntry, 'season' | 'season_type' | 'source'>;
 export interface PackageData {
   schema_version: number; season: number; season_type: 'regular' | 'playoff';
   source: string; observed_at: string | null; fetched_at: string | null;
