@@ -1,0 +1,47 @@
+{
+  "status": "UNADOPTED; consumed buffers detach, but one fresh full-workload pair shows no whole-browser memory saving",
+  "source": "9decc72ba0426e0aca8c456bc994e42fbd0dbd00",
+  "treatment": "Worker load staging ArrayBuffer transfer(0) after synchronous Rust load completes or fails; optional method errors are isolated and payload reference is cleared. Original UI bytes remain separate.",
+  "scope": "Original75/eight residents/two905/332 archives/20 queries/restart, original flags/sampler/network observer, no forced GC. Instrumented lifecycle probe separate from normal memory runner.",
+  "reference": "https://tc39.es/ecma262/multipage/structured-data.html#sec-arraybuffer.prototype.transfer",
+  "reports": {
+    "candidate": {
+      "file": "worker-staging-release-candidate-20261014.json",
+      "sha256": "005789d5688d89264f9f023321844b99fca0bc2ee981e36a76c00582bc63a859"
+    },
+    "control": {
+      "file": "worker-staging-release-control-20261014.json",
+      "sha256": "d51e8a213304b8f0e11575517e67aa636fb792d70103a772ade5533bdc10d5de"
+    }
+  },
+  "measurements": {
+    "candidate": {
+      "private_mib": 395.45703125,
+      "blank_mib": 229.015625,
+      "warm_max_ms": 98.43439999999828
+    },
+    "control": {
+      "private_mib": 393.32421875,
+      "blank_mib": 224.09765625,
+      "warm_max_ms": 104.42799999999988
+    }
+  },
+  "verification": {
+    "viewport": {
+      "file": "worker-staging-release-viewport-20261014.json",
+      "sha256": "9531a1f791376edf8f7b154d2ee023bcf439d6d5652eaf7a1430a8323c241f52"
+    },
+    "lifecycle": {
+      "file": "worker-staging-release-lifecycle-20261014.json",
+      "sha256": "f16469202d1a8c3de031c9a1553987b69b900f4fa5d874cb80363fb6a479bd11"
+    }
+  },
+  "byte_scope": "Only worker.js differs among frontend modules; WASM/catalog unchanged. Build info and shell hashes differ.",
+  "build_log_sha256": "f1aa517007bbd3233da906687847e51e4eb77e3758797b8fc33f8b3688c1156d",
+  "probe_sha256": "c8cf81e1fa6e7245c2711d8b0897545fe2d2836ab464c1b6a2e66594b8894155",
+  "failed_probe": "Initial wrapper sent a load before dynamic module import installed the message handler; timed out. Failed report/log retained. Corrected probe waits for an explicit ready acknowledgment before load.",
+  "open_gates": [
+    "250 MiB whole-browser acceptance",
+    "Physical Android deferred"
+  ]
+}

@@ -1,0 +1,1508 @@
+{
+  "started_at": "2026-10-14T08:25:15.459Z",
+  "completed": true,
+  "host": {
+    "platform": "win32",
+    "arch": "x64",
+    "os_release": "10.0.26310",
+    "cpu": "12th Gen Intel(R) Core(TM) i7-12800HX",
+    "logical_cpus": 24,
+    "ram_bytes": 34042929152
+  },
+  "scope": "Single isolated headless Chromium on this Windows workstation. Includes owned browser/renderer/GPU/utility processes; excludes Node runner, local HTTP server and sampler. Working-set sums may count shared pages more than once. Private-byte sums measure private allocations, not just resident RAM. Sample maxima may miss transient spikes; lifetime working-set peaks are per-process, not concurrent group peaks. No physical-phone or remote-rollback claim.",
+  "sampling": {
+    "requested_interval_ms": 100,
+    "tree_discovery_interval_ms": 500,
+    "actual_median_interval_ms": 188,
+    "actual_max_interval_ms": 837
+  },
+  "packages": [
+    {
+      "id": "20252026-regular",
+      "bytes": 926515,
+      "load_and_render_ms": 178.40249999999924,
+      "rows": 933,
+      "resident_windows": 1
+    },
+    {
+      "id": "20242025-regular",
+      "bytes": 908625,
+      "load_and_render_ms": 144.03300000000036,
+      "rows": 905,
+      "resident_windows": 2
+    },
+    {
+      "id": "20242025-playoff",
+      "bytes": 259978,
+      "load_and_render_ms": 82.72580000000016,
+      "rows": 332,
+      "resident_windows": 3
+    },
+    {
+      "id": "20232024-regular",
+      "bytes": 909591,
+      "load_and_render_ms": 170.86290000000008,
+      "rows": 911,
+      "resident_windows": 4
+    },
+    {
+      "id": "20232024-playoff",
+      "bytes": 264960,
+      "load_and_render_ms": 88.27800000000025,
+      "rows": 339,
+      "resident_windows": 5
+    },
+    {
+      "id": "20222023-regular",
+      "bytes": 936534,
+      "load_and_render_ms": 139.90340000000106,
+      "rows": 939,
+      "resident_windows": 6
+    },
+    {
+      "id": "20222023-playoff",
+      "bytes": 262089,
+      "load_and_render_ms": 79.80320000000029,
+      "rows": 334,
+      "resident_windows": 7
+    },
+    {
+      "id": "20212022-regular",
+      "bytes": 988849,
+      "load_and_render_ms": 117.67000000000007,
+      "rows": 1004,
+      "resident_windows": 8
+    },
+    {
+      "id": "20212022-playoff",
+      "bytes": 263293,
+      "load_and_render_ms": 90.84569999999985,
+      "rows": 335,
+      "resident_windows": 8
+    },
+    {
+      "id": "20202021-regular",
+      "bytes": 892768,
+      "load_and_render_ms": 146.45950000000084,
+      "rows": 904,
+      "resident_windows": 8
+    },
+    {
+      "id": "20202021-playoff",
+      "bytes": 262152,
+      "load_and_render_ms": 80.45879999999852,
+      "rows": 337,
+      "resident_windows": 8
+    },
+    {
+      "id": "20192020-regular",
+      "bytes": 860817,
+      "load_and_render_ms": 112.46500000000015,
+      "rows": 861,
+      "resident_windows": 8
+    },
+    {
+      "id": "20192020-playoff",
+      "bytes": 402760,
+      "load_and_render_ms": 85.64709999999832,
+      "rows": 516,
+      "resident_windows": 8
+    },
+    {
+      "id": "20182019-regular",
+      "bytes": 884461,
+      "load_and_render_ms": 120.3614000000016,
+      "rows": 906,
+      "resident_windows": 8
+    },
+    {
+      "id": "20182019-playoff",
+      "bytes": 258349,
+      "load_and_render_ms": 96.2380000000012,
+      "rows": 333,
+      "resident_windows": 8
+    },
+    {
+      "id": "20172018-regular",
+      "bytes": 869271,
+      "load_and_render_ms": 92.03670000000056,
+      "rows": 871,
+      "resident_windows": 8
+    },
+    {
+      "id": "20172018-playoff",
+      "bytes": 260915,
+      "load_and_render_ms": 72.81490000000122,
+      "rows": 333,
+      "resident_windows": 8
+    },
+    {
+      "id": "20162017-regular",
+      "bytes": 865646,
+      "load_and_render_ms": 91.696899999999,
+      "rows": 885,
+      "resident_windows": 8
+    },
+    {
+      "id": "20162017-playoff",
+      "bytes": 266101,
+      "load_and_render_ms": 73.84139999999752,
+      "rows": 343,
+      "resident_windows": 8
+    },
+    {
+      "id": "20152016-regular",
+      "bytes": 872850,
+      "load_and_render_ms": 101.05679999999847,
+      "rows": 890,
+      "resident_windows": 8
+    },
+    {
+      "id": "20152016-playoff",
+      "bytes": 265706,
+      "load_and_render_ms": 95.13510000000315,
+      "rows": 340,
+      "resident_windows": 8
+    },
+    {
+      "id": "20142015-regular",
+      "bytes": 857046,
+      "load_and_render_ms": 105.50620000000345,
+      "rows": 859,
+      "resident_windows": 8
+    },
+    {
+      "id": "20142015-playoff",
+      "bytes": 264283,
+      "load_and_render_ms": 107.20319999999992,
+      "rows": 339,
+      "resident_windows": 8
+    },
+    {
+      "id": "20132014-regular",
+      "bytes": 862203,
+      "load_and_render_ms": 91.42229999999836,
+      "rows": 878,
+      "resident_windows": 8
+    },
+    {
+      "id": "20132014-playoff",
+      "bytes": 269000,
+      "load_and_render_ms": 90.8080000000009,
+      "rows": 344,
+      "resident_windows": 8
+    },
+    {
+      "id": "20122013-regular",
+      "bytes": 809752,
+      "load_and_render_ms": 116.81200000000172,
+      "rows": 826,
+      "resident_windows": 8
+    },
+    {
+      "id": "20122013-playoff",
+      "bytes": 270604,
+      "load_and_render_ms": 83.45639999999912,
+      "rows": 349,
+      "resident_windows": 8
+    },
+    {
+      "id": "20112012-regular",
+      "bytes": 865276,
+      "load_and_render_ms": 133.70709999999963,
+      "rows": 877,
+      "resident_windows": 8
+    },
+    {
+      "id": "20112012-playoff",
+      "bytes": 268863,
+      "load_and_render_ms": 107.50530000000072,
+      "rows": 347,
+      "resident_windows": 8
+    },
+    {
+      "id": "20102011-regular",
+      "bytes": 861262,
+      "load_and_render_ms": 146.11810000000332,
+      "rows": 886,
+      "resident_windows": 8
+    },
+    {
+      "id": "20102011-playoff",
+      "bytes": 263962,
+      "load_and_render_ms": 82.51799999999639,
+      "rows": 339,
+      "resident_windows": 8
+    },
+    {
+      "id": "20092010-regular",
+      "bytes": 848598,
+      "load_and_render_ms": 146.5894999999946,
+      "rows": 855,
+      "resident_windows": 8
+    },
+    {
+      "id": "20092010-playoff",
+      "bytes": 267154,
+      "load_and_render_ms": 100.29650000000402,
+      "rows": 342,
+      "resident_windows": 8
+    },
+    {
+      "id": "20082009-regular",
+      "bytes": 856255,
+      "load_and_render_ms": 137.63289999999688,
+      "rows": 870,
+      "resident_windows": 8
+    },
+    {
+      "id": "20082009-playoff",
+      "bytes": 259274,
+      "load_and_render_ms": 86.87099999999919,
+      "rows": 333,
+      "resident_windows": 8
+    },
+    {
+      "id": "20072008-regular",
+      "bytes": 825438,
+      "load_and_render_ms": 139.86120000000665,
+      "rows": 851,
+      "resident_windows": 8
+    },
+    {
+      "id": "20072008-playoff",
+      "bytes": 263177,
+      "load_and_render_ms": 86.32949999999983,
+      "rows": 340,
+      "resident_windows": 8
+    },
+    {
+      "id": "20062007-regular",
+      "bytes": 829179,
+      "load_and_render_ms": 131.04759999999806,
+      "rows": 847,
+      "resident_windows": 8
+    },
+    {
+      "id": "20062007-playoff",
+      "bytes": 256138,
+      "load_and_render_ms": 71.47050000000309,
+      "rows": 331,
+      "resident_windows": 8
+    },
+    {
+      "id": "20052006-regular",
+      "bytes": 843241,
+      "load_and_render_ms": 137.45810000000347,
+      "rows": 853,
+      "resident_windows": 8
+    },
+    {
+      "id": "20052006-playoff",
+      "bytes": 259019,
+      "load_and_render_ms": 115.9429999999993,
+      "rows": 333,
+      "resident_windows": 8
+    },
+    {
+      "id": "20032004-regular",
+      "bytes": 886180,
+      "load_and_render_ms": 146.31289999999717,
+      "rows": 909,
+      "resident_windows": 8
+    },
+    {
+      "id": "20032004-playoff",
+      "bytes": 267212,
+      "load_and_render_ms": 102.10859999999957,
+      "rows": 343,
+      "resident_windows": 8
+    },
+    {
+      "id": "20022003-regular",
+      "bytes": 859084,
+      "load_and_render_ms": 114.08679999999731,
+      "rows": 885,
+      "resident_windows": 8
+    },
+    {
+      "id": "20022003-playoff",
+      "bytes": 262138,
+      "load_and_render_ms": 76.53480000000127,
+      "rows": 337,
+      "resident_windows": 8
+    },
+    {
+      "id": "20012002-regular",
+      "bytes": 845117,
+      "load_and_render_ms": 164.16440000000148,
+      "rows": 871,
+      "resident_windows": 8
+    },
+    {
+      "id": "20012002-playoff",
+      "bytes": 268188,
+      "load_and_render_ms": 76.71070000000327,
+      "rows": 344,
+      "resident_windows": 8
+    },
+    {
+      "id": "20002001-regular",
+      "bytes": 854477,
+      "load_and_render_ms": 136.0126999999993,
+      "rows": 876,
+      "resident_windows": 8
+    },
+    {
+      "id": "20002001-playoff",
+      "bytes": 261769,
+      "load_and_render_ms": 74.58510000000388,
+      "rows": 338,
+      "resident_windows": 8
+    },
+    {
+      "id": "19992000-regular",
+      "bytes": 809404,
+      "load_and_render_ms": 145.07459999999992,
+      "rows": 828,
+      "resident_windows": 8
+    },
+    {
+      "id": "19992000-playoff",
+      "bytes": 257832,
+      "load_and_render_ms": 79.64999999999418,
+      "rows": 334,
+      "resident_windows": 8
+    },
+    {
+      "id": "19981999-regular",
+      "bytes": 787336,
+      "load_and_render_ms": 117.6301999999996,
+      "rows": 804,
+      "resident_windows": 8
+    },
+    {
+      "id": "19981999-playoff",
+      "bytes": 277483,
+      "load_and_render_ms": 76.85379999999714,
+      "rows": 358,
+      "resident_windows": 8
+    },
+    {
+      "id": "19971998-regular",
+      "bytes": 734809,
+      "load_and_render_ms": 136.94460000000254,
+      "rows": 750,
+      "resident_windows": 8
+    },
+    {
+      "id": "19971998-playoff",
+      "bytes": 265265,
+      "load_and_render_ms": 75.69380000000092,
+      "rows": 340,
+      "resident_windows": 8
+    },
+    {
+      "id": "19961997-regular",
+      "bytes": 739627,
+      "load_and_render_ms": 136.8622000000032,
+      "rows": 752,
+      "resident_windows": 8
+    },
+    {
+      "id": "19961997-playoff",
+      "bytes": 264916,
+      "load_and_render_ms": 81.89249999999447,
+      "rows": 343,
+      "resident_windows": 8
+    },
+    {
+      "id": "19951996-regular",
+      "bytes": 747478,
+      "load_and_render_ms": 138.18509999999515,
+      "rows": 767,
+      "resident_windows": 8
+    },
+    {
+      "id": "19951996-playoff",
+      "bytes": 270316,
+      "load_and_render_ms": 75.45679999999993,
+      "rows": 347,
+      "resident_windows": 8
+    },
+    {
+      "id": "19941995-regular",
+      "bytes": 705563,
+      "load_and_render_ms": 86.52789999999368,
+      "rows": 717,
+      "resident_windows": 8
+    },
+    {
+      "id": "19941995-playoff",
+      "bytes": 268354,
+      "load_and_render_ms": 84.914300000004,
+      "rows": 344,
+      "resident_windows": 8
+    },
+    {
+      "id": "19931994-regular",
+      "bytes": 760939,
+      "load_and_render_ms": 95.93159999999625,
+      "rows": 775,
+      "resident_windows": 8
+    },
+    {
+      "id": "19931994-playoff",
+      "bytes": 265306,
+      "load_and_render_ms": 71.91900000000169,
+      "rows": 342,
+      "resident_windows": 8
+    },
+    {
+      "id": "19921993-regular",
+      "bytes": 687976,
+      "load_and_render_ms": 81.26260000000184,
+      "rows": 696,
+      "resident_windows": 8
+    },
+    {
+      "id": "19921993-playoff",
+      "bytes": 261498,
+      "load_and_render_ms": 81.44920000000275,
+      "rows": 337,
+      "resident_windows": 8
+    },
+    {
+      "id": "19911992-regular",
+      "bytes": 681944,
+      "load_and_render_ms": 152.50879999999597,
+      "rows": 695,
+      "resident_windows": 8
+    },
+    {
+      "id": "19911992-playoff",
+      "bytes": 276696,
+      "load_and_render_ms": 77.61299999999756,
+      "rows": 358,
+      "resident_windows": 8
+    },
+    {
+      "id": "19901991-regular",
+      "bytes": 637269,
+      "load_and_render_ms": 83.30390000001353,
+      "rows": 648,
+      "resident_windows": 8
+    },
+    {
+      "id": "19901991-playoff",
+      "bytes": 275451,
+      "load_and_render_ms": 77.90899999999965,
+      "rows": 354,
+      "resident_windows": 8
+    },
+    {
+      "id": "19891990-regular",
+      "bytes": 631007,
+      "load_and_render_ms": 81.35940000000119,
+      "rows": 652,
+      "resident_windows": 8
+    },
+    {
+      "id": "19891990-playoff",
+      "bytes": 274505,
+      "load_and_render_ms": 77.20859999999811,
+      "rows": 352,
+      "resident_windows": 8
+    },
+    {
+      "id": "19881989-regular",
+      "bytes": 637726,
+      "load_and_render_ms": 84.40649999999732,
+      "rows": 648,
+      "resident_windows": 8
+    },
+    {
+      "id": "19881989-playoff",
+      "bytes": 273661,
+      "load_and_render_ms": 82.06670000001031,
+      "rows": 352,
+      "resident_windows": 8
+    },
+    {
+      "id": "19871988-regular",
+      "bytes": 644102,
+      "load_and_render_ms": 82.38009999999485,
+      "rows": 671,
+      "resident_windows": 8
+    },
+    {
+      "id": "19871988-playoff",
+      "bytes": 284302,
+      "load_and_render_ms": 78.18070000001171,
+      "rows": 367,
+      "resident_windows": 8
+    }
+  ],
+  "imports": [
+    {
+      "season_type": "regular",
+      "import_and_render_ms": 159.66659999999683,
+      "rows": 905
+    },
+    {
+      "season_type": "playoff",
+      "import_and_render_ms": 98.64689999999246,
+      "rows": 332
+    }
+  ],
+  "warm_query_ms": [
+    98.43439999999828,
+    80.15029999999388,
+    62.30589999999211,
+    92.09240000000864,
+    59.49899999999616,
+    62.98850000000675,
+    53.2384999999922,
+    85.24839999999676,
+    52.87189999999828,
+    84.97149999999965,
+    66.6649000000034,
+    80.95500000000175,
+    62.41730000000098,
+    64.67369999999937,
+    55.43769999999495,
+    76.25870000000577,
+    70.82540000000154,
+    88.95900000000256,
+    53.30539999999746,
+    75.01850000000559
+  ],
+  "artifact": {
+    "commit": "9decc72ba0426e0aca8c456bc994e42fbd0dbd00",
+    "shell_build": "595fc643bea2f63dd7b9897e5c5ab84c61ae70790bc2def296698e41541ba29b",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "archive": {
+    "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca",
+    "bytes": 149672
+  },
+  "browser": "153.0.8010.12",
+  "query_completion": "Complete result count (and query summary for viewport rendering), then pending tbody.inert cleared before starting the next query.",
+  "renderer": "Viewport rows; complete engine result retained, at most 44 mounted players at 1280x800.",
+  "memory": [
+    {
+      "phase": "blank_browser",
+      "samples": 4,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 233619456,
+      "last_private_bytes": 240140288,
+      "peak_private_bytes": 240140288,
+      "peak_working_set_bytes": 485679104,
+      "peak_sum_lifetime_working_set_bytes": 496906240
+    },
+    {
+      "phase": "startup",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 257126400,
+      "last_private_bytes": 287629312,
+      "peak_private_bytes": 287629312,
+      "peak_working_set_bytes": 559837184,
+      "peak_sum_lifetime_working_set_bytes": 567029760
+    },
+    {
+      "phase": "package_20252026-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 325840896,
+      "last_private_bytes": 326029312,
+      "peak_private_bytes": 326029312,
+      "peak_working_set_bytes": 604467200,
+      "peak_sum_lifetime_working_set_bytes": 613289984
+    },
+    {
+      "phase": "package_20242025-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 340381696,
+      "last_private_bytes": 340426752,
+      "peak_private_bytes": 340426752,
+      "peak_working_set_bytes": 619532288,
+      "peak_sum_lifetime_working_set_bytes": 626245632
+    },
+    {
+      "phase": "package_20242025-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 346365952,
+      "last_private_bytes": 346365952,
+      "peak_private_bytes": 346365952,
+      "peak_working_set_bytes": 624500736,
+      "peak_sum_lifetime_working_set_bytes": 631107584
+    },
+    {
+      "phase": "package_20232024-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 362139648,
+      "last_private_bytes": 362139648,
+      "peak_private_bytes": 362139648,
+      "peak_working_set_bytes": 640593920,
+      "peak_sum_lifetime_working_set_bytes": 647307264
+    },
+    {
+      "phase": "package_20232024-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 367792128,
+      "last_private_bytes": 367792128,
+      "peak_private_bytes": 367792128,
+      "peak_working_set_bytes": 645996544,
+      "peak_sum_lifetime_working_set_bytes": 652115968
+    },
+    {
+      "phase": "package_20222023-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 381480960,
+      "last_private_bytes": 381485056,
+      "peak_private_bytes": 381485056,
+      "peak_working_set_bytes": 659443712,
+      "peak_sum_lifetime_working_set_bytes": 665522176
+    },
+    {
+      "phase": "package_20222023-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 385626112,
+      "last_private_bytes": 385626112,
+      "peak_private_bytes": 385626112,
+      "peak_working_set_bytes": 664424448,
+      "peak_sum_lifetime_working_set_bytes": 671793152
+    },
+    {
+      "phase": "package_20212022-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 398430208,
+      "last_private_bytes": 398430208,
+      "peak_private_bytes": 398598144,
+      "peak_working_set_bytes": 677007360,
+      "peak_sum_lifetime_working_set_bytes": 685490176
+    },
+    {
+      "phase": "package_20212022-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 398372864,
+      "last_private_bytes": 404021248,
+      "peak_private_bytes": 404021248,
+      "peak_working_set_bytes": 684052480,
+      "peak_sum_lifetime_working_set_bytes": 691650560
+    },
+    {
+      "phase": "package_20202021-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 388771840,
+      "last_private_bytes": 388771840,
+      "peak_private_bytes": 404172800,
+      "peak_working_set_bytes": 684089344,
+      "peak_sum_lifetime_working_set_bytes": 704503808
+    },
+    {
+      "phase": "package_20202021-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 388800512,
+      "last_private_bytes": 389873664,
+      "peak_private_bytes": 390045696,
+      "peak_working_set_bytes": 673304576,
+      "peak_sum_lifetime_working_set_bytes": 704561152
+    },
+    {
+      "phase": "package_20192020-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 389885952,
+      "last_private_bytes": 391696384,
+      "peak_private_bytes": 391708672,
+      "peak_working_set_bytes": 674959360,
+      "peak_sum_lifetime_working_set_bytes": 704675840
+    },
+    {
+      "phase": "package_20192020-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 391778304,
+      "last_private_bytes": 395292672,
+      "peak_private_bytes": 395292672,
+      "peak_working_set_bytes": 678559744,
+      "peak_sum_lifetime_working_set_bytes": 704684032
+    },
+    {
+      "phase": "package_20182019-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 395296768,
+      "last_private_bytes": 401666048,
+      "peak_private_bytes": 401666048,
+      "peak_working_set_bytes": 684867584,
+      "peak_sum_lifetime_working_set_bytes": 704753664
+    },
+    {
+      "phase": "package_20182019-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 393146368,
+      "last_private_bytes": 393146368,
+      "peak_private_bytes": 393146368,
+      "peak_working_set_bytes": 677044224,
+      "peak_sum_lifetime_working_set_bytes": 704753664
+    },
+    {
+      "phase": "package_20172018-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 398573568,
+      "last_private_bytes": 398577664,
+      "peak_private_bytes": 398577664,
+      "peak_working_set_bytes": 682287104,
+      "peak_sum_lifetime_working_set_bytes": 704753664
+    },
+    {
+      "phase": "package_20172018-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 398577664,
+      "last_private_bytes": 400056320,
+      "peak_private_bytes": 400056320,
+      "peak_working_set_bytes": 683884544,
+      "peak_sum_lifetime_working_set_bytes": 704753664
+    },
+    {
+      "phase": "package_20162017-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 397606912,
+      "last_private_bytes": 397606912,
+      "peak_private_bytes": 405684224,
+      "peak_working_set_bytes": 689631232,
+      "peak_sum_lifetime_working_set_bytes": 704753664
+    },
+    {
+      "phase": "package_20162017-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 397606912,
+      "last_private_bytes": 399716352,
+      "peak_private_bytes": 399716352,
+      "peak_working_set_bytes": 683732992,
+      "peak_sum_lifetime_working_set_bytes": 704753664
+    },
+    {
+      "phase": "package_20152016-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 404336640,
+      "last_private_bytes": 404336640,
+      "peak_private_bytes": 404336640,
+      "peak_working_set_bytes": 688373760,
+      "peak_sum_lifetime_working_set_bytes": 704753664
+    },
+    {
+      "phase": "package_20152016-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 401997824,
+      "last_private_bytes": 401997824,
+      "peak_private_bytes": 404348928,
+      "peak_working_set_bytes": 688394240,
+      "peak_sum_lifetime_working_set_bytes": 704753664
+    },
+    {
+      "phase": "package_20142015-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 406999040,
+      "last_private_bytes": 407044096,
+      "peak_private_bytes": 407044096,
+      "peak_working_set_bytes": 690999296,
+      "peak_sum_lifetime_working_set_bytes": 704753664
+    },
+    {
+      "phase": "package_20142015-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 407044096,
+      "last_private_bytes": 407412736,
+      "peak_private_bytes": 407412736,
+      "peak_working_set_bytes": 691458048,
+      "peak_sum_lifetime_working_set_bytes": 704753664
+    },
+    {
+      "phase": "package_20132014-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 405725184,
+      "last_private_bytes": 405725184,
+      "peak_private_bytes": 405725184,
+      "peak_working_set_bytes": 689856512,
+      "peak_sum_lifetime_working_set_bytes": 704753664
+    },
+    {
+      "phase": "package_20132014-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 405733376,
+      "last_private_bytes": 407404544,
+      "peak_private_bytes": 407404544,
+      "peak_working_set_bytes": 691494912,
+      "peak_sum_lifetime_working_set_bytes": 704753664
+    },
+    {
+      "phase": "package_20122013-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 407404544,
+      "last_private_bytes": 410959872,
+      "peak_private_bytes": 410959872,
+      "peak_working_set_bytes": 694816768,
+      "peak_sum_lifetime_working_set_bytes": 704753664
+    },
+    {
+      "phase": "package_20122013-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 408223744,
+      "last_private_bytes": 408223744,
+      "peak_private_bytes": 408223744,
+      "peak_working_set_bytes": 692236288,
+      "peak_sum_lifetime_working_set_bytes": 704770048
+    },
+    {
+      "phase": "package_20112012-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 408285184,
+      "last_private_bytes": 414666752,
+      "peak_private_bytes": 414666752,
+      "peak_working_set_bytes": 700600320,
+      "peak_sum_lifetime_working_set_bytes": 707874816
+    },
+    {
+      "phase": "package_20112012-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 407482368,
+      "last_private_bytes": 407482368,
+      "peak_private_bytes": 408887296,
+      "peak_working_set_bytes": 697368576,
+      "peak_sum_lifetime_working_set_bytes": 708018176
+    },
+    {
+      "phase": "package_20102011-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 406876160,
+      "last_private_bytes": 406876160,
+      "peak_private_bytes": 407506944,
+      "peak_working_set_bytes": 695230464,
+      "peak_sum_lifetime_working_set_bytes": 712835072
+    },
+    {
+      "phase": "package_20102011-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 407879680,
+      "last_private_bytes": 407879680,
+      "peak_private_bytes": 407879680,
+      "peak_working_set_bytes": 695390208,
+      "peak_sum_lifetime_working_set_bytes": 712843264
+    },
+    {
+      "phase": "package_20092010-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 407834624,
+      "last_private_bytes": 408735744,
+      "peak_private_bytes": 408735744,
+      "peak_working_set_bytes": 696307712,
+      "peak_sum_lifetime_working_set_bytes": 712859648
+    },
+    {
+      "phase": "package_20092010-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 375398400,
+      "last_private_bytes": 377769984,
+      "peak_private_bytes": 377769984,
+      "peak_working_set_bytes": 667131904,
+      "peak_sum_lifetime_working_set_bytes": 712867840
+    },
+    {
+      "phase": "package_20082009-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 377769984,
+      "last_private_bytes": 382652416,
+      "peak_private_bytes": 382652416,
+      "peak_working_set_bytes": 672157696,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_20082009-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 380387328,
+      "last_private_bytes": 380387328,
+      "peak_private_bytes": 380387328,
+      "peak_working_set_bytes": 670048256,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_20072008-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 380387328,
+      "last_private_bytes": 385073152,
+      "peak_private_bytes": 385073152,
+      "peak_working_set_bytes": 674197504,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_20072008-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 383098880,
+      "last_private_bytes": 383098880,
+      "peak_private_bytes": 385073152,
+      "peak_working_set_bytes": 674197504,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_20062007-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 383655936,
+      "last_private_bytes": 389046272,
+      "peak_private_bytes": 389046272,
+      "peak_working_set_bytes": 678375424,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_20062007-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 384372736,
+      "last_private_bytes": 384372736,
+      "peak_private_bytes": 389308416,
+      "peak_working_set_bytes": 678391808,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_20052006-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 384372736,
+      "last_private_bytes": 388722688,
+      "peak_private_bytes": 388722688,
+      "peak_working_set_bytes": 678723584,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_20052006-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 390311936,
+      "last_private_bytes": 390311936,
+      "peak_private_bytes": 390311936,
+      "peak_working_set_bytes": 680300544,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_20032004-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 378802176,
+      "last_private_bytes": 378802176,
+      "peak_private_bytes": 378802176,
+      "peak_working_set_bytes": 668291072,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_20032004-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 381079552,
+      "last_private_bytes": 381079552,
+      "peak_private_bytes": 381079552,
+      "peak_working_set_bytes": 670289920,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_20022003-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 381890560,
+      "last_private_bytes": 381890560,
+      "peak_private_bytes": 381890560,
+      "peak_working_set_bytes": 671801344,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_20022003-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 381890560,
+      "last_private_bytes": 383291392,
+      "peak_private_bytes": 383291392,
+      "peak_working_set_bytes": 673280000,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_20012002-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 388460544,
+      "last_private_bytes": 388943872,
+      "peak_private_bytes": 388943872,
+      "peak_working_set_bytes": 678596608,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_20012002-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 384487424,
+      "last_private_bytes": 384487424,
+      "peak_private_bytes": 390008832,
+      "peak_working_set_bytes": 679632896,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_20002001-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 384491520,
+      "last_private_bytes": 388784128,
+      "peak_private_bytes": 388784128,
+      "peak_working_set_bytes": 678756352,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_20002001-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 390291456,
+      "last_private_bytes": 390291456,
+      "peak_private_bytes": 390291456,
+      "peak_working_set_bytes": 680460288,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19992000-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 388837376,
+      "last_private_bytes": 388837376,
+      "peak_private_bytes": 390291456,
+      "peak_working_set_bytes": 680460288,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19992000-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 388837376,
+      "last_private_bytes": 390307840,
+      "peak_private_bytes": 390307840,
+      "peak_working_set_bytes": 679395328,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19981999-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 390316032,
+      "last_private_bytes": 390901760,
+      "peak_private_bytes": 390901760,
+      "peak_working_set_bytes": 680271872,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19981999-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 390901760,
+      "last_private_bytes": 392585216,
+      "peak_private_bytes": 392585216,
+      "peak_working_set_bytes": 681836544,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19971998-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 395796480,
+      "last_private_bytes": 395796480,
+      "peak_private_bytes": 395796480,
+      "peak_working_set_bytes": 685056000,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19971998-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 391565312,
+      "last_private_bytes": 391565312,
+      "peak_private_bytes": 391565312,
+      "peak_working_set_bytes": 680558592,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19961997-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 391565312,
+      "last_private_bytes": 395489280,
+      "peak_private_bytes": 395489280,
+      "peak_working_set_bytes": 684539904,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19961997-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 395489280,
+      "last_private_bytes": 396513280,
+      "peak_private_bytes": 396513280,
+      "peak_working_set_bytes": 685735936,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19951996-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 392794112,
+      "last_private_bytes": 392794112,
+      "peak_private_bytes": 399106048,
+      "peak_working_set_bytes": 688570368,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19951996-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 394473472,
+      "last_private_bytes": 394473472,
+      "peak_private_bytes": 394571776,
+      "peak_working_set_bytes": 683700224,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19941995-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 394334208,
+      "last_private_bytes": 398376960,
+      "peak_private_bytes": 398376960,
+      "peak_working_set_bytes": 687521792,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19941995-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 388841472,
+      "last_private_bytes": 388972544,
+      "peak_private_bytes": 388972544,
+      "peak_working_set_bytes": 679088128,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19931994-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 392372224,
+      "last_private_bytes": 392372224,
+      "peak_private_bytes": 392372224,
+      "peak_working_set_bytes": 682217472,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19931994-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 387551232,
+      "last_private_bytes": 387551232,
+      "peak_private_bytes": 392458240,
+      "peak_working_set_bytes": 682246144,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19921993-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 387796992,
+      "last_private_bytes": 391217152,
+      "peak_private_bytes": 391217152,
+      "peak_working_set_bytes": 681127936,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19921993-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 390610944,
+      "last_private_bytes": 392814592,
+      "peak_private_bytes": 392814592,
+      "peak_working_set_bytes": 682782720,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19911992-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 391499776,
+      "last_private_bytes": 391499776,
+      "peak_private_bytes": 391499776,
+      "peak_working_set_bytes": 681578496,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19911992-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 385282048,
+      "last_private_bytes": 387985408,
+      "peak_private_bytes": 387985408,
+      "peak_working_set_bytes": 678240256,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19901991-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 387985408,
+      "last_private_bytes": 391208960,
+      "peak_private_bytes": 391208960,
+      "peak_working_set_bytes": 681381888,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19901991-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 391208960,
+      "last_private_bytes": 392036352,
+      "peak_private_bytes": 392036352,
+      "peak_working_set_bytes": 682184704,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19891990-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 394592256,
+      "last_private_bytes": 394616832,
+      "peak_private_bytes": 394616832,
+      "peak_working_set_bytes": 684343296,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19891990-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 392425472,
+      "last_private_bytes": 392425472,
+      "peak_private_bytes": 394567680,
+      "peak_working_set_bytes": 684322816,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19881989-regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 387883008,
+      "last_private_bytes": 393388032,
+      "peak_private_bytes": 393388032,
+      "peak_working_set_bytes": 683540480,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19881989-playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 393388032,
+      "last_private_bytes": 395542528,
+      "peak_private_bytes": 395542528,
+      "peak_working_set_bytes": 685649920,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19871988-regular",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 394129408,
+      "last_private_bytes": 394129408,
+      "peak_private_bytes": 395186176,
+      "peak_working_set_bytes": 685268992,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "package_19871988-playoff",
+      "samples": 2,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 394129408,
+      "last_private_bytes": 396144640,
+      "peak_private_bytes": 396144640,
+      "peak_working_set_bytes": 686297088,
+      "peak_sum_lifetime_working_set_bytes": 712871936
+    },
+    {
+      "phase": "archive_regular",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 383369216,
+      "last_private_bytes": 383369216,
+      "peak_private_bytes": 383369216,
+      "peak_working_set_bytes": 673767424,
+      "peak_sum_lifetime_working_set_bytes": 716484608
+    },
+    {
+      "phase": "archive_playoff",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 395116544,
+      "last_private_bytes": 395116544,
+      "peak_private_bytes": 395116544,
+      "peak_working_set_bytes": 685387776,
+      "peak_sum_lifetime_working_set_bytes": 724324352
+    },
+    {
+      "phase": "warm_query",
+      "samples": 3,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 395161600,
+      "last_private_bytes": 397037568,
+      "peak_private_bytes": 397037568,
+      "peak_working_set_bytes": 689156096,
+      "peak_sum_lifetime_working_set_bytes": 724545536
+    },
+    {
+      "phase": "resident_settled",
+      "samples": 4,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 396046336,
+      "last_private_bytes": 396046336,
+      "peak_private_bytes": 397312000,
+      "peak_working_set_bytes": 689602560,
+      "peak_sum_lifetime_working_set_bytes": 724545536
+    },
+    {
+      "phase": "engine_restarted",
+      "samples": 6,
+      "min_processes": 8,
+      "max_processes": 8,
+      "minimum_private_bytes": 372064256,
+      "last_private_bytes": 372064256,
+      "peak_private_bytes": 391503872,
+      "peak_working_set_bytes": 684019712,
+      "peak_sum_lifetime_working_set_bytes": 733093888
+    }
+  ],
+  "missing_sampled_phases": [],
+  "target_scope": "All normal workload phases including engine restart.",
+  "sampled_peak_private_bytes": 414666752,
+  "sampled_peak_working_set_bytes": 700600320,
+  "sampled_private_bytes_over_blank_baseline": 174526464,
+  "provisional_250_mib_target": {
+    "sampled_private_bytes_below_target": false,
+    "sampled_sum_working_set_below_target": false,
+    "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+  },
+  "finished_at": "2026-10-14T08:26:37.482Z"
+}

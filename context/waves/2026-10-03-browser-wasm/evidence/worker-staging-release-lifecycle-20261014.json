@@ -1,0 +1,151 @@
+{
+  "verified": true,
+  "scope": "Instrumented real-worker lifecycle probe, not memory acceptance.",
+  "modes": [
+    {
+      "mode": "native",
+      "loaded": {
+        "schema_version": 1,
+        "request_id": 1,
+        "context_generation": 1,
+        "value": {
+          "revision": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+          "residents": [
+            "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44"
+          ],
+          "metadata": {
+            "schema_version": 1,
+            "season": 20252026,
+            "season_type": "regular",
+            "source": "repository:20252026",
+            "observed_at": null,
+            "fetched_at": null
+          }
+        },
+        "probe": [
+          {
+            "before": 926515,
+            "length": 0,
+            "after": 0,
+            "resultBytes": 0
+          }
+        ]
+      },
+      "refused": {
+        "schema_version": 1,
+        "request_id": 2,
+        "context_generation": 1,
+        "error": {
+          "kind": "engine_error",
+          "message": "invalid package: expected ident at line 1 column 2"
+        },
+        "probe": [
+          {
+            "before": 926515,
+            "length": 0,
+            "after": 0,
+            "resultBytes": 0
+          },
+          {
+            "before": 13,
+            "length": 0,
+            "after": 0,
+            "resultBytes": 0
+          }
+        ]
+      },
+      "queryRows": 933,
+      "expectedRows": 933,
+      "originalHashPreserved": true,
+      "revisionMatchesRaw": true
+    },
+    {
+      "mode": "unavailable",
+      "loaded": {
+        "schema_version": 1,
+        "request_id": 1,
+        "context_generation": 1,
+        "value": {
+          "revision": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+          "residents": [
+            "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44"
+          ],
+          "metadata": {
+            "schema_version": 1,
+            "season": 20252026,
+            "season_type": "regular",
+            "source": "repository:20252026",
+            "observed_at": null,
+            "fetched_at": null
+          }
+        },
+        "probe": []
+      },
+      "refused": {
+        "schema_version": 1,
+        "request_id": 2,
+        "context_generation": 1,
+        "error": {
+          "kind": "engine_error",
+          "message": "invalid package: expected ident at line 1 column 2"
+        },
+        "probe": []
+      },
+      "queryRows": 933,
+      "expectedRows": 933,
+      "originalHashPreserved": true,
+      "revisionMatchesRaw": true
+    },
+    {
+      "mode": "throws",
+      "loaded": {
+        "schema_version": 1,
+        "request_id": 1,
+        "context_generation": 1,
+        "value": {
+          "revision": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+          "residents": [
+            "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44"
+          ],
+          "metadata": {
+            "schema_version": 1,
+            "season": 20252026,
+            "season_type": "regular",
+            "source": "repository:20252026",
+            "observed_at": null,
+            "fetched_at": null
+          }
+        },
+        "probe": [
+          {
+            "before": 926515,
+            "length": 0
+          }
+        ]
+      },
+      "refused": {
+        "schema_version": 1,
+        "request_id": 2,
+        "context_generation": 1,
+        "error": {
+          "kind": "engine_error",
+          "message": "invalid package: expected ident at line 1 column 2"
+        },
+        "probe": [
+          {
+            "before": 926515,
+            "length": 0
+          },
+          {
+            "before": 13,
+            "length": 0
+          }
+        ]
+      },
+      "queryRows": 933,
+      "expectedRows": 933,
+      "originalHashPreserved": true,
+      "revisionMatchesRaw": true
+    }
+  ]
+}
