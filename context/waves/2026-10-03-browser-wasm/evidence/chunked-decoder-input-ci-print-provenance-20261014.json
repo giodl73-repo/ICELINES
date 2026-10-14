@@ -1,0 +1,24 @@
+{
+  "status": "Exact CI print proof passed; master build/publication still pending",
+  "source": "3b61f10e186339dbe29ec761eebdc9b63a6dd3e1",
+  "reports": {
+    "verification": {
+      "file": "chunked-decoder-input-ci-print-verification-20261014.json",
+      "sha256": "133e9fea3351f064e5271d06dc4ae8cadde85fe687fa37d075191ade257488b9"
+    },
+    "reference": {
+      "file": "chunked-decoder-input-ci-print-reference-20261014.json",
+      "sha256": "11040639dcccbf5a7aaa565b03a4346c419b64c4f7728feefac605c040a1140e"
+    },
+    "pdf": {
+      "file": "chunked-decoder-input-ci-print-pdf-20261014.pdf",
+      "sha256": "316ae92984a2a94c171213b09192daa760166b9a47b86eb7e4953498606859cb"
+    }
+  },
+  "scope": "Actual Chromium PDF after viewport beforeprint/afterprint;24 pages/all933 names and ranks, UTF-8 reference, PyMuPDF/pypdf extraction, no out-of-page text. First/last page PNGs visually inspected and readable. Not physical printer, screen-reader, phone or memory proof.",
+  "visual_pages": {
+    "first": "target\\viewport-browser-aOOq21\\print-first-page.png",
+    "last": "target\\viewport-browser-aOOq21\\print-last-page.png"
+  },
+  "helper_sha256": "f604686d9345c26a84e527e35d2b1e54ffcb0b419c568f9ffacbc7dea0bbc211"
+}
