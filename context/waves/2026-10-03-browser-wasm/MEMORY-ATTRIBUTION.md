@@ -671,3 +671,10 @@ confirmed linear-memory gain comes with CPU work, dependency/code size and data
 representation complexity; it does not close the full resource gap. Stable source
 and generated engine bindings are restored. Reports/source hashes/qualification
 are in compressed-export provenance and raw reports. Real Android remains deferred.
+
+Reverse-order clean comparison (candidate first, control second, no compiler):
+445.47 versus444.71 MiB private peak. Both complete all75 packages, two archive
+imports,20 warm queries, eight residents and restart under the original sampler
+and browser flags. This fails to reproduce the first pair's apparent saving.
+Compression is not adopted; the confirmed2.625 MiB linear saving does not justify
+slower imports and representation complexity. Both whole-browser targets fail.
