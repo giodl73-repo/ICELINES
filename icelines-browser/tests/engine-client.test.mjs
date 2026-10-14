@@ -16,6 +16,37 @@ function reply(worker, value, error, overrides = {}) {
     context_generation: request.context_generation, ...(error ? { error } : { value }), ...overrides } });
 }
 
+test('JSON transport preserves complete rows and Unicode without changing callers', async () => {
+  const {client, workers, failures} = setup();
+  const result = {rows: [{player_id: 1, name: 'Slafkovský', pace_82: null}, {player_id: 2, name: 'Stützle', pace_82: 82.5}]};
+  const pending = client.request('query', {});
+  reply(workers[0], JSON.stringify(result), undefined, {encoding: 'json'});
+  assert.deepEqual(await pending, result);
+  assert.deepEqual(failures, []);
+});
+
+test('malformed JSON transport fails every pending request and requires recovery', async () => {
+  const {client, workers, failures} = setup();
+  const first = client.request('query', {});
+  const second = client.request('detail', 1);
+  const checks = [first, second].map(p => assert.rejects(p, EngineStoppedError));
+  reply(workers[0], '{broken', undefined, {encoding: 'json'});
+  await Promise.all(checks);
+  assert.equal(failures.length, 1);
+  assert.equal(client.available, false);
+});
+
+test('JSON encoding requires a string success value', async () => {
+  for (const overrides of [{encoding:'other'}, {encoding:'json'}, {encoding:'json', error:{kind:'engine_error', message:'bad'}, value:undefined}]) {
+    const {client, workers, failures} = setup();
+    const pending = client.request('query', {});
+    const rejected = assert.rejects(pending, EngineStoppedError);
+    reply(workers[0], {rows:[]}, undefined, overrides);
+    await rejected;
+    assert.equal(failures.length, 1);
+  }
+});
+
 test('deferred first load preserves the context chosen before any worker exists', async () => {
   const {client, workers, failures} = setup(120000, {deferStart:true});
   assert.equal(workers.length, 0); assert.equal(client.available, true);

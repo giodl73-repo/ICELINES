@@ -50,5 +50,6 @@ export interface EngineRequest {
 }
 export interface EngineResponse {
   schema_version: 1; request_id: number; context_generation: number;
+  encoding?: 'json';
   value?: unknown; error?: { kind: string; message: string };
 }

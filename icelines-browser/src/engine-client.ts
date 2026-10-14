@@ -35,6 +35,7 @@ export class EngineClient {
       if (!response || response.schema_version !== 1 || !Number.isSafeInteger(response.request_id)
         || !Number.isSafeInteger(response.context_generation)
         || (!!response.error === Object.hasOwn(response, 'value'))
+        || (response.encoding !== undefined && (response.encoding !== 'json' || response.error || typeof response.value !== 'string'))
         || (response.error && (typeof response.error.kind !== 'string' || typeof response.error.message !== 'string'))) {
         this.fail(epoch, 'Engine returned an invalid response.'); return;
       }
@@ -42,10 +43,15 @@ export class EngineClient {
       if (!pending) return;
       if (response.context_generation !== pending.generation) { this.fail(epoch, 'Engine response context was invalid.'); return; }
       if (response.error?.kind === 'engine_failure') { this.fail(epoch, response.error.message); return; }
+      let value = response.value;
+      if (response.context_generation === this.generation && response.encoding === 'json') {
+        try { value = JSON.parse(value as string); }
+        catch { this.fail(epoch, 'Engine returned invalid JSON.'); return; }
+      }
       clearTimeout(pending.timer); this.pending.delete(response.request_id);
       if (response.context_generation !== this.generation) pending.reject(new Error('cancelled: context changed'));
       else if (response.error) pending.reject(new Error(response.error.message));
-      else pending.resolve(response.value);
+      else pending.resolve(value);
     };
     worker.onerror = () => this.fail(epoch, 'Engine stopped unexpectedly.');
     worker.onmessageerror = () => this.fail(epoch, 'Engine response could not be decoded.');

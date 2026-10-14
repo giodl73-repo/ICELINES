@@ -41,7 +41,9 @@ self.onmessage = (event: MessageEvent<EngineRequest>) => {
           const revision = engine.load_package(new Uint8Array(request.payload as ArrayBuffer));
           response.value = { revision, residents: JSON.parse(engine.resident_revisions()), metadata: JSON.parse(engine.package_metadata()) }; break;
         }
-        case 'query': response.value = JSON.parse(engine.query(JSON.stringify(request.payload as QueryRequest))); break;
+        // Preserve Rust's JSON across the worker boundary. Parsing here would
+        // allocate a second row tree only for structured clone to copy it.
+        case 'query': response.value = engine.query(JSON.stringify(request.payload as QueryRequest)); response.encoding = 'json'; break;
         case 'detail': response.value = JSON.parse(engine.player_detail(Number(request.payload))); break;
         case 'currentSeason': response.value = engine.current_season(); break;
         case 'schedule': response.value = JSON.parse(engine.schedule_week(new Uint8Array(request.payload as ArrayBuffer))); break;
