@@ -1,0 +1,89 @@
+{
+  "decision": "Rejected as a memory optimization; close draft PR105 without merge or publication. Clean integrated opposite-order pairs do not reproduce a consistent saving. Earlier transformed diagnostic observations remain valid observations but are insufficient adoption evidence.",
+  "source_commit": "ed60eedc5ecdfe56949aacd6cb70c07a1b356e3d",
+  "evidence": {
+    "candidate-first": {
+      "file": "frontend-bundle-integrated-memory-candidate-first-20261014.json",
+      "sha256": "7d9d21856664b7c8bf802c298a400f4f11f139887941bd58a883e7e1f55870fe"
+    },
+    "control-second": {
+      "file": "frontend-bundle-integrated-memory-control-second-20261014.json",
+      "sha256": "7bad7e8531c5a5b26fe24a9f0343e164427d2a20741503b641f460f7b375afa2"
+    },
+    "control-first": {
+      "file": "frontend-bundle-integrated-memory-control-first-20261014.json",
+      "sha256": "e08946fe6447dd83675e73d5ce2e9c258b89e8dbf969c778641427e5845841e7"
+    },
+    "candidate-second": {
+      "file": "frontend-bundle-integrated-memory-candidate-second-20261014.json",
+      "sha256": "ba81abc21fe409a0eb0d3df4cd5a255d97ab1a55c773283fa8bfe1fe2e69bbce"
+    }
+  },
+  "measurements": [
+    {
+      "run": "candidate-first",
+      "peak_private_mib": 404.140625,
+      "blank_private_mib": 235.609375,
+      "warm_median_ms": 70.28299999999581
+    },
+    {
+      "run": "control-second",
+      "peak_private_mib": 398.6953125,
+      "blank_private_mib": 232.2890625,
+      "warm_median_ms": 76.39010000000417
+    },
+    {
+      "run": "control-first",
+      "peak_private_mib": 401.19140625,
+      "blank_private_mib": 237.4296875,
+      "warm_median_ms": 71.7245000000039
+    },
+    {
+      "run": "candidate-second",
+      "peak_private_mib": 400.640625,
+      "blank_private_mib": 233.27734375,
+      "warm_median_ms": 81.43510000000242
+    }
+  ],
+  "pair_candidate_minus_control_mib": [
+    5.4453125,
+    -0.55078125
+  ],
+  "scope": "All75 packages/eight residents/two905/332 imports/20 committed warm queries/restart; original sampler/flags/network observer, no forced GC. Whole browser250 MiB comparison fails in all4 runs; no baseline-subtracted acceptance.",
+  "control": "target/chunked-decoder-input-artifact, source807e2adcd31cdd8cd31a74f87fdeec05247b7ef0, same Windows WASM and all bytes except main/build-info/shell-manifest/sw.",
+  "ci": {
+    "run": 38591755455,
+    "conclusion": "success",
+    "artifact_id": 11908920300,
+    "build_info": {
+      "schema_version": 1,
+      "commit": "eb2af0aa92655d5afbbe0a8873d4faec12ac23eb",
+      "working_tree_dirty": false,
+      "tools": {
+        "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+        "node": "v22.22.3",
+        "python": "Python 3.14.2",
+        "wasm_bindgen": "wasm-bindgen 0.2.118",
+        "esbuild": "0.28.2"
+      },
+      "frontend": {
+        "entry": "src/main.js",
+        "format": "bundled-esm",
+        "target": "es2022"
+      },
+      "wasm_sha256": "8482c9fd825f773eb3fc0956e42f67f0931caf871d2bab89c76b01a4738aab3a"
+    },
+    "shell_build": "c9ee7ff6b13677f20f058aad4571187c39823b8e40d80496885bcb777e5fc7bf",
+    "verified_files": 182,
+    "packages": 75,
+    "main_sha256": "4f1272b11c324c071b2d0238e08bfb6198f5a3db8b7675847825719df55a79ec",
+    "same_main_as_local": true,
+    "other_runtime_bytes_equal_published_75e6ba97": true
+  },
+  "not_run": "CI artifact memory/publication checks are not claimed; candidate rejected from clean local comparisons.",
+  "production_unchanged": true,
+  "remaining_validation": [
+    "250 MiB whole-browser budget",
+    "Android explicitly deferred by user"
+  ]
+}

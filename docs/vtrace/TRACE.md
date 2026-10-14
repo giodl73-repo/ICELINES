@@ -6,6 +6,11 @@ evidence: context/waves/2026-10-03-browser-wasm/evidence/frontend-bundle-provena
 Clean artifact verification, corruption/context, executing bundle identity and
 full workload gates remain pending;250 MiB and physical Android remain unmet.
 
+CHG-121 final experimental disposition: rejected; PR105 closed without merge or
+publication. Integrated runs are recorded in
+context/waves/2026-10-03-browser-wasm/evidence/frontend-bundle-integrated-decision-20261014.json.
+No production requirement or build change is promoted.
+
 ## Scope
 
 Repo or feature: `icelines` repo-baseline VTRACE adoption.

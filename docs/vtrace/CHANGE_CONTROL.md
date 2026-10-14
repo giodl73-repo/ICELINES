@@ -206,3 +206,7 @@ no fixed causal saving or acceptance claim.250 MiB and Android remain open.
 Review lenses: BENCH/WIRE/KEEL/FORGE/EDGE, single agent. Adoption gates: corruption
 and context checks, offline/viewport, executing bundle identity, clean CI and full
 workload measurements. Update DESIGN/TRACE; no resource-budget revision.
+
+Disposition: rejected2026-10-14 as a memory optimization. Clean integrated
+opposite-order pairs do not reproduce the prototype saving. PR105 closed without
+merge/publication; this branch records an experiment, not a production change.

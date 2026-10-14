@@ -36,3 +36,10 @@ there is no resource waiver or final acceptance. Amendments: enforce injection
 ordering (implemented/tested), verify actual executing bundle instead of separate
 modules (local pass, CI pending), retain scoped evidence and draft status
 (implemented). Native Rust semantics and live relay behavior are unchanged.
+
+Final disposition: candidate rejected as a memory optimization; PR105 closed
+without merge/publication. [Integrated runs and CI verification](evidence/frontend-bundle-integrated-decision-20261014.json)
+show candidate/control404.14/398.70 and400.64/401.19 MiB. A consistent saving
+does not reproduce. Browser CI succeeds and its182-file artifact has the same
+main bundle. CI memory/public transitions are not claimed for this rejected
+candidate.250 MiB and Android remain open; production remains75e6ba97.
