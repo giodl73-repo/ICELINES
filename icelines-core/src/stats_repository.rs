@@ -34,6 +34,7 @@
 //! behavior change — they just lose the lint that warned them
 //! against passing the bare repo across threads.
 
+use std::borrow::Borrow;
 use std::collections::{HashMap, VecDeque};
 #[cfg(not(feature = "send-sync"))]
 use std::marker::PhantomData;
@@ -88,13 +89,31 @@ pub type ExtraReportKey = (
 /// The cap is independent of the typed-window LRU (`DEFAULT_LRU_CAP`).
 pub const EXTRA_REPORTS_CAP: usize = 4096;
 
+// Keep large stats rows out of spare wasm32 hash-table buckets. Native storage
+// stays inline; callers on both targets still borrow the same SeasonStats type.
+#[cfg(target_arch = "wasm32")]
+type StoredSeasonStats = Box<SeasonStats>;
+#[cfg(not(target_arch = "wasm32"))]
+type StoredSeasonStats = SeasonStats;
+
+fn store_stats(stats: SeasonStats) -> StoredSeasonStats {
+    #[cfg(target_arch = "wasm32")]
+    {
+        Box::new(stats)
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        stats
+    }
+}
+
 #[derive(Debug)]
 pub struct StatsRepository {
     // pub(crate) so external code can't bypass roster index + LRU
     // bookkeeping by mutating the HashMaps directly. Read access via
     // `iter_identities()` / `iter_stats()`; mutation via `upsert_*`.
     pub(crate) identities: HashMap<PlayerId, PlayerIdentity>,
-    pub(crate) stats: HashMap<(PlayerId, Season, SeasonType), SeasonStats>,
+    pub(crate) stats: HashMap<(PlayerId, Season, SeasonType), StoredSeasonStats>,
     /// Per-player contracts. Window-independent — contracts don't evict
     /// when a (season, type) window does, and contracts are not keyed
     /// by season. The current NHL landing API rarely populates these.
@@ -195,7 +214,7 @@ impl StatsRepository {
     }
 
     pub fn season(&self, id: PlayerId, s: Season, t: SeasonType) -> Option<&SeasonStats> {
-        self.stats.get(&(id, s, t))
+        self.stats.get(&(id, s, t)).map(Borrow::borrow)
     }
 
     pub fn contract(&self, id: PlayerId) -> Option<&PlayerContract> {
@@ -254,7 +273,7 @@ impl StatsRepository {
             .stats
             .iter()
             .filter(|(&(pid, _, t), _)| pid == id && filter.is_none_or(|ft| t == ft))
-            .map(|(_, s)| s)
+            .map(|(_, s)| s.borrow())
             .collect();
         rows.sort_by(|a, b| {
             a.season
@@ -317,7 +336,7 @@ impl StatsRepository {
     /// Iterate every resident `SeasonStats` row. Order is unspecified.
     /// For (season, type)-scoped iteration use `league()` instead.
     pub fn iter_stats<'a>(&'a self) -> impl Iterator<Item = &'a SeasonStats> + 'a {
-        self.stats.values()
+        self.stats.values().map(Borrow::borrow)
     }
 
     /// Iterate every resident `(PlayerId, &PlayerContract)`. Order
@@ -455,7 +474,7 @@ impl StatsRepository {
 
         // 3. Insert new stats; index rosters from new stints.
         self.index_rosters(&stats);
-        self.stats.insert(key, stats);
+        self.stats.insert(key, store_stats(stats));
 
         Ok(())
     }
