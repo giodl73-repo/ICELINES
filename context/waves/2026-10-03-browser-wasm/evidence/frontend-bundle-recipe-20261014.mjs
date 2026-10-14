@@ -1,0 +1,58 @@
+import { readFile, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { gzipSync } from 'node:zlib';
+import { build, version } from './frontend-bundle-tools/node_modules/esbuild/lib/main.js';
+if(version !== '0.28.2') throw Error('Unexpected bundler version');
+const base='target/wasm-validation-75e6ba97';
+const result=await build({entryPoints:[`${base}/src/main.js`],bundle:true,minify:true,format:'esm',platform:'browser',target:'es2022',write:false,metafile:true});
+if(result.outputFiles.length!==1) throw Error('Expected exactly one main bundle');
+const bundled=Buffer.from(result.outputFiles[0].contents);
+const sha=b=>createHash('sha256').update(b).digest('hex');
+await writeFile('target/frontend-bundle-main.js',bundled);
+await writeFile('target/frontend-bundle-metafile.json',JSON.stringify(result.metafile,null,2)+'\n');
+const manifest=JSON.parse(await readFile(`${base}/shell-manifest.json`,'utf8'));
+const originalMain=await readFile(`${base}/src/main.js`);
+const originalWorker=await readFile(`${base}/sw.js`,'utf8');
+const template=originalWorker.replace('const manifest = '+JSON.stringify(manifest)+';', 'const manifest = __SHELL_MANIFEST__;');
+if(sha(Buffer.from(template))!==manifest.worker_sha256)throw Error('Original exact template reconstruction failed');
+const asset=manifest.assets.find(a=>a.path==='src/main.js');
+Object.assign(asset,{sha256:sha(bundled),bytes:bundled.length,gzip_bytes:gzipSync(bundled).length});
+manifest.build=sha(JSON.stringify({assets:manifest.assets,worker_sha256:manifest.worker_sha256}));
+await writeFile('target/frontend-bundle-sw.js',template.replace('__SHELL_MANIFEST__',JSON.stringify(manifest)));
+await writeFile('target/frontend-bundle-shell.json',JSON.stringify(manifest,null,2)+'\n');
+const experiment={scope:'Local transformed serving diagnostic, not a retained production artifact or acceptance. Original artifact is verified before serving; only main.js, sw.js and shell-manifest.json are transformed. All normal workload phases, browser flags, sampler, network observer and engine remain unchanged. No forced GC.',base_commit:'75e6ba9709e31e2cdeed633958f923f0ae36c01d',esbuild:version,original_main_sha256:sha(originalMain),bundled_main_sha256:sha(bundled),original_main_bytes:originalMain.length,bundled_main_bytes:bundled.length,bundled_inputs:Object.keys(result.metafile.inputs),shell_build:manifest.build};
+await writeFile('target/frontend-bundle-provenance.json',JSON.stringify(experiment,null,2)+'\n');
+let harness=await readFile('icelines-browser/e2e/memory.mjs','utf8');
+harness=harness.replace("from '@playwright/test'", "from '../icelines-browser/node_modules/@playwright/test/index.mjs'")
+ .replace("from './memory-diagnostics.mjs'","from '../icelines-browser/e2e/memory-diagnostics.mjs'")
+ .replace("from './memory-scope.mjs'","from '../icelines-browser/e2e/memory-scope.mjs'")
+ .replace("'../..'","'..'")
+ .replace('target/browser-memory-','target/frontend-bundle-memory-');
+const serve='      response.end(await readFile(file));';
+if(harness.split(serve).length!==2)throw Error('Serving marker changed');
+harness=harness.replace(serve,`      const transformed={'src/main.js':'frontend-bundle-main.js','sw.js':'frontend-bundle-sw.js','shell-manifest.json':'frontend-bundle-shell.json'};
+      const relative=pathname.slice(prefix.length);
+      response.end(await readFile(transformed[relative] ? resolve(repository,'target',transformed[relative]) : file));`);
+harness=harness.replace('  report.completed = true;',`  report.experiment = JSON.parse(await readFile(resolve(repository,'target/frontend-bundle-provenance.json'),'utf8'));
+  report.target_scope = report.experiment.scope;
+  report.provisional_250_mib_target.sampled_private_bytes_below_target = null;
+  report.provisional_250_mib_target.sampled_sum_working_set_below_target = null;
+  report.provisional_250_mib_target.note = 'Transformed diagnostic; no acceptance claim.';
+  report.completed = true;`);
+await writeFile('target/frontend-bundle-memory.mjs',harness);
+console.log(JSON.stringify(experiment,null,2));
+let viewport=await readFile('icelines-browser/e2e/viewport.mjs','utf8');
+viewport=viewport.replace("from '@playwright/test'","from '../icelines-browser/node_modules/@playwright/test/index.mjs'").replace("'../..'","'..'").replace('target/viewport-browser-','target/frontend-bundle-viewport-');
+const viewportServe="}).end(await readFile(f));";
+if(viewport.split(viewportServe).length!==2)throw Error('Viewport serving marker changed');
+viewport=viewport.replace(viewportServe,`}).end(await readFile(({'src/main.js':'frontend-bundle-main.js','sw.js':'frontend-bundle-sw.js','shell-manifest.json':'frontend-bundle-shell.json'})[p] ? resolve(repository,'target',({'src/main.js':'frontend-bundle-main.js','sw.js':'frontend-bundle-sw.js','shell-manifest.json':'frontend-bundle-shell.json'})[p]) : f));`);
+viewport=viewport.replace("const server = createServer", "report.experiment = "+JSON.stringify(experiment)+";\nconst server = createServer");
+await writeFile('target/frontend-bundle-viewport.mjs',viewport);
+let offline=await readFile('icelines-browser/e2e/offline-reopen.mjs','utf8');
+offline=offline.replace("from '@playwright/test'","from '../icelines-browser/node_modules/@playwright/test/index.mjs'").replace("'../..'","'..'").replace('target/browser-acceptance-','target/frontend-bundle-offline-');
+const offlineServe='        response.end(await readFile(file));';
+if(offline.split(offlineServe).length!==2)throw Error('Offline serving marker changed');
+offline=offline.replace(offlineServe,`        const transformed={'src/main.js':'frontend-bundle-main.js','sw.js':'frontend-bundle-sw.js','shell-manifest.json':'frontend-bundle-shell.json'};
+        response.end(await readFile(transformed[pathname.slice(prefix.length)] ? resolve(repository,'target',transformed[pathname.slice(prefix.length)]) : file));`);
+offline=offline.replace('let server;', 'report.experiment = '+JSON.stringify(experiment)+';\nlet server;');
+await writeFile('target/frontend-bundle-offline.mjs',offline);

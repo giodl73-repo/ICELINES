@@ -1,0 +1,92 @@
+{
+  "started_at": "2026-10-14T15:35:14.941Z",
+  "verified": true,
+  "scope": "Isolated Chromium process close/reopen with offline network control; saved versus unsaved seasons, fresh query and player detail. Not physical-phone, total-memory or remote-rollback proof.",
+  "evidence": {
+    "saved_unfiltered_rows": 933,
+    "browser_process_closed": true,
+    "local_server_stopped": true,
+    "offline_viewport_rows": 42,
+    "offline": {
+      "online": false,
+      "probe_failed": true
+    },
+    "pending_table": {
+      "visibility": "hidden",
+      "inert": true,
+      "rows": 933
+    },
+    "fresh_filtered_rows": 835,
+    "attached_rows": {
+      "common_rows_unchanged": true,
+      "added": 0,
+      "removed": 98,
+      "rows": 835,
+      "previous_rows": 933
+    },
+    "player_detail": "Connor McDavid",
+    "failed_requests": [
+      {
+        "url": "http://127.0.0.1:54659/ICELINES/workbench/uncached-acceptance-probe-1791992119597",
+        "error": "net::ERR_INTERNET_DISCONNECTED"
+      }
+    ],
+    "failed_query_cleared_rows": true,
+    "retry_query_rows": 835
+  },
+  "profile_retained": "C:\\Users\\giodl\\AppData\\Local\\Temp\\icelines-acceptance-VBVBdg",
+  "experiment": {
+    "scope": "Local transformed serving diagnostic, not a retained production artifact or acceptance. Original artifact is verified before serving; only main.js, sw.js and shell-manifest.json are transformed. All normal workload phases, browser flags, sampler, network observer and engine remain unchanged. No forced GC.",
+    "base_commit": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+    "esbuild": "0.28.2",
+    "original_main_sha256": "00f8f0a97c67af01b7edb9c28711cdf2a923b9d08a04a23a412e7ac2671c70ea",
+    "bundled_main_sha256": "4f1272b11c324c071b2d0238e08bfb6198f5a3db8b7675847825719df55a79ec",
+    "original_main_bytes": 37354,
+    "bundled_main_bytes": 76338,
+    "bundled_inputs": [
+      "target/wasm-validation-75e6ba97/src/player-table.js",
+      "target/wasm-validation-75e6ba97/src/viewport-table.js",
+      "target/wasm-validation-75e6ba97/src/appearance.js",
+      "target/wasm-validation-75e6ba97/src/engine-client.js",
+      "target/wasm-validation-75e6ba97/src/offline.js",
+      "target/wasm-validation-75e6ba97/src/network.js",
+      "target/wasm-validation-75e6ba97/src/live-coordination.js",
+      "target/wasm-validation-75e6ba97/src/acquisition.js",
+      "target/wasm-validation-75e6ba97/src/save-policy.js",
+      "target/wasm-validation-75e6ba97/src/library.js",
+      "target/wasm-validation-75e6ba97/src/schedule.js",
+      "target/wasm-validation-75e6ba97/src/polling.js",
+      "target/wasm-validation-75e6ba97/src/query-export.js",
+      "target/wasm-validation-75e6ba97/src/catalog.js",
+      "target/wasm-validation-75e6ba97/src/package-download.js",
+      "target/wasm-validation-75e6ba97/src/catalog-metadata.js",
+      "target/wasm-validation-75e6ba97/src/archive.js",
+      "target/wasm-validation-75e6ba97/src/view-state.js",
+      "target/wasm-validation-75e6ba97/src/main.js"
+    ],
+    "shell_build": "468fd26d4054df0d5e739fb6cb355f0b91a42e83b5bbf2039953cd78423d5fe0"
+  },
+  "retained_artifact": {
+    "commit": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+    "shell_build": "e575ec099d635615476610b46ec106b97e83d28b66fc3980bbdcbbf4292c1a36",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "url": "http://127.0.0.1:54659/ICELINES/workbench/",
+  "browser": "153.0.8010.12",
+  "build": {
+    "schema_version": 1,
+    "commit": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "8482c9fd825f773eb3fc0956e42f67f0931caf871d2bab89c76b01a4738aab3a"
+  },
+  "saved_package": "20252026-regular",
+  "unsaved_package": "20242025-regular",
+  "finished_at": "2026-10-14T15:35:20.780Z"
+}

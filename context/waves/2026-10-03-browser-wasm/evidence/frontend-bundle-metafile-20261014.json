@@ -1,0 +1,314 @@
+{
+  "inputs": {
+    "target/wasm-validation-75e6ba97/src/player-table.js": {
+      "bytes": 4641,
+      "imports": [],
+      "format": "esm"
+    },
+    "target/wasm-validation-75e6ba97/src/viewport-table.js": {
+      "bytes": 7727,
+      "imports": [
+        {
+          "path": "target/wasm-validation-75e6ba97/src/player-table.js",
+          "kind": "import-statement",
+          "original": "./player-table.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "target/wasm-validation-75e6ba97/src/appearance.js": {
+      "bytes": 1392,
+      "imports": [],
+      "format": "esm"
+    },
+    "target/wasm-validation-75e6ba97/src/engine-client.js": {
+      "bytes": 5018,
+      "imports": [],
+      "format": "esm"
+    },
+    "target/wasm-validation-75e6ba97/src/offline.js": {
+      "bytes": 4356,
+      "imports": [],
+      "format": "esm"
+    },
+    "target/wasm-validation-75e6ba97/src/network.js": {
+      "bytes": 5504,
+      "imports": [],
+      "format": "esm"
+    },
+    "target/wasm-validation-75e6ba97/src/live-coordination.js": {
+      "bytes": 2091,
+      "imports": [],
+      "format": "esm"
+    },
+    "target/wasm-validation-75e6ba97/src/acquisition.js": {
+      "bytes": 5656,
+      "imports": [
+        {
+          "path": "target/wasm-validation-75e6ba97/src/network.js",
+          "kind": "import-statement",
+          "original": "./network.js"
+        },
+        {
+          "path": "target/wasm-validation-75e6ba97/src/live-coordination.js",
+          "kind": "import-statement",
+          "original": "./live-coordination.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "target/wasm-validation-75e6ba97/src/save-policy.js": {
+      "bytes": 334,
+      "imports": [],
+      "format": "esm"
+    },
+    "target/wasm-validation-75e6ba97/src/library.js": {
+      "bytes": 17851,
+      "imports": [
+        {
+          "path": "target/wasm-validation-75e6ba97/src/acquisition.js",
+          "kind": "import-statement",
+          "original": "./acquisition.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "target/wasm-validation-75e6ba97/src/schedule.js": {
+      "bytes": 10496,
+      "imports": [
+        {
+          "path": "target/wasm-validation-75e6ba97/src/acquisition.js",
+          "kind": "import-statement",
+          "original": "./acquisition.js"
+        },
+        {
+          "path": "target/wasm-validation-75e6ba97/src/save-policy.js",
+          "kind": "import-statement",
+          "original": "./save-policy.js"
+        },
+        {
+          "path": "target/wasm-validation-75e6ba97/src/library.js",
+          "kind": "import-statement",
+          "original": "./library.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "target/wasm-validation-75e6ba97/src/polling.js": {
+      "bytes": 3568,
+      "imports": [],
+      "format": "esm"
+    },
+    "target/wasm-validation-75e6ba97/src/query-export.js": {
+      "bytes": 2084,
+      "imports": [],
+      "format": "esm"
+    },
+    "target/wasm-validation-75e6ba97/src/catalog.js": {
+      "bytes": 2925,
+      "imports": [
+        {
+          "path": "target/wasm-validation-75e6ba97/src/acquisition.js",
+          "kind": "import-statement",
+          "original": "./acquisition.js"
+        },
+        {
+          "path": "target/wasm-validation-75e6ba97/src/network.js",
+          "kind": "import-statement",
+          "original": "./network.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "target/wasm-validation-75e6ba97/src/package-download.js": {
+      "bytes": 3213,
+      "imports": [
+        {
+          "path": "target/wasm-validation-75e6ba97/src/acquisition.js",
+          "kind": "import-statement",
+          "original": "./acquisition.js"
+        },
+        {
+          "path": "target/wasm-validation-75e6ba97/src/network.js",
+          "kind": "import-statement",
+          "original": "./network.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "target/wasm-validation-75e6ba97/src/catalog-metadata.js": {
+      "bytes": 15550,
+      "imports": [
+        {
+          "path": "target/wasm-validation-75e6ba97/src/library.js",
+          "kind": "import-statement",
+          "original": "./library.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "target/wasm-validation-75e6ba97/src/archive.js": {
+      "bytes": 7736,
+      "imports": [],
+      "format": "esm"
+    },
+    "target/wasm-validation-75e6ba97/src/view-state.js": {
+      "bytes": 3433,
+      "imports": [],
+      "format": "esm"
+    },
+    "target/wasm-validation-75e6ba97/src/main.js": {
+      "bytes": 37354,
+      "imports": [
+        {
+          "path": "target/wasm-validation-75e6ba97/src/viewport-table.js",
+          "kind": "import-statement",
+          "original": "./viewport-table.js"
+        },
+        {
+          "path": "target/wasm-validation-75e6ba97/src/appearance.js",
+          "kind": "import-statement",
+          "original": "./appearance.js"
+        },
+        {
+          "path": "target/wasm-validation-75e6ba97/src/engine-client.js",
+          "kind": "import-statement",
+          "original": "./engine-client.js"
+        },
+        {
+          "path": "target/wasm-validation-75e6ba97/src/offline.js",
+          "kind": "import-statement",
+          "original": "./offline.js"
+        },
+        {
+          "path": "target/wasm-validation-75e6ba97/src/schedule.js",
+          "kind": "import-statement",
+          "original": "./schedule.js"
+        },
+        {
+          "path": "target/wasm-validation-75e6ba97/src/polling.js",
+          "kind": "import-statement",
+          "original": "./polling.js"
+        },
+        {
+          "path": "target/wasm-validation-75e6ba97/src/live-coordination.js",
+          "kind": "import-statement",
+          "original": "./live-coordination.js"
+        },
+        {
+          "path": "target/wasm-validation-75e6ba97/src/query-export.js",
+          "kind": "import-statement",
+          "original": "./query-export.js"
+        },
+        {
+          "path": "target/wasm-validation-75e6ba97/src/catalog.js",
+          "kind": "import-statement",
+          "original": "./catalog.js"
+        },
+        {
+          "path": "target/wasm-validation-75e6ba97/src/save-policy.js",
+          "kind": "import-statement",
+          "original": "./save-policy.js"
+        },
+        {
+          "path": "target/wasm-validation-75e6ba97/src/package-download.js",
+          "kind": "import-statement",
+          "original": "./package-download.js"
+        },
+        {
+          "path": "target/wasm-validation-75e6ba97/src/catalog-metadata.js",
+          "kind": "import-statement",
+          "original": "./catalog-metadata.js"
+        },
+        {
+          "path": "target/wasm-validation-75e6ba97/src/archive.js",
+          "kind": "import-statement",
+          "original": "./archive.js"
+        },
+        {
+          "path": "target/wasm-validation-75e6ba97/src/acquisition.js",
+          "kind": "import-statement",
+          "original": "./acquisition.js"
+        },
+        {
+          "path": "target/wasm-validation-75e6ba97/src/library.js",
+          "kind": "import-statement",
+          "original": "./library.js"
+        },
+        {
+          "path": "target/wasm-validation-75e6ba97/src/view-state.js",
+          "kind": "import-statement",
+          "original": "./view-state.js"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "main.js": {
+      "imports": [],
+      "exports": [],
+      "entryPoint": "target/wasm-validation-75e6ba97/src/main.js",
+      "inputs": {
+        "target/wasm-validation-75e6ba97/src/player-table.js": {
+          "bytesInOutput": 1916
+        },
+        "target/wasm-validation-75e6ba97/src/viewport-table.js": {
+          "bytesInOutput": 4073
+        },
+        "target/wasm-validation-75e6ba97/src/appearance.js": {
+          "bytesInOutput": 841
+        },
+        "target/wasm-validation-75e6ba97/src/engine-client.js": {
+          "bytesInOutput": 2665
+        },
+        "target/wasm-validation-75e6ba97/src/offline.js": {
+          "bytesInOutput": 2527
+        },
+        "target/wasm-validation-75e6ba97/src/network.js": {
+          "bytesInOutput": 2654
+        },
+        "target/wasm-validation-75e6ba97/src/live-coordination.js": {
+          "bytesInOutput": 977
+        },
+        "target/wasm-validation-75e6ba97/src/acquisition.js": {
+          "bytesInOutput": 2675
+        },
+        "target/wasm-validation-75e6ba97/src/save-policy.js": {
+          "bytesInOutput": 84
+        },
+        "target/wasm-validation-75e6ba97/src/library.js": {
+          "bytesInOutput": 9303
+        },
+        "target/wasm-validation-75e6ba97/src/schedule.js": {
+          "bytesInOutput": 6160
+        },
+        "target/wasm-validation-75e6ba97/src/polling.js": {
+          "bytesInOutput": 2039
+        },
+        "target/wasm-validation-75e6ba97/src/query-export.js": {
+          "bytesInOutput": 1155
+        },
+        "target/wasm-validation-75e6ba97/src/catalog.js": {
+          "bytesInOutput": 1645
+        },
+        "target/wasm-validation-75e6ba97/src/package-download.js": {
+          "bytesInOutput": 1377
+        },
+        "target/wasm-validation-75e6ba97/src/catalog-metadata.js": {
+          "bytesInOutput": 14012
+        },
+        "target/wasm-validation-75e6ba97/src/archive.js": {
+          "bytesInOutput": 43
+        },
+        "target/wasm-validation-75e6ba97/src/view-state.js": {
+          "bytesInOutput": 2201
+        },
+        "target/wasm-validation-75e6ba97/src/main.js": {
+          "bytesInOutput": 19990
+        }
+      },
+      "bytes": 76338
+    }
+  }
+}

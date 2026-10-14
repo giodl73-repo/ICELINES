@@ -1,0 +1,96 @@
+{
+  "scope": "Local transformed serving diagnostic, not a retained production artifact or acceptance. Original artifact is verified before serving; only main.js, sw.js and shell-manifest.json are transformed. All normal workload phases, browser flags, sampler, network observer and engine remain unchanged. No forced GC.",
+  "base_commit": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+  "esbuild": "0.28.2",
+  "original_main_sha256": "00f8f0a97c67af01b7edb9c28711cdf2a923b9d08a04a23a412e7ac2671c70ea",
+  "bundled_main_sha256": "4f1272b11c324c071b2d0238e08bfb6198f5a3db8b7675847825719df55a79ec",
+  "original_main_bytes": 37354,
+  "bundled_main_bytes": 76338,
+  "bundled_inputs": [
+    "target/wasm-validation-75e6ba97/src/player-table.js",
+    "target/wasm-validation-75e6ba97/src/viewport-table.js",
+    "target/wasm-validation-75e6ba97/src/appearance.js",
+    "target/wasm-validation-75e6ba97/src/engine-client.js",
+    "target/wasm-validation-75e6ba97/src/offline.js",
+    "target/wasm-validation-75e6ba97/src/network.js",
+    "target/wasm-validation-75e6ba97/src/live-coordination.js",
+    "target/wasm-validation-75e6ba97/src/acquisition.js",
+    "target/wasm-validation-75e6ba97/src/save-policy.js",
+    "target/wasm-validation-75e6ba97/src/library.js",
+    "target/wasm-validation-75e6ba97/src/schedule.js",
+    "target/wasm-validation-75e6ba97/src/polling.js",
+    "target/wasm-validation-75e6ba97/src/query-export.js",
+    "target/wasm-validation-75e6ba97/src/catalog.js",
+    "target/wasm-validation-75e6ba97/src/package-download.js",
+    "target/wasm-validation-75e6ba97/src/catalog-metadata.js",
+    "target/wasm-validation-75e6ba97/src/archive.js",
+    "target/wasm-validation-75e6ba97/src/view-state.js",
+    "target/wasm-validation-75e6ba97/src/main.js"
+  ],
+  "shell_build": "468fd26d4054df0d5e739fb6cb355f0b91a42e83b5bbf2039953cd78423d5fe0",
+  "evidence": {
+    "candidate-first": {
+      "file": "frontend-bundle-candidate-first-20261014.json",
+      "sha256": "902f9666441d66badd3600e49468a34f70fbba4892accc54c8545dadd230be91"
+    },
+    "control-second": {
+      "file": "frontend-bundle-control-second-20261014.json",
+      "sha256": "9cecffbbbfc53a133980a4634f7dd9a50e414b56dae3bf7a85ace6d6db8ba0fd"
+    },
+    "control-first": {
+      "file": "frontend-bundle-control-first-20261014.json",
+      "sha256": "f03ffcd1ee05ef4043e5109e624bb01f0131d1cee012382b3b80b4d4d8c6f4ac"
+    },
+    "candidate-second": {
+      "file": "frontend-bundle-candidate-second-20261014.json",
+      "sha256": "ca9d22f1a7c582f000c3210157eebc675bcdb2108790e36a913bf6245ef4c1ea"
+    },
+    "viewport": {
+      "file": "frontend-bundle-viewport-20261014.json",
+      "sha256": "d60041e69bc6593be796a542fc274dee5add101a1a0956ad3c9a8cfecaafe620"
+    },
+    "offline": {
+      "file": "frontend-bundle-offline-20261014.json",
+      "sha256": "4c46c722f91bf5ef9a9c19585c24a7ea565454d6f115cb979b67f94f091cde4f"
+    },
+    "print": {
+      "file": "frontend-bundle-print-20261014.json",
+      "sha256": "00adb859750ed2c0d6f6cfd9f51df7fb8a74c3ee7656906f17949c2b750c9cd5"
+    },
+    "recipe": {
+      "file": "frontend-bundle-recipe-20261014.mjs",
+      "sha256": "84e8ea4a671c657e3480b42779da16ccf8e862136de93a4a9330e3d8a11b6a9b"
+    },
+    "metafile": {
+      "file": "frontend-bundle-metafile-20261014.json",
+      "sha256": "c19e3c14bcdd2aae3ef3a134069cca1fca277eb8336abe2ca8120bc8549633e9"
+    }
+  },
+  "measurements": [
+    {
+      "run": "candidate-first",
+      "peak_private_mib": 386.18359375,
+      "blank_private_mib": 221.69140625,
+      "warm_median_ms": 75.8975999999966
+    },
+    {
+      "run": "control-second",
+      "peak_private_mib": 395.19921875,
+      "blank_private_mib": 232.16796875,
+      "warm_median_ms": 76.64800000000105
+    },
+    {
+      "run": "control-first",
+      "peak_private_mib": 403.046875,
+      "blank_private_mib": 236.27734375,
+      "warm_median_ms": 74.93570000000182
+    },
+    {
+      "run": "candidate-second",
+      "peak_private_mib": 391.25390625,
+      "blank_private_mib": 232.9453125,
+      "warm_median_ms": 76.16044999999576
+    }
+  ],
+  "decision": "Promising local diagnostic only; production adoption pending. Pair differences 9.016 and 11.793 MiB; blank baseline differences 10.477 and 3.332 MiB. No exact causal saving or 250 MiB acceptance claim. No production source/build/dependency/publication changes. Worker and inactive individual modules remain cached, so duplicated cached bytes are not optimized. Must add controlled build integration, exact executing bundle identity, corruption/context checks, and reviewed clean CI artifact measurements before adoption."
+}
