@@ -1,0 +1,20 @@
+{
+  "cause": "Verifier read UTF-8 Node JSON with Windows CP1252 default; its CP1252 stdout/report output then displayed correct PDF accents as replacement characters.",
+  "application_defect": false,
+  "original_pdf_sha256": "737acf295ffd5234688cf50f916a026176e5703fe6788fe1f720651a5fd5ae08",
+  "original_failed_report_sha256": "e458b07d8dac80332bc76b197311f6f88c0e321b206bdf556c677dc9a48ad042",
+  "corrected_report": "viewport-print-utf8-corrected-20261013.json",
+  "fresh_deployed_source_report": "viewport-master-print-utf8-20261013.json",
+  "deployed_source": "4d1f513e29869bceba4fec9bf08d51511ad74207",
+  "rows": 933,
+  "unicode_names_match": true,
+  "independent_parsers": [
+    "PyMuPDF",
+    "pypdf"
+  ],
+  "verifier": "scripts/verify-browser-print.py",
+  "verifier_sha256": "f604686d9345c26a84e527e35d2b1e54ffcb0b419c568f9ffacbc7dea0bbc211",
+  "normalization": "NFC and whitespace only; accents are retained",
+  "runtime_changed": false,
+  "scope": "Closes falsely reported PDF extraction gap only. Physical printer/screen-reader/Android and the 250 MiB whole-browser target remain unproven or unmet."
+}

@@ -1,0 +1,71 @@
+{
+  "phase": "offline",
+  "started_at": "2026-10-14T01:52:39.445Z",
+  "verified": true,
+  "scope": "Isolated desktop Chromium profile across real Pages deployments. Saved public season plus frozen repository schedule fixture. No physical-phone, live-NHL or whole-browser resource claim.",
+  "browser": "153.0.8010.12",
+  "initial_owned_pages": 0,
+  "extra_owned_pages_closed": 0,
+  "network": {
+    "online": false,
+    "probe_failed": true
+  },
+  "loaded_build": {
+    "schema_version": 1,
+    "commit": "2e265236f3e71fd2dbe6ecab74e64b296a553465",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "2e4c853309a32d8366c282afe113626fde5c25b26349bd9194ceafe59123f57b"
+  },
+  "executing_renderer": "viewport",
+  "mounted_players": 42,
+  "storage": {
+    "datasets": [
+      {
+        "id": "20252026-regular",
+        "revision": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+        "sha256": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+        "bytes": 926515,
+        "metadata": {
+          "schema_version": 1,
+          "season": 20252026,
+          "season_type": "regular",
+          "source": "repository:20252026",
+          "observed_at": null,
+          "fetched_at": null
+        },
+        "keepUpdated": false
+      }
+    ],
+    "schedules": [
+      {
+        "id": "nhl-game-week:2026-04-29",
+        "revision": "0142670ebe87b8d584a9fda0575e742fc43ce652ad2c2f297d7c48e73060222a",
+        "sha256": "0142670ebe87b8d584a9fda0575e742fc43ce652ad2c2f297d7c48e73060222a",
+        "bytes": 752,
+        "metadata": {
+          "schema_version": 1,
+          "kind": "nhl-game-week",
+          "requested_date": "2026-04-29",
+          "source": "NHL schedule",
+          "observed_at": null,
+          "fetched_at": "2026-10-13T00:00:00Z"
+        },
+        "keepUpdated": false
+      }
+    ],
+    "settings": [
+      "20252026-regular",
+      "nhl-game-week:2026-04-29"
+    ]
+  },
+  "saved_bytes_unchanged": true,
+  "filtered_rows": 8,
+  "player_detail": "Connor McDavid",
+  "finished_at": "2026-10-14T01:52:40.920Z"
+}

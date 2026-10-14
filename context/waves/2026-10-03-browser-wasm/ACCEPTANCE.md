@@ -6,6 +6,35 @@ It does not declare the full plan complete.
 
 ## Current release
 
+- Validation source: `2e265236f3e71fd2dbe6ecab74e64b296a553465`, merged PR #92.
+  Includes PR #91 viewport rendering and authenticated gzip catalog delivery.
+- Master browser build `38495299888` and native CI `38495299823` pass; PR and
+  master each have 29 successful checks. Retained artifact `11863289024` verifies
+  181 files, 75 packages and 26 shell assets. No publication rebuild.
+- Shell: `9691890e23471a01accd6b907228e1d03eed268890039c5bb97061a9a26a8aad`.
+  WASM: `2e4c853309a32d8366c282afe113626fde5c25b26349bd9194ceafe59123f57b`.
+- Publication `38497514039`, rollback `38498071961` to4d1f513e, and final restore
+  `38499320777` succeed. Final static verification matches272 served files:
+  178 runtime and94 documentation. One initial documentation503 is preserved;
+  a focused retry verifies the same file against unchanged preservation hashes.
+- Public in-place first update and rollback preserve one saved933-player season,
+  one frozen two-game schedule, revisions, bytes, metadata and settings. Executing
+  main-module SHA verifies the rollback and final restored code. Public gzip read
+  shows905 players and exports the original908625-byte JSON from118304 wire bytes.
+- Final profile reopening, fresh eight-player query/detail and strict offline
+  controls pass. Export in the reused profile hit a matching Chromium153/CDP
+  download-history regression; failed attempts remain. A backed-up workaround
+  clears only the owned test profile's three download tables, with other history
+  tables and app storage unchanged. Final verification reopens already-restored
+  2e265236 after those failures; it is not mislabeled a new in-place transition.
+- Exact master full workload peaks388.74 MiB private allocations;20 warm queries
+  have median70.45/max83.92 ms on this Windows workstation. The fixed250 MiB
+  whole-browser gate FAILS. Physical Android remains explicitly deferred.
+- Source/scope and raw reports: `evidence/gzip-delivery-publication-provenance-20261013.json`.
+  This is an incremental validation release, not full resource/mobile acceptance.
+
+## Historical e0741daa publication
+
 - Validation source: `e0741daad56749cc3a3292e3f054b56d9f2605a2`; merged PR #89's deferred engine and attached-row renderer. This is a validation build, not full resource/mobile acceptance.
 - Retained master build: `38457012844`; publication `38467985652`; rollback `38469050130` to previous 0e34ce88; final restore `38469247324`, all successful. Deployments reused exact reviewed bytes with the complete upload-tar guard.
 - Shell: `273224d69d98ddb8f6d7ea7d6a861b408bc993db807c8c537ec7593133c7e497`.
@@ -56,15 +85,23 @@ recorded separately in MEMORY-ATTRIBUTION.md and the catalog-context artifacts.
 | Polling, cancellation, previous-good preservation | Polling/acquisition tests and deployed cancellation evidence | Implemented |
 | Responsive UI, keyboard, share routes and source disclosures | Selected 360px/desktop tests and deployed export/view checks | Partial acceptance; not a physical-phone or full assistive-technology claim |
 | Appearance choices | Night Game, Fresh Ice, Hockey Club; live switching, preference reload and cross-tab observations | Implemented |
-| Exact release publication and documentation preservation | Build 38457012844, publication 38467985652, restore 38469247324; deployed-optimization-release-20261013.json matches 195 served files | Selected current-release bytes/documentation verified; upload tar guard covers staged hidden files |
-| Application update with saved data | Public one-tab consent-driven 0e34ce88 to e0741daa update; saved 933-player season plus two-game schedule fixture preserved; pending/render behavior proves new application code | Selected current public in-place update passes; two-tab consent passes separately on localhost |
-| Deployed offline reopening and saved query | public-optimization-restore-offline-20261013.json: process closed/reopened offline; saved season/schedule restored, uncached probe fails, fresh eight-player filter/detail and new renderer behavior pass | Selected current desktop acceptance passes; earlier CI profile also verifies unsaved discard and 835-row filter; physical mobile remains separate |
-| Previous-version rollback and forward restore | Rollback 38469050130 to 0e34ce88, restore 38469247324 to e0741daa; public browser/offline reports and exact stored hashes | Selected current in-place path passes both directions with saved bytes unchanged; earlier notice timeout retained, cause unproven |
-| Whole-browser staging/resident peak memory | stable-handler-control-memory-20261013.json: existing renderer, all 75 packages, eight residents, 905/332-player imports, 20 queries with explicit commit barrier and restart; private peak 548.02 MiB | OPEN: retained 250 MiB target is exceeded; continue allocation investigation. Sampled private allocations and shared-page working-set sums are not exact concurrent physical-memory peaks |
+| Exact release publication and documentation preservation | Master38495299888; publication38497514039; final restore38499320777; final static aggregate272 files, original503 retained | Current validation bytes/documentation verified; complete upload guard covers hidden files |
+| Application update with saved data | Public one-tab4d1f513e→2e265236 update and2e265236→4d1f513e rollback preserve saved933-player season/frozen schedule; actual gzip execution/source SHA | Selected public path passes; not arbitrary user data or a new two-tab proof |
+| Deployed offline reopening and saved query | gzip-delivery-public-final-offline-20261013.json: saved bytes restore, uncached probe fails, navigator offline, fresh eight-player filter/detail and executing-module SHA match | Current desktop path passes; physical mobile separate |
+| Previous-version rollback and forward restore | Rollback38498071961 and restore38499320777; exact code/data hashes, final offline/export after backed-up automation-history workaround | Scoped public roundtrip verified; failed export-time browser closures retained and qualified |
+| Whole-browser staging/resident peak memory | gzip-delivery-master-memory-20261013.json: all75 packages,8 residents,905/332 imports,20 committed queries/restart, original flags/sampler;388.74 MiB private peak | OPEN: fixed250 MiB target fails; no baseline subtraction, forced GC or workload reduction. Counters are not exact physical RAM |
 | Physical mobile, touch/picker and latency | Desktop browser at narrow viewport | OPEN: real mobile browser/device measurements required |
 | Compare/history/team/cards/fantasy | Plan WP-BW-07 requires separately scoped contracts and parity | Later waves; not implemented or implicitly accepted by the first slice |
 
-## Completed checks and remaining acceptance actions
+## Remaining acceptance actions
+
+1. Continue allocation optimization until the original250 MiB whole-browser
+   target passes the complete workload. Current exact-master result388.74 MiB
+   is failed acceptance, not a budget waiver.
+2. Complete physical Android when the user connects the phone. Keep picker,
+   touch, TalkBack, latency and device/resource scope separate from desktop proof.
+
+## Historical completed checks and earlier measurements
 
 1. Desktop deployed offline reopening completed on 2026-10-12 using the opt-in
    `icelines-browser/e2e/offline-reopen.mjs` Playwright runner. The same check also
@@ -115,7 +152,7 @@ historical preparation. The authorized public rehearsal and final restore are
 now recorded in `evidence/public-rehearsal-provenance-20261013.json`; approval is
 no longer pending for that completed rehearsal.
 
-## Local viewport candidate — not published (2026-10-13)
+## Historical viewport candidate — superseded by current release
 
 83da9b55 retains complete query results/exports while rendering a bounded viewport.
 Actual browser traversal covers all 933 skaters, correct last-player detail, forward
@@ -141,3 +178,13 @@ Physical printer/screen-reader/Android behavior is untested. Updated full-worklo
 private peak 447.03 MiB still fails 250 MiB. Actual browser regression,
 149 unit tests, type checking and offline process reopen pass. See the retained
 viewport-print evidence; current public release and full-goal gates are unchanged.
+
+## Historical print-verifier correction
+
+The earlier11 accented-name PDF mismatch came from reading the UTF-8 reference
+using Windows CP1252, not from damaged app/PDF names. The original failed bytes
+are retained as `.raw.cp1252`; the old JSON is transcoded to validUTF-8 and marked
+superseded. Exact current master PDF passes all933 ranks/names, including accents,
+with two parsers,24 pages and no text outside bounds. The opt-in permanent
+`scripts/verify-browser-print.py` reads/writes strictUTF-8. This is machine text
+inspection, not physical-printer or screen-reader acceptance.

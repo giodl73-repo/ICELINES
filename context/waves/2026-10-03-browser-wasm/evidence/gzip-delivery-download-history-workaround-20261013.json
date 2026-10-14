@@ -1,0 +1,14 @@
+{
+  "profile": "owned public-rehearsal-wLiGtK only",
+  "backup": "archive/history-before-download-workaround.sqlite",
+  "backup_sha256": "0188b84026b47c1fe8b42eb4e0d32dff9355501d77c2d7574f172f6c037a1692",
+  "removed_test_download_rows": {
+    "downloads_slices": 0,
+    "downloads_url_chains": 1,
+    "downloads": 1
+  },
+  "all_other_history_tables_unchanged": true,
+  "indexeddb_cookies_preferences_modified": false,
+  "upstream": "https://github.com/microsoft/playwright/issues/42506",
+  "scope": "Reversible workaround for matching Chromium153 automation regression. No app changes, profile reset, benchmark changes or user-browser history modification."
+}
