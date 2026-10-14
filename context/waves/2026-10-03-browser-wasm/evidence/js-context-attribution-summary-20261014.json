@@ -1,0 +1,380 @@
+{
+  "scope": "Sampled cumulative JS churn, not live memory/leaks/native/OS totals. Direct selfSize counted once. Native/unmapped nodes inherit nearest known script context as a stack heuristic. Named utility-world attribution is context evidence; source markers are heuristics. Only actual source SHA matching retained module bytes is labeled verified app module. Unknown nodes remain separate. No budget subtraction or acceptance claim.",
+  "contexts": {
+    "page": {
+      "node_count": 24055,
+      "sample_count": 5269,
+      "summed_node_self_size_bytes": 86660276,
+      "buckets": [
+        {
+          "bucket": "named_playwright_utility_context",
+          "sampled_self_size_bytes": 35355984,
+          "fraction": 0.40798374563219714
+        },
+        {
+          "bucket": "unmapped_internal",
+          "sampled_self_size_bytes": 20027792,
+          "fraction": 0.23110694916318983
+        },
+        {
+          "bucket": "verified_application_module",
+          "sampled_self_size_bytes": 15707736,
+          "fraction": 0.1812564732657902
+        },
+        {
+          "bucket": "verified_playwright_utility_script",
+          "sampled_self_size_bytes": 13337072,
+          "fraction": 0.15390064070416762
+        },
+        {
+          "bucket": "automation_source_marker_heuristic",
+          "sampled_self_size_bytes": 2033900,
+          "fraction": 0.023469807550578307
+        },
+        {
+          "bucket": "default_context_unclassified_source",
+          "sampled_self_size_bytes": 197792,
+          "fraction": 0.002282383684076889
+        }
+      ],
+      "verified_modules": {
+        "src/main.js": "00f8f0a97c67af01b7edb9c28711cdf2a923b9d08a04a23a412e7ac2671c70ea",
+        "src/package-download.js": "92935d08b51ef5c65f99adac15f763ec85b0e4471366771d41c5fecb4214524a",
+        "src/network.js": "8f1102d36e112bd2d571e4e91f9cd8f08c3f4136579aa0909b53433489329d8a",
+        "src/view-state.js": "a9496f24e717d31a1a06779bdd08c621fc6f052cac02f9f86ab1129e4746bcbd",
+        "src/viewport-table.js": "14b857caa013d0a536056af0d838c6e02121c888c4dd10249674f12beca987ce",
+        "src/engine-client.js": "6530325b756b4daa4b93ef100903e1fb2c9cf8e8143f99ff06252a525fb40072",
+        "src/polling.js": "5f77d7c9b3d2831e8f7cdaa3e39f48c4d2e6c82157ae4cb069af2d15611e067c",
+        "src/player-table.js": "67a747b8751f59542e7e907d229980a08cf70f3593f1a53e372f9828b0f7fc34",
+        "src/acquisition.js": "0f00abb38bfe32175283bc7941c8a93a4351c57f3fbb8baeaa88710cd3e6cddf"
+      },
+      "sampled_sources_unavailable": 104,
+      "top_locations": [
+        {
+          "bucket": "named_playwright_utility_context",
+          "url": "",
+          "function": "next",
+          "line": 0,
+          "sampled_self_size_bytes": 19199020
+        },
+        {
+          "bucket": "verified_application_module",
+          "url": "http://127.0.0.1:57715/ICELINES/workbench/src/engine-client.js",
+          "function": "worker.onmessage",
+          "line": 44,
+          "sampled_self_size_bytes": 11352232
+        },
+        {
+          "bucket": "unmapped_internal",
+          "url": "",
+          "function": "(V8 API)",
+          "line": 0,
+          "sampled_self_size_bytes": 11318692
+        },
+        {
+          "bucket": "unmapped_internal",
+          "url": "",
+          "function": "(BYTECODE_COMPILER)",
+          "line": 0,
+          "sampled_self_size_bytes": 6527588
+        },
+        {
+          "bucket": "verified_playwright_utility_script",
+          "url": "",
+          "function": "evaluate",
+          "line": 305,
+          "sampled_self_size_bytes": 3934100
+        },
+        {
+          "bucket": "verified_playwright_utility_script",
+          "url": "",
+          "function": "innerSerialize",
+          "line": 186,
+          "sampled_self_size_bytes": 3492472
+        },
+        {
+          "bucket": "verified_playwright_utility_script",
+          "url": "",
+          "function": "parseEvaluationResultValue",
+          "line": 106,
+          "sampled_self_size_bytes": 2116328
+        },
+        {
+          "bucket": "unmapped_internal",
+          "url": "",
+          "function": "",
+          "line": 0,
+          "sampled_self_size_bytes": 2049940
+        },
+        {
+          "bucket": "named_playwright_utility_context",
+          "url": "",
+          "function": "_cached",
+          "line": 5500,
+          "sampled_self_size_bytes": 1968972
+        },
+        {
+          "bucket": "named_playwright_utility_context",
+          "url": "",
+          "function": "replace",
+          "line": 0,
+          "sampled_self_size_bytes": 1525356
+        },
+        {
+          "bucket": "named_playwright_utility_context",
+          "url": "",
+          "function": "",
+          "line": 0,
+          "sampled_self_size_bytes": 1413624
+        },
+        {
+          "bucket": "automation_source_marker_heuristic",
+          "url": "",
+          "function": "next",
+          "line": 0,
+          "sampled_self_size_bytes": 1393564
+        },
+        {
+          "bucket": "named_playwright_utility_context",
+          "url": "",
+          "function": "eval",
+          "line": 6938,
+          "sampled_self_size_bytes": 1296984
+        },
+        {
+          "bucket": "verified_playwright_utility_script",
+          "url": "",
+          "function": "entries",
+          "line": 0,
+          "sampled_self_size_bytes": 901800
+        },
+        {
+          "bucket": "verified_playwright_utility_script",
+          "url": "",
+          "function": "Map",
+          "line": 0,
+          "sampled_self_size_bytes": 836944
+        },
+        {
+          "bucket": "named_playwright_utility_context",
+          "url": "",
+          "function": "_matchesParents",
+          "line": 5630,
+          "sampled_self_size_bytes": 804232
+        },
+        {
+          "bucket": "named_playwright_utility_context",
+          "url": "",
+          "function": "end",
+          "line": 5486,
+          "sampled_self_size_bytes": 787968
+        },
+        {
+          "bucket": "verified_application_module",
+          "url": "http://127.0.0.1:57715/ICELINES/workbench/src/package-download.js",
+          "function": "expandPackage",
+          "line": 3,
+          "sampled_self_size_bytes": 672672
+        },
+        {
+          "bucket": "named_playwright_utility_context",
+          "url": "",
+          "function": "previewNode",
+          "line": 7805,
+          "sampled_self_size_bytes": 656200
+        },
+        {
+          "bucket": "named_playwright_utility_context",
+          "url": "",
+          "function": "Set",
+          "line": 0,
+          "sampled_self_size_bytes": 639780
+        },
+        {
+          "bucket": "named_playwright_utility_context",
+          "url": "",
+          "function": "_matchesSimple",
+          "line": 5582,
+          "sampled_self_size_bytes": 590592
+        },
+        {
+          "bucket": "verified_application_module",
+          "url": "http://127.0.0.1:57715/ICELINES/workbench/src/main.js",
+          "function": "renderResidentLibrary",
+          "line": 240,
+          "sampled_self_size_bytes": 573824
+        },
+        {
+          "bucket": "verified_application_module",
+          "url": "http://127.0.0.1:57715/ICELINES/workbench/src/player-table.js",
+          "function": "",
+          "line": 63,
+          "sampled_self_size_bytes": 557680
+        },
+        {
+          "bucket": "verified_playwright_utility_script",
+          "url": "",
+          "function": "set",
+          "line": 0,
+          "sampled_self_size_bytes": 530024
+        },
+        {
+          "bucket": "named_playwright_utility_context",
+          "url": "",
+          "function": "values",
+          "line": 0,
+          "sampled_self_size_bytes": 426240
+        }
+      ]
+    },
+    "worker": {
+      "node_count": 22,
+      "sample_count": 366,
+      "summed_node_self_size_bytes": 8318916,
+      "buckets": [
+        {
+          "bucket": "verified_application_module",
+          "sampled_self_size_bytes": 8219788,
+          "fraction": 0.9880840244089495
+        },
+        {
+          "bucket": "unmapped_internal",
+          "sampled_self_size_bytes": 82728,
+          "fraction": 0.009944564892829787
+        },
+        {
+          "bucket": "known_other_context",
+          "sampled_self_size_bytes": 16400,
+          "fraction": 0.001971410698220778
+        }
+      ],
+      "verified_modules": {
+        "src/worker.js": "12a6c48e58a22f545477760166bc8752a24d8cd7a8977b683df1a98fd0f03e42",
+        "src/archive.js": "33b02bee6ab4d8bbc62c7ae5a4f74ea276ba15093b1cd933df5d20063187b03a",
+        "pkg/icelines_wasm.js": "4b15c2eb21ef2700537fe78d742a04bfcf20723236e1d578ec837a2ae9e8f153"
+      },
+      "sampled_sources_unavailable": 0,
+      "top_locations": [
+        {
+          "bucket": "verified_application_module",
+          "url": "http://127.0.0.1:57715/ICELINES/workbench/src/worker.js",
+          "function": "",
+          "line": 17,
+          "sampled_self_size_bytes": 5079508
+        },
+        {
+          "bucket": "verified_application_module",
+          "url": "http://127.0.0.1:57715/ICELINES/workbench/src/archive.js",
+          "function": "archivePackage",
+          "line": 121,
+          "sampled_self_size_bytes": 2334112
+        },
+        {
+          "bucket": "verified_application_module",
+          "url": "http://127.0.0.1:57715/ICELINES/workbench/src/archive.js",
+          "function": "json",
+          "line": 115,
+          "sampled_self_size_bytes": 642136
+        },
+        {
+          "bucket": "unmapped_internal",
+          "url": "",
+          "function": "(V8 API)",
+          "line": 0,
+          "sampled_self_size_bytes": 66336
+        },
+        {
+          "bucket": "verified_application_module",
+          "url": "http://127.0.0.1:57715/ICELINES/workbench/src/worker.js",
+          "function": "self.onmessage",
+          "line": 12,
+          "sampled_self_size_bytes": 65572
+        },
+        {
+          "bucket": "verified_application_module",
+          "url": "",
+          "function": "subarray",
+          "line": 0,
+          "sampled_self_size_bytes": 32880
+        },
+        {
+          "bucket": "verified_application_module",
+          "url": "",
+          "function": "next",
+          "line": 0,
+          "sampled_self_size_bytes": 32780
+        },
+        {
+          "bucket": "verified_application_module",
+          "url": "http://127.0.0.1:57715/ICELINES/workbench/src/archive.js",
+          "function": "importArchive",
+          "line": 156,
+          "sampled_self_size_bytes": 16408
+        },
+        {
+          "bucket": "known_other_context",
+          "url": "http://127.0.0.1:57715/ICELINES/workbench/pkg/icelines_wasm_bg.wasm",
+          "function": "js-to-wasm:iii:iiii",
+          "line": 1,
+          "sampled_self_size_bytes": 16400
+        },
+        {
+          "bucket": "verified_application_module",
+          "url": "",
+          "function": "then",
+          "line": 0,
+          "sampled_self_size_bytes": 16392
+        },
+        {
+          "bucket": "unmapped_internal",
+          "url": "",
+          "function": "then",
+          "line": 0,
+          "sampled_self_size_bytes": 16392
+        },
+        {
+          "bucket": "unmapped_internal",
+          "url": "",
+          "function": "(root)",
+          "line": 0,
+          "sampled_self_size_bytes": 0
+        },
+        {
+          "bucket": "unmapped_internal",
+          "url": "",
+          "function": "",
+          "line": 0,
+          "sampled_self_size_bytes": 0
+        },
+        {
+          "bucket": "verified_application_module",
+          "url": "http://127.0.0.1:57715/ICELINES/workbench/pkg/icelines_wasm.js",
+          "function": "query",
+          "line": 112,
+          "sampled_self_size_bytes": 0
+        },
+        {
+          "bucket": "verified_application_module",
+          "url": "http://127.0.0.1:57715/ICELINES/workbench/pkg/icelines_wasm.js",
+          "function": "getStringFromWasm0",
+          "line": 225,
+          "sampled_self_size_bytes": 0
+        },
+        {
+          "bucket": "verified_application_module",
+          "url": "http://127.0.0.1:57715/ICELINES/workbench/pkg/icelines_wasm.js",
+          "function": "decodeText",
+          "line": 292,
+          "sampled_self_size_bytes": 0
+        },
+        {
+          "bucket": "verified_application_module",
+          "url": "http://127.0.0.1:57715/ICELINES/workbench/pkg/icelines_wasm.js",
+          "function": "resident_revisions",
+          "line": 135,
+          "sampled_self_size_bytes": 0
+        }
+      ]
+    }
+  }
+}

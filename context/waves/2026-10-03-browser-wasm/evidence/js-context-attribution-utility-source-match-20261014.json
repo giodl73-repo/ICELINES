@@ -1,0 +1,42 @@
+{
+  "scope": "Exact whole-script SHA matching runtime Debugger sources against reconstructed installed Playwright UtilityScript wrapper. No live memory/acceptance claim; unmatched source-marker classifications remain heuristic.",
+  "playwright_version": "1.63.0",
+  "bundle_sha256": "549070af3acabb3efcc4f55bfe6210f9f7c2fcf633cf7eaa59bfe60719969171",
+  "candidates": [
+    {
+      "under_test": false,
+      "trimmed": false,
+      "sha256": "fd3b882cab3a898b34e827ab330d9fb152340d61f7d0c3cec30247018af131e4",
+      "bytes": 11035
+    },
+    {
+      "under_test": false,
+      "trimmed": true,
+      "sha256": "071eeb87d9e8018586b2626b1eea0ffacdd0da19ae617253bbeb6774e5483490",
+      "bytes": 11028
+    },
+    {
+      "under_test": true,
+      "trimmed": false,
+      "sha256": "7f9b66ff2ac01de030c8f707b651657b65b5ef873aadadef7c70dfaad9c064c4",
+      "bytes": 11034
+    },
+    {
+      "under_test": true,
+      "trimmed": true,
+      "sha256": "1c36ee1fa3608b73cb3bf1dd2152267bfa92cbfcd5d0c64dce6d804a5d1a63eb",
+      "bytes": 11027
+    }
+  ],
+  "matches": [
+    {
+      "scriptId": "24",
+      "sha256": "fd3b882cab3a898b34e827ab330d9fb152340d61f7d0c3cec30247018af131e4",
+      "bytes": 11035,
+      "source_markers": {
+        "injected_script": false,
+        "playwright_evaluation_serializer": true
+      }
+    }
+  ]
+}

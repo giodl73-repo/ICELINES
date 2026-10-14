@@ -1,0 +1,52 @@
+{
+  "scope": "Full75/eight/two905/332/20/restart diagnostic on unchanged published75e6ba97, extra JS samplers and Runtime/Debugger metadata observers after first committed package. Cumulative sampled churn including naturally collected objects; not live/retained native/backing/Rust/OS memory, leak evidence or acceptance. No explicit GC/pressure commands.",
+  "source": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+  "artifact": {
+    "commit": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+    "shell_build": "e575ec099d635615476610b46ec106b97e83d28b66fc3980bbdcbbf4292c1a36",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "evidence": {
+    "report": {
+      "file": "js-context-attribution-report-20261014.json.gz",
+      "sha256": "a584aa6d2313dd52fd178cdb10f03226f27e9416650799f0b7292961d9ea275a",
+      "raw_sha256": "e7d9ae6c4c596282165e5cbba3e5045981023d560a0d4ba688073bbf2df21f23",
+      "raw_bytes": 22209938,
+      "compression": "gzip, lossless full original diagnostic"
+    },
+    "summary": {
+      "file": "js-context-attribution-summary-20261014.json",
+      "sha256": "aefb3fc6f4ba299e3fcad4f29785e3ef228ab98299d3cda2990314491f95ec00"
+    },
+    "utility-source-match": {
+      "file": "js-context-attribution-utility-source-match-20261014.json",
+      "sha256": "1159e32085dd9e7d855d3d08fd9dd7b5437709c9d52f7758f9554e7896f54ec6"
+    },
+    "runner-recipe": {
+      "file": "js-context-attribution-runner-recipe-20261014.py",
+      "sha256": "d491b85b836effda024076d5af26a19b48e3c03c8e1eb333454df3f603fa8f6e"
+    },
+    "base-runner-recipe": {
+      "file": "js-context-attribution-base-runner-recipe-20261014.py",
+      "sha256": "373feda0aeb46ac595d175a4d4def80bacbe674d9a04f651c6280d2181900d56"
+    },
+    "summary-recipe": {
+      "file": "js-context-attribution-summary-recipe-20261014.py",
+      "sha256": "49f2400e5aae3ef4c17c556a8a2a6aae0a2ad172c0d29bdff26d39ff09d92b95"
+    },
+    "utility-match-recipe": {
+      "file": "js-context-attribution-utility-match-recipe-20261014.mjs",
+      "sha256": "d8e897be7099d618a9987c01c1dd5c038a8df1bca73f2b29b92ddb610b8cf1b6"
+    }
+  },
+  "source_metadata": "Page reports named Playwright isolated utility world and default world.7583 script metadata events;2779 sampled script source fetches,104 unavailable. Worker4 sampled sources all available. A whole-script SHA matches installed Playwright1.63.0 utility wrapper;9 page module hashes match retained app source.",
+  "observations": "Page sampled direct selfSize sum82.65 MiB cumulative.40.80% named utility-context bucket;15.39% exact utility-source bucket;18.13% verified app-module bucket;23.11% unmapped/internal;2.35% source-marker heuristic;0.23% default context unclassified. Worker7.93 MiB cumulative,98.81% verified app modules.",
+  "limits": "Each unique profile node selfSize is counted once. Native/unmapped child nodes inherit nearest known script context as a call-stack heuristic. No physical allocation ownership guarantee. Samplers/Debugger can change allocations, timing and script retention. Unavailable sources and internal/bytecode-compiler frames stay explicitly unresolved. Percentages are proportions of sampled cumulative churn, not OS memory.",
+  "decision": "Do not target all earlier empty-URL page allocations as app leaks. Most identified page churn is in automation contexts/wrapper. Keep original acceptance flags/scope; do not subtract automation samples from whole-browser counters. No app/source/build change or PR.",
+  "remaining": [
+    "250 MiB whole-browser target unmet",
+    "Android explicitly deferred"
+  ],
+  "production_unchanged": true
+}
