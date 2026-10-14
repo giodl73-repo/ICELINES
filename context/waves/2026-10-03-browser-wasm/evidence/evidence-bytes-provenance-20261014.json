@@ -1,0 +1,37 @@
+{
+  "status": "Verified exact-byte archival correction; no runtime/acceptance change",
+  "original_source": "079f2c36f6c2250c0eb1a58ad14026470aefcdfd",
+  "fix_source": "2d697471",
+  "scope": "227 pre-existing strictUTF8 JSON records,62 explicit sibling {file,sha256} descriptors; not every external archive/module/PDF/source hash field. checkout-index simulates core.autocrlf=true plus current attributes.",
+  "reports": {
+    "before": {
+      "file": "evidence-bytes-before-20261014.json",
+      "sha256": "838c871ba592fffd9433991ae27ec1c9e44cc10279647c04a681a2d6890cd86c",
+      "mismatch_counts": {
+        "working_match": 41,
+        "git_blob_match": 14,
+        "clean_checkout_match": 48
+      }
+    },
+    "after": {
+      "file": "evidence-bytes-after-20261014.json",
+      "sha256": "eba659aca8ec49f4c7da3a882af70f47af129329225dd9f491ff6130f9d4c8e1",
+      "mismatch_counts": {
+        "working_match": 0,
+        "git_blob_match": 0,
+        "clean_checkout_match": 0
+      }
+    }
+  },
+  "restoration": {
+    "file": "evidence-bytes-restoration-20261014.json",
+    "sha256": "786afd1a1d71a59cc11d5fbe5bbbb439b8e699825365eecf4777ca09f7a13bc4"
+  },
+  "method": "Restore14 normalized Git blobs to CRLF only when their reconstructed bytes match the unchanged recorded original SHA; JSON values identical. Other pre-existing records retain their original Git blob bytes. Nested attributes disable newline conversion for archival JSON.",
+  "audit_script_sha256": "5154f5e39ca51d33ddae5bf68da41d0b3e8696950b7357f0ff4301551a497cfc",
+  "restoration_script_sha256": "07947f18d95ebfbeafb8103724b27b7245d29450415e80cc458cf12fb74bafeb",
+  "open_gates": [
+    "250 MiB whole-browser target remains failed",
+    "Physical Android deferred"
+  ]
+}

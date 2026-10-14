@@ -1,0 +1,91 @@
+{
+  "restored": [
+    {
+      "file": "catalog-metadata-index-master-print-20261014.json",
+      "original_sha256": "296914e8e7b2c9a6507ccb13ec94cd91838423fac30389d2ee25d475be9ceff3",
+      "normalized_git_blob_sha256": "15acc13072d39968f395f3e577e2428d10cd6fdae330ebc17d347c3a4de0c4af",
+      "conversion": "LF -> CRLF only; reconstructs exact recorded original bytes"
+    },
+    {
+      "file": "catalog-metadata-index-public-first-history-workaround-20261014.json",
+      "original_sha256": "d6487cebe434eec47e64b7644bf405cbd2328545cccf1bc3253af16f057d9561",
+      "normalized_git_blob_sha256": "511e50670292c1045f6a5260634b9a541980da43c10de8f6d1e9c4de3d697e72",
+      "conversion": "LF -> CRLF only; reconstructs exact recorded original bytes"
+    },
+    {
+      "file": "catalog-metadata-index-public-first-static-20261014.json",
+      "original_sha256": "76b70ae91e93161b8abd5b891cbc39bec7583fe69e0562bb3aa5cd2cf13fac99",
+      "normalized_git_blob_sha256": "e93d9c4556e566c51517fe8b0b4a570df1df5f6c1364595b9c4d8007e5d2a08b",
+      "conversion": "LF -> CRLF only; reconstructs exact recorded original bytes"
+    },
+    {
+      "file": "catalog-metadata-index-public-restore-history-workaround-20261014.json",
+      "original_sha256": "b0c968eeebfffb6b8e2e60cfa19d839c4bae62e1221e0a431db879bba340f94b",
+      "normalized_git_blob_sha256": "895be430a33ec35ffb6d9d1c2033a0d09c490b78fc88c9a654a2d7d95fce9f68",
+      "conversion": "LF -> CRLF only; reconstructs exact recorded original bytes"
+    },
+    {
+      "file": "catalog-metadata-index-public-restore-static-20261014.json",
+      "original_sha256": "42be37706cfd8929544c58d334f1632bd3e97b5f6709b2be85d7f7f25425dfd0",
+      "normalized_git_blob_sha256": "1bdf5770e155a98d8ae4707a3937bf8676b2faf13b3166d0bd77ce69e0142a3a",
+      "conversion": "LF -> CRLF only; reconstructs exact recorded original bytes"
+    },
+    {
+      "file": "catalog-metadata-index-public-rollback-history-workaround-20261014.json",
+      "original_sha256": "dc81b59b2488aa88c81018185a14b343bbfdb0ecba8aa0364b1b07a4a737c727",
+      "normalized_git_blob_sha256": "e7dd2d7709281fac975298c549cd4642908ac66690837aaa129ef02e4858e189",
+      "conversion": "LF -> CRLF only; reconstructs exact recorded original bytes"
+    },
+    {
+      "file": "catalog-metadata-index-public-rollback-static-20261014.json",
+      "original_sha256": "9cae84805931f6d378a6eb0bd37cb7d2cb838c4b5a6a5538aaf1ce7fb693ecef",
+      "normalized_git_blob_sha256": "4bb2486926fc9475c320e3119c642e2253fcd2417a62401364c84fa90f65b2bf",
+      "conversion": "LF -> CRLF only; reconstructs exact recorded original bytes"
+    },
+    {
+      "file": "stream-expansion-master-print-20261013.json",
+      "original_sha256": "0d14d76b63541630b178ba373560668db54877714e4dfe0e00891d7cd83e66e9",
+      "normalized_git_blob_sha256": "88cb2ea2104716b9e025d76c31117423e953c84831cdfa876968be66619a18ef",
+      "conversion": "LF -> CRLF only; reconstructs exact recorded original bytes"
+    },
+    {
+      "file": "stream-expansion-public-first-history-workaround-20261013.json",
+      "original_sha256": "414ba59d37839ac89daab9247eb0e056d0ae40b5e7d7cba842a73dee12892296",
+      "normalized_git_blob_sha256": "09ff093b19ba42f907c498ffc797d476bcde5c4fd304bae8d2f45d01acc5a06a",
+      "conversion": "LF -> CRLF only; reconstructs exact recorded original bytes"
+    },
+    {
+      "file": "stream-expansion-public-first-static-20261013.json",
+      "original_sha256": "3d067ce3c3feb0603bbcb4d15180022c26ca1724aa74e8cb656ed59f5be98627",
+      "normalized_git_blob_sha256": "2b960858a569fee22cfb132247277fc1477fa443af35d65ad2d19788106a88ed",
+      "conversion": "LF -> CRLF only; reconstructs exact recorded original bytes"
+    },
+    {
+      "file": "stream-expansion-public-restore-history-workaround-20261013.json",
+      "original_sha256": "b00f089923e758bbac0063366bead85f0f7a15b78bbdae08117def9ab5a1dd9d",
+      "normalized_git_blob_sha256": "33bdace0bfdb96888c59d9682c569449f7ce4e004603542eaa896be1139db42c",
+      "conversion": "LF -> CRLF only; reconstructs exact recorded original bytes"
+    },
+    {
+      "file": "stream-expansion-public-restore-static-20261013.json",
+      "original_sha256": "a76da5881cba55ddf45f23079cd4a99fcc7b2a4722c24f041110ed1e1b4f8294",
+      "normalized_git_blob_sha256": "0b622c5e195adbfac1bbe35362c987f3b4854830af7c884edc5a8c83669641fe",
+      "conversion": "LF -> CRLF only; reconstructs exact recorded original bytes"
+    },
+    {
+      "file": "stream-expansion-public-rollback-history-workaround-20261013.json",
+      "original_sha256": "dc9473c5b41972c601aa597f959fd0a60c47cba5928ea08cdcf6d6dbe9ad39f5",
+      "normalized_git_blob_sha256": "6a30bdf44d8b6c142aaa3c49af106d0b5135db0384d52a439e7ea4919f04d212",
+      "conversion": "LF -> CRLF only; reconstructs exact recorded original bytes"
+    },
+    {
+      "file": "stream-expansion-public-rollback-static-20261013.json",
+      "original_sha256": "a469e33b067e3ada22d7fa24a781b805d563d8480acc795d7581ab6ab9e55b14",
+      "normalized_git_blob_sha256": "375a1aa6fbbc655c83a513b7f9bb9d497fcb6f5fbaeb23b131c45da80c85e758",
+      "conversion": "LF -> CRLF only; reconstructs exact recorded original bytes"
+    }
+  ],
+  "protected_json_files": 227,
+  "verified_sibling_report_references": 62,
+  "scope": "Exact sibling {file,sha256} descriptors only; not every archive/module/PDF/source hash field. Strict UTF-8 JSON parsing. checkout-index materializes current index with Windows autocrlf/attributes; Git blob comparison uses HEAD."
+}
