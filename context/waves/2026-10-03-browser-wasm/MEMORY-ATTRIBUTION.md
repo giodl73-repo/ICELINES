@@ -1,5 +1,25 @@
 # Desktop allocation investigation — 2026-10-12
 
+## Current published metadata projection (2026-10-14)
+
+PR96 is merged/published as38d2a053. Known authenticated package digests use
+build-derived headers; unknown packages keep full UTF-8/JSON parsing. No WASM
+interface, normalization, raw export, save policy or eight-window limit changes.
+Two opposite-order local Windows pairs show399.12/401.80 and395.49/400.67 MiB
+candidate/control peaks (baselines231.61/226.35 and230.37/231.60). The observed
+2.69/5.18 MiB raw differences are modest and subject to baseline variation.
+
+Actual master full workload reaches390.42 MiB private, baseline226.52 MiB and
+maximum warm query92.11 ms. The250 MiB target still fails. All75 packages, both
+imports, eight residents,20 queries and restart retain original flags/sampler/
+observer, no forced GC and every sampled phase. Master modules/WASM match the
+reviewed CI preview. Source/code/byte and counter scopes remain distinct.
+
+Retained master publication, same-profile rollback/restore, exact public273/272/
+273-file verification and offline queries pass; final restore38526559371 leaves
+38d2a053 public. See catalog-metadata-index-* evidence. Android stays deferred.
+Sections below describe earlier candidates/releases, not current acceptance.
+
 ## Merged single-buffer gzip expansion (2026-10-13)
 
 Base b29ba81c includes the merged PR93 catalog-context guard. Published master

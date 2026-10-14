@@ -1,0 +1,96 @@
+{
+  "current_public_source": "38d2a053b0abc6b139b8f20718377c4df8a57a11",
+  "artifact_id": 11875720347,
+  "checks_passed": 29,
+  "phases": {
+    "first": {
+      "run": 38525844284,
+      "from": "e58a3bfc0f71fe7ba844cf729df166132eff7693",
+      "to": "38d2a053b0abc6b139b8f20718377c4df8a57a11",
+      "reports": {
+        "static": {
+          "file": "catalog-metadata-index-public-first-static-20261014.json",
+          "sha256": "76b70ae91e93161b8abd5b891cbc39bec7583fe69e0562bb3aa5cd2cf13fac99"
+        },
+        "update": {
+          "file": "catalog-metadata-index-public-first-update-20261014.json",
+          "sha256": "ec92112a005f93673b621537941a200dc58770959c02856b0d0a157defded7e3"
+        },
+        "offline": {
+          "file": "catalog-metadata-index-public-first-offline-20261014.json",
+          "sha256": "59366033b48cdbe9e4ef63bc7b17efa8868556eddb9ccab7edd3309c280aab0c"
+        },
+        "history-workaround": {
+          "file": "catalog-metadata-index-public-first-history-workaround-20261014.json",
+          "sha256": "d6487cebe434eec47e64b7644bf405cbd2328545cccf1bc3253af16f057d9561"
+        }
+      },
+      "deployed_matches": 273,
+      "browser_files": 182,
+      "preserved_files": 95,
+      "preservation_sha256": "6f15961c7f054144f466f244f2c9bd3cc2201ebc1f2dce73af14d636b3b1f4e5"
+    },
+    "rollback": {
+      "run": 38526243290,
+      "from": "38d2a053b0abc6b139b8f20718377c4df8a57a11",
+      "to": "e58a3bfc0f71fe7ba844cf729df166132eff7693",
+      "reports": {
+        "static": {
+          "file": "catalog-metadata-index-public-rollback-static-20261014.json",
+          "sha256": "9cae84805931f6d378a6eb0bd37cb7d2cb838c4b5a6a5538aaf1ce7fb693ecef"
+        },
+        "update": {
+          "file": "catalog-metadata-index-public-rollback-update-20261014.json",
+          "sha256": "f1ca861704c3a29fb03c45adc4f8eab40fe5410b0a741ea54d72863a31bb92a6"
+        },
+        "offline": {
+          "file": "catalog-metadata-index-public-rollback-offline-20261014.json",
+          "sha256": "d5decc4d46c18e381b5dea3467fe6733d592b694ab477ed8f787266e7e1bd535"
+        },
+        "history-workaround": {
+          "file": "catalog-metadata-index-public-rollback-history-workaround-20261014.json",
+          "sha256": "dc81b59b2488aa88c81018185a14b343bbfdb0ecba8aa0364b1b07a4a737c727"
+        }
+      },
+      "deployed_matches": 272,
+      "browser_files": 181,
+      "preserved_files": 95,
+      "preservation_sha256": "145ec48790ed8c400c9dc452fa5327c98730cae8a8db884afbddff16a7e27e4d"
+    },
+    "restore": {
+      "run": 38526559371,
+      "from": "e58a3bfc0f71fe7ba844cf729df166132eff7693",
+      "to": "38d2a053b0abc6b139b8f20718377c4df8a57a11",
+      "reports": {
+        "static": {
+          "file": "catalog-metadata-index-public-restore-static-20261014.json",
+          "sha256": "42be37706cfd8929544c58d334f1632bd3e97b5f6709b2be85d7f7f25425dfd0"
+        },
+        "update": {
+          "file": "catalog-metadata-index-public-restore-update-20261014.json",
+          "sha256": "804f53bd47bb6640279e13a2b5b112f27573b7294086168a74a7ab170216e156"
+        },
+        "offline": {
+          "file": "catalog-metadata-index-public-restore-offline-20261014.json",
+          "sha256": "5dce11527a2be073399d8010aef5851c842d930467a1e926cd2c1a6572140de8"
+        },
+        "history-workaround": {
+          "file": "catalog-metadata-index-public-restore-history-workaround-20261014.json",
+          "sha256": "b0c968eeebfffb6b8e2e60cfa19d839c4bae62e1221e0a431db879bba340f94b"
+        }
+      },
+      "deployed_matches": 273,
+      "browser_files": 182,
+      "preserved_files": 95,
+      "preservation_sha256": "6f15961c7f054144f466f244f2c9bd3cc2201ebc1f2dce73af14d636b3b1f4e5"
+    }
+  },
+  "scope": "Exact retained-artifact public publication, same-profile consent-driven rollback/restore, source-module hashes and offline fresh queries. No live NHL or physical Android/resource acceptance claim.",
+  "open_gates": [
+    "250 MiB whole-browser target; master390.42 MiB",
+    "Physical Android deferred"
+  ],
+  "documentation_inventories_identical": true,
+  "baseline_sha256": "8d2aa669f740d6f01be258b48597fe610de64f5e6c4fa62e74cad5f638a1ff7a",
+  "rehearsal_helper_sha256": "da0f900401a3aefcfba84f5a6bb0820f9932ad617cdf2678d1a91bd82535a980"
+}

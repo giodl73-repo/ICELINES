@@ -1,10 +1,45 @@
 # Browser WASM acceptance ledger
 
-Updated: 2026-10-13. Requirement: REQ-BROWSER-001; work packages WP-BW-01..06.
+Updated: 2026-10-14. Requirement: REQ-BROWSER-001; work packages WP-BW-01..06.
 This reconciles implemented features with the plan's remaining acceptance gates.
 It does not declare the full plan complete.
 
 ## Current release
+
+Public source is38d2a053b0abc6b139b8f20718377c4df8a57a11, merged PR96's
+digest-keyed catalog metadata projection. Whole JSON is authenticated and parsed
+during build; known verified digests avoid reparsing player records on the UI
+thread. Unknown digests retain the original fatal UTF-8/full JSON parser and
+engine validation. No native API, data revision, saving policy or residency change.
+
+PR and master each pass29 checks. Master browser38523902672/native38523902552
+produce retained artifact11875720347:182 files,75 packages,27 shell assets.
+Shell is3fcb6d9bc9e9b3cbf067aefded629932ced8ba1a5b1d1a19026eff3f0fdfebe2;
+WASM remains2e4c853309a32d8366c282afe113626fde5c25b26349bd9194ceafe59123f57b.
+Exact master catalog-context, viewport, keyboard, export, corrupt-gzip refusal,
+offline and933-name/two-parser PDF checks pass. Typecheck/160 units pass.
+
+Publication38525844284, rollback38526243290 toe58a3bfc and final restore
+38526559371 all succeed with retained bytes, no rebuild. Served-file verification
+matches273/272/273 files respectively, with no failures. All95 staged documentation
+hashes match throughout. The same owned profile completes both consent-driven
+directions, preserving saved season/schedule bytes, revisions, metadata and settings.
+Online gzip acquisition exports exact original905-player JSON. Executing main,
+decoder and new metadata module hashes match retained artifacts; offline process
+reopening blocks uncached probes and runs a fresh eight-player query/detail.
+Backed-up owned test-download history cleanup handles the known Chromium153
+automation issue without changing app storage, user profiles or benchmark flags.
+
+Actual master full-workload private peak is390.42 MiB, baseline226.52 MiB,
+maximum warm query92.11 ms. All75 packages/eight residents/two imports/20 queries
+and restart complete with every required phase sampled, original flags/sampler/
+observer and no forced GC. Earlier opposite-order candidate pairs showed modest
+2.69/5.18 MiB raw reductions with baseline variation; no universal saving is claimed.
+The250 MiB gate remains FAILED. Physical Android remains deferred by the user.
+Evidence: catalog-metadata-index-master-* and publication provenance dated20261014.
+This is an incremental validation release, not full resource/mobile acceptance.
+
+## Historical e58a3bfc release
 
 PR93's catalog-context guard is merged as b29ba81c. Its 29 CI checks and exact
 master artifact verification, six catalog refusal cases, viewport and offline

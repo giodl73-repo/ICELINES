@@ -1,0 +1,53 @@
+{
+  "source": "38d2a053b0abc6b139b8f20718377c4df8a57a11",
+  "browser_run": 38523902672,
+  "native_run": 38523902552,
+  "checks_passed": 29,
+  "artifact_id": 11875720347,
+  "shell": "3fcb6d9bc9e9b3cbf067aefded629932ced8ba1a5b1d1a19026eff3f0fdfebe2",
+  "publication_run": 38525844284,
+  "publication_status": "Published and finally restored by38526559371;273 served files, same-profile update and offline reopening pass",
+  "reports": {
+    "context": {
+      "file": "catalog-metadata-index-master-context-20261014.json",
+      "sha256": "3a96d7a9799e44905d112ef08a9f66742d4a93c7f33cb2137140f8a75876f8f6"
+    },
+    "viewport": {
+      "file": "catalog-metadata-index-master-viewport-20261014.json",
+      "sha256": "2c5942d860455313609bacb851eb953366bfa6a10860386c8c87ef9381e97530"
+    },
+    "offline": {
+      "file": "catalog-metadata-index-master-offline-20261014.json",
+      "sha256": "47d2e4463371e501a515fe9c1c2fce10f1aabc6e0d85cabb810dd9c6216bd11d"
+    },
+    "refusal": {
+      "file": "catalog-metadata-index-master-refusal-20261014.json",
+      "sha256": "834fb1793f43068fc8d332985911a5b626dd0ad838debe555525fff435e52e3a"
+    },
+    "print": {
+      "file": "catalog-metadata-index-master-print-20261014.json",
+      "sha256": "296914e8e7b2c9a6507ccb13ec94cd91838423fac30389d2ee25d475be9ceff3"
+    },
+    "memory": {
+      "file": "catalog-metadata-index-master-memory-20261014.json",
+      "sha256": "8045787da7a824616a69f600fad99e88400b12b23fce08e97137e33ae5b83617"
+    }
+  },
+  "open_gates": [
+    "250 MiB whole-browser target",
+    "Physical Android deferred"
+  ],
+  "memory": {
+    "private_peak_mib": 390.41796875,
+    "blank_mib": 226.51953125,
+    "warm_max_ms": 92.11190000000352,
+    "below_250_mib": false
+  },
+  "reviewed_preview_modules_and_engine_match": true,
+  "module_sha256": {
+    "main.js": "00f8f0a97c67af01b7edb9c28711cdf2a923b9d08a04a23a412e7ac2671c70ea",
+    "package-download.js": "ba5c95670886bde3371d1de5a11b0a41eceefca432c256395732322f694509db",
+    "catalog-metadata.js": "459ad240d2973f346b94dd36cd3d56c71b721b27e43aaf1381fa09a265f6e2f4"
+  },
+  "publication_provenance": "catalog-metadata-index-publication-provenance-20261014.json"
+}

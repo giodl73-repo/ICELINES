@@ -1,0 +1,69 @@
+{
+  "verified": true,
+  "artifact": {
+    "commit": "b4ad32ba34f3f749729c2308ad9f582d696a6288",
+    "shell_build": "c765c4074967f6897d15688e8832eafba5572425689ef1fc9b8b562ab5123d13",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "scope": "Owned browser with intentionally unsigned two-entry catalog and unavailable offline-shell cache; fixture invokes hidden reload handler after swapping catalog; catalog mismatch fresh/cached rejection, previous-good full result/exact package export/requery and retry. Not offline, memory, production or phone proof.",
+  "evidence": {
+    "outcomes": [
+      {
+        "cached": false,
+        "change": {
+          "season": 20262027
+        },
+        "previous_rows": 933,
+        "exact_previous_export": true,
+        "requery": true
+      },
+      {
+        "cached": false,
+        "change": {
+          "season_type": "playoff"
+        },
+        "previous_rows": 933,
+        "exact_previous_export": true,
+        "requery": true
+      },
+      {
+        "cached": false,
+        "change": {
+          "source": "wrong catalog source"
+        },
+        "previous_rows": 933,
+        "exact_previous_export": true,
+        "requery": true
+      },
+      {
+        "cached": true,
+        "change": {
+          "season": 20262027
+        },
+        "previous_rows": 933,
+        "exact_previous_export": true,
+        "requery": true
+      },
+      {
+        "cached": true,
+        "change": {
+          "season_type": "playoff"
+        },
+        "previous_rows": 933,
+        "exact_previous_export": true,
+        "requery": true
+      },
+      {
+        "cached": true,
+        "change": {
+          "source": "wrong catalog source"
+        },
+        "previous_rows": 933,
+        "exact_previous_export": true,
+        "requery": true
+      }
+    ],
+    "retry_rows": 905
+  }
+}
