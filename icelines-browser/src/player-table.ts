@@ -29,7 +29,7 @@ export class PlayerTable {
     if (release) { this.pool = []; this.goalie = undefined; this.head.replaceChildren(); }
   }
 
-  render(rows: PlayerRow[], goalie: boolean, rankOffset = 0): void {
+  render(rows: PlayerRow[], goalie: boolean, rankOffset = 0, endMarker?: Node): void {
     if (this.goalie !== goalie) {
       this.clear(); this.goalie = goalie;
       const header = document.createElement('tr');
@@ -78,7 +78,8 @@ export class PlayerTable {
         fragment.append(nodes.element);
       }
     });
-    this.body.append(fragment);
+    if (endMarker?.parentNode === this.body) this.body.insertBefore(fragment, endMarker);
+    else this.body.append(fragment);
     // A smaller result must release spare nodes from a larger season/filter.
     this.pool.length = Math.min(rows.length, MAX_REUSABLE_ROWS);
     this.body.style.visibility = ''; this.body.inert = false;

@@ -118,11 +118,11 @@ export class ViewportTable {
     // Keep document height stable while spacers are temporarily detached.
     const container = this.htmlTable.parentElement!;
     container.style.minHeight = `${this.htmlTable.getBoundingClientRect().height}px`;
-    this.top.remove(); this.bottom.remove();
+    if (!virtual) { this.top.remove(); this.bottom.remove(); }
     this.htmlTable.classList.toggle('viewport-table', virtual);
     this.htmlTable.setAttribute('aria-rowcount', String(this.rows.length + 1));
-    this.table.render(this.rows.slice(start, end), this.goalie, start);
-    const elements = Array.from(this.body.querySelectorAll<HTMLTableRowElement>('tr'));
+    this.table.render(this.rows.slice(start, end), this.goalie, start, this.bottom);
+    const elements = Array.from(this.body.querySelectorAll<HTMLTableRowElement>('tr:not(.row-spacer)'));
     elements.forEach((element, index) => {
       const rank = start + index;
       element.dataset.resultIndex = String(rank);
@@ -134,9 +134,11 @@ export class ViewportTable {
       for (const [spacer, height] of [[this.top, start * ROW_HEIGHT], [this.bottom, (this.rows.length - end) * ROW_HEIGHT]] as const) {
         const cell = spacer.cells[0]; cell.colSpan = this.goalie ? 7 : 8; cell.style.height = `${height}px`;
       }
-      if (start) this.body.prepend(this.top);
-      if (end < this.rows.length) this.body.append(this.bottom);
-    }
+      if (start) { if (this.top.parentNode !== this.body) this.body.prepend(this.top); }
+      else this.top.remove();
+      if (end < this.rows.length) { if (this.bottom.parentNode !== this.body) this.body.append(this.bottom); }
+      else this.bottom.remove();
+    } else { this.top.remove(); this.bottom.remove(); }
     container.style.minHeight = '';
     if (focusedIndex !== undefined) {
       if (focusedIndex >= start && focusedIndex < end) {

@@ -7,6 +7,12 @@ import { PlayerTable } from '../dist/src/player-table.js';
 class Node {
   children = []; parent = null; onclick = null; nodeValue = null; style = {};
   constructor(tag) { this.tag = tag; }
+  get parentNode() { return this.parent; }
+  insertBefore(node, reference) {
+    if (node.tag === 'fragment') { for (const child of [...node.children]) this.insertBefore(child,reference); return; }
+    node.remove();const index=this.children.indexOf(reference);assert.ok(index>=0);
+    this.children.splice(index,0,node);node.parent=this;
+  }
   append(...nodes) {
     for (const node of nodes) {
       if (node.tag === 'fragment') { this.append(...[...node.children]); continue; }
@@ -26,6 +32,15 @@ globalThis.document = {
 };
 const row = { player_id: 1, name: '<img src=x onerror=alert(1)>', team: 'MTL', gp: 10, goals: 0, assists: 2, points: 2, pace_82: null, wins: 0, save_pct: 0.912345, gaa: null };
 const fixture = () => { const body = new Node('tbody'), head = new Node('thead'), opened = []; return { body, head, opened, table: new PlayerTable(body, head, value => opened.push(value)) }; };
+
+test('growing and shrinking player results stay before an attached end marker', () => {
+  const {table,body}=fixture();table.render([row],false);
+  const first=body.children[0],marker=new Node('spacer');body.append(marker);
+  table.render([row,{...row,player_id:2,name:'Second'}],false,0,marker);
+  assert.equal(body.children[0],first);assert.equal(body.children[1].children[1].textContent,'Second');assert.equal(body.children[2],marker);
+  table.render([row],false,0,marker);
+  assert.deepEqual(body.children,[first,marker]);assert.equal(marker.parentNode,body);
+});
 
 test('reuses row, text and header nodes but opens the current player after query changes', () => {
   const { table, body, head, opened } = fixture(); table.render([row], false);
