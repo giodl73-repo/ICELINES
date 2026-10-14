@@ -1,0 +1,77 @@
+{
+  "status": "DIAGNOSTIC_COMPLETE for five requested checkpoints; global acceptance still incomplete",
+  "scope": "Allocation checkpoint diagnostic with separate 16 MiB bounded traces and inspector snapshots: not normal acceptance. No forced GC, altered flags, package/query truncation or observer-buffer change. Sequential OS/heap snapshots are not exact synchronized attribution; inspection can change collection timing.",
+  "control_artifact": {
+    "commit": "2a085dac1036b358f18351cab8b7788ee521f001",
+    "shell_build": "a91318faa7f1fd730ad5923bc3aafec22773b2c8c7ec93aa43267762f5e9eaad",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "observer": "Separate16 MiB tracing buffers at each checkpoint plus inspector observations; original full workload/flags/sampler/network observer. Additional observer overhead, sequential snapshots and changed collection timing prohibit acceptance or exact causal attribution.",
+  "forced_gc": false,
+  "deterministic": false,
+  "association": "Allocator records match exact requested GlobalMemoryDump GUID begin/end timestamp interval; serialized allocator event IDs are not assumed equal. Nested/shared entries must not be summed.",
+  "traces": [
+    {
+      "phase": "blank_browser",
+      "dumpGuid": "0x3",
+      "success": true,
+      "file": "allocation-blank_browser.json",
+      "bytes": 3281722,
+      "sha256": "b9eacd3c5c58567613f4eb2f9d722ed13d9455946f5a91b8ffb6bc9863813c2a"
+    },
+    {
+      "phase": "ready_before_engine",
+      "dumpGuid": "0x4",
+      "success": true,
+      "file": "allocation-ready_before_engine.json",
+      "bytes": 4579390,
+      "sha256": "6c5b4546a34cc37c1d5aac111e7c5f1e4a3a16c3d641521ac7d2b0735e7d9fcd"
+    },
+    {
+      "phase": "loaded_26",
+      "dumpGuid": "0x6",
+      "success": true,
+      "file": "allocation-loaded_26.json",
+      "bytes": 5463044,
+      "sha256": "5415779d293c2db1bde4968c2bf36e58321f8fa2c3bb475b5346c1e9f79f880b"
+    },
+    {
+      "phase": "after_twenty_queries",
+      "dumpGuid": "0x9",
+      "success": true,
+      "file": "allocation-after_twenty_queries.json",
+      "bytes": 6071539,
+      "sha256": "34079b2cc078cdcd246008d07d5c6dc20e76ecd2e7444897511581724e8c41f7"
+    },
+    {
+      "phase": "after_restart",
+      "dumpGuid": "0xa",
+      "success": true,
+      "file": "allocation-after_restart.json",
+      "bytes": 4868821,
+      "sha256": "c065cb7bf53d8de4c5617aaa881b4584c1da23f54735d9e2810f28121afe1b2c"
+    }
+  ],
+  "trace_local_directory": "target\\viewport-runtime-attribution-ps9E13",
+  "scripts": {
+    "target/prepare-checkpoint-traces.py": "71ffb43e9a7e58e718c699b420ea9a9b9a11fc389e606d17e021ef3d5bd1ae9f",
+    "target/checkpoint-traces-diagnostic.mjs": "8c5c126829fd06c3f6e84bb382c5d8206f51a85d07c6af98ab079be36ff7a390",
+    "target/summarize-checkpoint-traces.py": "892bb4ed0d203778e521aa06b393335d7ba30111e056e3e2ad475ba97a660780"
+  },
+  "evidence": {
+    "report": {
+      "file": "checkpoint-allocation-report-20261014.json",
+      "sha256": "67ca633c08fb77bfacf2feb9c7e7b663fcfc9bd6d27f8af8cf9e727c9a3e5371"
+    },
+    "summary": {
+      "file": "checkpoint-allocation-summary-20261014.json",
+      "sha256": "2e948de87247c0b1f268c9ed9ca2e4e0e26e220a1cdafd3276cd00c66c7f8288"
+    }
+  },
+  "next_experiment": "Incremental keyed resident-list DOM reconciliation to reduce allocation churn across changing seasons. Distinct from prior signature-based skipping and callback cleanup; previous variants demonstrated no repeatable saving. No implementation adopted here.",
+  "open_gates": [
+    "250 MiB full-browser memory",
+    "Physical Android deferred"
+  ]
+}

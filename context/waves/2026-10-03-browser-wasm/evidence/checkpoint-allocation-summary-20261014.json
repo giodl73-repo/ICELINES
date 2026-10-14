@@ -1,0 +1,1706 @@
+{
+  "scope": "Additional tracing/inspector diagnostic, no forced GC, no acceptance claim. Hierarchical/shared categories overlap; do not sum allocator sizes. Process labels identify browser process classes, not exact application target ownership.",
+  "phases": [
+    {
+      "phase": "blank_browser",
+      "dump_guid": "0x3",
+      "trace_interval": [
+        450532760969,
+        450532878184
+      ],
+      "allocator_events": 9,
+      "processes": [
+        {
+          "pid": 1132,
+          "name": "WebUI Top Renderer",
+          "categories": {
+            "malloc": {
+              "effective_size": 15454729,
+              "size": 15668320,
+              "virtual_size": 14941008
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 13151601,
+              "size": 13365149
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 29003,
+              "size": 29003
+            },
+            "partition_alloc": {
+              "effective_size": 4105242,
+              "size": 6819840
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 3534946,
+              "size": 6249517
+            },
+            "blink_gc": {
+              "effective_size": 863236,
+              "size": 5767168
+            },
+            "blink_gc/main": {
+              "effective_size": 863236,
+              "size": 5767168
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 4903912
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 4903912,
+              "committed_size": 5767168,
+              "effective_size": 863236,
+              "pooled_size": 0,
+              "size": 5767168
+            },
+            "v8": {
+              "effective_size": 11222044,
+              "size": 11222044
+            },
+            "v8/main": {
+              "effective_size": 11222044,
+              "size": 11222044
+            },
+            "v8/main/heap": {
+              "effective_size": 11010048,
+              "size": 11010048
+            },
+            "v8/main/malloc": {
+              "effective_size": 161860,
+              "peak_size": 8407592,
+              "size": 161860
+            },
+            "shared_memory": {
+              "effective_size": 62976,
+              "size": 114688
+            }
+          }
+        },
+        {
+          "pid": 5400,
+          "name": "Renderer",
+          "categories": {
+            "malloc": {
+              "effective_size": 8631650,
+              "size": 8714672,
+              "virtual_size": 7937616
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 7224071,
+              "size": 7307063
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 26481,
+              "size": 26481
+            },
+            "partition_alloc": {
+              "effective_size": 581623,
+              "size": 581632
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 452956,
+              "size": 452956
+            },
+            "blink_gc": {
+              "effective_size": 1072357,
+              "size": 1441792
+            },
+            "blink_gc/main": {
+              "effective_size": 1072357,
+              "size": 1441792
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 369432
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 369432,
+              "committed_size": 1441792,
+              "effective_size": 1072357,
+              "pooled_size": 0,
+              "size": 1441792
+            },
+            "gpu": {
+              "effective_size": 131008,
+              "size": 131008
+            },
+            "v8": {
+              "effective_size": 1393712,
+              "size": 1393712
+            },
+            "v8/main": {
+              "effective_size": 1393712,
+              "size": 1393712
+            },
+            "v8/main/heap": {
+              "effective_size": 1310720,
+              "size": 1310720
+            },
+            "v8/main/malloc": {
+              "effective_size": 61496,
+              "peak_size": 20472,
+              "size": 61496
+            },
+            "shared_memory": {
+              "effective_size": 69120,
+              "size": 257984
+            }
+          }
+        },
+        {
+          "pid": 7604,
+          "name": "Renderer",
+          "categories": {
+            "malloc": {
+              "effective_size": 5465719,
+              "size": 5527215,
+              "virtual_size": 5192832
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 4479479,
+              "size": 4540975
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 26625,
+              "size": 26625
+            },
+            "partition_alloc": {
+              "effective_size": 475125,
+              "size": 475136
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 385036,
+              "size": 385036
+            },
+            "blink_gc": {
+              "effective_size": 706559,
+              "size": 917504
+            },
+            "blink_gc/main": {
+              "effective_size": 706559,
+              "size": 917504
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 210944
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 210944,
+              "committed_size": 917504,
+              "effective_size": 706559,
+              "pooled_size": 0,
+              "size": 917504
+            },
+            "v8": {
+              "effective_size": 847928,
+              "size": 847928
+            },
+            "v8/main": {
+              "effective_size": 847928,
+              "size": 847928
+            },
+            "v8/main/heap": {
+              "effective_size": 786432,
+              "size": 786432
+            },
+            "v8/main/malloc": {
+              "effective_size": 61496,
+              "peak_size": 20472,
+              "size": 61496
+            },
+            "shared_memory": {
+              "effective_size": 36352,
+              "size": 69632
+            }
+          }
+        },
+        {
+          "pid": 18528,
+          "name": "Browser",
+          "categories": {
+            "malloc": {
+              "effective_size": 31753050,
+              "size": 32636042,
+              "virtual_size": 29581184
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 25478106,
+              "size": 26361098
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 188233,
+              "size": 188233
+            },
+            "gpu": {
+              "effective_size": 1114048,
+              "size": 1114048
+            },
+            "shared_memory": {
+              "effective_size": 1320448,
+              "size": 2629568
+            }
+          }
+        },
+        {
+          "pid": 31496,
+          "name": "Service: tracing.mojom.TracingService",
+          "categories": {
+            "malloc": {
+              "effective_size": 3124893,
+              "size": 3124893,
+              "virtual_size": 2228336
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 1957421,
+              "size": 1957421
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 25395,
+              "size": 25395
+            },
+            "shared_memory": {
+              "effective_size": 139776,
+              "size": 270336
+            }
+          }
+        },
+        {
+          "pid": 60328,
+          "name": "Service: network.mojom.NetworkService",
+          "categories": {
+            "malloc": {
+              "effective_size": 7380557,
+              "size": 7380557,
+              "virtual_size": 6451072
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 5922509,
+              "size": 5922509
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 45507,
+              "size": 45507
+            },
+            "shared_memory": {
+              "effective_size": 45568,
+              "size": 86016
+            }
+          }
+        },
+        {
+          "pid": 65364,
+          "name": "GPU Process",
+          "categories": {
+            "malloc": {
+              "effective_size": 45597595,
+              "size": 45601534,
+              "virtual_size": 26586064
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 25556939,
+              "size": 25560878
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 320054,
+              "size": 320054
+            },
+            "gpu": {
+              "effective_size": 4249652,
+              "size": 7268276
+            },
+            "gpu/shared_images": {
+              "effective_size": 4004352,
+              "size": 5773824
+            },
+            "shared_memory": {
+              "effective_size": 84480,
+              "size": 1523712
+            }
+          }
+        },
+        {
+          "pid": 65712,
+          "name": "Service: storage.mojom.StorageService",
+          "categories": {
+            "malloc": {
+              "effective_size": 2699655,
+              "size": 2699655,
+              "virtual_size": 1914080
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 1744039,
+              "size": 1744039
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 25001,
+              "size": 25001
+            },
+            "shared_memory": {
+              "effective_size": 27136,
+              "size": 45056
+            }
+          }
+        }
+      ]
+    },
+    {
+      "phase": "ready_before_engine",
+      "dump_guid": "0x4",
+      "trace_interval": [
+        450534213244,
+        450534323983
+      ],
+      "allocator_events": 9,
+      "processes": [
+        {
+          "pid": 1132,
+          "name": "WebUI Top Renderer",
+          "categories": {
+            "malloc": {
+              "effective_size": 15665985,
+              "size": 15844768,
+              "virtual_size": 15104848
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 13169113,
+              "size": 13347853
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 29003,
+              "size": 29003
+            },
+            "partition_alloc": {
+              "effective_size": 4109340,
+              "size": 6823936
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 3535874,
+              "size": 6250445
+            },
+            "blink_gc": {
+              "effective_size": 830984,
+              "size": 5767168
+            },
+            "blink_gc/main": {
+              "effective_size": 830984,
+              "size": 5767168
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 4936184
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 4936184,
+              "committed_size": 5767168,
+              "effective_size": 830984,
+              "pooled_size": 0,
+              "size": 5767168
+            },
+            "v8": {
+              "effective_size": 11187236,
+              "size": 11187236
+            },
+            "v8/main": {
+              "effective_size": 11187236,
+              "size": 11187236
+            },
+            "v8/main/heap": {
+              "effective_size": 11010048,
+              "size": 11010048
+            },
+            "v8/main/malloc": {
+              "effective_size": 127052,
+              "peak_size": 8407592,
+              "size": 127052
+            },
+            "shared_memory": {
+              "effective_size": 62976,
+              "size": 126976
+            }
+          }
+        },
+        {
+          "pid": 5400,
+          "name": "Renderer",
+          "categories": {
+            "malloc": {
+              "effective_size": 21619627,
+              "size": 21921376,
+              "virtual_size": 18321040
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 16186245,
+              "size": 16487945
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 31611,
+              "size": 31611
+            },
+            "partition_alloc": {
+              "effective_size": 6592065,
+              "size": 6602752
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 5977214,
+              "size": 5987870
+            },
+            "blink_gc": {
+              "effective_size": 1266852,
+              "size": 4587520
+            },
+            "blink_gc/main": {
+              "effective_size": 726258,
+              "size": 3407872
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 2681600
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 2681600,
+              "committed_size": 3407872,
+              "effective_size": 726258,
+              "pooled_size": 0,
+              "size": 3407872
+            },
+            "gpu": {
+              "effective_size": 2359168,
+              "size": 2359168
+            },
+            "v8": {
+              "effective_size": 6887476,
+              "size": 6887476
+            },
+            "v8/main": {
+              "effective_size": 4684852,
+              "size": 4684852
+            },
+            "v8/main/heap": {
+              "effective_size": 4517888,
+              "size": 4517888
+            },
+            "v8/main/malloc": {
+              "effective_size": 127052,
+              "peak_size": 780256,
+              "size": 127052
+            },
+            "shared_memory": {
+              "effective_size": 110080,
+              "size": 2580352
+            }
+          }
+        },
+        {
+          "pid": 7604,
+          "name": "Renderer",
+          "categories": {
+            "malloc": {
+              "effective_size": 5669955,
+              "size": 5731504,
+              "virtual_size": 5471360
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 4566875,
+              "size": 4628371
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 26625,
+              "size": 26625
+            },
+            "partition_alloc": {
+              "effective_size": 475125,
+              "size": 475136
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 385036,
+              "size": 385036
+            },
+            "blink_gc": {
+              "effective_size": 706559,
+              "size": 917504
+            },
+            "blink_gc/main": {
+              "effective_size": 706559,
+              "size": 917504
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 210944
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 210944,
+              "committed_size": 917504,
+              "effective_size": 706559,
+              "pooled_size": 0,
+              "size": 917504
+            },
+            "v8": {
+              "effective_size": 847928,
+              "size": 847928
+            },
+            "v8/main": {
+              "effective_size": 847928,
+              "size": 847928
+            },
+            "v8/main/heap": {
+              "effective_size": 786432,
+              "size": 786432
+            },
+            "v8/main/malloc": {
+              "effective_size": 61496,
+              "peak_size": 20472,
+              "size": 61496
+            },
+            "shared_memory": {
+              "effective_size": 36352,
+              "size": 77824
+            }
+          }
+        },
+        {
+          "pid": 18528,
+          "name": "Browser",
+          "categories": {
+            "malloc": {
+              "effective_size": 35629249,
+              "size": 36767569,
+              "virtual_size": 35346512
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 29302897,
+              "size": 30441217
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 191567,
+              "size": 191567
+            },
+            "gpu": {
+              "effective_size": 4325248,
+              "size": 4325248
+            },
+            "shared_memory": {
+              "effective_size": 2254336,
+              "size": 7741312
+            }
+          }
+        },
+        {
+          "pid": 31496,
+          "name": "Service: tracing.mojom.TracingService",
+          "categories": {
+            "malloc": {
+              "effective_size": 3955937,
+              "size": 3955984,
+              "virtual_size": 3698992
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 2133493,
+              "size": 2133493
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 25467,
+              "size": 25467
+            },
+            "shared_memory": {
+              "effective_size": 28365312,
+              "size": 29519872
+            }
+          }
+        },
+        {
+          "pid": 60328,
+          "name": "Service: network.mojom.NetworkService",
+          "categories": {
+            "malloc": {
+              "effective_size": 8367425,
+              "size": 8367472,
+              "virtual_size": 7910064
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 6877089,
+              "size": 6877089
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 45967,
+              "size": 45967
+            },
+            "shared_memory": {
+              "effective_size": 64000,
+              "size": 126976
+            }
+          }
+        },
+        {
+          "pid": 65364,
+          "name": "GPU Process",
+          "categories": {
+            "malloc": {
+              "effective_size": 48811291,
+              "size": 48939817,
+              "virtual_size": 29737632
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 28129915,
+              "size": 28258441
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 351007,
+              "size": 351007
+            },
+            "gpu": {
+              "effective_size": 4380272,
+              "size": 24997232
+            },
+            "gpu/shared_images": {
+              "effective_size": 4004352,
+              "size": 17930752
+            },
+            "shared_memory": {
+              "effective_size": 88576,
+              "size": 7053312
+            }
+          }
+        },
+        {
+          "pid": 65712,
+          "name": "Service: storage.mojom.StorageService",
+          "categories": {
+            "malloc": {
+              "effective_size": 2838807,
+              "size": 2838807,
+              "virtual_size": 2229472
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 1883191,
+              "size": 1883191
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 25001,
+              "size": 25001
+            },
+            "shared_memory": {
+              "effective_size": 31232,
+              "size": 65536
+            }
+          }
+        }
+      ]
+    },
+    {
+      "phase": "loaded_26",
+      "dump_guid": "0x6",
+      "trace_interval": [
+        450556934765,
+        450557068408
+      ],
+      "allocator_events": 9,
+      "processes": [
+        {
+          "pid": 1132,
+          "name": "WebUI Top Renderer",
+          "categories": {
+            "malloc": {
+              "effective_size": 14962846,
+              "size": 15141632,
+              "virtual_size": 14801744
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 13063841,
+              "size": 13242581
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 29003,
+              "size": 29003
+            },
+            "partition_alloc": {
+              "effective_size": 3654676,
+              "size": 6369280
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 3540197,
+              "size": 6254768
+            },
+            "blink_gc": {
+              "effective_size": 825440,
+              "size": 5767168
+            },
+            "blink_gc/main": {
+              "effective_size": 825440,
+              "size": 5767168
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 4941704
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 4941704,
+              "committed_size": 5767168,
+              "effective_size": 825440,
+              "pooled_size": 0,
+              "size": 5767168
+            },
+            "v8": {
+              "effective_size": 11187236,
+              "size": 11187236
+            },
+            "v8/main": {
+              "effective_size": 11187236,
+              "size": 11187236
+            },
+            "v8/main/heap": {
+              "effective_size": 11010048,
+              "size": 11010048
+            },
+            "v8/main/malloc": {
+              "effective_size": 127052,
+              "peak_size": 8407592,
+              "size": 127052
+            },
+            "shared_memory": {
+              "effective_size": 71168,
+              "size": 143360
+            }
+          }
+        },
+        {
+          "pid": 5400,
+          "name": "Renderer",
+          "categories": {
+            "malloc": {
+              "effective_size": 41497840,
+              "size": 41961856,
+              "virtual_size": 33344176
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 28585415,
+              "size": 29049387
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 37045,
+              "size": 37045
+            },
+            "partition_alloc": {
+              "effective_size": 43894321,
+              "size": 43905024
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 41349180,
+              "size": 41359836
+            },
+            "blink_gc": {
+              "effective_size": 26066329,
+              "size": 35192912
+            },
+            "blink_gc/main": {
+              "effective_size": 24883745,
+              "size": 33095760
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 8211928
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 8211928,
+              "committed_size": 33095760,
+              "effective_size": 24883745,
+              "pooled_size": 14024704,
+              "size": 33095760
+            },
+            "gpu": {
+              "effective_size": 2817920,
+              "size": 2817920
+            },
+            "v8": {
+              "effective_size": 13397908,
+              "size": 13397908
+            },
+            "v8/main": {
+              "effective_size": 9023332,
+              "size": 9023332
+            },
+            "v8/main/heap": {
+              "effective_size": 8773632,
+              "size": 8773632
+            },
+            "v8/main/malloc": {
+              "effective_size": 86052,
+              "peak_size": 5965612,
+              "size": 86052
+            },
+            "shared_memory": {
+              "effective_size": 245248,
+              "size": 3190656
+            }
+          }
+        },
+        {
+          "pid": 7604,
+          "name": "Renderer",
+          "categories": {
+            "malloc": {
+              "effective_size": 5568695,
+              "size": 5630191,
+              "virtual_size": 4893824
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 4582455,
+              "size": 4643951
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 26625,
+              "size": 26625
+            },
+            "partition_alloc": {
+              "effective_size": 475125,
+              "size": 475136
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 442368,
+              "size": 442368
+            },
+            "blink_gc": {
+              "effective_size": 706559,
+              "size": 917504
+            },
+            "blink_gc/main": {
+              "effective_size": 706559,
+              "size": 917504
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 210944
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 210944,
+              "committed_size": 917504,
+              "effective_size": 706559,
+              "pooled_size": 0,
+              "size": 917504
+            },
+            "v8": {
+              "effective_size": 847928,
+              "size": 847928
+            },
+            "v8/main": {
+              "effective_size": 847928,
+              "size": 847928
+            },
+            "v8/main/heap": {
+              "effective_size": 786432,
+              "size": 786432
+            },
+            "v8/main/malloc": {
+              "effective_size": 61496,
+              "peak_size": 20472,
+              "size": 61496
+            },
+            "shared_memory": {
+              "effective_size": 42496,
+              "size": 90112
+            }
+          }
+        },
+        {
+          "pid": 18528,
+          "name": "Browser",
+          "categories": {
+            "malloc": {
+              "effective_size": 36695073,
+              "size": 37856485,
+              "virtual_size": 35281216
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 30429921,
+              "size": 31591333
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 189411,
+              "size": 189411
+            },
+            "gpu": {
+              "effective_size": 4325248,
+              "size": 4325248
+            },
+            "shared_memory": {
+              "effective_size": 3327488,
+              "size": 9908096
+            }
+          }
+        },
+        {
+          "pid": 31496,
+          "name": "Service: tracing.mojom.TracingService",
+          "categories": {
+            "malloc": {
+              "effective_size": 4141242,
+              "size": 4141280,
+              "virtual_size": 3871024
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 2145541,
+              "size": 2145541
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 25467,
+              "size": 25467
+            },
+            "shared_memory": {
+              "effective_size": 27261440,
+              "size": 29532160
+            }
+          }
+        },
+        {
+          "pid": 60328,
+          "name": "Service: network.mojom.NetworkService",
+          "categories": {
+            "malloc": {
+              "effective_size": 8647309,
+              "size": 8647344,
+              "virtual_size": 8233248
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 7050405,
+              "size": 7050405
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 46571,
+              "size": 46571
+            },
+            "shared_memory": {
+              "effective_size": 72192,
+              "size": 143360
+            }
+          }
+        },
+        {
+          "pid": 65364,
+          "name": "GPU Process",
+          "categories": {
+            "malloc": {
+              "effective_size": 49492394,
+              "size": 49751648,
+              "virtual_size": 30535504
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 28811866,
+              "size": 29071120
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 350264,
+              "size": 350264
+            },
+            "gpu": {
+              "effective_size": 4380272,
+              "size": 29257072
+            },
+            "gpu/shared_images": {
+              "effective_size": 4004352,
+              "size": 21731840
+            },
+            "shared_memory": {
+              "effective_size": 94720,
+              "size": 7524352
+            }
+          }
+        },
+        {
+          "pid": 65712,
+          "name": "Service: storage.mojom.StorageService",
+          "categories": {
+            "malloc": {
+              "effective_size": 2858391,
+              "size": 2858391,
+              "virtual_size": 2282720
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 1902775,
+              "size": 1902775
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 25001,
+              "size": 25001
+            },
+            "shared_memory": {
+              "effective_size": 37376,
+              "size": 77824
+            }
+          }
+        }
+      ]
+    },
+    {
+      "phase": "after_twenty_queries",
+      "dump_guid": "0x9",
+      "trace_interval": [
+        450603820939,
+        450603956512
+      ],
+      "allocator_events": 9,
+      "processes": [
+        {
+          "pid": 1132,
+          "name": "WebUI Top Renderer",
+          "categories": {
+            "malloc": {
+              "effective_size": 14412953,
+              "size": 14550752,
+              "virtual_size": 14172896
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 11900197,
+              "size": 12037937
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 33791,
+              "size": 33791
+            },
+            "partition_alloc": {
+              "effective_size": 3907046,
+              "size": 3977216
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 3423164,
+              "size": 3493312
+            },
+            "blink_gc": {
+              "effective_size": 3210792,
+              "size": 5373952
+            },
+            "blink_gc/main": {
+              "effective_size": 3210792,
+              "size": 5373952
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 2163152
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 2163152,
+              "committed_size": 5373952,
+              "effective_size": 3210792,
+              "pooled_size": 0,
+              "size": 5373952
+            },
+            "v8": {
+              "effective_size": 5116924,
+              "size": 5116924
+            },
+            "v8/main": {
+              "effective_size": 5116924,
+              "size": 5116924
+            },
+            "v8/main/heap": {
+              "effective_size": 4980736,
+              "size": 4980736
+            },
+            "v8/main/malloc": {
+              "effective_size": 86052,
+              "peak_size": 8407592,
+              "size": 86052
+            },
+            "shared_memory": {
+              "effective_size": 77312,
+              "size": 155648
+            }
+          }
+        },
+        {
+          "pid": 5400,
+          "name": "Renderer",
+          "categories": {
+            "malloc": {
+              "effective_size": 31947099,
+              "size": 32433776,
+              "virtual_size": 29449280
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 24626879,
+              "size": 25113503
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 37665,
+              "size": 37665
+            },
+            "partition_alloc": {
+              "effective_size": 24950333,
+              "size": 24961024
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 24302592,
+              "size": 24313248
+            },
+            "blink_gc": {
+              "effective_size": 16950902,
+              "size": 35586128
+            },
+            "blink_gc/main": {
+              "effective_size": 15706328,
+              "size": 33095760
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 17389336
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 17389336,
+              "committed_size": 33095760,
+              "effective_size": 15706328,
+              "pooled_size": 8650752,
+              "size": 33095760
+            },
+            "gpu": {
+              "effective_size": 19070848,
+              "size": 19070848
+            },
+            "v8": {
+              "effective_size": 19711824,
+              "size": 19711824
+            },
+            "v8/main": {
+              "effective_size": 15330124,
+              "size": 15330124
+            },
+            "v8/main/heap": {
+              "effective_size": 15065088,
+              "size": 15065088
+            },
+            "v8/main/malloc": {
+              "effective_size": 86052,
+              "peak_size": 6212264,
+              "size": 86052
+            },
+            "shared_memory": {
+              "effective_size": 136704,
+              "size": 19345280
+            }
+          }
+        },
+        {
+          "pid": 7604,
+          "name": "Renderer",
+          "categories": {
+            "malloc": {
+              "effective_size": 5525439,
+              "size": 5586935,
+              "virtual_size": 5328880
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 4542415,
+              "size": 4603911
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 26553,
+              "size": 26553
+            },
+            "partition_alloc": {
+              "effective_size": 475125,
+              "size": 475136
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 442368,
+              "size": 442368
+            },
+            "blink_gc": {
+              "effective_size": 706559,
+              "size": 917504
+            },
+            "blink_gc/main": {
+              "effective_size": 706559,
+              "size": 917504
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 210944
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 210944,
+              "committed_size": 917504,
+              "effective_size": 706559,
+              "pooled_size": 0,
+              "size": 917504
+            },
+            "v8": {
+              "effective_size": 847928,
+              "size": 847928
+            },
+            "v8/main": {
+              "effective_size": 847928,
+              "size": 847928
+            },
+            "v8/main/heap": {
+              "effective_size": 786432,
+              "size": 786432
+            },
+            "v8/main/malloc": {
+              "effective_size": 61496,
+              "peak_size": 20472,
+              "size": 61496
+            },
+            "shared_memory": {
+              "effective_size": 46592,
+              "size": 98304
+            }
+          }
+        },
+        {
+          "pid": 18528,
+          "name": "Browser",
+          "categories": {
+            "malloc": {
+              "effective_size": 35670645,
+              "size": 36849480,
+              "virtual_size": 34970928
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 29531461,
+              "size": 30710296
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 186776,
+              "size": 186776
+            },
+            "gpu": {
+              "effective_size": 4325248,
+              "size": 4325248
+            },
+            "shared_memory": {
+              "effective_size": 3321344,
+              "size": 9908096
+            }
+          }
+        },
+        {
+          "pid": 31496,
+          "name": "Service: tracing.mojom.TracingService",
+          "categories": {
+            "malloc": {
+              "effective_size": 3328133,
+              "size": 3328192,
+              "virtual_size": 3179680
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 2033277,
+              "size": 2033277
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 25395,
+              "size": 25395
+            },
+            "shared_memory": {
+              "effective_size": 27236864,
+              "size": 29544448
+            }
+          }
+        },
+        {
+          "pid": 60328,
+          "name": "Service: network.mojom.NetworkService",
+          "categories": {
+            "malloc": {
+              "effective_size": 7815693,
+              "size": 7815693,
+              "virtual_size": 7298144
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 6485421,
+              "size": 6485421
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 40931,
+              "size": 40931
+            },
+            "shared_memory": {
+              "effective_size": 76288,
+              "size": 151552
+            }
+          }
+        },
+        {
+          "pid": 65364,
+          "name": "GPU Process",
+          "categories": {
+            "malloc": {
+              "effective_size": 49705414,
+              "size": 49994498,
+              "virtual_size": 30587792
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 28968502,
+              "size": 29257586
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 353406,
+              "size": 353406
+            },
+            "gpu": {
+              "effective_size": 4380272,
+              "size": 49376624
+            },
+            "gpu/shared_images": {
+              "effective_size": 4004352,
+              "size": 25598464
+            },
+            "shared_memory": {
+              "effective_size": 107008,
+              "size": 23801856
+            }
+          }
+        },
+        {
+          "pid": 65712,
+          "name": "Service: storage.mojom.StorageService",
+          "categories": {
+            "malloc": {
+              "effective_size": 2767983,
+              "size": 2767983,
+              "virtual_size": 2103376
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 1815583,
+              "size": 1815583
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 24929,
+              "size": 24929
+            },
+            "shared_memory": {
+              "effective_size": 43520,
+              "size": 90112
+            }
+          }
+        }
+      ]
+    },
+    {
+      "phase": "after_restart",
+      "dump_guid": "0xa",
+      "trace_interval": [
+        450608070315,
+        450608164830
+      ],
+      "allocator_events": 9,
+      "processes": [
+        {
+          "pid": 1132,
+          "name": "WebUI Top Renderer",
+          "categories": {
+            "malloc": {
+              "effective_size": 14140996,
+              "size": 14278800,
+              "virtual_size": 13898464
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 11900149,
+              "size": 12037889
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 33791,
+              "size": 33791
+            },
+            "partition_alloc": {
+              "effective_size": 3907046,
+              "size": 3977216
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 3423164,
+              "size": 3493312
+            },
+            "blink_gc": {
+              "effective_size": 3210792,
+              "size": 5373952
+            },
+            "blink_gc/main": {
+              "effective_size": 3210792,
+              "size": 5373952
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 2163152
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 2163152,
+              "committed_size": 5373952,
+              "effective_size": 3210792,
+              "pooled_size": 0,
+              "size": 5373952
+            },
+            "v8": {
+              "effective_size": 5116924,
+              "size": 5116924
+            },
+            "v8/main": {
+              "effective_size": 5116924,
+              "size": 5116924
+            },
+            "v8/main/heap": {
+              "effective_size": 4980736,
+              "size": 4980736
+            },
+            "v8/main/malloc": {
+              "effective_size": 86052,
+              "peak_size": 8407592,
+              "size": 86052
+            },
+            "shared_memory": {
+              "effective_size": 83456,
+              "size": 167936
+            }
+          }
+        },
+        {
+          "pid": 5400,
+          "name": "Renderer",
+          "categories": {
+            "malloc": {
+              "effective_size": 27279319,
+              "size": 27764064,
+              "virtual_size": 25427008
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 21980474,
+              "size": 22465182
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 37665,
+              "size": 37665
+            },
+            "partition_alloc": {
+              "effective_size": 19834433,
+              "size": 19845120
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 18830528,
+              "size": 18841184
+            },
+            "blink_gc": {
+              "effective_size": 30994207,
+              "size": 35586128
+            },
+            "blink_gc/main": {
+              "effective_size": 29785776,
+              "size": 33095760
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 3309888
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 3309888,
+              "committed_size": 33095760,
+              "effective_size": 29785776,
+              "pooled_size": 11010048,
+              "size": 33095760
+            },
+            "gpu": {
+              "effective_size": 131008,
+              "size": 131008
+            },
+            "v8": {
+              "effective_size": 18661236,
+              "size": 18661236
+            },
+            "v8/main": {
+              "effective_size": 15330124,
+              "size": 15330124
+            },
+            "v8/main/heap": {
+              "effective_size": 15065088,
+              "size": 15065088
+            },
+            "v8/main/malloc": {
+              "effective_size": 86052,
+              "peak_size": 6212264,
+              "size": 86052
+            },
+            "shared_memory": {
+              "effective_size": 146944,
+              "size": 425920
+            }
+          }
+        },
+        {
+          "pid": 7604,
+          "name": "Renderer",
+          "categories": {
+            "malloc": {
+              "effective_size": 5524399,
+              "size": 5585895,
+              "virtual_size": 5406704
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 4541375,
+              "size": 4602871
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 26553,
+              "size": 26553
+            },
+            "partition_alloc": {
+              "effective_size": 475125,
+              "size": 475136
+            },
+            "partition_alloc/allocated_objects": {
+              "effective_size": 442368,
+              "size": 442368
+            },
+            "blink_gc": {
+              "effective_size": 706559,
+              "size": 917504
+            },
+            "blink_gc/main": {
+              "effective_size": 706559,
+              "size": 917504
+            },
+            "blink_gc/main/allocated_objects": {
+              "size": 210944
+            },
+            "blink_gc/main/heap": {
+              "allocated_objects_size": 210944,
+              "committed_size": 917504,
+              "effective_size": 706559,
+              "pooled_size": 0,
+              "size": 917504
+            },
+            "v8": {
+              "effective_size": 847928,
+              "size": 847928
+            },
+            "v8/main": {
+              "effective_size": 847928,
+              "size": 847928
+            },
+            "v8/main/heap": {
+              "effective_size": 786432,
+              "size": 786432
+            },
+            "v8/main/malloc": {
+              "effective_size": 61496,
+              "peak_size": 20472,
+              "size": 61496
+            },
+            "shared_memory": {
+              "effective_size": 50688,
+              "size": 106496
+            }
+          }
+        },
+        {
+          "pid": 18528,
+          "name": "Browser",
+          "categories": {
+            "malloc": {
+              "effective_size": 35661085,
+              "size": 36855416,
+              "virtual_size": 35061040
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 29521901,
+              "size": 30716232
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 186776,
+              "size": 186776
+            },
+            "gpu": {
+              "effective_size": 1114048,
+              "size": 1114048
+            },
+            "shared_memory": {
+              "effective_size": 3321344,
+              "size": 6696896
+            }
+          }
+        },
+        {
+          "pid": 31496,
+          "name": "Service: tracing.mojom.TracingService",
+          "categories": {
+            "malloc": {
+              "effective_size": 3433299,
+              "size": 3433328,
+              "virtual_size": 3318944
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 1988525,
+              "size": 1988525
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 25395,
+              "size": 25395
+            },
+            "shared_memory": {
+              "effective_size": 27212288,
+              "size": 29556736
+            }
+          }
+        },
+        {
+          "pid": 60328,
+          "name": "Service: network.mojom.NetworkService",
+          "categories": {
+            "malloc": {
+              "effective_size": 7787853,
+              "size": 7787853,
+              "virtual_size": 7288000
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 6459533,
+              "size": 6459533
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 40835,
+              "size": 40835
+            },
+            "shared_memory": {
+              "effective_size": 80384,
+              "size": 159744
+            }
+          }
+        },
+        {
+          "pid": 65364,
+          "name": "GPU Process",
+          "categories": {
+            "malloc": {
+              "effective_size": 48173465,
+              "size": 48476768,
+              "virtual_size": 29615200
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 27446585,
+              "size": 27749888
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 352064,
+              "size": 352064
+            },
+            "gpu": {
+              "effective_size": 4380144,
+              "size": 29846896
+            },
+            "gpu/shared_images": {
+              "effective_size": 4004352,
+              "size": 28219904
+            },
+            "shared_memory": {
+              "effective_size": 113152,
+              "size": 1662976
+            }
+          }
+        },
+        {
+          "pid": 65712,
+          "name": "Service: storage.mojom.StorageService",
+          "categories": {
+            "malloc": {
+              "effective_size": 2743727,
+              "size": 2743727,
+              "virtual_size": 2140240
+            },
+            "malloc/allocated_objects": {
+              "effective_size": 1791327,
+              "size": 1791327
+            },
+            "malloc/metadata_fragmentation_caches": {
+              "effective_size": 24929,
+              "size": 24929
+            },
+            "shared_memory": {
+              "effective_size": 49664,
+              "size": 102400
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "all_requested_checkpoints_present": true
+}
