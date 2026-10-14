@@ -1,0 +1,102 @@
+{
+  "phase": "offline",
+  "started_at": "2026-10-14T13:59:18.301Z",
+  "verified": true,
+  "scope": "Isolated desktop Chromium profile across real Pages deployments. Saved public season plus frozen repository schedule fixture. No physical-phone, live-NHL or whole-browser resource claim.",
+  "browser": "153.0.8010.12",
+  "browser_events": [
+    {
+      "event": "context-close",
+      "planned": true,
+      "at": 1791986359896
+    },
+    {
+      "event": "disconnected",
+      "planned": true,
+      "at": 1791986359896
+    }
+  ],
+  "initial_owned_pages": 0,
+  "extra_owned_pages_closed": 0,
+  "network": {
+    "online": false,
+    "probe_failed": true
+  },
+  "loaded_build": {
+    "schema_version": 1,
+    "commit": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "8482c9fd825f773eb3fc0956e42f67f0931caf871d2bab89c76b01a4738aab3a"
+  },
+  "executing_renderer": "viewport",
+  "mounted_players": 42,
+  "storage": {
+    "datasets": [
+      {
+        "id": "20252026-regular",
+        "revision": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+        "sha256": "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+        "bytes": 926515,
+        "metadata": {
+          "schema_version": 1,
+          "season": 20252026,
+          "season_type": "regular",
+          "source": "repository:20252026",
+          "observed_at": null,
+          "fetched_at": null
+        },
+        "keepUpdated": false
+      }
+    ],
+    "schedules": [
+      {
+        "id": "nhl-game-week:2026-04-29",
+        "revision": "0142670ebe87b8d584a9fda0575e742fc43ce652ad2c2f297d7c48e73060222a",
+        "sha256": "0142670ebe87b8d584a9fda0575e742fc43ce652ad2c2f297d7c48e73060222a",
+        "bytes": 752,
+        "metadata": {
+          "schema_version": 1,
+          "kind": "nhl-game-week",
+          "requested_date": "2026-04-29",
+          "source": "NHL schedule",
+          "observed_at": null,
+          "fetched_at": "2026-10-13T00:00:00Z"
+        },
+        "keepUpdated": false
+      }
+    ],
+    "settings": [
+      "20252026-regular",
+      "nhl-game-week:2026-04-29"
+    ]
+  },
+  "saved_bytes_unchanged": true,
+  "filtered_rows": 8,
+  "player_detail": "Connor McDavid",
+  "executing_main_sha256": "00f8f0a97c67af01b7edb9c28711cdf2a923b9d08a04a23a412e7ac2671c70ea",
+  "expected_main_sha256": "00f8f0a97c67af01b7edb9c28711cdf2a923b9d08a04a23a412e7ac2671c70ea",
+  "executing_package_download_sha256": "92935d08b51ef5c65f99adac15f763ec85b0e4471366771d41c5fecb4214524a",
+  "expected_package_download_sha256": "92935d08b51ef5c65f99adac15f763ec85b0e4471366771d41c5fecb4214524a",
+  "executing_catalog_metadata_sha256": "459ad240d2973f346b94dd36cd3d56c71b721b27e43aaf1381fa09a265f6e2f4",
+  "expected_catalog_metadata_sha256": "459ad240d2973f346b94dd36cd3d56c71b721b27e43aaf1381fa09a265f6e2f4",
+  "executing_wasm": {
+    "verified": true,
+    "scope": "Debugger bytecode from the one owned engine worker; additional observer, not memory acceptance.",
+    "worker_url": "https://giodl73-repo.github.io/ICELINES/workbench/src/worker.js",
+    "wasm_script_url": "https://giodl73-repo.github.io/ICELINES/workbench/pkg/icelines_wasm_bg.wasm",
+    "bytes": 630021,
+    "sha256": "8482c9fd825f773eb3fc0956e42f67f0931caf871d2bab89c76b01a4738aab3a",
+    "expected_sha256": "8482c9fd825f773eb3fc0956e42f67f0931caf871d2bab89c76b01a4738aab3a"
+  },
+  "network_after_source_check": {
+    "online": false,
+    "probe_failed": true
+  },
+  "finished_at": "2026-10-14T13:59:20.111Z"
+}
