@@ -66,6 +66,18 @@ self.addEventListener('install', event => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 120_000);
     try {
+      // Optional routing avoids waking the worker for uncached package reads.
+      // Missing/rejected/stalled support preserves the existing fetch path.
+      if (typeof event.addRoutes === 'function') {
+        let routeTimeout;
+        try {
+          await Promise.race([
+            event.addRoutes([{ condition: { urlPattern: new URL('data/*', base).href, requestMethod: 'GET' }, source: 'network' }]),
+            new Promise(resolve => { routeTimeout = setTimeout(resolve, 2_000); }),
+          ]);
+        } catch { /* Optional routing must not prevent verified shell install. */ }
+        finally { clearTimeout(routeTimeout); }
+      }
       await acquireShell(cache, controller.signal);
     } catch (error) { await caches.delete(cacheName); throw error; }
     finally { clearTimeout(timeout); }

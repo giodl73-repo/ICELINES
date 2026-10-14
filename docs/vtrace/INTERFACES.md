@@ -722,6 +722,13 @@ Status: foundation implementation in progress; compatibility evidence pending.
 
 ## IF-BROWSER-001 optional gzip transport — CHG-120
 
+CHG-123 candidate (not adopted): optional static service-worker routing sends
+same-origin data/* GETs to network before worker startup. Dataset routes stay
+uncached and exact transport/raw authentication stays in the frontend. Shell
+assets retain their sealed same-build cache path. Missing/rejected addRoutes
+support falls back to the existing fetch event, without preventing verified
+shell installation. No persistent data or live relay contract changes.
+
 The version1 public catalog retains each entry's canonical `url`, `bytes` and
 `sha256`. An optional `transport` contains `encoding: "gzip"`, `url`, `bytes` and
 `sha256`; the transport URL must equal the canonical JSON URL plus `.gz`.

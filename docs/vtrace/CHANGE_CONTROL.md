@@ -193,3 +193,19 @@ remain open. CI/master/public-origin transfer and update/rollback evidence are
 required before promoting the delivery implementation.
 Trace updates: INTERFACES, WORK_PACKAGES, TRACE, VERIFICATION and VALIDATION.
 No resource waiver, native dependency change or hockey semantics change.
+
+## CHG-123: Optional static package network routing candidate (2026-10-14)
+
+Candidate only. Where InstallEvent.addRoutes exists, register GET requests under
+the same-origin data/ prefix with source network. These requests already bypass
+the shell cache, but can currently wake the worker. Unsupported/rejected routing
+falls back to existing fetch handling. Shell acquire/hash/readiness/cache repair,
+update consent, dataset authentication and IndexedDB persistence remain intact.
+Affected: IF-BROWSER-001; REQ-BROWSER-001; WP-BW-05; WP-BW-06.
+Review lenses: BENCH/WIRE/KEEL/FORGE/EDGE, single agent. Gates: feature/fallback
+and corrupt-install tests, actual route matching, offline/context/viewport
+correctness, unchanged full-workload memory comparisons, CI/public transition
+proof before adoption.250 MiB and Android remain open; no budget waiver.
+
+Optional route registration is bounded to2 seconds inside the existing120-second
+shell install deadline; a stalled routing promise cannot prevent verified fallback.

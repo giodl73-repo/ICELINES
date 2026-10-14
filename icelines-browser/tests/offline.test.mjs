@@ -47,6 +47,31 @@ test('changed deployment asset rejects installation and removes the incomplete c
   const h = harness({ corrupt: true }); await assert.rejects(h.dispatch('install'), /changed during install/);
   assert.equal(h.storage.size, 0);
 });
+
+test('static package routing is scoped to network-only data GETs under the project path', async () => {
+  const baseURL='https://example.test/ICELINES/workbench/';const h=harness({baseURL});const routes=[];
+  await h.dispatch('install',{addRoutes:async rule=>routes.push(JSON.parse(JSON.stringify(rule)))});
+  assert.deepEqual(routes,[[{condition:{urlPattern:baseURL+'data/*',requestMethod:'GET'},source:'network'}]]);
+  assert.equal(h.fetched.length,manifest.assets.length);
+  assert.equal(h.activated(),0);
+  assert.equal((await h.dispatch('fetch',{request:new Request(baseURL+'style.css')})).status,200);
+  assert.equal(await h.dispatch('fetch',{request:new Request(baseURL+'data/package.json.gz')}),undefined);
+});
+
+test('rejected optional routing preserves verified install, but routing cannot waive corrupt shell assets', async () => {
+  const h=harness();let calls=0;
+  await h.dispatch('install',{addRoutes:async()=>{calls++;throw Error('Unsupported route');}});
+  assert.equal(calls,1);assert.equal(h.fetched.length,manifest.assets.length);assert.equal(h.storage.size,1);
+  const corrupt=harness({corrupt:true});
+  await assert.rejects(corrupt.dispatch('install',{addRoutes:async()=>{}}),/changed during install/);
+  assert.equal(corrupt.storage.size,0);
+});
+
+test('stalled optional routing cannot indefinitely block authenticated shell installation', async () => {
+  const h=harness({timers:{setTimeout(callback,ms){if(ms===2000)queueMicrotask(callback);return ms;},clearTimeout(){}}});
+  await h.dispatch('install',{addRoutes:()=>new Promise(()=>{})});
+  assert.equal(h.fetched.length,manifest.assets.length);assert.equal(h.storage.size,1);
+});
 test('root/hash shell reload resolves the cached index under the Pages project path', async () => {
   const h = harness(); await h.dispatch('install');
   const response = await h.dispatch('fetch', { request: new Request('https://example.test/ICELINES/') });

@@ -1,5 +1,10 @@
 # Trace Matrix
 
+CHG-123 candidate: IF-BROWSER-001 / REQ-BROWSER-001 / WP-BW-05 / WP-BW-06 to
+service-worker.template.js optional package routing and offline tests. Actual
+route, integrity/offline/viewport and full-workload/CI gates pending;250 MiB and
+physical Android remain open. No implementation is promoted by this row.
+
 ## Scope
 
 Repo or feature: `icelines` repo-baseline VTRACE adoption.
