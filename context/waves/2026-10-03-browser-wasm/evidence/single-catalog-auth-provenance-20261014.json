@@ -1,0 +1,62 @@
+{
+  "status": "UNADOPTED: no whole-browser benefit in first candidate/control pair; no optimization PR/publication",
+  "source": "dd65a4d10fc7533407dabe5c144d03019a20e8f0",
+  "external_verifier_fix": "61b1062f",
+  "treatment": "Remove repeated raw payload hash only after downloadPackage or loadSaved authenticated the exact buffer; retain size/catalog context and engine validation.",
+  "scope": "One normal candidate-then-control pair,75 packages/eight residents/two905/332 imports/20 queries/restart, original flags/sampler/network observer, no forced GC; no baseline-subtracted acceptance.",
+  "reports": {
+    "candidate": {
+      "file": "single-catalog-auth-candidate-20261014.json",
+      "sha256": "10058ae1a6cd7828c2f3d3b697bbdaeb4f239234b9fd2b5975e1dc43feff3209"
+    },
+    "control": {
+      "file": "single-catalog-auth-control-20261014.json",
+      "sha256": "007d1809137059c2ff0c36c6c8d4075d67ecb3932a9a96d9b1644d455c9d963a"
+    },
+    "refusal": {
+      "file": "single-catalog-auth-refusal-20261014.json",
+      "sha256": "8ef138c0bda58d4e97f4ec51f80fe06fe0e46a9197d96cc86d5d7354d105dbaf"
+    },
+    "context": {
+      "file": "single-catalog-auth-context-20261014.json",
+      "sha256": "c83da368f12d618b6ff9ec8d7343dc0191429c95650138256f81c3d303af6895"
+    },
+    "offline": {
+      "file": "single-catalog-auth-offline-20261014.json",
+      "sha256": "5bcb7b7b797f3dded8ccd64022ef77fae565154b51937f6a0596eb2dd113b8ca"
+    },
+    "viewport": {
+      "file": "single-catalog-auth-viewport-20261014.json",
+      "sha256": "dedd9ab8df8741f0e97da6f9c8f43a9899c45288a038051ad025855ae43e49cb"
+    }
+  },
+  "measurements": {
+    "candidate": {
+      "private_peak_mib": 390.33203125,
+      "blank_mib": 237.51953125,
+      "warm_max_ms": 96.14289999999164
+    },
+    "control": {
+      "private_peak_mib": 390.1328125,
+      "blank_mib": 230.9375,
+      "warm_max_ms": 96.13790000000154
+    }
+  },
+  "candidate_minus_control_private_mib": 0.19921875,
+  "verification": "160 browser units; all75 actual WASM loads; real corruption/context/offline/viewport pass. WASM identical and only main.js differs among frontend modules. Candidate SW template is checkout CRLF while retained control uses LF, a documented packaging difference.",
+  "verifier_failure": "Original verifier normalized authenticated CRLF and refused before browser launch. Failed log retained; separate exact-byte verifier fix and11 tests (new CRLF/mixed regression fails before fix) repair validation without rewriting artifact.",
+  "logs_sha256": {
+    "single-catalog-auth-build.log": "679c4442d82c1d7f9b972e9b7a72cc98790bf5b9ba9b22c4438bbd487d640ad1",
+    "single-catalog-auth-units.log": "08659d51b2e8d9998b4cf1cf1f60fe099f315abb5f5a230d7dc70ff1729c191f",
+    "single-catalog-auth-refusal.log": "28737edcba608574c27210f15a21e9d4cf6c93d8c5e013cbc1b3dbcea9ca411c",
+    "single-catalog-auth-refusal-corrected.log": "3631e49d1f2fe3c3b5d9bb3affd4e7de20192a0ad161428284da917b11241edb",
+    "single-catalog-auth-verifier-regression-before.log": "7cd2f029850997591b9e9499db4a93f013171f297f9358b2f8a0d12c2e6718f1",
+    "single-catalog-auth-verifier-regression-after.log": "0fc7f9dee1d865cf69b398b8ad49c35c91fb7d68edabe7583315087dc12a5de5"
+  },
+  "published_source_unchanged": "5ef015c4d47ebbcee8234eb92f1fe83716b45054",
+  "open_gates": [
+    "250 MiB whole-browser gate FAILED",
+    "Physical Android explicitly deferred"
+  ],
+  "next_action": "Isolate and validate exact-byte verifier repair separately; retain negative performance experiment off master."
+}
