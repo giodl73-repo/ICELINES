@@ -1,0 +1,99 @@
+{
+  "started_at": "2026-10-14T15:11:43.695Z",
+  "completed": true,
+  "host": {
+    "platform": "win32",
+    "arch": "x64",
+    "os_release": "10.0.26310",
+    "cpu": "12th Gen Intel(R) Core(TM) i7-12800HX",
+    "logical_cpus": 24,
+    "ram_bytes": 34042929152
+  },
+  "scope": "Single isolated headless Chromium on this Windows workstation. Includes owned browser/renderer/GPU/utility processes; excludes Node runner, local HTTP server and sampler. Working-set sums may count shared pages more than once. Private-byte sums measure private allocations, not just resident RAM. Sample maxima may miss transient spikes; lifetime working-set peaks are per-process, not concurrent group peaks. No physical-phone or remote-rollback claim.",
+  "sampling": {
+    "requested_interval_ms": 100,
+    "tree_discovery_interval_ms": 500,
+    "actual_median_interval_ms": 193,
+    "actual_max_interval_ms": 921
+  },
+  "packages": [],
+  "imports": [],
+  "warm_query_ms": [],
+  "artifact": {
+    "commit": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+    "shell_build": "e575ec099d635615476610b46ec106b97e83d28b66fc3980bbdcbbf4292c1a36",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "archive": {
+    "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca",
+    "bytes": 149672
+  },
+  "browser": "153.0.8010.12",
+  "served_worker_transformation": {
+    "original_sha256": "92024b6345de8dbf19f546bbecb8d41b532d7cc79ada5f7d255f26aa60f33309",
+    "transformed_sha256": "6ad9081ab98d52ab293c9026581aef5e67394e4d8e351f78c60bca0a87c711cf",
+    "scope": "Diagnostic counters only; retained artifact verified before serving transformed SW. Not production identity or acceptance."
+  },
+  "engine_worker_count": 0,
+  "shell_audit_calls": {
+    "acquire": 1,
+    "reports": 1,
+    "digests": 54
+  },
+  "shell_asset_count": 27,
+  "memory": [
+    {
+      "phase": "blank_browser",
+      "samples": 6,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 235450368,
+      "last_private_bytes": 237076480,
+      "peak_private_bytes": 237076480,
+      "peak_working_set_bytes": 493436928,
+      "peak_sum_lifetime_working_set_bytes": 506032128
+    },
+    {
+      "phase": "startup",
+      "samples": 2,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 294125568,
+      "last_private_bytes": 294162432,
+      "peak_private_bytes": 294162432,
+      "peak_working_set_bytes": 577351680,
+      "peak_sum_lifetime_working_set_bytes": 585854976
+    },
+    {
+      "phase": "idle_settled",
+      "samples": 13,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 293978112,
+      "last_private_bytes": 294391808,
+      "peak_private_bytes": 294531072,
+      "peak_working_set_bytes": 578129920,
+      "peak_sum_lifetime_working_set_bytes": 586481664
+    },
+    {
+      "phase": "diagnostic_target_inventory",
+      "samples": 1,
+      "min_processes": 9,
+      "max_processes": 9,
+      "minimum_private_bytes": 292663296,
+      "last_private_bytes": 292663296,
+      "peak_private_bytes": 292663296,
+      "peak_working_set_bytes": 576569344,
+      "peak_sum_lifetime_working_set_bytes": 586481664
+    }
+  ],
+  "missing_sampled_phases": [],
+  "target_scope": "Startup shell-audit counter diagnostic: transformed minimal/scriptless/unstyled controls are nonfunctional attribution treatments; normal control waits for offline readiness. Five seconds idle, target inventory afterward. Not full-workload acceptance. Original flags/sampler, no forced GC; one run per treatment, baseline variation prevents exact causal subtraction.",
+  "sampled_peak_private_bytes": 294531072,
+  "sampled_peak_working_set_bytes": 578129920,
+  "sampled_private_bytes_over_blank_baseline": 57454592,
+  "provisional_250_mib_target": null,
+  "control": "retained empty workbench, offline shell ready",
+  "finished_at": "2026-10-14T15:12:00.199Z"
+}

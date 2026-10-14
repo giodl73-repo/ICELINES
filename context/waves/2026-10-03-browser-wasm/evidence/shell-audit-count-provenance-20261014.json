@@ -1,0 +1,64 @@
+{
+  "status": "Negative startup hypothesis: no redundant audit observed; no implementation or release change",
+  "source": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+  "reports": {
+    "first": {
+      "file": "shell-audit-count-first-20261014.json",
+      "sha256": "5fc99afde0ab7d53c4f9c03a4bd9ccd1d34bbecc028a046de8d5f9600449a8f3"
+    },
+    "second": {
+      "file": "shell-audit-count-second-20261014.json",
+      "sha256": "00f9c4709faf768badba044d68071d473da30a5e56ce7100b04362276dcf41ef"
+    },
+    "third": {
+      "file": "shell-audit-count-third-20261014.json",
+      "sha256": "486da564c5ef0884346dc08ff9c53fd211d14f8666df1668f25e289585ed9df9"
+    }
+  },
+  "observations": {
+    "first": {
+      "calls": {
+        "acquire": 1,
+        "reports": 1,
+        "digests": 54
+      },
+      "assets": 27,
+      "completed": true,
+      "engine_workers": 0,
+      "target": null
+    },
+    "second": {
+      "calls": {
+        "acquire": 1,
+        "reports": 1,
+        "digests": 54
+      },
+      "assets": 27,
+      "completed": true,
+      "engine_workers": 0,
+      "target": null
+    },
+    "third": {
+      "calls": {
+        "acquire": 1,
+        "reports": 1,
+        "digests": 54
+      },
+      "assets": 27,
+      "completed": true,
+      "engine_workers": 0,
+      "target": null
+    }
+  },
+  "scope": "Three isolated cold single-tab startups on retained published artifact. SW response transformed with acquisition/report/digest counters after retained artifact verification; five-second idle, original browser flags/sampler, no forced GC, no engine worker, null acceptance target. Not production identity, full-workload or mobile proof. Instrumentation/race timing can affect behavior; not a general multi-tab guarantee.",
+  "conclusion": "One27-asset install verification plus one27-asset actual cached-readiness verification in each observed run. No concurrent-duplicate audit opportunity established. Do not skip cached integrity checks to reduce measured memory.",
+  "helpers_sha256": {
+    "target/prepare-shell-audit-counts.py": "4537dbaff920c63e1ebd71977e37f2d76fff61a0176617b737f48e067f0c6284",
+    "target/shell-audit-counts.mjs": "71da7558df71695869821ab15a83d3674f1597004e391db9191e3cb595c86fca"
+  },
+  "next_action": "Review frontend module-loading/initialization cost; bundling is a possible separate experiment requiring generated metadata preservation and full feature/acceptance checks before adoption. No saving proved.",
+  "open_gates": [
+    "250 MiB whole-browser FAILED",
+    "Physical Android explicitly deferred"
+  ]
+}
