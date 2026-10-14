@@ -1,0 +1,61 @@
+{
+  "status": "UNADOPTED; private-byte saving did not repeat in reverse-order pair",
+  "source": "4f850fda874f3a89bb4a435c5819aa1e75c0d908",
+  "treatment": "browser-release opt-level s -> z only",
+  "scope": "Two opposite-order Windows full-workload pairs; original browser flags/sampler/observer, no forced GC. Engine compiler profile differs intentionally; frontend/catalog match.",
+  "checked_build": "passed; actual all75 WASM loads, native/WASM parity corpus and160 browser units",
+  "reports": {
+    "candidate-first": {
+      "file": "wasm-opt-z-candidate-first-20261014.json",
+      "sha256": "a108fe7172b3515be43eac7e2930d5d92b975800075e8c17d62dfab10b66f583"
+    },
+    "control-second": {
+      "file": "wasm-opt-z-control-second-20261014.json",
+      "sha256": "d54fdbd8897ebd1273c33d32480f47959eab7f8747341bda94e71a183fea3cfd"
+    },
+    "control-first": {
+      "file": "wasm-opt-z-control-first-20261014.json",
+      "sha256": "492a52d89371ad7e93e09572e4ca1d7338c93dd3beb2c9fbcc0da2d2c8331c25"
+    },
+    "candidate-second": {
+      "file": "wasm-opt-z-candidate-second-20261014.json",
+      "sha256": "c0f4b5152a36627a41d51422b054e6816af4398ea0125eb0ebad9746036e2103"
+    }
+  },
+  "measurements": {
+    "candidate-first": {
+      "private_mib": 393.75390625,
+      "blank_mib": 227.671875,
+      "warm_max_ms": 92.98450000000594
+    },
+    "control-second": {
+      "private_mib": 407.81640625,
+      "blank_mib": 238.328125,
+      "warm_max_ms": 104.7954000000027
+    },
+    "control-first": {
+      "private_mib": 397.21875,
+      "blank_mib": 232.27734375,
+      "warm_max_ms": 94.01600000000326
+    },
+    "candidate-second": {
+      "private_mib": 405.8828125,
+      "blank_mib": 236.21484375,
+      "warm_max_ms": 100.73759999999311
+    }
+  },
+  "open_gates": [
+    "250 MiB whole-browser target",
+    "Physical Android deferred"
+  ],
+  "wasm_bytes": {
+    "candidate": 640530,
+    "control": 632676
+  },
+  "wasm_sha256": {
+    "candidate": "afc8c4eaa882b56ae951dd6d6d4fa6590e36ceb95eaf7611f5880670b65c8b5a",
+    "control": "4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee"
+  },
+  "checked_build_log_sha256": "3a353adfa90f563df0ab07e6fa69bbd3d40b85341830667ee5d76d89b7d5d198",
+  "compiler_reference": "https://doc.rust-lang.org/cargo/reference/profiles.html#opt-level"
+}
