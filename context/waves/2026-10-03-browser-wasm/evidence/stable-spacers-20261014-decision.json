@@ -1,0 +1,100 @@
+{
+  "candidate_commit": "f56c50bc8b2c20aaaa3e2ae1d8d314b234c2ea85",
+  "decision": "Do not adopt: no repeatable whole-browser private-byte reduction. No PR, CI build or publication.",
+  "scope": "Four normal full-workload runs preserve original sampler, flags, channel, 75 packages, eight residents, two imports, twenty warm queries and restart. No baseline subtraction or forced GC. Extra mutation observer appears only in separate viewport checks.",
+  "build_scope": "Frontend-only candidate reuses exact retained Windows WASM; not a fresh Rust or CI build.",
+  "desktop_acceptance": false,
+  "physical_android": "Deferred by user; untested",
+  "runs": [
+    {
+      "label": "candidate-first",
+      "peak_private_mib": 393.359375,
+      "blank_private_mib": 237.66796875,
+      "warm_median_ms": 62.592100000001665,
+      "warm_max_ms": 92.99259999999776
+    },
+    {
+      "label": "control-second",
+      "peak_private_mib": 383.23046875,
+      "blank_private_mib": 227.734375,
+      "warm_median_ms": 65.76860000000306,
+      "warm_max_ms": 99.83249999998952
+    },
+    {
+      "label": "control-first",
+      "peak_private_mib": 398.64453125,
+      "blank_private_mib": 234.1953125,
+      "warm_median_ms": 64.68154999999388,
+      "warm_max_ms": 95.10119999999006
+    },
+    {
+      "label": "candidate-second",
+      "peak_private_mib": 397.296875,
+      "blank_private_mib": 234.50390625,
+      "warm_median_ms": 68.54660000000149,
+      "warm_max_ms": 99.04469999999856
+    }
+  ],
+  "evidence": {
+    "memory-candidate-first": {
+      "file": "stable-spacers-20261014-memory-candidate-first.json",
+      "sha256": "2fbb717940084dade421b397db22e7ddcdba4370c29373cc23edece1b2d69e8b"
+    },
+    "memory-control-second": {
+      "file": "stable-spacers-20261014-memory-control-second.json",
+      "sha256": "2d4955b5366b451bce1989228c103d4411f622830df4f29ec1c44335ab154ea7"
+    },
+    "memory-control-first": {
+      "file": "stable-spacers-20261014-memory-control-first.json",
+      "sha256": "901b6edbfcb58e2ce013155032cacf136f9409658a114471acfa6c71953a469d"
+    },
+    "memory-candidate-second": {
+      "file": "stable-spacers-20261014-memory-candidate-second.json",
+      "sha256": "8c7613b3de966112fea171dbe0144447c0fa406518764100026e86d895b47713"
+    },
+    "viewport-candidate": {
+      "file": "stable-spacers-20261014-viewport-candidate.json",
+      "sha256": "925d30eca7ba88177d967968f24d9a4a960db195caa797e8d8347be0e6916887"
+    },
+    "viewport-control": {
+      "file": "stable-spacers-20261014-viewport-control.json",
+      "sha256": "48fb932b39f8bd3e86c8766345f1ed4256535f379aef83fe7378ed61809bb20a"
+    },
+    "refusal": {
+      "file": "stable-spacers-20261014-refusal.json",
+      "sha256": "29143159f71f19d9f8550f161aa4717b9deb89ded04eab40cb91db237d9b8b88"
+    },
+    "context": {
+      "file": "stable-spacers-20261014-context.json",
+      "sha256": "e60cf18a1ca5a45cfb649100c3440f0d1246975363b989e92651c76ad7e43542"
+    },
+    "offline": {
+      "file": "stable-spacers-20261014-offline.json",
+      "sha256": "34bbc5be53d90158cffcbaeba7a71fb6ef19e6397d416e59b2c9dea3247f2340"
+    },
+    "print": {
+      "file": "stable-spacers-20261014-print.json",
+      "sha256": "55ff79cb9e820b526cc37859ff70294de864d1aef41fd2120c9aa98c39361d58"
+    },
+    "print-reference": {
+      "file": "stable-spacers-20261014-print-reference.json",
+      "sha256": "11040639dcccbf5a7aaa565b03a4346c419b64c4f7728feefac605c040a1140e"
+    },
+    "print-pdf": {
+      "file": "stable-spacers-20261014-print-pdf.pdf",
+      "sha256": "176457f0f3d740b272eff7a0183750f35069adc63e9fd591698b530cf75aaca1"
+    },
+    "original-regression": {
+      "file": "stable-spacers-20261014-original-regression.log",
+      "sha256": "92d0180537b2176f431b55bf8fd2beaabae0c16d3b3662afc400536dd37a2471"
+    },
+    "build-recipe": {
+      "file": "stable-spacers-20261014-build-recipe.mjs",
+      "sha256": "df315f638715f65a1b5d5844226619db840054d1ff16a4e1f8d00a5d759046d0"
+    },
+    "viewport-recipe": {
+      "file": "stable-spacers-20261014-viewport-recipe.py",
+      "sha256": "92037bdf7f861c8931c82673f9f0a4d7127f7c373db7fc38d65799c6575bc388"
+    }
+  }
+}
