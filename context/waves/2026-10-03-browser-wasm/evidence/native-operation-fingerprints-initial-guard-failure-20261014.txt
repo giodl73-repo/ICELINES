@@ -1,0 +1,19 @@
+Probe report: C:\Users\giodl\.codex\worktrees\browser-wasm\icelines\target\native-operation-fingerprints-hypwz2\report.json
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert.ok(module)
+
+    at file:///C:/Users/giodl/.codex/worktrees/browser-wasm/icelines/target/native-operation-fingerprints.mjs:47:75 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: undefined,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v22.22.3

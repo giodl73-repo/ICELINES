@@ -1,0 +1,42 @@
+{
+  "scope": "Artificial known-operation native allocation probes, not full app workload or resource/latency acceptance. Fresh isolated Chromium per operation, native sampler4096-byte average; no explicit GC/pressure or app modifications.",
+  "evidence": {
+    "report": {
+      "file": "native-operation-fingerprints-report-20261014.json.gz",
+      "sha256": "07d166642efc2d9689b443b12be1ddcaf130f4cef746690a02b03c5c574bc14d",
+      "raw_sha256": "ce74b5b182126096e661849988aaf8868f47908cec22363b6ddfc82772333ba5",
+      "compression": "gzip, full lossless original report"
+    },
+    "summary": {
+      "file": "native-operation-fingerprints-summary-20261014.json",
+      "sha256": "a336eba92d8aa0e7ff266d99fbda5545fa35f4986585a074ea6bebe00ff9aab3"
+    },
+    "runner": {
+      "file": "native-operation-fingerprints-runner-20261014.mjs",
+      "sha256": "0473c6b34362fdcd7e6bd0c154f8eb1598533afce6fe6690db3fbd7afa23e02c"
+    },
+    "summary-recipe": {
+      "file": "native-operation-fingerprints-summary-recipe-20261014.py",
+      "sha256": "eec52a70e25983a83c4352a224cfd0cbe5980f2c7fab45e8d24de8b6c9c8e7ab"
+    },
+    "initial-guard-failure": {
+      "file": "native-operation-fingerprints-initial-guard-failure-20261014.txt",
+      "sha256": "4cbee2687c0046af72ad1d8700bfacc405e981ba56381f52b7a31323d6cecfe6"
+    },
+    "initial-incomplete-report": {
+      "file": "native-operation-fingerprints-initial-incomplete-report-20261014.json",
+      "sha256": "cf935b15398268456609ab61c24810b65eb2e322f295bf33aee77a2c65ae6686"
+    }
+  },
+  "operations": "No-op control;8 typed arrays and8 cloned buffers totaling2211840 bytes each;5000 DOM spans/text nodes;1 MiB incompressible gzip through8 KiB input writes and bounded output, exact SHA checked after sampler stops. Inputs/framework warmed before sampling.",
+  "identity": "Chrome module debug UUID/image size must match historical profile when module is present. Control has0 samples and no module mapping, kept as missing coverage rather than zero-allocation proof. Other probes produce8/18/39/136 samples.",
+  "comparison": "Exact normalized module name/debug UUID/relative-PC prefixes of4/6/8 frames. Every historical sample enters one category per depth; unmapped and ambiguous paths remain separate. At depth8,13 of272 historical samples share a typed-array/gzip prefix;259 unmatched. No internal routine name/instance owner/leak inference.",
+  "sampling_limits": "Operation snapshots and historical profile use different sampling intervals; raw counts/weights are not compared as exact memory totals. Transient/freed or unsampled allocations may be absent. Shared paths can serve many operation/object kinds, so matches do not establish owners or removable bytes. Historical source is not current-release acceptance.",
+  "fixture_failure": "Initial control guard wrongly required a Chrome module despite0 samples. Failure/incomplete report preserved; guard now records missing module coverage and checks identity only when present. Corrected probe runs5 operations; no app correction or full workload rerun.",
+  "decision": "Retain limited allocator-path correlations; do not delete data or modify the app based on shared prefixes. Native frame ownership remains unresolved; no optimization/CI/PR/publication.",
+  "remaining": [
+    "250 MiB whole-browser target unmet",
+    "Physical Android deferred by user"
+  ],
+  "production_unchanged": true
+}

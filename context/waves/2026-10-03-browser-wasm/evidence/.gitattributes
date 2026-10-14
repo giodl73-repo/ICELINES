@@ -1,3 +1,6 @@
 # Reports are archival bytes; provenance hashes must survive every checkout.
 # Some original reporters emit LF and others CRLF. Preserve both exactly.
 *.json -text whitespace=cr-at-eol
+native-operation-fingerprints-*.py -text
+native-operation-fingerprints-*.mjs -text
+native-operation-fingerprints-*.txt -text whitespace=cr-at-eol

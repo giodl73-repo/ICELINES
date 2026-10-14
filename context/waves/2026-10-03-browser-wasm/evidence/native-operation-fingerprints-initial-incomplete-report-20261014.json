@@ -1,0 +1,6 @@
+{
+  "completed": false,
+  "scope": "Artificial isolated allocator-path probes, not app workload/resource/latency acceptance. Extra native sampling at4096-byte intervals, no explicit GC/pressure commands. Stack matches identify shared native call paths only, not object ownership, leaks or removable bytes.",
+  "provisional_250_mib_target": null,
+  "operations": []
+}
