@@ -43,8 +43,10 @@ def verify(root: Path, commit: str, build: str) -> dict:
     wasm = (root / "pkg/icelines_wasm_bg.wasm").read_bytes()
     if not wasm.startswith(b"\0asm\x01\0\0\0") or digest(wasm) != info["wasm_sha256"]:
         raise ValueError("WASM identity mismatch")
-    worker = (root / "sw.js").read_text(encoding="utf-8")
-    embedded = re.search(r"^const manifest = (.+);$", worker, re.MULTILINE)
+    # Hash the original UTF-8 bytes, including checkout/build line endings.
+    # read_text's universal-newline conversion changes authenticated CRLF bytes.
+    worker = (root / "sw.js").read_bytes().decode("utf-8")
+    embedded = re.search(r"^const manifest = (.+);\r?$", worker, re.MULTILINE)
     if embedded is None or json.loads(embedded.group(1)) != shell:
         raise ValueError("worker manifest mismatch")
     template = worker[:embedded.start(1)] + "__SHELL_MANIFEST__" + worker[embedded.end(1):]
