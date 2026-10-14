@@ -678,3 +678,31 @@ imports,20 warm queries, eight residents and restart under the original sampler
 and browser flags. This fails to reproduce the first pair's apparent saving.
 Compression is not adopted; the confirmed2.625 MiB linear saving does not justify
 slower imports and representation complexity. Both whole-browser targets fail.
+
+## Query JSON transport experiment
+
+Isolated bccf9d5a passes Rust query JSON unchanged through the worker boundary,
+then parses once in EngineClient before resolving callers. This removes the
+worker's parsed result tree and its structured clone; complete query semantics,
+exports, native engine and eight resident windows remain unchanged. Malformed
+encoded responses fail the engine and reject all pending requests. Type checking
+and152 units pass, including Unicode/null preservation and protocol recovery.
+Actual browser checks cover all933 ranks/names/exports, keyboard navigation,
+AX, print, failure/retry and77 goalies. Offline process reopening passes.
+
+A clean sequential candidate/control pair with the original normal workload
+peaks441.52 / 436.77 MiB private bytes; blank229.28 / 228.03. All75 packages,
+two archive imports,20 full queries and restart complete. Same WASM bytes,
+original browser flags/sampler, no forced GC or workload reduction. This does
+not establish a saving; the prototype is retained locally and not adopted.
+The250 MiB requirement remains unmet and physical Android remains deferred.
+Raw reports and exact source/artifact provenance use json-transport prefixes.
+
+The checked-in offline runner initially fails by reading virtual spacer rows
+as player rows. The failed report is retained. The runner now reads the full
+result count, validates bounded viewport rows after offline reopening, and uses
+Show all players for the complete baseline/filter comparison. It also passes
+against the retained previous classic-table release. No application runtime is
+changed by this verification repair, and screenshots capture the viewport rather
+than allocating a67000px-tall full-page image. Full print coverage remains in
+the dedicated viewport acceptance check.

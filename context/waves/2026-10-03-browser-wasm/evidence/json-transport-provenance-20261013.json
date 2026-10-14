@@ -1,0 +1,57 @@
+{
+  "commit": "bccf9d5a6c405842ab3e9fffdc9424c393dbc3f0",
+  "branch": "codex/wasm-json-transport-experiment",
+  "adopted": false,
+  "decision": "No measured whole-browser saving; restore published runtime.",
+  "scope": "Query only: Rust JSON is sent through worker unchanged and parsed by EngineClient before resolving caller. No engine/query/filter changes.",
+  "unit_tests": 152,
+  "type_check": true,
+  "measurements": [
+    {
+      "label": "candidate",
+      "completed": true,
+      "peak_private_mib": 441.5234375,
+      "blank_private_mib": 229.27734375,
+      "imports": [
+        {
+          "season_type": "regular",
+          "import_and_render_ms": 191.81530000000203,
+          "rows": 905
+        },
+        {
+          "season_type": "playoff",
+          "import_and_render_ms": 163.57179999999062,
+          "rows": 332
+        }
+      ],
+      "max_warm_query_ms": 73.92269999999553
+    },
+    {
+      "label": "control",
+      "completed": true,
+      "peak_private_mib": 436.7734375,
+      "blank_private_mib": 228.03125,
+      "imports": [
+        {
+          "season_type": "regular",
+          "import_and_render_ms": 216.4131999999954,
+          "rows": 905
+        },
+        {
+          "season_type": "playoff",
+          "import_and_render_ms": 176.99259999999776,
+          "rows": 332
+        }
+      ],
+      "max_warm_query_ms": 85.50720000000729
+    }
+  ],
+  "limitations": [
+    "One clean candidate/control pair; not a statistical estimate.",
+    "Original sampler, browser flags, all75 packages, two archive imports,20 full queries,8 resident seasons and restart; no forced GC.",
+    "250 MiB target fails; physical Android deferred.",
+    "Original offline harness failed because it read virtual spacer rows as players; failed report retained, viewport-aware harness passed."
+  ],
+  "candidate_wasm_sha256": "4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee",
+  "control_wasm_sha256": "4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee"
+}
