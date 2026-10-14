@@ -4,6 +4,27 @@ Updated: 2026-10-13. Requirement: REQ-BROWSER-001; work packages WP-BW-01..06.
 This reconciles implemented features with the plan's remaining acceptance gates.
 It does not declare the full plan complete.
 
+## Merged changes awaiting master validation
+
+PR93's catalog-context guard is merged as b29ba81c. Its 29 CI checks and exact
+master artifact verification, six catalog refusal cases, viewport and offline
+reopening pass. PR94's bounded gzip decoder is merged as e58a3bfc after 29 checks
+and exact preview a019be7c browser/offline/refusal validation. Master browser run
+38511436965 and native run 38511437021 are pending. Neither change is published;
+the current public release below remains 2e265236.
+
+The PR94 CI preview's full-workload private peak is 388.95 MiB versus retained
+master control 406.71 MiB, with blank baselines 227.36/236.32 MiB. This additional
+pair uses identical WASM/catalog bytes and unchanged flags, sampler and observer,
+all 75 packages, eight residents, both imports, 20 queries and restart, no forced
+GC. Local Windows pairs earlier observed 11.29/16.03 MiB reductions; this pair
+observes 17.76 MiB. Baseline variation remains a limitation. The 250 MiB gate
+still fails; Android remains deferred by the user.
+
+The digest-view experiment is unadopted: one full-workload pair measured
+399.05 MiB candidate versus 395.33 MiB control. Its code and reports remain on
+the separate local experiment branch, not the merged implementation.
+
 ## Current release
 
 - Validation source: `2e265236f3e71fd2dbe6ecab74e64b296a553465`, merged PR #92.
@@ -184,7 +205,7 @@ viewport-print evidence; current public release and full-goal gates are unchange
 The earlier11 accented-name PDF mismatch came from reading the UTF-8 reference
 using Windows CP1252, not from damaged app/PDF names. The original failed bytes
 are retained as `.raw.cp1252`; the old JSON is transcoded to validUTF-8 and marked
-superseded. Exact current master PDF passes all933 ranks/names, including accents,
+superseded. Exact published 2e265236 PDF passes all933 ranks/names, including accents,
 with two parsers,24 pages and no text outside bounds. The opt-in permanent
 `scripts/verify-browser-print.py` reads/writes strictUTF-8. This is machine text
 inspection, not physical-printer or screen-reader acceptance.

@@ -1,0 +1,26 @@
+{
+  "commit": "b29ba81c544421d3a0111c7bc5cbf32d99855fb0",
+  "offline": {
+    "file": "resident-catalog-context-master-offline-20261013.json",
+    "sha256": "e694ee80108db0189cc440edc3ece9860c06a1d92e3b95676d8c383be728f48e"
+  },
+  "artifact_id": 11869615019,
+  "viewport": {
+    "file": "resident-catalog-context-master-viewport-20261013.json",
+    "sha256": "f6dc2d509ef4df0b0e0e6d391b59cbf18b8b1065cd7a51b73a7d21f0195a2b60"
+  },
+  "catalog_context": {
+    "file": "resident-catalog-context-master-catalog-context-20261013.json",
+    "sha256": "2db887e449427a68201e9e42442617252378ffe7f6d5192ddc4701c78a8a6883"
+  },
+  "artifact": "target/wasm-validation-b29ba81c",
+  "native_run": 38508479294,
+  "publication": "not published; public remains 2e265236",
+  "gates": [
+    "250 MiB unmet",
+    "Android deferred"
+  ],
+  "browser_run": 38508479248,
+  "native_ci": "success; 28 jobs",
+  "browser_ci": "success"
+}

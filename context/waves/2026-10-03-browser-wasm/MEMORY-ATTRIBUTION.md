@@ -1,6 +1,6 @@
 # Desktop allocation investigation — 2026-10-12
 
-## Latest local candidate: single-buffer gzip expansion (2026-10-13)
+## Merged single-buffer gzip expansion (2026-10-13)
 
 Clean master b29ba81c includes the merged PR93 catalog-context guard.
 Public release remains 2e265236; neither this prototype nor PR93 is published here.
@@ -30,9 +30,21 @@ reopening with fresh query/detail.
 
 Evidence: `evidence/stream-expansion-*-20261013.json` and
 `signals/roles/check/stream-expansion-roles-check-2026-10-13.md`.
-Reviewed-head CI artifact checks remain pending. The 250 MiB whole-browser
-requirement remains unmet. Android is deferred by the user. Sections below
-describe historical artifacts and diagnostics.
+PR94 merged as e58a3bfc after all29 checks passed. Exact preview a019be7c verifies
+181 files/75 packages and passes viewport, corrupt-transport/export/retry and
+offline reopening. Its full-workload memory comparison with retained b29ba81c
+master measured 388.95 versus406.71 MiB, baselines227.36/236.32 MiB and maximum
+warm queries83.23/79.16 ms. WASM/catalog bytes match. The observed17.76 MiB raw
+difference remains a local observation with baseline variation, not a waiver.
+Evidence: stream-expansion-ci-* reports and provenance. Master e58a3bfc runs
+38511436965/38511437021 are pending; public remains2e265236.
+
+A further digest-copy removal experiment834a3f37 passed157 units and the full
+workload but measured399.05 MiB versus395.33 MiB control (baselines229.51/231.79).
+No observed saving in this one pair: unadopted, on a separate local branch.
+
+The 250 MiB requirement remains unmet. Android is deferred by the user.
+Sections below describe historical artifacts and diagnostics.
 
 The provisional 250 MiB whole-browser target remains exceeded. Measurements
 below are Windows private allocations and summed working sets, not exact
