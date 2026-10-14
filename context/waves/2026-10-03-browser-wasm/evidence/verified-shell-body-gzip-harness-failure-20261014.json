@@ -1,0 +1,32 @@
+{
+  "started_at": "2026-10-14T11:27:09.096Z",
+  "verified": false,
+  "scope": "Isolated Chromium process close/reopen with offline network control; saved versus unsaved seasons, fresh query and player detail. Not physical-phone, total-memory or remote-rollback proof.",
+  "evidence": {},
+  "profile_retained": "C:\\Users\\giodl\\AppData\\Local\\Temp\\icelines-acceptance-000gqv",
+  "retained_artifact": {
+    "commit": "69fe8c19b3499040e6e8c49b4addbb5e303353f4",
+    "shell_build": "5970bfd5b4ed3b4d20351485d26bf7e8563c4d41e1c594a3d02b00a88374b68d",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "http_content_encoding": "gzip for every served file; cached worker/module/body decoding exercised",
+  "url": "http://127.0.0.1:63774/ICELINES/workbench/",
+  "browser": "153.0.8010.12",
+  "build": {
+    "schema_version": 1,
+    "commit": "69fe8c19b3499040e6e8c49b4addbb5e303353f4",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "782009af96f7a4c5fbd17a46e0716d4b6a300d4e85286a65c2b92e5cdd7f12ed"
+  },
+  "saved_package": "20252026-regular",
+  "unsaved_package": "20242025-regular",
+  "error": "Error: expect(locator).toHaveAttribute(expected) failed\n\nLocator: locator('#rows')\nExpected pattern: /^[1-9]\\d*$/\nReceived string:  \"\"\nTimeout: 60000ms\n\nCall log:\n  - Expect \"toHaveAttribute\" locator('#rows') with timeout 60000ms\n  - waiting for locator('#rows')\n    120 × locator resolved to <tbody id=\"rows\"></tbody>\n        - unexpected value \"null\"\n",
+  "finished_at": "2026-10-14T11:28:14.473Z"
+}

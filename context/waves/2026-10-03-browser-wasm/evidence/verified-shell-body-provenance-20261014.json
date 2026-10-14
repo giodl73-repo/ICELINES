@@ -1,0 +1,68 @@
+{
+  "status": "UNADOPTED: first normal pair shows no whole-browser memory reduction; no PR/publication",
+  "source": "69fe8c19b3499040e6e8c49b4addbb5e303353f4",
+  "base": "39198dd71fe7abc71faed52a6331106bbad3e9e9",
+  "published_source_unchanged": "5ef015c4d47ebbcee8234eb92f1fe83716b45054",
+  "treatment": "Service worker consumes response once for verification and caches authenticated decoded bytes in a new Response; removes content-encoding and replaces content-length; preserves MIME/status/other headers.",
+  "scope": "One candidate-then-control pair; full75/eight residents/two905/332 imports/20 committed queries/restart; original flags/sampler/network observer; no forced GC; no baseline-subtracted acceptance. Not independent reverse-order pairs, public update/recovery or phone proof.",
+  "reports": {
+    "candidate": {
+      "file": "verified-shell-body-candidate-20261014.json",
+      "sha256": "b3a2354c27d837b10c0f93dd720177c47f1927c4011d94102e1b93f119252952"
+    },
+    "control": {
+      "file": "verified-shell-body-control-20261014.json",
+      "sha256": "3d8175ee3d16a053037f02ac393de56dabab24aafcf9c3ef3c8c5ab7e1014988"
+    },
+    "viewport": {
+      "file": "verified-shell-body-viewport-20261014.json",
+      "sha256": "cc9de3fa42065086c245f256ea5a5231fca8cd10b25b0465c0c28570041df20b"
+    },
+    "gzip-offline": {
+      "file": "verified-shell-body-gzip-offline-20261014.json",
+      "sha256": "b5f0a0df97f71cf70ebdd7cdfcf5455ea1c306cb902ad4de0d5f93a77bd582da"
+    },
+    "gzip-harness-failure": {
+      "file": "verified-shell-body-gzip-harness-failure-20261014.json",
+      "sha256": "7d089fccc1f5b976653118033961eee8733d140e48059d391fa4aeae72c5a771"
+    }
+  },
+  "measurements": {
+    "candidate": {
+      "private_peak_mib": 396.359375,
+      "blank_mib": 235.5234375,
+      "startup_mib": 279.20703125,
+      "warm_max_ms": 96.48500000000058
+    },
+    "control": {
+      "private_peak_mib": 389.01953125,
+      "blank_mib": 231.703125,
+      "startup_mib": 278.578125,
+      "warm_max_ms": 89.69200000001001
+    }
+  },
+  "candidate_minus_control_private_mib": 7.33984375,
+  "engine_sha256": "782009af96f7a4c5fbd17a46e0716d4b6a300d4e85286a65c2b92e5cdd7f12ed",
+  "engine_and_frontend_byte_identical_to_control": true,
+  "units": "161 passed. Earlier new header regression test against stale baseline dist failed as expected; rebuilt candidate passes.",
+  "harness_failure": "Initial HTTP test double-compressed canonical .json.gz packages; extra wire bytes triggered the existing advertised-byte limit. Failed report/log retained. Corrected helper applies HTTP gzip to shell assets and leaves canonical gzip packages unchanged; process-close/offline-reopen passes.",
+  "helper_sha256": {
+    "target/prepare-gzip-http-offline.py": "c725eda39af2028ef0edfc2db7492b1f7871294816d9c3a9889af54fd2b5f925",
+    "target/gzip-http-offline-reopen.mjs": "5267a4e027406073bb414e2abb7687fbc2efb7bc073cd5ea85d30fe2e26d88d5"
+  },
+  "logs_sha256": {
+    "verified-shell-body-build.log": "f960a5a2b987c46c8b2b1ec51d8820af8a2ff45c3fd3a39b387b90323980bf1d",
+    "verified-shell-body-offline-units.log": "539f04241c91062d3d81d98b595d532b7eefd185304b2b690fab644c818755aa",
+    "verified-shell-body-final-units.log": "09451fa33755432fc57a92da1080e53a87d3f849852498d4b00fa8931264814c",
+    "verified-shell-body-gzip-offline.log": "d3c23579ecf155fddbd9dfc928934ca7e39816f37885cff961850fcba6ee508e",
+    "verified-shell-body-gzip-offline-corrected.log": "026b6773363ed0d041182f6401e917c989838047dc94675933706a34f1f1442a",
+    "verified-shell-body-viewport.log": "a0c967ca191707014a478485460bd6cac0d4d689e987fce76b3ea4340de0426d",
+    "verified-shell-body-memory-candidate.log": "5f34af3019cd006ebff44af87c5224c38bfdc44e8f196462f8acb1c411f4b3a7",
+    "verified-shell-body-memory-control.log": "a044476f5d6378b9a609a50ec5b20f0ba104844da32a92e8ec412acc373e641d"
+  },
+  "open_gates": [
+    "250 MiB whole-browser target FAILED",
+    "Physical Android deferred"
+  ],
+  "next_investigation": "Attribute cold-start script/offline preparation allocations without disabling offline capability or altering acceptance flags/workload. No further saving is proven."
+}
