@@ -1,0 +1,68 @@
+{
+  "scope": "Clean local integrated build candidate, not publication, memory acceptance or physical Android proof. CI and full clean artifact memory comparisons pending.",
+  "source_commit": "ed60eedc5ecdfe56949aacd6cb70c07a1b356e3d",
+  "build_info": {
+    "schema_version": 1,
+    "commit": "ed60eedc5ecdfe56949aacd6cb70c07a1b356e3d",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118",
+      "esbuild": "0.28.2"
+    },
+    "frontend": {
+      "entry": "src/main.js",
+      "format": "bundled-esm",
+      "target": "es2022"
+    },
+    "wasm_sha256": "782009af96f7a4c5fbd17a46e0716d4b6a300d4e85286a65c2b92e5cdd7f12ed"
+  },
+  "shell_build": "28849482056e3281b618082e1b0060308d13f9b07b00d7ed06251071ff0044a0",
+  "evidence": {
+    "context": {
+      "file": "frontend-bundle-build-context-20261014.json",
+      "sha256": "bb28b9cb8620053b30de922299d138bd9970b38dc6c1feb8e652f21fe79573d2"
+    },
+    "refusal": {
+      "file": "frontend-bundle-build-refusal-20261014.json",
+      "sha256": "1c1484aad9ea3a23b0e9c41f5be5671bea7667f80ea490beb0b13be54277cc62"
+    },
+    "offline": {
+      "file": "frontend-bundle-build-offline-20261014.json",
+      "sha256": "0f6479180880c97d60258fee8d62eebeb3c41ab48de130bee5d31bd56dd65afd"
+    },
+    "viewport": {
+      "file": "frontend-bundle-build-viewport-20261014.json",
+      "sha256": "d4e2493c48632ac35a376815fa35144d9c2e3256fba9af512d9c8078730a2efa"
+    },
+    "print": {
+      "file": "frontend-bundle-build-print-20261014.json",
+      "sha256": "ca0ffb09da47137662186156065b5cc2e0efcf03decc4a85c3d980cac1cd6d5f"
+    },
+    "pdf": {
+      "file": "frontend-bundle-build-pdf-20261014.pdf",
+      "sha256": "310d451bcfe42da72ed9102621da97b516994bd64a8f00dec4474ce1dfff68ff"
+    },
+    "print-reference": {
+      "file": "frontend-bundle-build-print-reference-20261014.json",
+      "sha256": "11040639dcccbf5a7aaa565b03a4346c419b64c4f7728feefac605c040a1140e"
+    },
+    "fingerprint": {
+      "file": "frontend-bundle-build-fingerprint-20261014.json",
+      "sha256": "05540cc4b7b992e2a995ad3da6794885500dbe682a46988a2ad9499573c51310"
+    }
+  },
+  "browser_units": 165,
+  "native_distributed_wasm_parity_cases": 270,
+  "production_unchanged": true,
+  "pr": "https://github.com/giodl73-repo/ICELINES/pull/105",
+  "pending": [
+    "CI artifact",
+    "CI artifact correctness and executing identity",
+    "full artifact memory comparisons",
+    "250 MiB whole-browser acceptance",
+    "physical Android (deferred by user)"
+  ]
+}

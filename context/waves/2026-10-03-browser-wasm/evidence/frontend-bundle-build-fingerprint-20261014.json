@@ -1,0 +1,17 @@
+{
+  "verified": true,
+  "scope": "Actual executing bundled main source and WASM bytecode fingerprints; extra debugger observer, not normal memory measurement. Not memory or phone acceptance.",
+  "candidate": {
+    "main_sha256": "4f1272b11c324c071b2d0238e08bfb6198f5a3db8b7675847825719df55a79ec",
+    "inlined_modules_not_separately_executed": true,
+    "wasm": {
+      "verified": true,
+      "scope": "Debugger bytecode from the one owned engine worker; additional observer, not memory acceptance.",
+      "worker_url": "http://127.0.0.1:51137/ICELINES/workbench/src/worker.js",
+      "wasm_script_url": "http://127.0.0.1:51137/ICELINES/workbench/pkg/icelines_wasm_bg.wasm",
+      "bytes": 632770,
+      "sha256": "782009af96f7a4c5fbd17a46e0716d4b6a300d4e85286a65c2b92e5cdd7f12ed",
+      "expected_sha256": "782009af96f7a4c5fbd17a46e0716d4b6a300d4e85286a65c2b92e5cdd7f12ed"
+    }
+  }
+}
