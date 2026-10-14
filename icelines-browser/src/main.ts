@@ -30,6 +30,7 @@ const keepUpdated = element<HTMLInputElement>('keep-updated');
 let catalog: CatalogEntry[] = [];
 let active: Dataset | undefined;
 const resident = new Map<string, Dataset>();
+const residentNodes = new Map<string, { row: HTMLLIElement; label: HTMLSpanElement; button: HTMLButtonElement }>();
 let saved: SavedDatasetEntry[] = [];
 let librarySequence = 0;
 let result: QueryResult | undefined;
@@ -183,17 +184,39 @@ async function activate(bytes: Uint8Array, id: string, policy = false): Promise<
 }
 function renderResidentLibrary(): void {
   element('resident-count').textContent = `(${resident.size}/8)`;
-  const node = element('resident-library'); node.replaceChildren();
-  for (const dataset of resident.values()) {
-    const row = document.createElement('li');
-    const label = document.createElement('span');
-    label.textContent = `${dataset.metadata.season} · ${dataset.metadata.season_type} · ${dataset.metadata.source}${active?.revision === dataset.revision ? ' · selected' : ''}`;
-    const button = document.createElement('button'); button.textContent = 'Use in-memory season';
-    button.disabled = active?.revision === dataset.revision || routing || recovering || engineUnavailable;
-    button.onclick = () => { void perform(async () => { await activateResident(dataset); status('Selected in-memory season. Saved copies are unchanged.'); }); };
-    row.append(label,button); node.append(row);
+  const node = element('resident-library');
+  for (const [revision, nodes] of residentNodes) {
+    if (!resident.has(revision)) {
+      nodes.button.onclick = null; nodes.row.remove(); residentNodes.delete(revision);
+    }
   }
-  if (!resident.size) node.textContent = 'No seasons in this tab yet.';
+  if (!resident.size) {
+    if (node.textContent !== 'No seasons in this tab yet.') node.textContent = 'No seasons in this tab yet.';
+    return;
+  }
+  if (!residentNodes.size) node.replaceChildren();
+  let cursor = node.firstElementChild;
+  for (const dataset of resident.values()) {
+    let nodes = residentNodes.get(dataset.revision);
+    if (!nodes) {
+      const row = document.createElement('li');
+      const label = document.createElement('span');
+      const button = document.createElement('button'); button.textContent = 'Use in-memory season';
+      const revision = dataset.revision;
+      // Resolve the current record instead of retaining an evicted dataset.
+      button.onclick = () => { void perform(async () => {
+        const current = resident.get(revision);
+        if (!current) throw new Error('missing data: season is no longer in memory');
+        await activateResident(current); status('Selected in-memory season. Saved copies are unchanged.');
+      }); };
+      row.append(label, button); nodes = { row, label, button }; residentNodes.set(revision, nodes);
+    }
+    const label = `${dataset.metadata.season} · ${dataset.metadata.season_type} · ${dataset.metadata.source}${active?.revision === dataset.revision ? ' · selected' : ''}`;
+    if (nodes.label.textContent !== label) nodes.label.textContent = label;
+    nodes.button.disabled = active?.revision === dataset.revision || routing || recovering || engineUnavailable;
+    if (nodes.row !== cursor) node.insertBefore(nodes.row, cursor);
+    cursor = nodes.row.nextElementSibling;
+  }
 }
 async function activateResident(dataset: Dataset): Promise<void> {
   cancelAcquisition(); const generation = engine.changeContext();
