@@ -1,0 +1,72 @@
+{
+  "scope": "Read-only reanalysis of previously retained historical extra-observer traces, not current production measurement or acceptance.",
+  "acceptance": null,
+  "finding": "Compositor cc/resource_memory size is 7.3125 MiB at package 1 and remains unchanged through package 75. GPU shader cache stays about 0.176 MiB. These reported categories do not explain a growing season-dependent graphics allocation. OS GPU private bytes fluctuate; categories overlap and omit unreported allocations.",
+  "decision": "No graphics/CSS optimization or browser flag change is justified by these dumps. No deployment change. Continue targeting retained renderer allocations; fixed 250 MiB requirement remains open.",
+  "limitations": [
+    "GPU resources may be shared among app and browser UI; PID membership is not application ownership.",
+    "Latest OS sample is not simultaneous with trace dump.",
+    "Startup graphics resources predate engine loading but were not measured with a scriptless control here.",
+    "Sampled checkpoints do not bound intervening transient peaks.",
+    "Do not add hierarchical sizes, use effective_size as complete ownership, subtract baseline, or waive the acceptance gate."
+  ],
+  "evidence": {
+    "historical-report": {
+      "file": "gpu-allocation-attribution-20261014-historical-report.json",
+      "sha256": "94ad9c1e6fbe230be3436e731b6dd6807df7ad6c112cdc1b378141c009083522"
+    },
+    "summary": {
+      "file": "gpu-allocation-attribution-20261014-summary.json",
+      "sha256": "47eb7239b71754b89326532202b7829cefb197bbe0f8e0949f34cec462e5f300"
+    },
+    "recipe": {
+      "file": "gpu-allocation-attribution-20261014-recipe.py",
+      "sha256": "6d9199701f08336070bf6c4f4704e8f56c0fa28dd7e6da1ab4e36533e7112023"
+    },
+    "ready_before_engine": {
+      "file": "gpu-allocation-attribution-20261014-ready_before_engine-trace.json.gz",
+      "sha256": "158227d4bebde6a9d96b2fb328fe9edca13b362c108bb23245fb86d74a0c3ae0",
+      "expanded_sha256": "fa3798b9b56968eb306ddfb5f45b27275b0c268f89f6d4c90d22cf826a62667c"
+    },
+    "loaded_1": {
+      "file": "gpu-allocation-attribution-20261014-loaded_1-trace.json.gz",
+      "sha256": "51dcccf0b635f380980387facbc87ab19ee2ef674d21a0d2e016e98d673fb5d3",
+      "expanded_sha256": "76660f6847fecd282b3dfe70b94d57a25982f337a811ca9b778879ac6e8f26c2"
+    },
+    "loaded_8": {
+      "file": "gpu-allocation-attribution-20261014-loaded_8-trace.json.gz",
+      "sha256": "c3f3c9d238eac895626727c0a38d90f9dc6b8d8c9ffb3264f4bbf4e2955d1649",
+      "expanded_sha256": "b9eca63bd8b0fbbbf656b3b7cbcedb636e7251bb63b52d04ce4dd63e67c848a0"
+    },
+    "loaded_10": {
+      "file": "gpu-allocation-attribution-20261014-loaded_10-trace.json.gz",
+      "sha256": "e0d4bec9240bbe7a3de92f444e631832c645b9d1110c38a67d224d362098febb",
+      "expanded_sha256": "46b7d06ef1d0c05c2a97a724b526c2ffb14cc0754f2002b837e880f5555129d4"
+    },
+    "loaded_11": {
+      "file": "gpu-allocation-attribution-20261014-loaded_11-trace.json.gz",
+      "sha256": "9694f8d7b0ea64aff87721ba0abc9386c27b6608a88cce86cabfda7c019e0013",
+      "expanded_sha256": "452da289f9e0f498b2291591e715e19fc1a8bc49dcc7886b0ae6d4875ab30675"
+    },
+    "loaded_26": {
+      "file": "gpu-allocation-attribution-20261014-loaded_26-trace.json.gz",
+      "sha256": "93b31fd6fe95a4fa24068c474e97ef96ce9059140d8381c9e2b7d326ef822aea",
+      "expanded_sha256": "d41f3b5058dd21cae79ed8abdab09c18e4afdc35e3d8a4bad40cbaadf26ee0b1"
+    },
+    "loaded_75": {
+      "file": "gpu-allocation-attribution-20261014-loaded_75-trace.json.gz",
+      "sha256": "107472967bb7b6f2eac1dc43afb4ce8993142d715dd27f0ac553fe91a2884e1b",
+      "expanded_sha256": "432f1012826a1b981a332640dd4257c8e6c3234f8852562930be90aadb1726e9"
+    },
+    "after_twenty_queries": {
+      "file": "gpu-allocation-attribution-20261014-after_twenty_queries-trace.json.gz",
+      "sha256": "dd20c170ba182bd3723a042c290664443777acef780faf9a05f2781c9aa0d9b5",
+      "expanded_sha256": "3c394a5b2ea76d9d06baae91a2b53c121ef4c14a17b14261d0660f6cf5d2e892"
+    },
+    "after_restart": {
+      "file": "gpu-allocation-attribution-20261014-after_restart-trace.json.gz",
+      "sha256": "3a3aa99319647c201f24b50f519a19def93b2879f25d421a8a2556a4dc1a4810",
+      "expanded_sha256": "2c8f5292f899a4c54042d3143b09c6f3a946ad405f1bfc5b0bb2192c51844c29"
+    }
+  }
+}
