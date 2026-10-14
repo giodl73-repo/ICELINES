@@ -616,3 +616,30 @@ No saving is established and the experiment is not adopted or published.
 The stable generated artifact and runtime source are restored. Exact candidate,
 control, browser and initial failed traversal reports use contained-scroll prefixes.
 The250 MiB requirement remains unmet; physical phone remains deferred.
+
+## Bare actual-worker diagnostic
+
+Minimal HTML serves the unchanged retained worker/WASM. It loads all75 packages,
+checks full shared-engine query counts/context and eight residents, imports both
+official archive season types (905/332), executes20 full worker queries and restarts
+the worker. It uses the original browser flags, owned-process sampler and network
+observation, without forced GC. It omits UI rendering, main package-metadata
+validation/library retention, offline shell/service worker and persistence.
+Those lifecycle and cadence differences mean this is not normal acceptance.
+
+Observed private peak342.21 MiB; blank229.13 MiB. Removing the workbench UI does not
+bring this tested configuration below250 MiB. This supports investigating worker,
+acquisition and browser-native allocations beyond table styling, but is not a
+formal lower bound or proof that other implementations cannot meet the target.
+An initial completed-operation run lacks a warm-query sample and is retained as
+incomplete. The corrected diagnostic holds the warm phase for two OS samples after
+the20-response burst; short-lived peaks can still be missed. Budget declaration
+is deliberately null, and the normal445–447 MiB result remains the acceptance
+comparison. Raw reports/provenance use bare-worker prefixes.
+
+Current normal fixture timings are separately audited:20 committed warm-query
+samples median66.87/max96.40 ms, and a matching current control median66.88/max77.26
+ms on this workstation. No mobile timing inference. The plan/current feature table
+now points to actual public4d1f513e publication/rollback/offline evidence instead
+of obsolete pending/current E0741daa notes. The250 MiB and physical-device gates
+remain unchanged and open.

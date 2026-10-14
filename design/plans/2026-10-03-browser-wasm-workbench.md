@@ -1,7 +1,7 @@
 # Browser WASM Workbench
 
 **Date:** 2026-10-03
-**Status:** Active partial implementation — first-release features and three appearance themes are deployed. PR #79 pagination and PR #80 resource corrections are included in the 2026-10-08 release. Deployed desktop Chromium offline reopening passed on 2026-10-12. Remote rollback and device/resource acceptance remain open; see the [acceptance ledger](../../context/waves/2026-10-03-browser-wasm/ACCEPTANCE.md).
+**Status:** Active partial implementation — first-release features, three themes and PR #91 viewport rendering are deployed as validation source 4d1f513e. Exact master artifact, public in-place update/rollback/restore and desktop offline reopening have scoped evidence on 2026-10-13. Physical Android and the 250 MiB whole-browser resource gate remain open; see the [acceptance ledger](../../context/waves/2026-10-03-browser-wasm/ACCEPTANCE.md).
 **Scope:** A GitHub Pages application running the shared IceLines Rust engine on the user's device, with release packages, imported files, live refresh, and optional local persistence.
 **Review:** [Planning review](../../signals/roles/check/browser-wasm-workbench-roles-check-2026-10-03.md); [implementation handoff review](../../signals/roles/check/browser-wasm-handoff-roles-check-2026-10-04.md) (release needs work).
 
@@ -26,7 +26,7 @@ Public release archives are build inputs for a versioned, lazy-loaded catalog.
 The existing Pages documentation stays at `/ICELINES/`; the browser is composed
 under `/ICELINES/workbench/`. On 2026-10-08, the theme publication moved Pages
 to the existing Actions publication workflow; `gh-pages` remains the documentation
-input for composition. Remote rollback acceptance is still required; see
+input for composition. Public rollback and forward restore preserve an owned test season/schedule; this is scoped evidence rather than arbitrary user-data coverage. See
 [rollout](../../icelines-browser/PAGES.md).
 LFS inputs use the same conversion path if actual assets are identified. Live
 stats and schedule acquisition are separate adapters; their browser access must
@@ -37,7 +37,7 @@ Follow-up decision: Cloudflare Free, operated through the user's account. The bo
 
 The delivery order is engine/contracts → one-season parity → local library →
 live refresh → browser UX → Pages release. Current implementation evidence is
-listed in section 12; local offline reopening passed in pulse 27. Pages deployment, relay live access, saved-data recovery and update/reload now have deployed-browser evidence. Deployed desktop Chromium offline reopening passed on 2026-10-12; remote rollback, physical mobile and full resource gates remain open. The roles verdict approves planning
+listed in section 12; local offline reopening passed in pulse 27. Pages deployment, relay live access, saved-data recovery and update/reload now have deployed-browser evidence. Deployed desktop offline reopening and public rollback/forward restore passed in the owned-profile corpus on 2026-10-13. Physical mobile and full resource gates remain open. The roles verdict approves planning
 with conditions and is not a release approval.
 
 ## 1. Outcome and first release

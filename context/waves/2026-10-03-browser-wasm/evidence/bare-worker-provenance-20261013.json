@@ -1,0 +1,13 @@
+{
+  "artifact_commit": "680a89cb594004c4160e1333928e2a0c5ae05e0b",
+  "wasm_sha256": "4f99584fe3147f05b525dae35c2ac2a49ca23aaa3f84fd961e5cecb9a43f0eee",
+  "script_sha256": "2bf840bf39fccb4a18908afc937761017a68d1cbf79e34e2884f82f04ee7db80",
+  "sampler_sha256": "fef055f0dbbdaee58013089814436f5cd8c8d231c90e9c3fa40e416d4aaa50bc",
+  "observed_private_peak_mib": 342.21484375,
+  "blank_private_peak_mib": 229.1328125,
+  "scope": "Minimal HTML with the actual retained worker/WASM, all75 catalog packages/full worker result counts, both official archive imports,20 full queries and worker restart. Same browser flags, sampler and network observation. No workbench rendering, acquisition metadata validation, main library retention, service worker/offline or persistence.",
+  "sampling_caveat": "Initial run completed protocol operations but had no warm-phase sample; retained as incomplete. Final run holds the phase after the20-query burst for two samples; within-burst transient peak may be missed. Different cadence and lifecycle, not normal acceptance or mathematical lower-bound proof.",
+  "acceptance_target": null,
+  "runtime_changed": false,
+  "conclusion": "Observed memory still exceeds250 MiB without the workbench UI. Further investigation should include worker/acquisition/browser native allocations; this result alone does not prove those are irreducible."
+}
