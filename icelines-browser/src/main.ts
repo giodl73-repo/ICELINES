@@ -259,7 +259,10 @@ element('restart-engine').onclick = () => { void recoverEngine(); };
 element('export-recovery').onclick = () => { if (recoveryCopy) download(recoveryCopy.bytes.slice().buffer, `icelines-${recoveryCopy.metadata.season}-${recoveryCopy.metadata.season_type}-recovery.json`, 'application/json'); };
 async function loadCatalog(entry: CatalogEntry): Promise<void> {
   const memory = resident.get(entry.sha256);
-  if (memory && memory.id === entry.id) { await activateResident(memory); status('Selected in-memory season. Save locally to keep it.'); return; }
+  if (memory && memory.id === entry.id) {
+    if (memory.metadata.season !== entry.season || memory.metadata.season_type !== entry.season_type || memory.metadata.source !== entry.source) throw new Error('Package does not match catalog context');
+    await activateResident(memory); status('Selected in-memory season. Save locally to keep it.'); return;
+  }
   const { controller, sequence } = beginAcquisition(); status('Loading season into memory…');
   element('cancel').hidden = false;
   try {
