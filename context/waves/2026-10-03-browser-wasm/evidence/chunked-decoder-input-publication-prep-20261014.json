@@ -1,0 +1,21 @@
+{
+  "status": "Prepublication baseline only; PR102 CI pending, no new publication",
+  "reviewed_head": "85122c6e07d06e21b389438e5ce0e087d2ff682f",
+  "old_public_source": "5ef015c4d47ebbcee8234eb92f1fe83716b45054",
+  "baseline": {
+    "file": "chunked-decoder-input-prepublication-baseline-20261014.json",
+    "sha256": "62a2e9efee089daa958032a22bd7efb7979b40c2cee26ea38e2b3090c1015d4c"
+  },
+  "scope": "Original owned persistent profile across prior publications; offline process reopening, fresh eight-player query/detail, saved season/schedule bytes preserved, executing modules/WASM matched, uncached network probe blocked before/after debugger. Frozen schedule fixture, not live NHL, physical phone or memory proof.",
+  "helper_sha256": {
+    "target/public-gzip-release-rehearsal.mjs": "bedbca5acb9b102395dbf86fced18b71b6438d2f7693a2e9b4b6f45f630f4f82",
+    "target/reset-owned-download-history.py": "c46916681ba25dfae07804d2f5278162b97eaa6691fba1fa203c290ef4f0431c",
+    "previous_history_helper_backup": "061b340e5fa70b321b78a46506e0618aeeeccbbf6c2ede17e064ced36b50bab9"
+  },
+  "history_helper_status": "New chunked phase labels prepared with required eight-hex release, original helper backed up; no history mutation executed for this baseline.",
+  "next_action": "Wait for PR CI; verify exact retained preview/master before publication; same-profile forward/rollback/restore with original saved bytes and static documentation preservation must still pass.",
+  "open_gates": [
+    "250 MiB whole-browser FAILED",
+    "Physical Android explicitly deferred"
+  ]
+}
