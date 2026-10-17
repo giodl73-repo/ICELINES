@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "acceptance": null,
+  "scope": "Reduced startup-only diagnostic, three fresh owned browsers with default benchmark launch options and original Windows sampler. No packages/imports/warm queries or restart workload. Never250 MiB acceptance, causal ownership or impossibility proof.",
+  "decision": "Investigate startup presentation/service-worker/module costs before further checksum experiments. This one short diagnostic does not establish causal component ownership, a memory floor or feasibility/impossibility of250 MiB.",
+  "limits": "Reduced workload; one empty/static/normal sequence of fresh browsers; eight startup samples minimum per arm; differing blank baselines retained; no package workload, forced GC, flag/channel/sampler changes, normal acceptance or device claim. Page request observer reports zero WASM requests; it is not worker/process attribution.",
+  "arms": [
+    {
+      "arm": "empty",
+      "blank_private_peak_mib": 225.9921875,
+      "startup_private_peak_mib": 240.7890625,
+      "wasm_requests": 0,
+      "samples": "empty-samples.json"
+    },
+    {
+      "arm": "static",
+      "blank_private_peak_mib": 229.125,
+      "startup_private_peak_mib": 258.0625,
+      "wasm_requests": 0,
+      "samples": "static-samples.json"
+    },
+    {
+      "arm": "normal",
+      "blank_private_peak_mib": 231.65625,
+      "startup_private_peak_mib": 281.0703125,
+      "wasm_requests": 0,
+      "samples": "normal-samples.json"
+    }
+  ],
+  "files": [
+    {
+      "file": "startup-cost-diagnostic-20261017-report.json",
+      "sha256": "fe2d741c9548560c3abfbaaf696c6e885c0c6a3fce43466f5ed0eb0f03094edd",
+      "original_path": "target/startup-cost-probe-SVdOyV/report.json"
+    },
+    {
+      "file": "startup-cost-diagnostic-20261017-empty-samples.json.gz",
+      "sha256": "6f5bbf7c5edcc3bd663d4ca1a8954a5ad9f548e6c30f6ebec279a8dffc961142",
+      "original_path": "target/startup-cost-probe-SVdOyV/empty-samples.json",
+      "expanded_sha256": "adb0c245aad24c52a79b2b6bf277638a8aedbe69924ca2011fcb11df1eb64888"
+    },
+    {
+      "file": "startup-cost-diagnostic-20261017-static-samples.json.gz",
+      "sha256": "612f6c05b3a9f33fcdfc063968e21ccfe797a744f99adc516343f2e3d470f003",
+      "original_path": "target/startup-cost-probe-SVdOyV/static-samples.json",
+      "expanded_sha256": "ab0c4c016151591ff05e87983dd9dbab4d918216bb5edbeed2b10e84f85cf278"
+    },
+    {
+      "file": "startup-cost-diagnostic-20261017-normal-samples.json.gz",
+      "sha256": "79dacd089fe31e8178a6bddd7cecd47ac4bee7fdfbd196ed339b43ccc55f59a7",
+      "original_path": "target/startup-cost-probe-SVdOyV/normal-samples.json",
+      "expanded_sha256": "687a94f8ecc762f3d771b6d54263e2f951fdb6c85264a307ca6ce3662002267c"
+    },
+    {
+      "file": "startup-cost-diagnostic-20261017-runner.mjs.gz",
+      "sha256": "a538c3c07faa76bffa2d2786ca47f5b3a5a62693221f64587139e398501dc58b",
+      "original_path": "target/startup-cost-probe.mjs",
+      "expanded_sha256": "b105c2207789fdfb5a43af2f01694c57de35336d36ad18653ff829097e53e353"
+    },
+    {
+      "file": "startup-cost-diagnostic-20261017-archive.py.gz",
+      "sha256": "9f98d76bf4ad7e9c166690e5c536ebb2fa301d9703314b8c8d576e3d64d1e1fc",
+      "original_path": "target/archive-startup-cost.py",
+      "expanded_sha256": "084b1ad12eab72cb1ca5d532ddcb8926e5244e607901cc20000af8f33c865bdf"
+    }
+  ]
+}
