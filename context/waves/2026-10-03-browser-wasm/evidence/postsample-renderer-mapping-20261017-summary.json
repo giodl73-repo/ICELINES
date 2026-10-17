@@ -1,0 +1,238 @@
+{
+  "scope": "Full original measurements precede all added trace/target observations. Surviving process identity guarded by creation time. Late target association is not historical object ownership or a pure app-code allocation partition; include automation/shared contexts, unknown targets and all other owned processes. Do not exclude costs or baseline-subtract acceptance.",
+  "artifact": {
+    "commit": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+    "shell_build": "e575ec099d635615476610b46ec106b97e83d28b66fc3980bbdcbbf4292c1a36",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "acceptance": null,
+  "peak": {
+    "phase": "package_20092010-regular",
+    "elapsed_ms": 34201,
+    "total_private_bytes": 404058112,
+    "groups": {
+      "utility:storage.mojom.StorageService": 10399744,
+      "crashpad-handler": 3047424,
+      "renderer:application-page-associated": 160256000,
+      "utility:network.mojom.NetworkService": 18169856,
+      "browser": 51871744,
+      "renderer:browser-ui-associated": 37982208,
+      "renderer:unmapped-to-late-target": 20127744,
+      "gpu-process": 102203392
+    },
+    "processes": [
+      {
+        "pid": 51152,
+        "private_bytes": 10399744,
+        "role": "utility:storage.mojom.StorageService",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 43700,
+        "private_bytes": 3047424,
+        "role": "crashpad-handler",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 8228,
+        "private_bytes": 160256000,
+        "role": "renderer:application-page-associated",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 4124,
+        "private_bytes": 18169856,
+        "role": "utility:network.mojom.NetworkService",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 51484,
+        "private_bytes": 51871744,
+        "role": "browser",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 3604,
+        "private_bytes": 37982208,
+        "role": "renderer:browser-ui-associated",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 38148,
+        "private_bytes": 20127744,
+        "role": "renderer:unmapped-to-late-target",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 35920,
+        "private_bytes": 102203392,
+        "role": "gpu-process",
+        "unmapped_reason": null
+      }
+    ]
+  },
+  "last": {
+    "phase": "engine_restarted",
+    "elapsed_ms": 82786,
+    "total_private_bytes": 359313408,
+    "groups": {
+      "utility:storage.mojom.StorageService": 10289152,
+      "crashpad-handler": 2908160,
+      "renderer:application-page-associated": 110510080,
+      "utility:network.mojom.NetworkService": 17444864,
+      "browser": 50417664,
+      "renderer:browser-ui-associated": 37883904,
+      "renderer:unmapped-to-late-target": 20021248,
+      "gpu-process": 109838336
+    },
+    "processes": [
+      {
+        "pid": 51152,
+        "private_bytes": 10289152,
+        "role": "utility:storage.mojom.StorageService",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 43700,
+        "private_bytes": 2908160,
+        "role": "crashpad-handler",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 8228,
+        "private_bytes": 110510080,
+        "role": "renderer:application-page-associated",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 4124,
+        "private_bytes": 17444864,
+        "role": "utility:network.mojom.NetworkService",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 51484,
+        "private_bytes": 50417664,
+        "role": "browser",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 3604,
+        "private_bytes": 37883904,
+        "role": "renderer:browser-ui-associated",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 38148,
+        "private_bytes": 20021248,
+        "role": "renderer:unmapped-to-late-target",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 35920,
+        "private_bytes": 109838336,
+        "role": "gpu-process",
+        "unmapped_reason": null
+      }
+    ]
+  },
+  "late_inventory": {
+    "scope": "Owned root and currently live descendants only. Full command lines inspected locally but never emitted. Roles do not identify app versus browser-UI renderer.",
+    "observed_at_utc": "2026-10-17T22:41:23.0782829Z",
+    "root_id": 51484,
+    "root_created_at_utc": "2026-10-17T22:39:57.4185970Z",
+    "processes": [
+      {
+        "id": 51152,
+        "parent_id": 51484,
+        "created_at_utc": "2026-10-17T22:39:58.4510320Z",
+        "kind": "utility",
+        "utility_subtype": "storage.mojom.StorageService"
+      },
+      {
+        "id": 43700,
+        "parent_id": 51484,
+        "created_at_utc": "2026-10-17T22:39:57.9388970Z",
+        "kind": "crashpad-handler",
+        "utility_subtype": null
+      },
+      {
+        "id": 8228,
+        "parent_id": 51484,
+        "created_at_utc": "2026-10-17T22:39:58.7241000Z",
+        "kind": "renderer",
+        "utility_subtype": null
+      },
+      {
+        "id": 4124,
+        "parent_id": 51484,
+        "created_at_utc": "2026-10-17T22:39:58.4201750Z",
+        "kind": "utility",
+        "utility_subtype": "network.mojom.NetworkService"
+      },
+      {
+        "id": 51484,
+        "parent_id": 55112,
+        "created_at_utc": "2026-10-17T22:39:57.4185970Z",
+        "kind": "browser",
+        "utility_subtype": null
+      },
+      {
+        "id": 3604,
+        "parent_id": 51484,
+        "created_at_utc": "2026-10-17T22:39:58.6628650Z",
+        "kind": "renderer",
+        "utility_subtype": null
+      },
+      {
+        "id": 38148,
+        "parent_id": 51484,
+        "created_at_utc": "2026-10-17T22:39:58.7113640Z",
+        "kind": "renderer",
+        "utility_subtype": null
+      },
+      {
+        "id": 35920,
+        "parent_id": 51484,
+        "created_at_utc": "2026-10-17T22:39:58.4017540Z",
+        "kind": "gpu-process",
+        "utility_subtype": null
+      }
+    ]
+  },
+  "tracing_service_present_in_inventory": false,
+  "post_sampling_mapping": {
+    "started_at_utc": "2026-10-17T22:41:23.154Z",
+    "sampler_exit": 0,
+    "samples_before": 217,
+    "finished_at_utc": "2026-10-17T22:41:23.489Z",
+    "samples_after": 217
+  },
+  "late_target_associations": {
+    "8228": [
+      {
+        "type": "service_worker",
+        "url": "http://127.0.0.1:54041/ICELINES/workbench/sw.js"
+      },
+      {
+        "type": "worker",
+        "url": "http://127.0.0.1:54041/ICELINES/workbench/src/worker.js"
+      },
+      {
+        "type": "page",
+        "url": "http://127.0.0.1:54041/ICELINES/workbench/#/leaders?season=20242025&type=playoff&kind=skaters&sort=points&gp=&data=local"
+      }
+    ],
+    "3604": [
+      {
+        "type": "browser_ui",
+        "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html"
+      },
+      {
+        "type": "browser_ui",
+        "url": "chrome://omnibox-popup.top-chrome/"
+      }
+    ]
+  }
+}

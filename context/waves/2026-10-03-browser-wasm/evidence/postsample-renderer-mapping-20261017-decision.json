@@ -1,0 +1,167 @@
+{
+  "scope": "Original full75/eight/two905332/20/restart, original channel/flags/sampler/network observer, no forced GC or added in-workload observer. Sampler terminates before Windows inventory, then target trace markers. No original measurements made during/after added trace. Supplemental diagnostic, not resource acceptance.",
+  "artifact": {
+    "commit": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+    "shell_build": "e575ec099d635615476610b46ec106b97e83d28b66fc3980bbdcbbf4292c1a36",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "post_sampling_boundary": {
+    "started_at_utc": "2026-10-17T22:41:23.154Z",
+    "sampler_exit": 0,
+    "samples_before": 217,
+    "finished_at_utc": "2026-10-17T22:41:23.489Z",
+    "samples_after": 217
+  },
+  "peak": {
+    "phase": "package_20092010-regular",
+    "elapsed_ms": 34201,
+    "total_private_bytes": 404058112,
+    "groups": {
+      "utility:storage.mojom.StorageService": 10399744,
+      "crashpad-handler": 3047424,
+      "renderer:application-page-associated": 160256000,
+      "utility:network.mojom.NetworkService": 18169856,
+      "browser": 51871744,
+      "renderer:browser-ui-associated": 37982208,
+      "renderer:unmapped-to-late-target": 20127744,
+      "gpu-process": 102203392
+    },
+    "processes": [
+      {
+        "pid": 51152,
+        "private_bytes": 10399744,
+        "role": "utility:storage.mojom.StorageService",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 43700,
+        "private_bytes": 3047424,
+        "role": "crashpad-handler",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 8228,
+        "private_bytes": 160256000,
+        "role": "renderer:application-page-associated",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 4124,
+        "private_bytes": 18169856,
+        "role": "utility:network.mojom.NetworkService",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 51484,
+        "private_bytes": 51871744,
+        "role": "browser",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 3604,
+        "private_bytes": 37982208,
+        "role": "renderer:browser-ui-associated",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 38148,
+        "private_bytes": 20127744,
+        "role": "renderer:unmapped-to-late-target",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 35920,
+        "private_bytes": 102203392,
+        "role": "gpu-process",
+        "unmapped_reason": null
+      }
+    ]
+  },
+  "late_target_associations": {
+    "8228": [
+      {
+        "type": "service_worker",
+        "url": "http://127.0.0.1:54041/ICELINES/workbench/sw.js"
+      },
+      {
+        "type": "worker",
+        "url": "http://127.0.0.1:54041/ICELINES/workbench/src/worker.js"
+      },
+      {
+        "type": "page",
+        "url": "http://127.0.0.1:54041/ICELINES/workbench/#/leaders?season=20242025&type=playoff&kind=skaters&sort=points&gp=&data=local"
+      }
+    ],
+    "3604": [
+      {
+        "type": "browser_ui",
+        "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html"
+      },
+      {
+        "type": "browser_ui",
+        "url": "chrome://omnibox-popup.top-chrome/"
+      }
+    ]
+  },
+  "archive_mapping": "Compressed runtime report names its original sibling target-process-markers-trace.json. The target-markers-trace descriptor maps it byte exactly to the renamed compressed archive.",
+  "interpretation": "At the peak, the same surviving process later associated with the application page accounts for152.83203125 MiB and browser-UI-associated renderer36.22265625 MiB. Another19.1953125 MiB renderer remains unassociated with exposed targets. Every owned PID remains counted once; all process identities at this sample pass conservative creation-time mapping.",
+  "limits": [
+    "Late target association is not historical object ownership, a pure application-code allocation partition or proof an unassociated renderer is spare. Application renderer includes automation and any shared contexts.",
+    "Parent browser/GPU/utility costs outside app-page renderer can still be influenced by app work. Do not call them an immutable independent floor or prove target impossible by subtraction.",
+    "Process private allocations are not physical RAM or guaranteed reclaimable bytes.",
+    "One run does not establish a universal memory cost or saving.",
+    "Physical Android remains deferred by user and untested."
+  ],
+  "acceptance": null,
+  "memory_gate": "Original250 MiB requirement remains failed. Original runner and all raw failed observations unchanged.",
+  "evidence": {
+    "report": {
+      "file": "postsample-renderer-mapping-20261017-report.json.gz",
+      "sha256": "cbc02c8dee8e531a390283ffc948d943f1d2d9bacb7585b1be0404e72fd57ade",
+      "expanded_sha256": "2a61d38fa38feabb17d2a177b68eae4fa7fda7f03143e1e8e55c8370e8614b31"
+    },
+    "samples": {
+      "file": "postsample-renderer-mapping-20261017-samples.json.gz",
+      "sha256": "63748f219a70ab58fc126f973fdf999437b48ce49d6f66fe5325759ceff4ef35",
+      "expanded_sha256": "0c01eed89382ad826b99d8603d60d4d7096c2b9d49c0c0e06c30e1c6ba341410"
+    },
+    "target-markers-trace": {
+      "file": "postsample-renderer-mapping-20261017-target-markers-trace.json.gz",
+      "sha256": "acb9e682da7973c1b18b1b1f87ae2f720aac127ded82ef8bad897d7af44fec4d",
+      "expanded_sha256": "2981ee5d87c8fc5d122bd7702bf4b4a2d9fdca426ede0fc327bbd9dff06cfdf8"
+    },
+    "summary": {
+      "file": "postsample-renderer-mapping-20261017-summary.json",
+      "sha256": "3fb83400730ef26e6587114123cebeba062db14e4bfcbb5f62c8c0e82741cd94"
+    },
+    "runner-recipe": {
+      "file": "postsample-renderer-mapping-20261017-runner-recipe.py",
+      "sha256": "d3fc1bab8a442e90e6a9f7634fefccf56a30e37b2de0ea475531c0844fe4ed1f"
+    },
+    "runner": {
+      "file": "postsample-renderer-mapping-20261017-runner.mjs",
+      "sha256": "f4362d3d65bef61dcff4b26eef6a3dffd5bf0ebacb26920e84d9995793bdab55"
+    },
+    "windows-inventory-recipe": {
+      "file": "postsample-renderer-mapping-20261017-windows-inventory-recipe.ps1",
+      "sha256": "a5dcdf5b7a9d35728cdb04d9e3f5d1be087cde3850d64a744d8c2ebd8bd1c956"
+    },
+    "target-marker-recipe": {
+      "file": "postsample-renderer-mapping-20261017-target-marker-recipe.mjs",
+      "sha256": "2209693546b7539d0ac9a3867169d3c107e4a47e30d858579176ef0c740c3927"
+    },
+    "analysis-generation-recipe": {
+      "file": "postsample-renderer-mapping-20261017-analysis-generation-recipe.py",
+      "sha256": "6c12eda6c6f369911fc0e1c9f2fcb66030b09c4c2c20566d44142d488c49458c"
+    },
+    "analysis-base-recipe": {
+      "file": "postsample-renderer-mapping-20261017-analysis-base-recipe.py",
+      "sha256": "3964d2629d49b1866be82954090e687185026333d8dd2bb46942363adff312a3"
+    },
+    "analysis-recipe": {
+      "file": "postsample-renderer-mapping-20261017-analysis-recipe.py",
+      "sha256": "6d353e36b7193cba2c96dbe806ac9d45d8d5ab0eaf55a97ca4f01f648c495aea"
+    }
+  }
+}
