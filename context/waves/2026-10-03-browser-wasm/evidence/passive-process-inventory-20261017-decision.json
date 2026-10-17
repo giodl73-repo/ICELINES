@@ -1,0 +1,189 @@
+{
+  "scope": "Full original75/eight/two905332/20/restart, original flags/channel/OS sampler/network observer and no forced GC. No added tracing, heap or target observer; Windows role inventory runs only after sampler is terminal. Supplemental diagnostic with null acceptance, not a budget waiver.",
+  "artifact": {
+    "commit": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+    "shell_build": "e575ec099d635615476610b46ec106b97e83d28b66fc3980bbdcbbf4292c1a36",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "peak": {
+    "phase": "package_20122013-regular",
+    "elapsed_ms": 28539,
+    "total_private_bytes": 406761472,
+    "groups": {
+      "renderer": 219303936,
+      "crashpad-handler": 5971968,
+      "utility:storage.mojom.StorageService": 10403840,
+      "utility:network.mojom.NetworkService": 18173952,
+      "gpu-process": 100573184,
+      "browser": 52334592
+    },
+    "processes": [
+      {
+        "pid": 53292,
+        "private_bytes": 154095616,
+        "role": "renderer",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 53360,
+        "private_bytes": 17276928,
+        "role": "renderer",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 55092,
+        "private_bytes": 3104768,
+        "role": "crashpad-handler",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 52064,
+        "private_bytes": 10403840,
+        "role": "utility:storage.mojom.StorageService",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 21772,
+        "private_bytes": 18173952,
+        "role": "utility:network.mojom.NetworkService",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 19828,
+        "private_bytes": 47931392,
+        "role": "renderer",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 3320,
+        "private_bytes": 100573184,
+        "role": "gpu-process",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 52584,
+        "private_bytes": 52334592,
+        "role": "browser",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 32404,
+        "private_bytes": 2867200,
+        "role": "crashpad-handler",
+        "unmapped_reason": null
+      }
+    ]
+  },
+  "late_inventory": {
+    "scope": "Owned root and currently live descendants only. Full command lines inspected locally but never emitted. Roles do not identify app versus browser-UI renderer.",
+    "observed_at_utc": "2026-10-17T22:37:13.3130569Z",
+    "root_id": 52584,
+    "root_created_at_utc": "2026-10-17T22:35:45.1351330Z",
+    "processes": [
+      {
+        "id": 53292,
+        "parent_id": 52584,
+        "created_at_utc": "2026-10-17T22:35:46.1949310Z",
+        "kind": "renderer",
+        "utility_subtype": null
+      },
+      {
+        "id": 53360,
+        "parent_id": 52584,
+        "created_at_utc": "2026-10-17T22:35:46.1819880Z",
+        "kind": "renderer",
+        "utility_subtype": null
+      },
+      {
+        "id": 55092,
+        "parent_id": 52584,
+        "created_at_utc": "2026-10-17T22:35:45.3215860Z",
+        "kind": "crashpad-handler",
+        "utility_subtype": null
+      },
+      {
+        "id": 52064,
+        "parent_id": 52584,
+        "created_at_utc": "2026-10-17T22:35:45.9588900Z",
+        "kind": "utility",
+        "utility_subtype": "storage.mojom.StorageService"
+      },
+      {
+        "id": 21772,
+        "parent_id": 52584,
+        "created_at_utc": "2026-10-17T22:35:45.9275900Z",
+        "kind": "utility",
+        "utility_subtype": "network.mojom.NetworkService"
+      },
+      {
+        "id": 19828,
+        "parent_id": 52584,
+        "created_at_utc": "2026-10-17T22:35:46.1379650Z",
+        "kind": "renderer",
+        "utility_subtype": null
+      },
+      {
+        "id": 3320,
+        "parent_id": 52584,
+        "created_at_utc": "2026-10-17T22:35:45.9116820Z",
+        "kind": "gpu-process",
+        "utility_subtype": null
+      },
+      {
+        "id": 52584,
+        "parent_id": 52032,
+        "created_at_utc": "2026-10-17T22:35:45.1351330Z",
+        "kind": "browser",
+        "utility_subtype": null
+      },
+      {
+        "id": 32404,
+        "parent_id": 55092,
+        "created_at_utc": "2026-10-17T22:35:45.5019150Z",
+        "kind": "crashpad-handler",
+        "utility_subtype": null
+      }
+    ]
+  },
+  "inference": "Normal peak has no tracing utility among classified owned processes. Prior tracing-service variation belongs to observer-heavy diagnostics and must not be imported as normal app cost. Aggregate renderers, GPU, browser and utilities all remain part of original whole-browser budget.",
+  "limitations": [
+    "End inventory does not recover exited processes; unknown/reused/ambiguous identities stay in totals as unmapped. At this observed peak all PIDs pass conservative creation-time/ownership classification.",
+    "Creation must predate root-created-plus-sample-elapsed, a conservative lower bound on actual sampling time; no historical PID-role inference from mere numeric PID equality.",
+    "Renderer role combines application, browser UI and possible spare renderers; no app-specific byte assignment is made.",
+    "One run is not causal attribution or an all-platform memory bound. Group private allocations are not physical RAM or removable bytes.",
+    "No new physical Android evidence; testing remains explicitly deferred."
+  ],
+  "disposition": "Original250 MiB gate remains failed. Future allocation experiments should distinguish renderer subgroups without adding observers during measured phases, or target an identified retained component; do not extrapolate from trace-service costs or exclude normal browser processes.",
+  "evidence": {
+    "report": {
+      "file": "passive-process-inventory-20261017-report.json",
+      "sha256": "bd81c82fdee6c561c470130206123c1871d60b98fbee4899917e76fedbc88e4e"
+    },
+    "summary": {
+      "file": "passive-process-inventory-20261017-summary.json",
+      "sha256": "63576845cd0bb49b1405c7be35c8dec39d9cf04b50451f6907734c283cc2ad4a"
+    },
+    "windows-inventory-recipe": {
+      "file": "passive-process-inventory-20261017-windows-inventory-recipe.ps1",
+      "sha256": "a5dcdf5b7a9d35728cdb04d9e3f5d1be087cde3850d64a744d8c2ebd8bd1c956"
+    },
+    "runner-recipe": {
+      "file": "passive-process-inventory-20261017-runner-recipe.py",
+      "sha256": "407b35654f4823e8862c58c5f2e51a23ccf6db1cccb0c8061de35ff2b2657e68"
+    },
+    "runner": {
+      "file": "passive-process-inventory-20261017-runner.mjs",
+      "sha256": "335f43bb7e4db9932ec9a6498245881733ed034c17813e7ac329ae9008ad5a08"
+    },
+    "analysis-recipe": {
+      "file": "passive-process-inventory-20261017-analysis-recipe.py",
+      "sha256": "3964d2629d49b1866be82954090e687185026333d8dd2bb46942363adff312a3"
+    },
+    "samples": {
+      "file": "passive-process-inventory-20261017-samples.json.gz",
+      "sha256": "7dcd308403d2aae7cfc3fd157de1f42d375eb580163a32e8578f704a9f19f6a9",
+      "expanded_sha256": "b76de55a3391364e5d2371bcc5a152f70f43f1d3ec617591d2e572a55fc7b6d1"
+    }
+  }
+}

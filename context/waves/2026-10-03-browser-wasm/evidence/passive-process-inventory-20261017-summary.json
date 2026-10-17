@@ -1,0 +1,220 @@
+{
+  "scope": "OS PID-kind classification using Windows command-line role tokens collected only after original sampler terminated. No tracing/heap/extra target observer or added flags. No app-versus-browser-UI renderer attribution. Exited/reused/uncertain PIDs stay in totals as unmapped. All groups form a disjoint sum of original private-byte counters, not physical RAM or removable bytes.",
+  "artifact": {
+    "commit": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+    "shell_build": "e575ec099d635615476610b46ec106b97e83d28b66fc3980bbdcbbf4292c1a36",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "acceptance": null,
+  "peak": {
+    "phase": "package_20122013-regular",
+    "elapsed_ms": 28539,
+    "total_private_bytes": 406761472,
+    "groups": {
+      "renderer": 219303936,
+      "crashpad-handler": 5971968,
+      "utility:storage.mojom.StorageService": 10403840,
+      "utility:network.mojom.NetworkService": 18173952,
+      "gpu-process": 100573184,
+      "browser": 52334592
+    },
+    "processes": [
+      {
+        "pid": 53292,
+        "private_bytes": 154095616,
+        "role": "renderer",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 53360,
+        "private_bytes": 17276928,
+        "role": "renderer",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 55092,
+        "private_bytes": 3104768,
+        "role": "crashpad-handler",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 52064,
+        "private_bytes": 10403840,
+        "role": "utility:storage.mojom.StorageService",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 21772,
+        "private_bytes": 18173952,
+        "role": "utility:network.mojom.NetworkService",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 19828,
+        "private_bytes": 47931392,
+        "role": "renderer",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 3320,
+        "private_bytes": 100573184,
+        "role": "gpu-process",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 52584,
+        "private_bytes": 52334592,
+        "role": "browser",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 32404,
+        "private_bytes": 2867200,
+        "role": "crashpad-handler",
+        "unmapped_reason": null
+      }
+    ]
+  },
+  "last": {
+    "phase": "engine_restarted",
+    "elapsed_ms": 85045,
+    "total_private_bytes": 371257344,
+    "groups": {
+      "renderer": 174465024,
+      "crashpad-handler": 5754880,
+      "utility:storage.mojom.StorageService": 10297344,
+      "utility:network.mojom.NetworkService": 17502208,
+      "gpu-process": 112988160,
+      "browser": 50249728
+    },
+    "processes": [
+      {
+        "pid": 53292,
+        "private_bytes": 117219328,
+        "role": "renderer",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 53360,
+        "private_bytes": 17170432,
+        "role": "renderer",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 55092,
+        "private_bytes": 3026944,
+        "role": "crashpad-handler",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 52064,
+        "private_bytes": 10297344,
+        "role": "utility:storage.mojom.StorageService",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 21772,
+        "private_bytes": 17502208,
+        "role": "utility:network.mojom.NetworkService",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 19828,
+        "private_bytes": 40075264,
+        "role": "renderer",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 3320,
+        "private_bytes": 112988160,
+        "role": "gpu-process",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 52584,
+        "private_bytes": 50249728,
+        "role": "browser",
+        "unmapped_reason": null
+      },
+      {
+        "pid": 32404,
+        "private_bytes": 2727936,
+        "role": "crashpad-handler",
+        "unmapped_reason": null
+      }
+    ]
+  },
+  "late_inventory": {
+    "scope": "Owned root and currently live descendants only. Full command lines inspected locally but never emitted. Roles do not identify app versus browser-UI renderer.",
+    "observed_at_utc": "2026-10-17T22:37:13.3130569Z",
+    "root_id": 52584,
+    "root_created_at_utc": "2026-10-17T22:35:45.1351330Z",
+    "processes": [
+      {
+        "id": 53292,
+        "parent_id": 52584,
+        "created_at_utc": "2026-10-17T22:35:46.1949310Z",
+        "kind": "renderer",
+        "utility_subtype": null
+      },
+      {
+        "id": 53360,
+        "parent_id": 52584,
+        "created_at_utc": "2026-10-17T22:35:46.1819880Z",
+        "kind": "renderer",
+        "utility_subtype": null
+      },
+      {
+        "id": 55092,
+        "parent_id": 52584,
+        "created_at_utc": "2026-10-17T22:35:45.3215860Z",
+        "kind": "crashpad-handler",
+        "utility_subtype": null
+      },
+      {
+        "id": 52064,
+        "parent_id": 52584,
+        "created_at_utc": "2026-10-17T22:35:45.9588900Z",
+        "kind": "utility",
+        "utility_subtype": "storage.mojom.StorageService"
+      },
+      {
+        "id": 21772,
+        "parent_id": 52584,
+        "created_at_utc": "2026-10-17T22:35:45.9275900Z",
+        "kind": "utility",
+        "utility_subtype": "network.mojom.NetworkService"
+      },
+      {
+        "id": 19828,
+        "parent_id": 52584,
+        "created_at_utc": "2026-10-17T22:35:46.1379650Z",
+        "kind": "renderer",
+        "utility_subtype": null
+      },
+      {
+        "id": 3320,
+        "parent_id": 52584,
+        "created_at_utc": "2026-10-17T22:35:45.9116820Z",
+        "kind": "gpu-process",
+        "utility_subtype": null
+      },
+      {
+        "id": 52584,
+        "parent_id": 52032,
+        "created_at_utc": "2026-10-17T22:35:45.1351330Z",
+        "kind": "browser",
+        "utility_subtype": null
+      },
+      {
+        "id": 32404,
+        "parent_id": 55092,
+        "created_at_utc": "2026-10-17T22:35:45.5019150Z",
+        "kind": "crashpad-handler",
+        "utility_subtype": null
+      }
+    ]
+  },
+  "tracing_service_present_in_inventory": false
+}
