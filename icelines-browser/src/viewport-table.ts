@@ -3,7 +3,7 @@ import type { PlayerRow } from './types.js';
 
 // Presentation only: retain the complete engine result for browsing and exports.
 const ROW_HEIGHT = 72;
-const OVERSCAN = 16;
+const OVERSCAN = 4;
 export function rowWindow(count: number, scrollOffset: number, viewportHeight: number): [number, number] {
   const size = Math.ceil(viewportHeight / ROW_HEIGHT) + 2 * OVERSCAN;
   // Keep terminal rows mounted when focus enters/leaves the table from outside.

@@ -68,8 +68,15 @@ try {
     let maxMounted = 0;
     for (let i = 0; i < 933; i += 20) {
         await page.evaluate(y => scrollTo(0, y), top + i * 72);
-        const expectedStart = await page.locator("#rows").evaluate(e => Math.max(0, Math.min(933 - 44, Math.floor(Math.max(0, -e.getBoundingClientRect().top) / 72) - 16)));
-        await expect(page.locator("#rows tr[data-result-index]").first()).toHaveAttribute("data-result-index", String(expectedStart));
+        // Synchronize on coverage of the actual visible ranks, independently
+        // of the renderer's chosen off-screen buffer or window-start formula.
+        await expect.poll(() => page.locator('#rows').evaluate(e => {
+            const offset = -e.getBoundingClientRect().top;
+            const first = Math.max(0, Math.min(932, Math.floor(offset / 72)));
+            const last = Math.max(first, Math.min(932, Math.floor((offset + innerHeight - 1) / 72)));
+            const mounted = new Set(Array.from(e.querySelectorAll('tr[data-result-index]'), row => Number(row.dataset.resultIndex)));
+            return mounted.has(first) && mounted.has(last);
+        })).toBe(true);
         const rows = await page.locator('#rows tr[data-result-index]').evaluateAll(es => es.map(e => ({ index: Number(e.dataset.resultIndex), rank: Number(e.cells[0].textContent), name: e.cells[1].textContent, height: e.getBoundingClientRect().height })));
         maxMounted = Math.max(maxMounted, rows.length);
         for (const r of rows) {
