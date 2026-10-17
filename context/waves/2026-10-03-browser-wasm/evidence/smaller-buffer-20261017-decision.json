@@ -1,0 +1,133 @@
+{
+  "candidate_commit": "89a436a93c1d53466fa19a525cde991f0ec1db47",
+  "change": "Off-screen buffer16 to4 rows per side; complete engine result/export retained. Candidate mounts20 versus control44 at800px. Source constant only runtime change. Viewport test now synchronizes on actual first/last visible-rank coverage instead of copying buffer/window-start formula. Both artifacts pass same updated browser test. Official memory runner unchanged.",
+  "build_scope": "Frontend-only local build reuses verified retained Windows engine; no fresh Rust/CI claim. All182 files match control except viewport-table.js and three identity files.",
+  "measurement_scope": "Four normal original full75/eight/two905332/20/restart workload runs, two opposite-order pairs. Original flags/channel/sampler/network observer; no forced GC, added observer, baseline subtraction or package/query/result reduction.",
+  "decision": "Do not adopt as whole-browser memory optimization. First raw candidate peak is7.16015625 MiB lower, but blank baseline is17.16796875 MiB lower. Reverse candidate is1.4453125 MiB higher with similar baselines. No repeatable saving or universal causal regression established. No third pair, PR, CI or publication.",
+  "correctness": "Both candidate/control traverse all933 ranks/names with120 forward/reverse tabs, terminal boundaries, detail, goalie77/filter835,390px and print transitions. Candidate24-page PDF preserves933 names/ranks with two extractors and no out-of-page text. Offline process reopening and corrupt-transfer preservation/retry pass. No new physical Android/screen-reader/printer or visual screenshot claim.",
+  "unit_tests": 163,
+  "initial_fixture_failure": "Direct tsc compilation overwrote build-injected catalog-metadata.js without regenerating shell seals. Ten offline-integrity tests correctly rejected changed metadata. Failure retained; full standard build regenerated injected metadata/seals before163 units passed. No runtime workaround or weakened integrity assertions.",
+  "original_budget_check": "Original renderer fails proposed20-row resource cap; it was not a historical correctness defect. Candidate compiled module restored afterward.",
+  "desktop_memory_acceptance": false,
+  "physical_android": "Deferred by user; untested",
+  "runs": [
+    {
+      "label": "candidate-first",
+      "peak_private_mib": 387.52734375,
+      "blank_private_mib": 224.1484375,
+      "warm_median_ms": 66.1313999999984,
+      "warm_max_ms": 88.10950000000594
+    },
+    {
+      "label": "control-second",
+      "peak_private_mib": 394.6875,
+      "blank_private_mib": 241.31640625,
+      "warm_median_ms": 65.94970000000467,
+      "warm_max_ms": 81.62659999998868
+    },
+    {
+      "label": "control-first",
+      "peak_private_mib": 392.96875,
+      "blank_private_mib": 230.7109375,
+      "warm_median_ms": 66.26105000000098,
+      "warm_max_ms": 90.53599999999278
+    },
+    {
+      "label": "candidate-second",
+      "peak_private_mib": 394.4140625,
+      "blank_private_mib": 230.0546875,
+      "warm_median_ms": 66.55139999999665,
+      "warm_max_ms": 83.28659999999218
+    }
+  ],
+  "evidence": {
+    "memory-candidate-first": {
+      "file": "smaller-buffer-20261017-memory-candidate-first.json",
+      "sha256": "ab6623d5fe64eba5fb9a546d5fd985cf9ba27763712cee5f58fe6f9daa3253b2"
+    },
+    "candidate-first-samples": {
+      "file": "smaller-buffer-20261017-candidate-first-samples.json.gz",
+      "sha256": "af740a05e432de623506a4f960771e71fadb7bf92725738ff17838c7c3c9e893",
+      "expanded_sha256": "26642a72f4b9402f2a4d94edafb71e03b222accb6b7ae050e29689c63166672b"
+    },
+    "memory-control-second": {
+      "file": "smaller-buffer-20261017-memory-control-second.json",
+      "sha256": "db826cb4b72d8f3f09480606bf7acfb9bf49b8f0e3aea59c04710800c80b2b8d"
+    },
+    "control-second-samples": {
+      "file": "smaller-buffer-20261017-control-second-samples.json.gz",
+      "sha256": "3fc61e40d38dfa12dc6194c6da800dcf2a61184f734892d76d9eb4c1f5bdd17a",
+      "expanded_sha256": "92a858f9d692d1f8b113bc2432391d12e41628bca5a2cc0d2e659986ecd0d1c2"
+    },
+    "memory-control-first": {
+      "file": "smaller-buffer-20261017-memory-control-first.json",
+      "sha256": "a86e7321e7f06bfb1e83a64dc6a6bd8cbfbdd09f240729811b51ecfe9dc5c4db"
+    },
+    "control-first-samples": {
+      "file": "smaller-buffer-20261017-control-first-samples.json.gz",
+      "sha256": "8d2437c22b901cbe752d19953abc7ff6bf25f57316e2be5828c2e06706f84713",
+      "expanded_sha256": "b6c0469046138ca75b28617fe52c26b94166e7caea6b36f665cdf2ae022c744c"
+    },
+    "memory-candidate-second": {
+      "file": "smaller-buffer-20261017-memory-candidate-second.json",
+      "sha256": "5d1fa5873ad8e600149e5e015cf06639f67b5bd104ab3b434073a5a6a276a2f8"
+    },
+    "candidate-second-samples": {
+      "file": "smaller-buffer-20261017-candidate-second-samples.json.gz",
+      "sha256": "c5a1b45928e4e58a22f452032083b7804b02eb0bef137bb72756cb5dae36c280",
+      "expanded_sha256": "264fcab44f2c81be47850bb8db44cf2f2ff2d2b84f96931eb3dee6ce745b1858"
+    },
+    "viewport-candidate": {
+      "file": "smaller-buffer-20261017-viewport-candidate.json",
+      "sha256": "de249aca7904102c8e5b46c1cb75c92750c5a257e542f2c1a5760ca51cff7704"
+    },
+    "viewport-control": {
+      "file": "smaller-buffer-20261017-viewport-control.json",
+      "sha256": "9267a6e719a133362a772fabae2c7f1d97026b0510cdc3c60927718c2ec6afdd"
+    },
+    "print-pdf": {
+      "file": "smaller-buffer-20261017-print-pdf.pdf",
+      "sha256": "74f8a16d7158279250d9531b36e9928938981e7cbef165620ce057fb59092e07"
+    },
+    "print-reference": {
+      "file": "smaller-buffer-20261017-print-reference.json",
+      "sha256": "11040639dcccbf5a7aaa565b03a4346c419b64c4f7728feefac605c040a1140e"
+    },
+    "print-verification": {
+      "file": "smaller-buffer-20261017-print-verification.json",
+      "sha256": "a48bd2f265b085d5befdd1aebf50c25685ebdd6ac20dc7e114c9674445d1be35"
+    },
+    "offline": {
+      "file": "smaller-buffer-20261017-offline.json",
+      "sha256": "b5e7eb1e867723e6526d9c289abdd5fe3b4531c69ee0b1cbdeca153576bf94e6"
+    },
+    "refusal": {
+      "file": "smaller-buffer-20261017-refusal.json",
+      "sha256": "96bc38db0874ab33c92e9664a16a317c8f186453f44040818bab7751dd7735c3"
+    },
+    "units": {
+      "file": "smaller-buffer-20261017-units.log",
+      "sha256": "364d602e6f5a6428435fbc9a900c52138be8d49263e307fa811dd835b6112ab1"
+    },
+    "initial-unit-fixture-failure": {
+      "file": "smaller-buffer-20261017-initial-unit-fixture-failure.log",
+      "sha256": "86a51cd800d7cf93a8128d93dbc07b8c159e0099f2c17b2eb13899ffbe780098"
+    },
+    "original-budget-check": {
+      "file": "smaller-buffer-20261017-original-budget-check.log",
+      "sha256": "4ff9320109dc40ba38d98de9517712fd871010cf8917afe61d94e8f1ce3909d8"
+    },
+    "build-recipe": {
+      "file": "smaller-buffer-20261017-build-recipe.mjs",
+      "sha256": "6696678e18a51265a7a691e77ae9bcf951909a8d22e0c40806f19b3f552cf1ec"
+    },
+    "build-log": {
+      "file": "smaller-buffer-20261017-build-log.log",
+      "sha256": "45072574eef069a1ec5e6c17159a06e58be46a1a464b6a5fac4e06ce0294ea7d"
+    },
+    "build-info": {
+      "file": "smaller-buffer-20261017-build-info.json",
+      "sha256": "6e934de24d2fe4b50b8a9d5ed85540c72b8ac582e5cde78f9e135d379130d884"
+    }
+  }
+}

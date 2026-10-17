@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "commit": "89a436a93c1d53466fa19a525cde991f0ec1db47",
+  "working_tree_dirty": false,
+  "tools": {
+    "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+    "node": "v22.22.3",
+    "python": "Python 3.14.2",
+    "wasm_bindgen": "wasm-bindgen 0.2.118"
+  },
+  "wasm_sha256": "782009af96f7a4c5fbd17a46e0716d4b6a300d4e85286a65c2b92e5cdd7f12ed",
+  "reused_engine": {
+    "source_commit": "807e2adcd31cdd8cd31a74f87fdeec05247b7ef0",
+    "wasm_sha256": "782009af96f7a4c5fbd17a46e0716d4b6a300d4e85286a65c2b92e5cdd7f12ed",
+    "scope": "Controlled frontend-only local experiment. Exact verified retained engine; Rust source subtrees/workspace manifest match. No claim Rust was recompiled for this frontend candidate; normal CI build required before adoption."
+  }
+}
