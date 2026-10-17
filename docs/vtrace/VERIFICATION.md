@@ -503,3 +503,7 @@ automatic saved restoration defeated isolation, a redundant load raced panel
 folding, and repeated process reopening with prior downloads hit a browser failure.
 The final fixture reopens once before all cases and asserts candidate nonresidency
 before each case. No browser flags, application assets or saved records changed.
+Re-run from the repository root with
+`node icelines-browser/e2e/persisted-catalog-context.mjs --artifact <retained-dist>`
+or use `npm run acceptance:persisted-catalog-context -- --artifact <retained-dist>`
+from `icelines-browser`. Artifact paths are relative to the repository root.

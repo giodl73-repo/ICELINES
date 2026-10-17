@@ -10,7 +10,8 @@
     "acceptance:offline": "node e2e/offline-reopen.mjs",
     "measure:memory": "node e2e/memory.mjs",
     "acceptance:viewport": "node e2e/viewport.mjs",
-    "acceptance:catalog-context": "node e2e/catalog-context.mjs"
+    "acceptance:catalog-context": "node e2e/catalog-context.mjs",
+    "acceptance:persisted-catalog-context": "node e2e/persisted-catalog-context.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
