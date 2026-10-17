@@ -1,0 +1,454 @@
+{
+  "scope": "Post-sampler/pre-trace renderer region census; source inventory contains owned descendants only. Partial/failed walks are retained. No peak-memory or native-allocation ownership claim.",
+  "renderers": [
+    {
+      "pid": 54092,
+      "created_at_utc": "2026-10-17T22:47:38.732292+00:00",
+      "completed": true,
+      "regions_queried": 2100,
+      "walk_ms": 14.825299993390217,
+      "state_bytes": {
+        "0x10000": 136854855229440,
+        "0x2000": 3881988448256,
+        "0x1000": 644612096
+      },
+      "committed_by_type_and_protection": {
+        "MEM_PRIVATE:READONLY": 2408448,
+        "MEM_PRIVATE:READWRITE": 99610624,
+        "MEM_MAPPED:READWRITE": 1323008,
+        "MEM_MAPPED:READONLY": 55521280,
+        "MEM_PRIVATE:EXECUTE_READ": 73728,
+        "MEM_PRIVATE:EXECUTE_READWRITE": 1896448,
+        "MEM_MAPPED:NOACCESS": 131293184,
+        "MEM_IMAGE:READONLY": 57765888,
+        "MEM_IMAGE:EXECUTE_READ": 289034240,
+        "MEM_IMAGE:READWRITE": 1576960,
+        "MEM_IMAGE:WRITECOPY": 4100096,
+        "MEM_IMAGE:EXECUTE_READWRITE": 8192
+      },
+      "private_committed_region_bytes": 103989248,
+      "largest_committed_allocations": [
+        {
+          "committed_bytes": 304005120,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 256589824,
+          "regions": 147
+        },
+        {
+          "committed_bytes": 136949760,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 0,
+          "regions": 43
+        },
+        {
+          "committed_bytes": 35389440,
+          "private_committed_bytes": 35389440,
+          "executable_committed_bytes": 0,
+          "regions": 2
+        },
+        {
+          "committed_bytes": 33591296,
+          "private_committed_bytes": 33591296,
+          "executable_committed_bytes": 0,
+          "regions": 426
+        },
+        {
+          "committed_bytes": 22880256,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 0,
+          "regions": 1
+        },
+        {
+          "committed_bytes": 14303232,
+          "private_committed_bytes": 14303232,
+          "executable_committed_bytes": 0,
+          "regions": 20
+        },
+        {
+          "committed_bytes": 10825728,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 0,
+          "regions": 1
+        },
+        {
+          "committed_bytes": 8179712,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 6340608,
+          "regions": 8
+        },
+        {
+          "committed_bytes": 7049216,
+          "private_committed_bytes": 7049216,
+          "executable_committed_bytes": 0,
+          "regions": 35
+        },
+        {
+          "committed_bytes": 4603904,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 3629056,
+          "regions": 18
+        },
+        {
+          "committed_bytes": 4263936,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 1765376,
+          "regions": 9
+        },
+        {
+          "committed_bytes": 3825664,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 2678784,
+          "regions": 6
+        },
+        {
+          "committed_bytes": 3387392,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 0,
+          "regions": 1
+        },
+        {
+          "committed_bytes": 2899968,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 2265088,
+          "regions": 18
+        },
+        {
+          "committed_bytes": 2543616,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 1540096,
+          "regions": 6
+        },
+        {
+          "committed_bytes": 2539520,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 1675264,
+          "regions": 6
+        },
+        {
+          "committed_bytes": 2412544,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 1720320,
+          "regions": 14
+        },
+        {
+          "committed_bytes": 1961984,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 790528,
+          "regions": 8
+        },
+        {
+          "committed_bytes": 1839104,
+          "private_committed_bytes": 1839104,
+          "executable_committed_bytes": 1839104,
+          "regions": 2
+        },
+        {
+          "committed_bytes": 1679360,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 892928,
+          "regions": 8
+        }
+      ],
+      "scope": "VirtualQueryEx metadata only; no memory contents, page touching, GC or working-set intervention. No addresses emitted. MEM_IMAGE/MEM_MAPPED can include private copy-on-write pages: MEM_PRIVATE committed sum is not complete OS private usage or physical RAM. Region walk is not an atomic snapshot."
+    },
+    {
+      "pid": 41688,
+      "created_at_utc": "2026-10-17T22:47:38.718904+00:00",
+      "completed": true,
+      "regions_queried": 1060,
+      "walk_ms": 6.783699995139614,
+      "state_bytes": {
+        "0x10000": 136859104759808,
+        "0x2000": 3877839060992,
+        "0x1000": 544468992
+      },
+      "committed_by_type_and_protection": {
+        "MEM_PRIVATE:READONLY": 1622016,
+        "MEM_PRIVATE:READWRITE": 7790592,
+        "MEM_MAPPED:READWRITE": 331776,
+        "MEM_MAPPED:READONLY": 50847744,
+        "MEM_MAPPED:NOACCESS": 131321856,
+        "MEM_IMAGE:READONLY": 57765888,
+        "MEM_IMAGE:EXECUTE_READ": 289034240,
+        "MEM_IMAGE:READWRITE": 1351680,
+        "MEM_IMAGE:WRITECOPY": 4325376,
+        "MEM_PRIVATE:EXECUTE_READ": 69632,
+        "MEM_IMAGE:EXECUTE_READWRITE": 8192
+      },
+      "private_committed_region_bytes": 9482240,
+      "largest_committed_allocations": [
+        {
+          "committed_bytes": 304005120,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 256589824,
+          "regions": 143
+        },
+        {
+          "committed_bytes": 136929280,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 0,
+          "regions": 41
+        },
+        {
+          "committed_bytes": 22880256,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 0,
+          "regions": 1
+        },
+        {
+          "committed_bytes": 10825728,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 0,
+          "regions": 1
+        },
+        {
+          "committed_bytes": 8179712,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 6340608,
+          "regions": 8
+        },
+        {
+          "committed_bytes": 4603904,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 3629056,
+          "regions": 18
+        },
+        {
+          "committed_bytes": 4263936,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 1765376,
+          "regions": 9
+        },
+        {
+          "committed_bytes": 3928064,
+          "private_committed_bytes": 3928064,
+          "executable_committed_bytes": 0,
+          "regions": 105
+        },
+        {
+          "committed_bytes": 3825664,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 2678784,
+          "regions": 6
+        },
+        {
+          "committed_bytes": 3387392,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 0,
+          "regions": 1
+        },
+        {
+          "committed_bytes": 2899968,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 2265088,
+          "regions": 18
+        },
+        {
+          "committed_bytes": 2543616,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 1540096,
+          "regions": 6
+        },
+        {
+          "committed_bytes": 2539520,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 1675264,
+          "regions": 6
+        },
+        {
+          "committed_bytes": 2412544,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 1720320,
+          "regions": 14
+        },
+        {
+          "committed_bytes": 1961984,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 790528,
+          "regions": 8
+        },
+        {
+          "committed_bytes": 1720320,
+          "private_committed_bytes": 1720320,
+          "executable_committed_bytes": 0,
+          "regions": 16
+        },
+        {
+          "committed_bytes": 1679360,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 892928,
+          "regions": 8
+        },
+        {
+          "committed_bytes": 1576960,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 0,
+          "regions": 1
+        },
+        {
+          "committed_bytes": 1568768,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 1228800,
+          "regions": 6
+        },
+        {
+          "committed_bytes": 1363968,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 1019904,
+          "regions": 6
+        }
+      ],
+      "scope": "VirtualQueryEx metadata only; no memory contents, page touching, GC or working-set intervention. No addresses emitted. MEM_IMAGE/MEM_MAPPED can include private copy-on-write pages: MEM_PRIVATE committed sum is not complete OS private usage or physical RAM. Region walk is not an atomic snapshot."
+    },
+    {
+      "pid": 52768,
+      "created_at_utc": "2026-10-17T22:47:38.669340+00:00",
+      "completed": true,
+      "regions_queried": 1390,
+      "walk_ms": 9.459399996558204,
+      "state_bytes": {
+        "0x10000": 136858962763776,
+        "0x2000": 3877959057408,
+        "0x1000": 566468608
+      },
+      "committed_by_type_and_protection": {
+        "MEM_PRIVATE:READONLY": 1622016,
+        "MEM_PRIVATE:READWRITE": 27230208,
+        "MEM_MAPPED:READWRITE": 856064,
+        "MEM_MAPPED:READONLY": 51851264,
+        "MEM_MAPPED:NOACCESS": 131305472,
+        "MEM_IMAGE:READONLY": 57765888,
+        "MEM_IMAGE:EXECUTE_READ": 289034240,
+        "MEM_IMAGE:READWRITE": 1462272,
+        "MEM_IMAGE:WRITECOPY": 4214784,
+        "MEM_PRIVATE:EXECUTE_READ": 69632,
+        "MEM_PRIVATE:EXECUTE_READWRITE": 1048576,
+        "MEM_IMAGE:EXECUTE_READWRITE": 8192
+      },
+      "private_committed_region_bytes": 29970432,
+      "largest_committed_allocations": [
+        {
+          "committed_bytes": 304005120,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 256589824,
+          "regions": 153
+        },
+        {
+          "committed_bytes": 136953856,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 0,
+          "regions": 42
+        },
+        {
+          "committed_bytes": 22880256,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 0,
+          "regions": 1
+        },
+        {
+          "committed_bytes": 11497472,
+          "private_committed_bytes": 11497472,
+          "executable_committed_bytes": 0,
+          "regions": 202
+        },
+        {
+          "committed_bytes": 10825728,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 0,
+          "regions": 1
+        },
+        {
+          "committed_bytes": 8179712,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 6340608,
+          "regions": 8
+        },
+        {
+          "committed_bytes": 5652480,
+          "private_committed_bytes": 5652480,
+          "executable_committed_bytes": 0,
+          "regions": 21
+        },
+        {
+          "committed_bytes": 5505024,
+          "private_committed_bytes": 5505024,
+          "executable_committed_bytes": 0,
+          "regions": 5
+        },
+        {
+          "committed_bytes": 4603904,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 3629056,
+          "regions": 18
+        },
+        {
+          "committed_bytes": 4263936,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 1765376,
+          "regions": 9
+        },
+        {
+          "committed_bytes": 3825664,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 2678784,
+          "regions": 6
+        },
+        {
+          "committed_bytes": 3387392,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 0,
+          "regions": 1
+        },
+        {
+          "committed_bytes": 2899968,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 2265088,
+          "regions": 18
+        },
+        {
+          "committed_bytes": 2543616,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 1540096,
+          "regions": 6
+        },
+        {
+          "committed_bytes": 2539520,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 1675264,
+          "regions": 6
+        },
+        {
+          "committed_bytes": 2412544,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 1720320,
+          "regions": 14
+        },
+        {
+          "committed_bytes": 1961984,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 790528,
+          "regions": 8
+        },
+        {
+          "committed_bytes": 1679360,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 892928,
+          "regions": 8
+        },
+        {
+          "committed_bytes": 1576960,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 0,
+          "regions": 1
+        },
+        {
+          "committed_bytes": 1568768,
+          "private_committed_bytes": 0,
+          "executable_committed_bytes": 1228800,
+          "regions": 6
+        }
+      ],
+      "scope": "VirtualQueryEx metadata only; no memory contents, page touching, GC or working-set intervention. No addresses emitted. MEM_IMAGE/MEM_MAPPED can include private copy-on-write pages: MEM_PRIVATE committed sum is not complete OS private usage or physical RAM. Region walk is not an atomic snapshot."
+    }
+  ]
+}

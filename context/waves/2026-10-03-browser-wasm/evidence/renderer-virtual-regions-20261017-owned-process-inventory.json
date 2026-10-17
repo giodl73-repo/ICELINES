@@ -1,0 +1,64 @@
+{
+  "scope": "Owned root and currently live descendants only. Full command lines inspected locally but never emitted. Roles do not identify app versus browser-UI renderer.",
+  "observed_at_utc": "2026-10-17T22:49:04.3063141Z",
+  "root_id": 54420,
+  "root_created_at_utc": "2026-10-17T22:47:37.7359980Z",
+  "processes": [
+    {
+      "id": 54092,
+      "parent_id": 54420,
+      "created_at_utc": "2026-10-17T22:47:38.7322920Z",
+      "kind": "renderer",
+      "utility_subtype": null
+    },
+    {
+      "id": 41748,
+      "parent_id": 54420,
+      "created_at_utc": "2026-10-17T22:47:38.4392470Z",
+      "kind": "utility",
+      "utility_subtype": "network.mojom.NetworkService"
+    },
+    {
+      "id": 53308,
+      "parent_id": 54420,
+      "created_at_utc": "2026-10-17T22:47:38.4234170Z",
+      "kind": "gpu-process",
+      "utility_subtype": null
+    },
+    {
+      "id": 45364,
+      "parent_id": 54420,
+      "created_at_utc": "2026-10-17T22:47:38.4784410Z",
+      "kind": "utility",
+      "utility_subtype": "storage.mojom.StorageService"
+    },
+    {
+      "id": 41688,
+      "parent_id": 54420,
+      "created_at_utc": "2026-10-17T22:47:38.7189040Z",
+      "kind": "renderer",
+      "utility_subtype": null
+    },
+    {
+      "id": 25708,
+      "parent_id": 54420,
+      "created_at_utc": "2026-10-17T22:47:38.0218190Z",
+      "kind": "crashpad-handler",
+      "utility_subtype": null
+    },
+    {
+      "id": 54420,
+      "parent_id": 4124,
+      "created_at_utc": "2026-10-17T22:47:37.7359980Z",
+      "kind": "browser",
+      "utility_subtype": null
+    },
+    {
+      "id": 52768,
+      "parent_id": 54420,
+      "created_at_utc": "2026-10-17T22:47:38.6693400Z",
+      "kind": "renderer",
+      "utility_subtype": null
+    }
+  ]
+}
