@@ -1,0 +1,1031 @@
+{
+  "scope": "Read-only reanalysis of nine historical additional-observer native dumps; not current release acceptance, byte ownership or reachability proof. Named blink_objects/blink_gc classes are an alternative view of allocated_objects, never additional bytes. No forced GC/new browser run.",
+  "acceptance": null,
+  "historical_artifact": {
+    "commit": "5ef015c4d47ebbcee8234eb92f1fe83716b45054",
+    "shell_build": "2cd7ec75fbdada2e037c0538b702286dff4a31419f383081bd29d82dc1efb02b",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "checkpoints": [
+    {
+      "label": "ready_before_engine",
+      "renderer_pid": 50968,
+      "targets_sharing_pid": [
+        "service_worker",
+        "page"
+      ],
+      "trace_sha256": "fa3798b9b56968eb306ddfb5f45b27275b0c268f89f6d4c90d22cf826a62667c",
+      "main_allocated_objects_bytes": 2237120,
+      "class_count": 1107,
+      "nonempty_class_edges_verified": 1107,
+      "top_classes": [
+        {
+          "name": "blink::LogicalLineItems",
+          "bytes": 228000,
+          "objects": 125,
+          "guid": "2c48"
+        },
+        {
+          "name": "blink::ScriptResource",
+          "bytes": 56848,
+          "objects": 19,
+          "guid": "2cd0"
+        },
+        {
+          "name": "blink::ChildListMutationAccumulator",
+          "bytes": 56064,
+          "objects": 876,
+          "guid": "2a06"
+        },
+        {
+          "name": "blink::ImmutableCSSPropertyValueSet",
+          "bytes": 53984,
+          "objects": 502,
+          "guid": "2bf7"
+        },
+        {
+          "name": "blink::StyleRule",
+          "bytes": 50432,
+          "objects": 546,
+          "guid": "2cf6"
+        },
+        {
+          "name": "blink::PlainTextNode",
+          "bytes": 43400,
+          "objects": 35,
+          "guid": "2c8f"
+        },
+        {
+          "name": "blink::ComputedStyle",
+          "bytes": 38232,
+          "objects": 531,
+          "guid": "2a0c"
+        },
+        {
+          "name": "blink::UniqueElementData",
+          "bytes": 37744,
+          "objects": 337,
+          "guid": "2d15"
+        },
+        {
+          "name": "blink::LayoutResult",
+          "bytes": 37520,
+          "objects": 469,
+          "guid": "2c2b"
+        },
+        {
+          "name": "Text",
+          "bytes": 33704,
+          "objects": 383,
+          "guid": "297a"
+        },
+        {
+          "name": "blink::PhysicalBoxFragment",
+          "bytes": 32440,
+          "objects": 343,
+          "guid": "2c89"
+        },
+        {
+          "name": "blink::ConstraintSpace::RareData",
+          "bytes": 30240,
+          "objects": 252,
+          "guid": "2a30"
+        },
+        {
+          "name": "blink::NinePieceImageData",
+          "bytes": 30240,
+          "objects": 126,
+          "guid": "2c67"
+        },
+        {
+          "name": "blink::ComputedStyleBase::StyleSurroundData",
+          "bytes": 27768,
+          "objects": 89,
+          "guid": "2a27"
+        },
+        {
+          "name": "blink::HeapVectorBacking<blink::HarfBuzzRunGlyphData>",
+          "bytes": 23776,
+          "objects": 166,
+          "guid": "2b79"
+        }
+      ]
+    },
+    {
+      "label": "loaded_1",
+      "renderer_pid": 50968,
+      "targets_sharing_pid": [
+        "service_worker",
+        "worker",
+        "page"
+      ],
+      "trace_sha256": "76660f6847fecd282b3dfe70b94d57a25982f337a811ca9b778879ac6e8f26c2",
+      "main_allocated_objects_bytes": 6110216,
+      "class_count": 1241,
+      "nonempty_class_edges_verified": 1241,
+      "top_classes": [
+        {
+          "name": "blink::LogicalLineItems",
+          "bytes": 1663488,
+          "objects": 912,
+          "guid": "3399"
+        },
+        {
+          "name": "blink::PlainTextNode",
+          "bytes": 229400,
+          "objects": 185,
+          "guid": "33ed"
+        },
+        {
+          "name": "blink::ConstraintSpace::RareData",
+          "bytes": 221280,
+          "objects": 1844,
+          "guid": "3162"
+        },
+        {
+          "name": "blink::LayoutResult",
+          "bytes": 177520,
+          "objects": 2219,
+          "guid": "337c"
+        },
+        {
+          "name": "blink::PhysicalBoxFragment",
+          "bytes": 137360,
+          "objects": 1261,
+          "guid": "33e1"
+        },
+        {
+          "name": "blink::ShapeResult",
+          "bytes": 134080,
+          "objects": 2095,
+          "guid": "3448"
+        },
+        {
+          "name": "blink::ShapeResultRun",
+          "bytes": 117320,
+          "objects": 2095,
+          "guid": "3449"
+        },
+        {
+          "name": "blink::HeapVectorBacking<blink::FragmentItem>",
+          "bytes": 113416,
+          "objects": 912,
+          "guid": "32ba"
+        },
+        {
+          "name": "blink::ChildListMutationAccumulator",
+          "bytes": 110848,
+          "objects": 1732,
+          "guid": "3138"
+        },
+        {
+          "name": "blink::HeapVectorBacking<blink::HarfBuzzRunGlyphData>",
+          "bytes": 95072,
+          "objects": 2095,
+          "guid": "32bd"
+        },
+        {
+          "name": "blink::ComputedStyle",
+          "bytes": 94392,
+          "objects": 1311,
+          "guid": "313e"
+        },
+        {
+          "name": "blink::PhysicalFragmentRareData",
+          "bytes": 75456,
+          "objects": 1048,
+          "guid": "33e4"
+        },
+        {
+          "name": "blink::LayoutTableCell",
+          "bytes": 70656,
+          "objects": 368,
+          "guid": "3383"
+        },
+        {
+          "name": "blink::TextRecord",
+          "bytes": 68248,
+          "objects": 449,
+          "guid": "3477"
+        },
+        {
+          "name": "Text",
+          "bytes": 67760,
+          "objects": 770,
+          "guid": "3096"
+        }
+      ]
+    },
+    {
+      "label": "loaded_8",
+      "renderer_pid": 50968,
+      "targets_sharing_pid": [
+        "service_worker",
+        "worker",
+        "page"
+      ],
+      "trace_sha256": "b9eca63bd8b0fbbbf656b3b7cbcedb636e7251bb63b52d04ce4dd63e67c848a0",
+      "main_allocated_objects_bytes": 25436168,
+      "class_count": 1249,
+      "nonempty_class_edges_verified": 1249,
+      "top_classes": [
+        {
+          "name": "blink::LogicalLineItems",
+          "bytes": 10247232,
+          "objects": 5618,
+          "guid": "4367"
+        },
+        {
+          "name": "blink::ConstraintSpace::RareData",
+          "bytes": 1455240,
+          "objects": 12127,
+          "guid": "412e"
+        },
+        {
+          "name": "blink::LayoutResult",
+          "bytes": 1022880,
+          "objects": 12786,
+          "guid": "434a"
+        },
+        {
+          "name": "blink::PlainTextNode",
+          "bytes": 880400,
+          "objects": 710,
+          "guid": "43bb"
+        },
+        {
+          "name": "blink::PhysicalBoxFragment",
+          "bytes": 772080,
+          "objects": 6842,
+          "guid": "43af"
+        },
+        {
+          "name": "blink::HeapVectorBacking<blink::FragmentItem>",
+          "bytes": 682840,
+          "objects": 5618,
+          "guid": "4288"
+        },
+        {
+          "name": "blink::ComputedStyle",
+          "bytes": 577152,
+          "objects": 8016,
+          "guid": "410a"
+        },
+        {
+          "name": "blink::ShapeResult",
+          "bytes": 539712,
+          "objects": 8433,
+          "guid": "441a"
+        },
+        {
+          "name": "blink::TextRecord",
+          "bytes": 481840,
+          "objects": 3170,
+          "guid": "4449"
+        },
+        {
+          "name": "blink::ShapeResultRun",
+          "bytes": 472248,
+          "objects": 8433,
+          "guid": "441b"
+        },
+        {
+          "name": "blink::PhysicalFragmentRareData",
+          "bytes": 439776,
+          "objects": 6108,
+          "guid": "43b2"
+        },
+        {
+          "name": "blink::HeapVectorBacking<cppgc::internal::BasicMember<blink::Element, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>",
+          "bytes": 401488,
+          "objects": 516,
+          "guid": "42bf"
+        },
+        {
+          "name": "blink::ShapeResultView",
+          "bytes": 387576,
+          "objects": 5383,
+          "guid": "441d"
+        },
+        {
+          "name": "blink::HeapVectorBacking<blink::HarfBuzzRunGlyphData>",
+          "bytes": 352560,
+          "objects": 8433,
+          "guid": "428b"
+        },
+        {
+          "name": "blink::HitTestData",
+          "bytes": 317440,
+          "objects": 3968,
+          "guid": "4304"
+        }
+      ]
+    },
+    {
+      "label": "loaded_10",
+      "renderer_pid": 50968,
+      "targets_sharing_pid": [
+        "service_worker",
+        "worker",
+        "page"
+      ],
+      "trace_sha256": "46b7d06ef1d0c05c2a97a724b526c2ffb14cc0754f2002b837e880f5555129d4",
+      "main_allocated_objects_bytes": 2509456,
+      "class_count": 939,
+      "nonempty_class_edges_verified": 939,
+      "top_classes": [
+        {
+          "name": "blink::HeapHashTableBacking<blink::HashTable<blink::ShapeCacheKey, blink::KeyValuePair<blink::ShapeCacheKey, cppgc::internal::BasicMember<const blink::ShapeResult, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::KeyValuePairExtractor, blink::HashMapValueTraits<blink::HashTraits<ShapeCacheKey>, blink::HashTraits<cppgc::internal::BasicMember<const blink::ShapeResult, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>>, blink::HashTraits<ShapeCacheKey>, blink::HeapAllocator>>",
+          "bytes": 126200,
+          "objects": 7,
+          "guid": "2eef"
+        },
+        {
+          "name": "blink::PhysicalBoxFragment",
+          "bytes": 115200,
+          "objects": 1012,
+          "guid": "307d"
+        },
+        {
+          "name": "blink::HeapVectorBacking<blink::FragmentItem>",
+          "bytes": 104624,
+          "objects": 856,
+          "guid": "2f96"
+        },
+        {
+          "name": "blink::ConstraintSpace::RareData",
+          "bytes": 98160,
+          "objects": 818,
+          "guid": "2e7c"
+        },
+        {
+          "name": "blink::LayoutResult",
+          "bytes": 79840,
+          "objects": 998,
+          "guid": "3028"
+        },
+        {
+          "name": "blink::ComputedStyle",
+          "bytes": 76320,
+          "objects": 1060,
+          "guid": "2e58"
+        },
+        {
+          "name": "blink::LayoutTableCell",
+          "bytes": 70656,
+          "objects": 368,
+          "guid": "302f"
+        },
+        {
+          "name": "blink::HeapHashTableBacking<blink::HashTable<cppgc::internal::BasicMember<const blink::ScriptWrappable, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, blink::KeyValuePair<cppgc::internal::BasicMember<const blink::ScriptWrappable, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, v8::TracedReference<v8::Object>>, blink::KeyValuePairExtractor, blink::HashMapValueTraits<blink::HashTraits<cppgc::internal::BasicMember<const blink::ScriptWrappable, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HashTraits<v8::TracedReference<v8::Object>>>, blink::HashTraits<cppgc::internal::BasicMember<const blink::ScriptWrappable, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HeapAllocator>>",
+          "bytes": 65544,
+          "objects": 1,
+          "guid": "2f40"
+        },
+        {
+          "name": "Text",
+          "bytes": 64328,
+          "objects": 731,
+          "guid": "2dda"
+        },
+        {
+          "name": "blink::PhysicalFragmentRareData",
+          "bytes": 63720,
+          "objects": 885,
+          "guid": "3080"
+        },
+        {
+          "name": "blink::ImmutableCSSPropertyValueSet",
+          "bytes": 56544,
+          "objects": 523,
+          "guid": "2ff4"
+        },
+        {
+          "name": "blink::ShapeResultView",
+          "bytes": 56376,
+          "objects": 783,
+          "guid": "30bb"
+        },
+        {
+          "name": "blink::LayoutText",
+          "bytes": 51184,
+          "objects": 457,
+          "guid": "3032"
+        },
+        {
+          "name": "blink::StyleRule",
+          "bytes": 50432,
+          "objects": 546,
+          "guid": "30d1"
+        },
+        {
+          "name": "blink::UniqueElementData",
+          "bytes": 49840,
+          "objects": 445,
+          "guid": "30ec"
+        }
+      ]
+    },
+    {
+      "label": "loaded_11",
+      "renderer_pid": 50968,
+      "targets_sharing_pid": [
+        "service_worker",
+        "worker",
+        "page"
+      ],
+      "trace_sha256": "452da289f9e0f498b2291591e715e19fc1a8bc49dcc7886b0ae6d4875ab30675",
+      "main_allocated_objects_bytes": 5214680,
+      "class_count": 1160,
+      "nonempty_class_edges_verified": 1160,
+      "top_classes": [
+        {
+          "name": "blink::LogicalLineItems",
+          "bytes": 1227552,
+          "objects": 673,
+          "guid": "342a"
+        },
+        {
+          "name": "blink::ConstraintSpace::RareData",
+          "bytes": 274560,
+          "objects": 2288,
+          "guid": "321c"
+        },
+        {
+          "name": "blink::PhysicalBoxFragment",
+          "bytes": 205880,
+          "objects": 1809,
+          "guid": "346d"
+        },
+        {
+          "name": "blink::LayoutResult",
+          "bytes": 200640,
+          "objects": 2508,
+          "guid": "340d"
+        },
+        {
+          "name": "blink::HeapVectorBacking<blink::FragmentItem>",
+          "bytes": 186056,
+          "objects": 1529,
+          "guid": "335b"
+        },
+        {
+          "name": "blink::ComputedStyle",
+          "bytes": 145152,
+          "objects": 2016,
+          "guid": "31f8"
+        },
+        {
+          "name": "blink::PhysicalFragmentRareData",
+          "bytes": 115776,
+          "objects": 1608,
+          "guid": "3470"
+        },
+        {
+          "name": "blink::ShapeResultView",
+          "bytes": 102240,
+          "objects": 1420,
+          "guid": "34d1"
+        },
+        {
+          "name": "blink::PlainTextNode",
+          "bytes": 93000,
+          "objects": 75,
+          "guid": "3479"
+        },
+        {
+          "name": "blink::ShapeResult",
+          "bytes": 79616,
+          "objects": 1244,
+          "guid": "34ce"
+        },
+        {
+          "name": "blink::PhysicalLineBoxFragment",
+          "bytes": 73440,
+          "objects": 1530,
+          "guid": "3471"
+        },
+        {
+          "name": "Text",
+          "bytes": 71632,
+          "objects": 814,
+          "guid": "3154"
+        },
+        {
+          "name": "blink::HeapHashTableBacking<blink::HashTable<blink::ShapeCacheKey, blink::KeyValuePair<blink::ShapeCacheKey, cppgc::internal::BasicMember<const blink::ShapeResult, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::KeyValuePairExtractor, blink::HashMapValueTraits<blink::HashTraits<ShapeCacheKey>, blink::HashTraits<cppgc::internal::BasicMember<const blink::ShapeResult, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>>, blink::HashTraits<ShapeCacheKey>, blink::HeapAllocator>>",
+          "bytes": 70904,
+          "objects": 7,
+          "guid": "329e"
+        },
+        {
+          "name": "blink::LayoutTableCell",
+          "bytes": 70848,
+          "objects": 369,
+          "guid": "3414"
+        },
+        {
+          "name": "blink::HeapVectorBacking<blink::HarfBuzzRunGlyphData>",
+          "bytes": 70136,
+          "objects": 1244,
+          "guid": "335d"
+        }
+      ]
+    },
+    {
+      "label": "loaded_26",
+      "renderer_pid": 50968,
+      "targets_sharing_pid": [
+        "service_worker",
+        "worker",
+        "page"
+      ],
+      "trace_sha256": "d41f3b5058dd21cae79ed8abdab09c18e4afdc35e3d8a4bad40cbaadf26ee0b1",
+      "main_allocated_objects_bytes": 8091456,
+      "class_count": 1160,
+      "nonempty_class_edges_verified": 1160,
+      "top_classes": [
+        {
+          "name": "blink::LogicalLineItems",
+          "bytes": 2467872,
+          "objects": 1353,
+          "guid": "3233"
+        },
+        {
+          "name": "blink::ConstraintSpace::RareData",
+          "bytes": 451920,
+          "objects": 3766,
+          "guid": "3025"
+        },
+        {
+          "name": "blink::LayoutResult",
+          "bytes": 322560,
+          "objects": 4032,
+          "guid": "3216"
+        },
+        {
+          "name": "blink::PhysicalBoxFragment",
+          "bytes": 297400,
+          "objects": 2613,
+          "guid": "3276"
+        },
+        {
+          "name": "blink::HeapVectorBacking<blink::FragmentItem>",
+          "bytes": 268328,
+          "objects": 2209,
+          "guid": "3164"
+        },
+        {
+          "name": "blink::ComputedStyle",
+          "bytes": 213624,
+          "objects": 2967,
+          "guid": "3001"
+        },
+        {
+          "name": "blink::PlainTextNode",
+          "bytes": 186000,
+          "objects": 150,
+          "guid": "3282"
+        },
+        {
+          "name": "blink::PhysicalFragmentRareData",
+          "bytes": 168336,
+          "objects": 2338,
+          "guid": "3279"
+        },
+        {
+          "name": "blink::ShapeResultView",
+          "bytes": 148680,
+          "objects": 2065,
+          "guid": "32da"
+        },
+        {
+          "name": "blink::ShapeResult",
+          "bytes": 139584,
+          "objects": 2181,
+          "guid": "32d7"
+        },
+        {
+          "name": "blink::TextRecord",
+          "bytes": 126008,
+          "objects": 829,
+          "guid": "3303"
+        },
+        {
+          "name": "blink::ShapeResultRun",
+          "bytes": 122136,
+          "objects": 2181,
+          "guid": "32d8"
+        },
+        {
+          "name": "blink::HeapVectorBacking<cppgc::internal::BasicMember<blink::Element, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>",
+          "bytes": 112672,
+          "objects": 133,
+          "guid": "3196"
+        },
+        {
+          "name": "blink::HeapVectorBacking<blink::HarfBuzzRunGlyphData>",
+          "bytes": 108024,
+          "objects": 2181,
+          "guid": "3166"
+        },
+        {
+          "name": "blink::HeapHashTableBacking<blink::HashTable<blink::ShapeCacheKey, blink::KeyValuePair<blink::ShapeCacheKey, cppgc::internal::BasicMember<const blink::ShapeResult, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::KeyValuePairExtractor, blink::HashMapValueTraits<blink::HashTraits<ShapeCacheKey>, blink::HashTraits<cppgc::internal::BasicMember<const blink::ShapeResult, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>>, blink::HashTraits<ShapeCacheKey>, blink::HeapAllocator>>",
+          "bytes": 107768,
+          "objects": 7,
+          "guid": "30a7"
+        }
+      ]
+    },
+    {
+      "label": "loaded_75",
+      "renderer_pid": 50968,
+      "targets_sharing_pid": [
+        "service_worker",
+        "worker",
+        "page"
+      ],
+      "trace_sha256": "432f1012826a1b981a332640dd4257c8e6c3234f8852562930be90aadb1726e9",
+      "main_allocated_objects_bytes": 5426848,
+      "class_count": 1159,
+      "nonempty_class_edges_verified": 1159,
+      "top_classes": [
+        {
+          "name": "blink::LogicalLineItems",
+          "bytes": 1243968,
+          "objects": 682,
+          "guid": "3069"
+        },
+        {
+          "name": "blink::ConstraintSpace::RareData",
+          "bytes": 275520,
+          "objects": 2296,
+          "guid": "2e5b"
+        },
+        {
+          "name": "blink::PhysicalBoxFragment",
+          "bytes": 206960,
+          "objects": 1818,
+          "guid": "30ac"
+        },
+        {
+          "name": "blink::LayoutResult",
+          "bytes": 202080,
+          "objects": 2526,
+          "guid": "304c"
+        },
+        {
+          "name": "blink::HeapVectorBacking<blink::FragmentItem>",
+          "bytes": 187136,
+          "objects": 1538,
+          "guid": "2f9a"
+        },
+        {
+          "name": "blink::ComputedStyle",
+          "bytes": 144792,
+          "objects": 2011,
+          "guid": "2e37"
+        },
+        {
+          "name": "blink::PhysicalFragmentRareData",
+          "bytes": 116424,
+          "objects": 1617,
+          "guid": "30af"
+        },
+        {
+          "name": "blink::ShapeResultView",
+          "bytes": 102816,
+          "objects": 1428,
+          "guid": "3110"
+        },
+        {
+          "name": "blink::PlainTextNode",
+          "bytes": 93000,
+          "objects": 75,
+          "guid": "30b8"
+        },
+        {
+          "name": "blink::ShapeResult",
+          "bytes": 81728,
+          "objects": 1277,
+          "guid": "310d"
+        },
+        {
+          "name": "blink::TextRecord",
+          "bytes": 76152,
+          "objects": 501,
+          "guid": "3139"
+        },
+        {
+          "name": "blink::PhysicalLineBoxFragment",
+          "bytes": 73872,
+          "objects": 1539,
+          "guid": "30b0"
+        },
+        {
+          "name": "Text",
+          "bytes": 71632,
+          "objects": 814,
+          "guid": "2d93"
+        },
+        {
+          "name": "blink::ShapeResultRun",
+          "bytes": 71512,
+          "objects": 1277,
+          "guid": "310e"
+        },
+        {
+          "name": "blink::HeapVectorBacking<blink::HarfBuzzRunGlyphData>",
+          "bytes": 71024,
+          "objects": 1277,
+          "guid": "2f9c"
+        }
+      ]
+    },
+    {
+      "label": "after_twenty_queries",
+      "renderer_pid": 50968,
+      "targets_sharing_pid": [
+        "service_worker",
+        "worker",
+        "page"
+      ],
+      "trace_sha256": "3c394a5b2ea76d9d06baae91a2b53c121ef4c14a17b14261d0660f6cf5d2e892",
+      "main_allocated_objects_bytes": 2718880,
+      "class_count": 950,
+      "nonempty_class_edges_verified": 950,
+      "top_classes": [
+        {
+          "name": "blink::PhysicalBoxFragment",
+          "bytes": 114920,
+          "objects": 1009,
+          "guid": "2d90"
+        },
+        {
+          "name": "blink::HeapVectorBacking<blink::FragmentItem>",
+          "bytes": 104504,
+          "objects": 855,
+          "guid": "2ca3"
+        },
+        {
+          "name": "blink::ComputedStyle",
+          "bytes": 98856,
+          "objects": 1373,
+          "guid": "2b63"
+        },
+        {
+          "name": "blink::ConstraintSpace::RareData",
+          "bytes": 98160,
+          "objects": 818,
+          "guid": "2b87"
+        },
+        {
+          "name": "blink::LayoutResult",
+          "bytes": 79600,
+          "objects": 995,
+          "guid": "2d3b"
+        },
+        {
+          "name": "blink::HeapHashTableBacking<blink::HashTable<blink::ShapeCacheKey, blink::KeyValuePair<blink::ShapeCacheKey, cppgc::internal::BasicMember<const blink::ShapeResult, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::KeyValuePairExtractor, blink::HashMapValueTraits<blink::HashTraits<ShapeCacheKey>, blink::HashTraits<cppgc::internal::BasicMember<const blink::ShapeResult, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>>, blink::HashTraits<ShapeCacheKey>, blink::HeapAllocator>>",
+          "bytes": 70904,
+          "objects": 7,
+          "guid": "2bfa"
+        },
+        {
+          "name": "blink::LayoutTableCell",
+          "bytes": 70656,
+          "objects": 368,
+          "guid": "2d42"
+        },
+        {
+          "name": "blink::HeapHashTableBacking<blink::HashTable<cppgc::internal::BasicMember<const blink::ScriptWrappable, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, blink::KeyValuePair<cppgc::internal::BasicMember<const blink::ScriptWrappable, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, v8::TracedReference<v8::Object>>, blink::KeyValuePairExtractor, blink::HashMapValueTraits<blink::HashTraits<cppgc::internal::BasicMember<const blink::ScriptWrappable, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HashTraits<v8::TracedReference<v8::Object>>>, blink::HashTraits<cppgc::internal::BasicMember<const blink::ScriptWrappable, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HeapAllocator>>",
+          "bytes": 65544,
+          "objects": 1,
+          "guid": "2c4a"
+        },
+        {
+          "name": "Text",
+          "bytes": 64416,
+          "objects": 732,
+          "guid": "2ae4"
+        },
+        {
+          "name": "blink::PhysicalFragmentRareData",
+          "bytes": 63576,
+          "objects": 883,
+          "guid": "2d93"
+        },
+        {
+          "name": "DOMRectReadOnly",
+          "bytes": 57344,
+          "objects": 1024,
+          "guid": "2a7e"
+        },
+        {
+          "name": "blink::ImmutableCSSPropertyValueSet",
+          "bytes": 56736,
+          "objects": 524,
+          "guid": "2d05"
+        },
+        {
+          "name": "blink::ShapeResultView",
+          "bytes": 56304,
+          "objects": 782,
+          "guid": "2dce"
+        },
+        {
+          "name": "blink::LayoutText",
+          "bytes": 52080,
+          "objects": 465,
+          "guid": "2d45"
+        },
+        {
+          "name": "blink::StyleRule",
+          "bytes": 50432,
+          "objects": 546,
+          "guid": "2de4"
+        }
+      ]
+    },
+    {
+      "label": "after_restart",
+      "renderer_pid": 50968,
+      "targets_sharing_pid": [
+        "service_worker",
+        "worker",
+        "page"
+      ],
+      "trace_sha256": "2c8f5292f899a4c54042d3143b09c6f3a946ad405f1bfc5b0bb2192c51844c29",
+      "main_allocated_objects_bytes": 3206600,
+      "class_count": 1071,
+      "nonempty_class_edges_verified": 1071,
+      "top_classes": [
+        {
+          "name": "blink::PhysicalBoxFragment",
+          "bytes": 124000,
+          "objects": 1109,
+          "guid": "2ff8"
+        },
+        {
+          "name": "blink::HeapVectorBacking<blink::FragmentItem>",
+          "bytes": 108752,
+          "objects": 882,
+          "guid": "2ee8"
+        },
+        {
+          "name": "blink::ConstraintSpace::RareData",
+          "bytes": 107520,
+          "objects": 896,
+          "guid": "2db1"
+        },
+        {
+          "name": "blink::ComputedStyle",
+          "bytes": 106128,
+          "objects": 1474,
+          "guid": "2d8d"
+        },
+        {
+          "name": "blink::LayoutResult",
+          "bytes": 92000,
+          "objects": 1150,
+          "guid": "2f9e"
+        },
+        {
+          "name": "blink::HeapHashTableBacking<blink::HashTable<blink::ShapeCacheKey, blink::KeyValuePair<blink::ShapeCacheKey, cppgc::internal::BasicMember<const blink::ShapeResult, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::KeyValuePairExtractor, blink::HashMapValueTraits<blink::HashTraits<ShapeCacheKey>, blink::HashTraits<cppgc::internal::BasicMember<const blink::ShapeResult, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>>, blink::HashTraits<ShapeCacheKey>, blink::HeapAllocator>>",
+          "bytes": 70904,
+          "objects": 7,
+          "guid": "2e2b"
+        },
+        {
+          "name": "blink::LayoutTableCell",
+          "bytes": 70656,
+          "objects": 368,
+          "guid": "2fa5"
+        },
+        {
+          "name": "blink::PhysicalFragmentRareData",
+          "bytes": 67824,
+          "objects": 942,
+          "guid": "2ffb"
+        },
+        {
+          "name": "Text",
+          "bytes": 66088,
+          "objects": 751,
+          "guid": "2cfb"
+        },
+        {
+          "name": "blink::HeapHashTableBacking<blink::HashTable<cppgc::internal::BasicMember<const blink::ScriptWrappable, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, blink::KeyValuePair<cppgc::internal::BasicMember<const blink::ScriptWrappable, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, v8::TracedReference<v8::Object>>, blink::KeyValuePairExtractor, blink::HashMapValueTraits<blink::HashTraits<cppgc::internal::BasicMember<const blink::ScriptWrappable, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HashTraits<v8::TracedReference<v8::Object>>>, blink::HashTraits<cppgc::internal::BasicMember<const blink::ScriptWrappable, cppgc::internal::WeakMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HeapAllocator>>",
+          "bytes": 65544,
+          "objects": 1,
+          "guid": "2e85"
+        },
+        {
+          "name": "blink::ShapeResultView",
+          "bytes": 58824,
+          "objects": 817,
+          "guid": "3040"
+        },
+        {
+          "name": "DOMRectReadOnly",
+          "bytes": 58128,
+          "objects": 1038,
+          "guid": "2c85"
+        },
+        {
+          "name": "blink::ImmutableCSSPropertyValueSet",
+          "bytes": 56752,
+          "objects": 525,
+          "guid": "2f67"
+        },
+        {
+          "name": "blink::LayoutText",
+          "bytes": 53648,
+          "objects": 479,
+          "guid": "2fa8"
+        },
+        {
+          "name": "blink::UniqueElementData",
+          "bytes": 50736,
+          "objects": 453,
+          "guid": "3075"
+        }
+      ]
+    }
+  ],
+  "archive_mapping": "Original runtime report names target-process-markers-trace.json beneath each checkpoint label. Resolve the label to its separately named compressed trace descriptor; expansion is byte exact. Full summary retains every verified class-to-anonymous-suballocation GUID edge.",
+  "findings": [
+    "At loaded8, main allocated objects total24.25782012939453 MiB. LogicalLineItems9.77252197265625 MiB, ConstraintSpace::RareData1.3878250122070312 MiB and LayoutResult0.975494384765625 MiB are major named layout allocations. Use exact class values in raw summary rather than rounded display text.",
+    "Named class totals equal blink_gc/main/allocated_objects exactly at every checkpoint, and every nonempty class GUID is joined through allocator ownership edges to an anonymous suballocation with equal byte size. These are the SAME bytes, not additional memory.",
+    "The24.26 MiB allocated-object observation drops to2.39 MiB at loaded10. This does not establish a permanent leak, object reachability, collection timing or reclaimable OS bytes.",
+    "Named classes identify a native subsystem without PDB symbols. They do not identify the calling JavaScript, distinguish application from automation-induced layout, or partition process private bytes."
+  ],
+  "primary_reference": "https://chromium.googlesource.com/chromium/src/+/HEAD/third_party/blink/renderer/platform/heap/blink_gc_memory_dump_provider.cc",
+  "reference_scope": "Current upstream provider explains named type aggregation and AddSuballocation ownership semantics; local trace names/edges/bytes are directly verified. Not an assertion that HEAD source equals installed Chromium binary.",
+  "next_action": "Target table-layout/intrinsic-measurement churn with a scoped diagnostic. Fixed-layout or geometry-read changes require complete name/column visibility, unknown imported data, keyboard/viewport/print proof and repeated original-workload memory benefit before adoption. Do not revisit decoder cleanup solely on these layout type counts.",
+  "open_gates": [
+    "Original250 MiB whole-browser memory requirement remains unmet.",
+    "Physical Android remains deferred by user and untested."
+  ],
+  "evidence": {
+    "historical-report": {
+      "file": "blink-layout-types-20261017-historical-report.json.gz",
+      "sha256": "59040d4f1cc03476ad0fa8ec86705bd6dfaf368f0762121538a7f0627cd7950b",
+      "expanded_sha256": "94ad9c1e6fbe230be3436e731b6dd6807df7ad6c112cdc1b378141c009083522"
+    },
+    "full-summary": {
+      "file": "blink-layout-types-20261017-full-summary.json.gz",
+      "sha256": "fc9437e4c8f97d6bbcc8d99a6c5b695c4b996f178cce8887ed56cde06716ef89",
+      "expanded_sha256": "169885931fbcbd48454733c468fe4868946c3fb1a429e384ed8bfb23828f7d86"
+    },
+    "ready_before_engine-trace": {
+      "file": "blink-layout-types-20261017-ready_before_engine-trace.json.gz",
+      "sha256": "158227d4bebde6a9d96b2fb328fe9edca13b362c108bb23245fb86d74a0c3ae0",
+      "expanded_sha256": "fa3798b9b56968eb306ddfb5f45b27275b0c268f89f6d4c90d22cf826a62667c"
+    },
+    "loaded_1-trace": {
+      "file": "blink-layout-types-20261017-loaded_1-trace.json.gz",
+      "sha256": "51dcccf0b635f380980387facbc87ab19ee2ef674d21a0d2e016e98d673fb5d3",
+      "expanded_sha256": "76660f6847fecd282b3dfe70b94d57a25982f337a811ca9b778879ac6e8f26c2"
+    },
+    "loaded_8-trace": {
+      "file": "blink-layout-types-20261017-loaded_8-trace.json.gz",
+      "sha256": "c3f3c9d238eac895626727c0a38d90f9dc6b8d8c9ffb3264f4bbf4e2955d1649",
+      "expanded_sha256": "b9eca63bd8b0fbbbf656b3b7cbcedb636e7251bb63b52d04ce4dd63e67c848a0"
+    },
+    "loaded_10-trace": {
+      "file": "blink-layout-types-20261017-loaded_10-trace.json.gz",
+      "sha256": "e0d4bec9240bbe7a3de92f444e631832c645b9d1110c38a67d224d362098febb",
+      "expanded_sha256": "46b7d06ef1d0c05c2a97a724b526c2ffb14cc0754f2002b837e880f5555129d4"
+    },
+    "loaded_11-trace": {
+      "file": "blink-layout-types-20261017-loaded_11-trace.json.gz",
+      "sha256": "9694f8d7b0ea64aff87721ba0abc9386c27b6608a88cce86cabfda7c019e0013",
+      "expanded_sha256": "452da289f9e0f498b2291591e715e19fc1a8bc49dcc7886b0ae6d4875ab30675"
+    },
+    "loaded_26-trace": {
+      "file": "blink-layout-types-20261017-loaded_26-trace.json.gz",
+      "sha256": "93b31fd6fe95a4fa24068c474e97ef96ce9059140d8381c9e2b7d326ef822aea",
+      "expanded_sha256": "d41f3b5058dd21cae79ed8abdab09c18e4afdc35e3d8a4bad40cbaadf26ee0b1"
+    },
+    "loaded_75-trace": {
+      "file": "blink-layout-types-20261017-loaded_75-trace.json.gz",
+      "sha256": "107472967bb7b6f2eac1dc43afb4ce8993142d715dd27f0ac553fe91a2884e1b",
+      "expanded_sha256": "432f1012826a1b981a332640dd4257c8e6c3234f8852562930be90aadb1726e9"
+    },
+    "after_twenty_queries-trace": {
+      "file": "blink-layout-types-20261017-after_twenty_queries-trace.json.gz",
+      "sha256": "dd20c170ba182bd3723a042c290664443777acef780faf9a05f2781c9aa0d9b5",
+      "expanded_sha256": "3c394a5b2ea76d9d06baae91a2b53c121ef4c14a17b14261d0660f6cf5d2e892"
+    },
+    "after_restart-trace": {
+      "file": "blink-layout-types-20261017-after_restart-trace.json.gz",
+      "sha256": "3a3aa99319647c201f24b50f519a19def93b2879f25d421a8a2556a4dc1a4810",
+      "expanded_sha256": "2c8f5292f899a4c54042d3143b09c6f3a946ad405f1bfc5b0bb2192c51844c29"
+    },
+    "recipe": {
+      "file": "blink-layout-types-20261017-recipe.py",
+      "sha256": "d192b56280597ba0202f686e9467bb632604039d96649a0a1fe815b6affc90d7"
+    }
+  }
+}
