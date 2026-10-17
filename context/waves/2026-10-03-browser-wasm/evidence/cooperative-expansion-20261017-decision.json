@@ -1,0 +1,110 @@
+{
+  "candidate_commit": "29ce4104498e74c9cba288fcab11a8f1694c2a0d",
+  "scope": "Four normal original full75/eight/two905332/20/restart runs in two opposite-order pairs; original flags/channel/sampler/network observer; no extra observers, forced GC or baseline subtraction. Source adds a zero-delay task boundary each256 KiB decoded, with bounds/deadline/abort checks retained.",
+  "build_scope": "Frontend-only local build reuses exact verified retained Windows engine; not fresh Rust or CI build. All182 artifact files match control except package-download.js and three identity files.",
+  "decision": "Do not adopt as memory optimization: initial raw reduction13.73828125 MiB does not repeat; reverse candidate is7.515625 MiB higher. Baselines vary; no universal causal saving/regression or native ownership is established. No third pair, PR, CI or publication.",
+  "unit_tests": 165,
+  "original_regression": "Both added queued abort/deadline tests fail original; candidate passes. Fake TransformStream tests prove task fairness under that fixture, not a native-browser retention mechanism.",
+  "desktop_memory_acceptance": false,
+  "physical_android": "Deferred by user; untested",
+  "runs": [
+    {
+      "label": "candidate-first",
+      "peak_private_mib": 406.41015625,
+      "blank_private_mib": 232.87109375,
+      "warm_median_ms": 70.05920000000333,
+      "warm_max_ms": 97.6883000000089,
+      "total_package_load_ms": 8391.359700000032
+    },
+    {
+      "label": "control-second",
+      "peak_private_mib": 420.1484375,
+      "blank_private_mib": 231.4609375,
+      "warm_median_ms": 66.49369999999908,
+      "warm_max_ms": 97.14770000000135,
+      "total_package_load_ms": 7376.94699999998
+    },
+    {
+      "label": "control-first",
+      "peak_private_mib": 410.40625,
+      "blank_private_mib": 230.109375,
+      "warm_median_ms": 66.94274999999834,
+      "warm_max_ms": 77.96990000000369,
+      "total_package_load_ms": 9127.381499999994
+    },
+    {
+      "label": "candidate-second",
+      "peak_private_mib": 417.921875,
+      "blank_private_mib": 235.6640625,
+      "warm_median_ms": 66.28205000000162,
+      "warm_max_ms": 77.8269999999975,
+      "total_package_load_ms": 8395.842199999988
+    }
+  ],
+  "evidence": {
+    "memory-candidate-first": {
+      "file": "cooperative-expansion-20261017-memory-candidate-first.json",
+      "sha256": "a11702e1a5352ab4a32403dc58ade4068cd292e4c17f36660b58dcf9ba9ce465"
+    },
+    "candidate-first-samples": {
+      "file": "cooperative-expansion-20261017-candidate-first-samples.json.gz",
+      "sha256": "e4cd75cb91f88ea89c73f37090eff8245379d051194dbcfb8de83ff934ca0d6e",
+      "expanded_sha256": "799b994cf56a6d5c19c7b19bb2cd5d32e7686f9ac8dab3f3139172a255ab4f2e"
+    },
+    "memory-control-second": {
+      "file": "cooperative-expansion-20261017-memory-control-second.json",
+      "sha256": "38aa77016cac3e1c5d5ffa322d964ac41d13e5ec74459736a6e7453f554f19ce"
+    },
+    "control-second-samples": {
+      "file": "cooperative-expansion-20261017-control-second-samples.json.gz",
+      "sha256": "d146c4e587e96490677eb3d846de03f10a44a53d5e6e9798077decfe6df267c9",
+      "expanded_sha256": "6765a94da8b852312422a697f6bdbc72fc503fb6f51bca7c67757a63cd9c5967"
+    },
+    "memory-control-first": {
+      "file": "cooperative-expansion-20261017-memory-control-first.json",
+      "sha256": "ca0cbba2f1e6bc8643b3f896cc825fe1315df341715fea68d6b16f37757ef727"
+    },
+    "control-first-samples": {
+      "file": "cooperative-expansion-20261017-control-first-samples.json.gz",
+      "sha256": "25b06825bdcef4c6200b220ab3beb5e2821c6200713006e7c98dd617a9cc9bc9",
+      "expanded_sha256": "7601a76eecab5a397980145187bd9851ab1e6b1128e534ce41b8d0a762056a5a"
+    },
+    "memory-candidate-second": {
+      "file": "cooperative-expansion-20261017-memory-candidate-second.json",
+      "sha256": "819f32751129801a58400f40c7183781f5c9581e793a28a35f50103272e1ba93"
+    },
+    "candidate-second-samples": {
+      "file": "cooperative-expansion-20261017-candidate-second-samples.json.gz",
+      "sha256": "884e1a98900c5386457979fc7c7ebb36df55e5d335dec232950bbcdc99c1e7e3",
+      "expanded_sha256": "f173a17a8a1b236cf3d917a7e41963cb780b643c61d336dffae2477281c81ae0"
+    },
+    "refusal": {
+      "file": "cooperative-expansion-20261017-refusal.json",
+      "sha256": "1b930ca08df2ef062fc0333c9e4a8858c7cb89cadfa3ac900eddd022a8b91616"
+    },
+    "offline": {
+      "file": "cooperative-expansion-20261017-offline.json",
+      "sha256": "3206e2c647a9eaaea9a41af54f675434ca4f41a9b7f21eaf42e189eec8eba377"
+    },
+    "original-regression": {
+      "file": "cooperative-expansion-20261017-original-regression.log",
+      "sha256": "566cc57d45d72c9217a1a8f057848f69d6bd30986a1b55ca4a7e96748f674d8e"
+    },
+    "units": {
+      "file": "cooperative-expansion-20261017-units.log",
+      "sha256": "f156925a1e08722737270c9e352902da57d933adb0cebe9e410067f341c629d5"
+    },
+    "build-recipe": {
+      "file": "cooperative-expansion-20261017-build-recipe.mjs",
+      "sha256": "07cb3a3030ee4147d5b4f2fe8ef0cf908bc85b1afa58f3d3d21a84a4d025d664"
+    },
+    "build-log": {
+      "file": "cooperative-expansion-20261017-build-log.log",
+      "sha256": "a53236dfd9f5dc8d1a0c3817082d819b19058729ea287a62f1945748d820a26d"
+    },
+    "build-info": {
+      "file": "cooperative-expansion-20261017-build-info.json",
+      "sha256": "6c68bd3e03ef2f6f26c85aec511d74c645289c60429ec71bcb44df27c2efe211"
+    }
+  }
+}

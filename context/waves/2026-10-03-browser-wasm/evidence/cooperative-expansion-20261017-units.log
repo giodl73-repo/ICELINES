@@ -1,0 +1,1014 @@
+
+> icelines-browser@0.26.0 test
+> npm run build && node --test tests/*.test.mjs
+
+
+> icelines-browser@0.26.0 build
+> node build.mjs
+
+IceLines browser 0.26.0 built in dist/; offline shell 027774fae068, 289400 bytes gzip (summed assets)
+TAP version 13
+# Subtest: safe reads retry transient failures, honor Retry-After, and omit credentials/cache
+ok 1 - safe reads retry transient failures, honor Retry-After, and omit credentials/cache
+  ---
+  duration_ms: 31.9271
+  type: 'test'
+  ...
+# Subtest: three retries is a hard per-request bound
+ok 2 - three retries is a hard per-request bound
+  ---
+  duration_ms: 2.6137
+  type: 'test'
+  ...
+# Subtest: Retry-After beyond the foreground deadline stops without waiting
+ok 3 - Retry-After beyond the foreground deadline stops without waiting
+  ---
+  duration_ms: 0.4654
+  type: 'test'
+  ...
+# Subtest: HTTP client errors and malformed JSON are terminal
+ok 4 - HTTP client errors and malformed JSON are terminal
+  ---
+  duration_ms: 1.3824
+  type: 'test'
+  ...
+# Subtest: oversized streamed responses are rejected even without Content-Length
+ok 5 - oversized streamed responses are rejected even without Content-Length
+  ---
+  duration_ms: 4.244
+  type: 'test'
+  ...
+# Subtest: cancellation stops before any request
+ok 6 - cancellation stops before any request
+  ---
+  duration_ms: 0.4491
+  type: 'test'
+  ...
+# Subtest: request timeout cancels pending transport and retries only within the bound
+ok 7 - request timeout cancels pending transport and retries only within the bound
+  ---
+  duration_ms: 59.5843
+  type: 'test'
+  ...
+# Subtest: Retry-After accepts HTTP dates and ignores invalid values
+ok 8 - Retry-After accepts HTTP dates and ignores invalid values
+  ---
+  duration_ms: 0.2686
+  type: 'test'
+  ...
+# Subtest: body timeout cancels stalled streams and shares the same retry bound
+ok 9 - body timeout cancels stalled streams and shares the same retry bound
+  ---
+  duration_ms: 59.3287
+  type: 'test'
+  ...
+# Subtest: abort during a response body stops immediately without retrying
+ok 10 - abort during a response body stops immediately without retrying
+  ---
+  duration_ms: 11.8319
+  type: 'test'
+  ...
+# Subtest: refresh assembles all required reports with no more than two concurrent requests
+ok 11 - refresh assembles all required reports with no more than two concurrent requests
+  ---
+  duration_ms: 17.0751
+  type: 'test'
+  ...
+# Subtest: incomplete/changing pagination never returns a replacement package
+ok 12 - incomplete/changing pagination never returns a replacement package
+  ---
+  duration_ms: 3.0376
+  type: 'test'
+  ...
+# Subtest: invalid season context is rejected before fetching
+ok 13 - invalid season context is rejected before fetching
+  ---
+  duration_ms: 0.3162
+  type: 'test'
+  ...
+# Subtest: refresh requires ordered unique players and matching report coverage
+ok 14 - refresh requires ordered unique players and matching report coverage
+  ---
+  duration_ms: 3.6699
+  type: 'test'
+  ...
+# Subtest: duplicates across page boundaries cannot replace good data
+ok 15 - duplicates across page boundaries cannot replace good data
+  ---
+  duration_ms: 2.2967
+  type: 'test'
+  ...
+# Subtest: ordered multiple pages retain every player exactly once
+ok 16 - ordered multiple pages retain every player exactly once
+  ---
+  duration_ms: 2.7642
+  type: 'test'
+  ...
+# Subtest: gzip/tar release layout is decoded locally with optional goalie absence and unknown observation time
+ok 17 - gzip/tar release layout is decoded locally with optional goalie absence and unknown observation time
+  ---
+  duration_ms: 25.3242
+  type: 'test'
+  ...
+# Subtest: manifest supplies season for a renamed archive and playoffs are selected explicitly
+ok 18 - manifest supplies season for a renamed archive and playoffs are selected explicitly
+  ---
+  duration_ms: 8.202
+  type: 'test'
+  ...
+# Subtest: wrong-season, filename/manifest mismatch and empty playoffs are refused
+ok 19 - wrong-season, filename/manifest mismatch and empty playoffs are refused
+  ---
+  duration_ms: 3.1026
+  type: 'test'
+  ...
+# Subtest: paths, links, extended metadata and unrecognized files are refused before payload parsing
+ok 20 - paths, links, extended metadata and unrecognized files are refused before payload parsing
+  ---
+  duration_ms: 4.2917
+  type: 'test'
+  ...
+# Subtest: duplicate basenames cannot shadow one another across directories
+ok 21 - duplicate basenames cannot shadow one another across directories
+  ---
+  duration_ms: 1.2687
+  type: 'test'
+  ...
+# Subtest: entry count and declared per-file expansion are bounded
+ok 22 - entry count and declared per-file expansion are bounded
+  ---
+  duration_ms: 31.4594
+  type: 'test'
+  ...
+# Subtest: header checksum, truncation and post-terminator data are refused
+ok 23 - header checksum, truncation and post-terminator data are refused
+  ---
+  duration_ms: 4.1936
+  type: 'test'
+  ...
+# Subtest: missing tar end marker and malformed gzip cannot become a package
+ok 24 - missing tar end marker and malformed gzip cannot become a package
+  ---
+  duration_ms: 11.3568
+  type: 'test'
+  ...
+# Subtest: compressed input above 25 MiB is refused before decompression
+ok 25 - compressed input above 25 MiB is refused before decompression
+  ---
+  duration_ms: 1.9228
+  type: 'test'
+  ...
+# Subtest: expanded streaming bytes are bounded independently of declared entry sizes
+ok 26 - expanded streaming bytes are bounded independently of declared entry sizes
+  ---
+  duration_ms: 2.833
+  type: 'test'
+  ...
+# Subtest: gzip integrity failure is terminal even when tar contents are otherwise valid
+ok 27 - gzip integrity failure is terminal even when tar contents are otherwise valid
+  ---
+  duration_ms: 5.5318
+  type: 'test'
+  ...
+# Subtest: lockout, unsupported context and invalid report JSON are refused
+ok 28 - lockout, unsupported context and invalid report JSON are refused
+  ---
+  duration_ms: 0.4502
+  type: 'test'
+  ...
+# Subtest: every generated catalog header matches the complete independent JSON parse
+ok 29 - every generated catalog header matches the complete independent JSON parse
+  ---
+  duration_ms: 571.7296
+  type: 'test'
+  ...
+# Subtest: unknown digests retain full JSON parsing, reordered Unicode headers and duplicate-key behavior
+ok 30 - unknown digests retain full JSON parsing, reordered Unicode headers and duplicate-key behavior
+  ---
+  duration_ms: 0.2974
+  type: 'test'
+  ...
+# Subtest: unknown malformed bodies and UTF-8 remain refused before activation
+ok 31 - unknown malformed bodies and UTF-8 remain refused before activation
+  ---
+  duration_ms: 0.4316
+  type: 'test'
+  ...
+# Subtest: published historical catalog validates all entries and projects only runtime fields
+ok 32 - published historical catalog validates all entries and projects only runtime fields
+  ---
+  duration_ms: 2.9596
+  type: 'test'
+  ...
+# Subtest: gzip transport stays on the canonical deployment path and validates its own budget/hash
+ok 33 - gzip transport stays on the canonical deployment path and validates its own budget/hash
+  ---
+  duration_ms: 0.9021
+  type: 'test'
+  ...
+# Subtest: catalog cannot redirect package reads outside the exact content-addressed deployment path
+ok 34 - catalog cannot redirect package reads outside the exact content-addressed deployment path
+  ---
+  duration_ms: 0.4923
+  type: 'test'
+  ...
+# Subtest: catalog rejects schema drift, oversized lists, ambiguous IDs and duplicate season contexts
+ok 35 - catalog rejects schema drift, oversized lists, ambiguous IDs and duplicate season contexts
+  ---
+  duration_ms: 1.506
+  type: 'test'
+  ...
+# Subtest: catalog refuses invalid seasons, counts, sizes, digests and display identities
+ok 36 - catalog refuses invalid seasons, counts, sizes, digests and display identities
+  ---
+  duration_ms: 0.5793
+  type: 'test'
+  ...
+# Subtest: catalog acquisition uses bounded safe public reads and validates before returning entries
+ok 37 - catalog acquisition uses bounded safe public reads and validates before returning entries
+  ---
+  duration_ms: 40.4524
+  type: 'test'
+  ...
+# Subtest: deferred first load preserves the context chosen before any worker exists
+ok 38 - deferred first load preserves the context chosen before any worker exists
+  ---
+  duration_ms: 5.303
+  type: 'test'
+  ...
+# Subtest: deferred concurrent requests share one worker and failure requires explicit recovery
+ok 39 - deferred concurrent requests share one worker and failure requires explicit recovery
+  ---
+  duration_ms: 1.3512
+  type: 'test'
+  ...
+# Subtest: explicit restart before the first request invalidates the cold context once
+ok 40 - explicit restart before the first request invalidates the cold context once
+  ---
+  duration_ms: 0.4222
+  type: 'test'
+  ...
+# Subtest: deferred constructor failure is reported once and does not retry on ordinary requests
+ok 41 - deferred constructor failure is reported once and does not retry on ordinary requests
+  ---
+  duration_ms: 0.4731
+  type: 'test'
+  ...
+# Subtest: matching owned response resolves and ordinary query errors leave engine usable
+ok 42 - matching owned response resolves and ordinary query errors leave engine usable
+  ---
+  duration_ms: 0.5617
+  type: 'test'
+  ...
+# Subtest: context change rejects obsolete requests immediately and ignores their late responses
+ok 43 - context change rejects obsolete requests immediately and ignores their late responses
+  ---
+  duration_ms: 0.6033
+  type: 'test'
+  ...
+# Subtest: crash rejects every pending request once and retired workers cannot satisfy new requests
+ok 44 - crash rejects every pending request once and retired workers cannot satisfy new requests
+  ---
+  duration_ms: 0.7626
+  type: 'test'
+  ...
+# Subtest: unavailable engine rejects promptly instead of leaving requests pending
+ok 45 - unavailable engine rejects promptly instead of leaving requests pending
+  ---
+  duration_ms: 0.3153
+  type: 'test'
+  ...
+# Subtest: manual restart cancels pending work and creates a distinct worker
+ok 46 - manual restart cancels pending work and creates a distinct worker
+  ---
+  duration_ms: 0.6444
+  type: 'test'
+  ...
+# Subtest: initialization failure and WASM trap responses require worker recovery
+ok 47 - initialization failure and WASM trap responses require worker recovery
+  ---
+  duration_ms: 0.7125
+  type: 'test'
+  ...
+# Subtest: malformed response envelopes and wrong context fail closed
+ok 48 - malformed response envelopes and wrong context fail closed
+  ---
+  duration_ms: 0.6691
+  type: 'test'
+  ...
+# Subtest: postMessage serialization/send failure settles the request and reports one failure
+ok 49 - postMessage serialization/send failure settles the request and reports one failure
+  ---
+  duration_ms: 0.4362
+  type: 'test'
+  ...
+# Subtest: constructor failure is reported asynchronously and can be retried explicitly
+ok 50 - constructor failure is reported asynchronously and can be retried explicitly
+  ---
+  duration_ms: 0.4876
+  type: 'test'
+  ...
+# Subtest: unresponsive worker is terminated by bounded watchdog
+ok 51 - unresponsive worker is terminated by bounded watchdog
+  ---
+  duration_ms: 21.6235
+  type: 'test'
+  ...
+# Subtest: explicit staging transfer detaches only the owned copy and keeps backup bytes intact
+ok 52 - explicit staging transfer detaches only the owned copy and keeps backup bytes intact
+  ---
+  duration_ms: 0.944
+  type: 'test'
+  ...
+# Subtest: borrowed input stays attached unless the caller explicitly transfers ownership
+ok 53 - borrowed input stays attached unless the caller explicitly transfers ownership
+  ---
+  duration_ms: 0.4125
+  type: 'test'
+  ...
+# Subtest: stale removal preserves a replacement and its active pointer
+ok 54 - stale removal preserves a replacement and its active pointer
+  ---
+  duration_ms: 15.0241
+  type: 'test'
+  ...
+# Subtest: refresh saves check current consent inside the transaction even without notifications
+ok 55 - refresh saves check current consent inside the transaction even without notifications
+  ---
+  duration_ms: 4.8046
+  type: 'test'
+  ...
+# Subtest: library entries retain verified headers without package bytes or player arrays
+ok 56 - library entries retain verified headers without package bytes or player arrays
+  ---
+  duration_ms: 21.4412
+  type: 'test'
+  ...
+# Subtest: selection refuses replaced or removed revisions and returns independently owned bytes
+ok 57 - selection refuses replaced or removed revisions and returns independently owned bytes
+  ---
+  duration_ms: 3.1383
+  type: 'test'
+  ...
+# Subtest: library commits bytes, policy, and active pointer together; stored bytes are owned
+ok 58 - library commits bytes, policy, and active pointer together; stored bytes are owned
+  ---
+  duration_ms: 1.5707
+  type: 'test'
+  ...
+# Subtest: revision conflict rolls back both the package and active pointer
+ok 59 - revision conflict rolls back both the package and active pointer
+  ---
+  duration_ms: 3.0854
+  type: 'test'
+  ...
+# Subtest: concurrent writers cannot silently overwrite the same saved revision
+ok 60 - concurrent writers cannot silently overwrite the same saved revision
+  ---
+  duration_ms: 3.4586
+  type: 'test'
+  ...
+# Subtest: removing an inactive saved copy preserves the active pointer and memory object
+ok 61 - removing an inactive saved copy preserves the active pointer and memory object
+  ---
+  duration_ms: 1.1606
+  type: 'test'
+  ...
+# Subtest: removing the active saved copy clears its pointer without deleting other datasets
+ok 62 - removing the active saved copy clears its pointer without deleting other datasets
+  ---
+  duration_ms: 1.3743
+  type: 'test'
+  ...
+# Subtest: pointer write failure rolls back a staged replacement and preserves memory
+ok 63 - pointer write failure rolls back a staged replacement and preserves memory
+  ---
+  duration_ms: 3.417
+  type: 'test'
+  ...
+# Subtest: save snapshots bytes and policy before asynchronous storage access
+ok 64 - save snapshots bytes and policy before asynchronous storage access
+  ---
+  duration_ms: 1.2386
+  type: 'test'
+  ...
+# Subtest: denied access rejects promptly and saved records remain after access is restored
+ok 65 - denied access rejects promptly and saved records remain after access is restored
+  ---
+  duration_ms: 3.529
+  type: 'test'
+  ...
+# Subtest: notification failure does not misreport a committed save
+ok 66 - notification failure does not misreport a committed save
+  ---
+  duration_ms: 5.0852
+  type: 'test'
+  ...
+# Subtest: denied BroadcastChannel construction does not prevent local saves
+ok 67 - denied BroadcastChannel construction does not prevent local saves
+  ---
+  duration_ms: 3.9776
+  type: 'test'
+  ...
+# Subtest: future database versions are refused without deleting original records
+ok 68 - future database versions are refused without deleting original records
+  ---
+  duration_ms: 1.2077
+  type: 'test'
+  ...
+# Subtest: stored byte corruption or revision tampering is refused
+ok 69 - stored byte corruption or revision tampering is refused
+  ---
+  duration_ms: 0.5884
+  type: 'test'
+  ...
+# Subtest: saved metadata cannot override package context or retain independent report arrays
+ok 70 - saved metadata cannot override package context or retain independent report arrays
+  ---
+  duration_ms: 0.7527
+  type: 'test'
+  ...
+# Subtest: future package schemas, unknown fields, invalid UTF-8 and malformed policies are refused
+ok 71 - future package schemas, unknown fields, invalid UTF-8 and malformed policies are refused
+  ---
+  duration_ms: 1.425
+  type: 'test'
+  ...
+# Subtest: invalid replacement cannot change the previous saved package or active pointer
+ok 72 - invalid replacement cannot change the previous saved package or active pointer
+  ---
+  duration_ms: 2.2216
+  type: 'test'
+  ...
+# Subtest: invalid active pointer is refused without modifying the settings record
+ok 73 - invalid active pointer is refused without modifying the settings record
+  ---
+  duration_ms: 1.2829
+  type: 'test'
+  ...
+# Subtest: corrupt database records are refused but remain recoverable without automatic deletion
+ok 74 - corrupt database records are refused but remain recoverable without automatic deletion
+  ---
+  duration_ms: 1.9261
+  type: 'test'
+  ...
+# Subtest: two tab coordinators serialize every live acquisition under the same deployment lock
+ok 75 - two tab coordinators serialize every live acquisition under the same deployment lock
+  ---
+  duration_ms: 10.2742
+  type: 'test'
+  ...
+# Subtest: cancellation while queued never starts acquisition and a later waiter still runs
+ok 76 - cancellation while queued never starts acquisition and a later waiter still runs
+  ---
+  duration_ms: 1.8203
+  type: 'test'
+  ...
+# Subtest: the shared foreground deadline includes waiting for another tab
+ok 77 - the shared foreground deadline includes waiting for another tab
+  ---
+  duration_ms: 16.3857
+  type: 'test'
+  ...
+# Subtest: a deadline releases the lock even if an adapter stops responding
+ok 78 - a deadline releases the lock even if an adapter stops responding
+  ---
+  duration_ms: 13.1898
+  type: 'test'
+  ...
+# Subtest: manual fallback serializes locally and queued cancellation cannot bypass the current reader
+ok 79 - manual fallback serializes locally and queued cancellation cannot bypass the current reader
+  ---
+  duration_ms: 2.6222
+  type: 'test'
+  ...
+# Subtest: a normal engine restart remains part of an unmodified workload
+ok 80 - a normal engine restart remains part of an unmodified workload
+  ---
+  duration_ms: 1.4828
+  type: 'test'
+  ...
+# Subtest: post-GC restart and diagnostic peaks cannot enter the control budget
+ok 81 - post-GC restart and diagnostic peaks cannot enter the control budget
+  ---
+  duration_ms: 0.6647
+  type: 'test'
+  ...
+# Subtest: a run starting with an intervention supplies no normal control phases
+ok 82 - a run starting with an intervention supplies no normal control phases
+  ---
+  duration_ms: 0.1768
+  type: 'test'
+  ...
+# Subtest: generated metadata keeps replacement tokens, quotes and Unicode as data
+ok 83 - generated metadata keeps replacement tokens, quotes and Unicode as data
+  ---
+  duration_ms: 4.355
+  type: 'test'
+  ...
+# Subtest: an absent or repeated build marker fails rather than shipping an empty or ambiguous index
+ok 84 - an absent or repeated build marker fails rather than shipping an empty or ambiguous index
+  ---
+  duration_ms: 1.0307
+  type: 'test'
+  ...
+# Subtest: controller replacement reloads once after first installation
+ok 85 - controller replacement reloads once after first installation
+  ---
+  duration_ms: 3.8719
+  type: 'test'
+  ...
+# Subtest: controller replacement reloads once after existing control
+ok 86 - controller replacement reloads once after existing control
+  ---
+  duration_ms: 0.5309
+  type: 'test'
+  ...
+# Subtest: offline UI requests verified readiness and exposes retryable repair without reloading work
+ok 87 - offline UI requests verified readiness and exposes retryable repair without reloading work
+  ---
+  duration_ms: 3.826
+  type: 'test'
+  ...
+# Subtest: offline install verifies and caches the complete shell, excluding datasets
+ok 88 - offline install verifies and caches the complete shell, excluding datasets
+  ---
+  duration_ms: 80.0042
+  type: 'test'
+  ...
+# Subtest: changed deployment asset rejects installation and removes the incomplete cache
+ok 89 - changed deployment asset rejects installation and removes the incomplete cache
+  ---
+  duration_ms: 3.4198
+  type: 'test'
+  ...
+# Subtest: root/hash shell reload resolves the cached index under the Pages project path
+ok 90 - root/hash shell reload resolves the cached index under the Pages project path
+  ---
+  duration_ms: 34.6273
+  type: 'test'
+  ...
+# Subtest: bookmarked fragment routes resolve cached HTML under the composed workbench path
+ok 91 - bookmarked fragment routes resolve cached HTML under the composed workbench path
+  ---
+  duration_ms: 22.467
+  type: 'test'
+  ...
+# Subtest: live/session packages, query-bearing URLs and other deployment paths are never intercepted
+ok 92 - live/session packages, query-bearing URLs and other deployment paths are never intercepted
+  ---
+  duration_ms: 1.4009
+  type: 'test'
+  ...
+# Subtest: missing cached engine cannot fall back to a mismatched network build
+ok 93 - missing cached engine cannot fall back to a mismatched network build
+  ---
+  duration_ms: 0.887
+  type: 'test'
+  ...
+# Subtest: activation removes only this deployment’s old shell caches
+ok 94 - activation removes only this deployment’s old shell caches
+  ---
+  duration_ms: 9.1041
+  type: 'test'
+  ...
+# Subtest: readiness checks actual cached bytes without network or unrelated-client messages
+ok 95 - readiness checks actual cached bytes without network or unrelated-client messages
+  ---
+  duration_ms: 21.7566
+  type: 'test'
+  ...
+# Subtest: registered worker cannot report ready after cache loss, missing asset or changed bytes
+ok 96 - registered worker cannot report ready after cache loss, missing asset or changed bytes
+  ---
+  duration_ms: 54.3841
+  type: 'test'
+  ...
+# Subtest: activation broadcasts readiness only to this deployment
+ok 97 - activation broadcasts readiness only to this deployment
+  ---
+  duration_ms: 23.1188
+  type: 'test'
+  ...
+# Subtest: explicit repair restores a lost cache using only verified same-build shell assets
+ok 98 - explicit repair restores a lost cache using only verified same-build shell assets
+  ---
+  duration_ms: 39.0647
+  type: 'test'
+  ...
+# Subtest: failed repair preserves existing files and never installs a newer network build
+ok 99 - failed repair preserves existing files and never installs a newer network build
+  ---
+  duration_ms: 61.4402
+  type: 'test'
+  ...
+# Subtest: concurrent repair requests share one acquisition and report to each requesting tab
+ok 100 - concurrent repair requests share one acquisition and report to each requesting tab
+  ---
+  duration_ms: 35.267
+  type: 'test'
+  ...
+# Subtest: unrelated clients cannot trigger shell repair
+ok 101 - unrelated clients cannot trigger shell repair
+  ---
+  duration_ms: 1.1197
+  type: 'test'
+  ...
+# Subtest: stalled repair aborts at the shell deadline and leaves a retryable failure
+ok 102 - stalled repair aborts at the shell deadline and leaves a retryable failure
+  ---
+  duration_ms: 1.4607
+  type: 'test'
+  ...
+# Subtest: update requires consent from every app tab and ignores unrelated sources
+ok 103 - update requires consent from every app tab and ignores unrelated sources
+  ---
+  duration_ms: 1.3372
+  type: 'test'
+  ...
+# Subtest: compressed and legacy download preserve exact Unicode package bytes
+ok 104 - compressed and legacy download preserve exact Unicode package bytes
+  ---
+  duration_ms: 73.5247
+  type: 'test'
+  ...
+# Subtest: wrong compressed digest, expanded digest, size and broken gzip are refused
+ok 105 - wrong compressed digest, expanded digest, size and broken gzip are refused
+  ---
+  duration_ms: 22.6236
+  type: 'test'
+  ...
+# Subtest: browser without gzip support uses the authenticated raw package
+ok 106 - browser without gzip support uses the authenticated raw package
+  ---
+  duration_ms: 3.2001
+  type: 'test'
+  ...
+# Subtest: expansion bomb is bounded and cancellation/deadline remain errors
+ok 107 - expansion bomb is bounded and cancellation/deadline remain errors
+  ---
+  duration_ms: 7.3011
+  type: 'test'
+  ...
+# Subtest: multi-chunk expansion preserves an offset input view and the exact output limit
+ok 108 - multi-chunk expansion preserves an offset input view and the exact output limit
+  ---
+  duration_ms: 54.0082
+  type: 'test'
+  ...
+# Subtest: decoder input writes preserve offset views and remain bounded without copying
+ok 109 - decoder input writes preserve offset views and remain bounded without copying
+  ---
+  duration_ms: 3.5254
+  type: 'test'
+  ...
+# Subtest: native gzip expansion preserves incompressible data across decoder input boundaries
+ok 110 - native gzip expansion preserves incompressible data across decoder input boundaries
+  ---
+  duration_ms: 47.0753
+  type: 'test'
+  ...
+# Subtest: cancellation stops decoder input before forwarding the whole payload
+ok 111 - cancellation stops decoder input before forwarding the whole payload
+  ---
+  duration_ms: 1.1508
+  type: 'test'
+  ...
+# Subtest: large expansion yields to a queued abort before finishing
+ok 112 - large expansion yields to a queued abort before finishing
+  ---
+  duration_ms: 4.0074
+  type: 'test'
+  ...
+# Subtest: large expansion yields to a queued deadline before finishing
+ok 113 - large expansion yields to a queued deadline before finishing
+  ---
+  duration_ms: 10.2857
+  type: 'test'
+  ...
+# Subtest: public package reads retry safe failures and preserve exact bytes with private caching disabled
+ok 114 - public package reads retry safe failures and preserve exact bytes with private caching disabled
+  ---
+  duration_ms: 41.5768
+  type: 'test'
+  ...
+# Subtest: package header and streamed overflows are terminal and cancel the response body
+ok 115 - package header and streamed overflows are terminal and cancel the response body
+  ---
+  duration_ms: 4.3253
+  type: 'test'
+  ...
+# Subtest: package body stalls share the 20-second request mechanism and four-attempt ceiling
+ok 116 - package body stalls share the 20-second request mechanism and four-attempt ceiling
+  ---
+  duration_ms: 59.1909
+  type: 'test'
+  ...
+# Subtest: cancelling a streamed season download releases its reader and never retries
+ok 117 - cancelling a streamed season download releases its reader and never retries
+  ---
+  duration_ms: 1.7966
+  type: 'test'
+  ...
+# Subtest: expired download deadlines and invalid byte budgets prevent transport
+ok 118 - expired download deadlines and invalid byte budgets prevent transport
+  ---
+  duration_ms: 0.7828
+  type: 'test'
+  ...
+# Subtest: reuses row, text and header nodes but opens the current player after query changes
+ok 119 - reuses row, text and header nodes but opens the current player after query changes
+  ---
+  duration_ms: 5.6152
+  type: 'test'
+  ...
+# Subtest: shorter results erase spare names and callbacks; unload releases the pool
+ok 120 - shorter results erase spare names and callbacks; unload releases the pool
+  ---
+  duration_ms: 1.2167
+  type: 'test'
+  ...
+# Subtest: goalie transitions rebuild column shape and retain null, zero and display precision
+ok 121 - goalie transitions rebuild column shape and retain null, zero and display precision
+  ---
+  duration_ms: 0.924
+  type: 'test'
+  ...
+# Subtest: viewport slices retain global ranks for skaters and goalies
+ok 122 - viewport slices retain global ranks for skaters and goalies
+  ---
+  duration_ms: 0.365
+  type: 'test'
+  ...
+# Subtest: pool is bounded without limiting results
+ok 123 - pool is bounded without limiting results
+  ---
+  duration_ms: 17.2489
+  type: 'test'
+  ...
+# Subtest: repeat queries keep common rows attached and only append growth
+ok 124 - repeat queries keep common rows attached and only append growth
+  ---
+  duration_ms: 0.8326
+  type: 'test'
+  ...
+# Subtest: focused reused button keeps focus for the same player and clears it when the rank changes identity
+ok 125 - focused reused button keeps focus for the same player and clears it when the rank changes identity
+  ---
+  duration_ms: 0.4713
+  type: 'test'
+  ...
+# Subtest: pending queries hide and disable stale rows without detaching them; rendering and failure clearing restore the body
+ok 126 - pending queries hide and disable stale rows without detaching them; rendering and failure clearing restore the body
+  ---
+  duration_ms: 0.4861
+  type: 'test'
+  ...
+# Subtest: polling is explicit and tab-only, has positive jitter, and resets on context change
+ok 127 - polling is explicit and tab-only, has positive jitter, and resets on context change
+  ---
+  duration_ms: 7.3429
+  type: 'test'
+  ...
+# Subtest: hidden/offline checks pause queued ticks and abort active polling without catch-up bursts
+ok 128 - hidden/offline checks pause queued ticks and abort active polling without catch-up bursts
+  ---
+  duration_ms: 1.7121
+  type: 'test'
+  ...
+# Subtest: manual busy periods and slow responses never overlap polling
+ok 129 - manual busy periods and slow responses never overlap polling
+  ---
+  duration_ms: 1.1081
+  type: 'test'
+  ...
+# Subtest: failed reads wait a full interval and stopping cancels outstanding work
+ok 130 - failed reads wait a full interval and stopping cancels outstanding work
+  ---
+  duration_ms: 3.0017
+  type: 'test'
+  ...
+# Subtest: missing context or cross-tab coordination never enables automatic reads
+ok 131 - missing context or cross-tab coordination never enables automatic reads
+  ---
+  duration_ms: 0.5368
+  type: 'test'
+  ...
+# Subtest: JSON carries exact query, provenance, floors, missing sources and full precision
+ok 132 - JSON carries exact query, provenance, floors, missing sources and full precision
+  ---
+  duration_ms: 4.2419
+  type: 'test'
+  ...
+# Subtest: CSV neutralizes spreadsheet formulas including leading whitespace and controls
+ok 133 - CSV neutralizes spreadsheet formulas including leading whitespace and controls
+  ---
+  duration_ms: 0.8058
+  type: 'test'
+  ...
+# Subtest: CSV quotes text, preserves Unicode/null/zero/precision and never creates metadata records
+ok 134 - CSV quotes text, preserves Unicode/null/zero/precision and never creates metadata records
+  ---
+  duration_ms: 2.2733
+  type: 'test'
+  ...
+# Subtest: goalie exports retain explicit zero floor and engine order, including empty results
+ok 135 - goalie exports retain explicit zero floor and engine order, including empty results
+  ---
+  duration_ms: 0.8291
+  type: 'test'
+  ...
+# Subtest: removing a saved context or revoking its policy disables refresh saving
+ok 136 - removing a saved context or revoking its policy disables refresh saving
+  ---
+  duration_ms: 1.4342
+  type: 'test'
+  ...
+# Subtest: library notification cannot grant saving consent to a session-only tab
+ok 137 - library notification cannot grant saving consent to a session-only tab
+  ---
+  duration_ms: 0.2688
+  type: 'test'
+  ...
+# Subtest: version-one migration preserves season bytes and pointer; older apps refuse upgraded storage
+ok 138 - version-one migration preserves season bytes and pointer; older apps refuse upgraded storage
+  ---
+  duration_ms: 11.1805
+  type: 'test'
+  ...
+# Subtest: interrupted additive migration rolls back schema and preserves original records for retry
+ok 139 - interrupted additive migration rolls back schema and preserves original records for retry
+  ---
+  duration_ms: 2.089
+  type: 'test'
+  ...
+# Subtest: schedule saves, policy, reload and removal are independent from season saves
+ok 140 - schedule saves, policy, reload and removal are independent from season saves
+  ---
+  duration_ms: 9.8068
+  type: 'test'
+  ...
+# Subtest: stale schedule removal preserves the replacement and active pointer
+ok 141 - stale schedule removal preserves the replacement and active pointer
+  ---
+  duration_ms: 1.8981
+  type: 'test'
+  ...
+# Subtest: schedule revision conflicts and quota failures preserve package and active pointers
+ok 142 - schedule revision conflicts and quota failures preserve package and active pointers
+  ---
+  duration_ms: 3.7061
+  type: 'test'
+  ...
+# Subtest: schedule packages bind context to verified bytes, refuse future schemas and export round-trip
+ok 143 - schedule packages bind context to verified bytes, refuse future schemas and export round-trip
+  ---
+  duration_ms: 2.4144
+  type: 'test'
+  ...
+# Subtest: corrupt schedules are preserved and do not disable a valid season library
+ok 144 - corrupt schedules are preserved and do not disable a valid season library
+  ---
+  duration_ms: 3.058
+  type: 'test'
+  ...
+# Subtest: schedule acquisition uses a fixed date endpoint and bounded uncached safe reads
+ok 145 - schedule acquisition uses a fixed date endpoint and bounded uncached safe reads
+  ---
+  duration_ms: 21.2627
+  type: 'test'
+  ...
+# Subtest: invalid schedule dates are refused before any request
+ok 146 - invalid schedule dates are refused before any request
+  ---
+  duration_ms: 1.9884
+  type: 'test'
+  ...
+# Subtest: changing dates without a loaded snapshot does not claim retained data
+ok 147 - changing dates without a loaded snapshot does not claim retained data
+  ---
+  duration_ms: 0.3125
+  type: 'test'
+  ...
+# Subtest: failed acquisition or shared projection keeps the previous complete schedule
+ok 148 - failed acquisition or shared projection keeps the previous complete schedule
+  ---
+  duration_ms: 7.3243
+  type: 'test'
+  ...
+# Subtest: late acquisition after switching dates cannot project or replace the current schedule
+ok 149 - late acquisition after switching dates cannot project or replace the current schedule
+  ---
+  duration_ms: 1.3149
+  type: 'test'
+  ...
+# Subtest: cancelling an in-flight projection preserves prior data and ignores its late result
+ok 150 - cancelling an in-flight projection preserves prior data and ignores its late result
+  ---
+  duration_ms: 1.1847
+  type: 'test'
+  ...
+# Subtest: saved policy refreshes complete replacements, restores without network, and separates unload/remove
+ok 151 - saved policy refreshes complete replacements, restores without network, and separates unload/remove
+  ---
+  duration_ms: 14.1582
+  type: 'test'
+  ...
+# Subtest: another tab revoking the policy prevents an in-flight refresh from saving again
+ok 152 - another tab revoking the policy prevents an in-flight refresh from saving again
+  ---
+  duration_ms: 3.8428
+  type: 'test'
+  ...
+# Subtest: refresh cannot overwrite revoked schedule consent when the notification is missed
+ok 153 - refresh cannot overwrite revoked schedule consent when the notification is missed
+  ---
+  duration_ms: 6.8949
+  type: 'test'
+  ...
+# Subtest: failed saved refresh keeps fresh memory and the previous saved revision; new dates stay session-only
+ok 154 - failed saved refresh keeps fresh memory and the previous saved revision; new dates stay session-only
+  ---
+  duration_ms: 4.2822
+  type: 'test'
+  ...
+# Subtest: storage denial leaves memory queryable and delayed saved loads cannot replace a new context
+ok 155 - storage denial leaves memory queryable and delayed saved loads cannot replace a new context
+  ---
+  duration_ms: 2.4787
+  type: 'test'
+  ...
+# Subtest: portable schedule import runs the shared projection and never enables persistence policy
+ok 156 - portable schedule import runs the shared projection and never enables persistence policy
+  ---
+  duration_ms: 2.8042
+  type: 'test'
+  ...
+# Subtest: all view controls round-trip and explicit zero remains distinct from default
+ok 157 - all view controls round-trip and explicit zero remains distinct from default
+  ---
+  duration_ms: 3.9018
+  type: 'test'
+  ...
+# Subtest: normal bookmarks omit private filter text and identifiers
+ok 158 - normal bookmarks omit private filter text and identifiers
+  ---
+  duration_ms: 4.6308
+  type: 'test'
+  ...
+# Subtest: public filter inclusion is explicit and URL-encoded without changing meaning
+ok 159 - public filter inclusion is explicit and URL-encoded without changing meaning
+  ---
+  duration_ms: 0.8214
+  type: 'test'
+  ...
+# Subtest: local links never include filters even with public-filter option requested
+ok 160 - local links never include filters even with public-filter option requested
+  ---
+  duration_ms: 1.6894
+  type: 'test'
+  ...
+# Subtest: only exact public catalog identity, revision and context count as public
+ok 161 - only exact public catalog identity, revision and context count as public
+  ---
+  duration_ms: 0.37
+  type: 'test'
+  ...
+# Subtest: local restoration respects context and active ID, and refuses ambiguous substitutes
+ok 162 - local restoration respects context and active ID, and refuses ambiguous substitutes
+  ---
+  duration_ms: 0.3715
+  type: 'test'
+  ...
+# Subtest: unsupported paths, arbitrary URLs, duplicate and unknown parameters are refused
+ok 163 - unsupported paths, arbitrary URLs, duplicate and unknown parameters are refused
+  ---
+  duration_ms: 0.3726
+  type: 'test'
+  ...
+# Subtest: season, GP and text bounds reject malformed or unavailable state
+ok 164 - season, GP and text bounds reject malformed or unavailable state
+  ---
+  duration_ms: 0.7763
+  type: 'test'
+  ...
+# Subtest: viewport windows are bounded and cover every visible rank through the last player
+ok 165 - viewport windows are bounded and cover every visible rank through the last player
+  ---
+  duration_ms: 6.0423
+  type: 'test'
+  ...
+1..165
+# tests 165
+# suites 0
+# pass 165
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1466.9507
+npm notice
+npm notice New major version of npm available! 10.9.8 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice

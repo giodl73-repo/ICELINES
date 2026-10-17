@@ -1,0 +1,3 @@
+IceLines browser 0.26.0 built in dist/; offline shell 47c46b10e429, 289400 bytes gzip (summed assets)
+Verified 27 shell assets, four hand-audited count sorts, eight-window residency and 75 public packages with actual WASM loading and queries. Largest app plus single-package gzip sum: 423477 bytes (10 MiB budget).
+Built controlled frontend-only candidate with exact retained matching engine and honest reused-engine provenance.

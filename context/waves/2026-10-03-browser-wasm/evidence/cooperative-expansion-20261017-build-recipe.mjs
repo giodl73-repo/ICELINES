@@ -1,0 +1,21 @@
+import {readFile,writeFile,cp} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {spawnSync} from 'node:child_process';
+const base='target/chunked-decoder-input-artifact';
+const info=JSON.parse(await readFile(base+'/build-info.json','utf8'));
+const shell=JSON.parse(await readFile(base+'/shell-manifest.json','utf8'));
+function run(command,args){const r=spawnSync(command,args,{encoding:'utf8'});if(r.status!==0)throw Error(r.stderr||r.error||command+' failed');return r.stdout.trim();}
+run('python',['scripts/verify-browser-artifact.py',base,info.commit,shell.build]);
+if(run('git',['status','--porcelain']))throw Error('Frontend recipe requires clean tracked source');
+const commit=run('git',['rev-parse','HEAD']);
+run('git',['diff','--exit-code',info.commit,commit,'--','icelines-core','icelines-data','icelines-query','icelines-sources','icelines-wasm','Cargo.toml']);
+await cp(base+'/pkg','icelines-browser/public/pkg',{recursive:true});
+const bytes=await readFile('icelines-browser/public/pkg/icelines_wasm_bg.wasm');
+if(createHash('sha256').update(bytes).digest('hex')!==info.wasm_sha256)throw Error('Reused engine hash mismatch');
+await writeFile('icelines-browser/public/build-info.json',JSON.stringify({...info,commit,working_tree_dirty:false,tools:{...info.tools,node:process.version},reused_engine:{source_commit:info.commit,wasm_sha256:info.wasm_sha256,scope:'Controlled frontend-only local experiment. Exact verified retained engine; Rust source subtrees/workspace manifest match. No claim Rust was recompiled for this frontend candidate; normal CI build required before adoption.'}},null,2)+'\n');
+const build=spawnSync(process.execPath,['icelines-browser/build.mjs'],{stdio:'inherit'});
+if(build.status!==0)throw Error('Frontend build failed');
+const verify=spawnSync(process.execPath,['scripts/verify-browser-dist.mjs'],{stdio:'inherit'});
+if(verify.status!==0)throw Error('Frontend distribution verification failed');
+await cp('icelines-browser/dist','target/cooperative-expansion-artifact',{recursive:true});
+console.log('Built controlled frontend-only candidate with exact retained matching engine and honest reused-engine provenance.');
