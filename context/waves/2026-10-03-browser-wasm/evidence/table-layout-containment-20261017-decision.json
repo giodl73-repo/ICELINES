@@ -1,0 +1,75 @@
+{
+  "candidate_commit": "ceadf88b989300b72d3adf5d739eda534947f961",
+  "change": "CSS-only contain:layout on existing table-scroll wrapper, reset to none for print. Existing fixed viewport columns, automatic nonviewport sizing, unknown input semantics and JS engine unchanged.",
+  "build_scope": "Controlled frontend-only retained-engine build, not fresh Rust/CI. Exact182-file candidate matches control except style.css and three identity files; Windows WASM remains782009af96f7a4c5fbd17a46e0716d4b6a300d4e85286a65c2b92e5cdd7f12ed.",
+  "measurement_scope": "One normal sequential candidate/control full75/eight/two905332/20/restart pair with original flags/channel/sampler/network observer, no forced GC, baseline subtraction or added observer.",
+  "decision": "Do not adopt as memory optimization. Candidate400.0390625 MiB versus control393.33984375 MiB does not demonstrate saving; blank baselines240.62109375/235.46875 vary. No universal causal regression is established. No reverse pair/PR/CI/publication.",
+  "timing": "Preserve candidate154.7633 ms/control134.6995 ms warm maxima. Both exceed stricter100 ms comparison and remain below original plan500 ms on this workstation. No timing waiver or memory pass.",
+  "correctness": "Full viewport/keyboard/AX933 names, exact72px rows, last detail, goalie77/filter835,390px and print transitions pass. Actual24-page PDF preserves933 ordered names/ranks with two extractors and no out-of-page text. No new physical printer/screen-reader/Android or visual screenshot claim.",
+  "desktop_memory_acceptance": false,
+  "physical_android": "Deferred by user; untested",
+  "runs": [
+    {
+      "label": "candidate",
+      "peak_private_mib": 400.0390625,
+      "blank_private_mib": 240.62109375,
+      "warm_median_ms": 84.70149999999558,
+      "warm_max_ms": 154.76330000000598
+    },
+    {
+      "label": "control",
+      "peak_private_mib": 393.33984375,
+      "blank_private_mib": 235.46875,
+      "warm_median_ms": 67.07675000000017,
+      "warm_max_ms": 134.69950000000244
+    }
+  ],
+  "evidence": {
+    "memory-candidate": {
+      "file": "table-layout-containment-20261017-memory-candidate.json",
+      "sha256": "a14d09490398125b4abca0ce6592baa51f3f2213510ea84b45e7f6752ffe14de"
+    },
+    "candidate-samples": {
+      "file": "table-layout-containment-20261017-candidate-samples.json.gz",
+      "sha256": "74bdf380369ed9ee178bbcf8f156c275dc5900a313565c96fc98c9210a06be30",
+      "expanded_sha256": "e0a2f0d1123cad6006fba5e3eef4ecc629ecc903afeb621f1c6ca56db9b7ac4f"
+    },
+    "memory-control": {
+      "file": "table-layout-containment-20261017-memory-control.json",
+      "sha256": "b33824d7edc19c0960745153d5ff2105d130343579819dc434e4d9dc5f1e1d17"
+    },
+    "control-samples": {
+      "file": "table-layout-containment-20261017-control-samples.json.gz",
+      "sha256": "88d5dc7173ff76f3d34e4242929e442c2c24182c12f4efd6b6212b57429fbff5",
+      "expanded_sha256": "cbadc270a8ba0a39a609aaffe994f7a5187cacb90d1ad7bc58863ae3a4d83dbd"
+    },
+    "viewport": {
+      "file": "table-layout-containment-20261017-viewport.json",
+      "sha256": "ddcaef6c65a72c47fd899f71ba03d8a950b36b00c51ac790869862ae8a8d4880"
+    },
+    "print-pdf": {
+      "file": "table-layout-containment-20261017-print-pdf.pdf",
+      "sha256": "111f90594c16b23d3c9e1cdfd7d5820fc910ea2d0c8eb17836abd4e4cd9dcfb0"
+    },
+    "print-reference": {
+      "file": "table-layout-containment-20261017-print-reference.json",
+      "sha256": "11040639dcccbf5a7aaa565b03a4346c419b64c4f7728feefac605c040a1140e"
+    },
+    "print-verification": {
+      "file": "table-layout-containment-20261017-print-verification.json",
+      "sha256": "81423f14cdf7932bbb5b610a2024c6ad6953e6a7dc529197f3d13a534f7aac15"
+    },
+    "build-recipe": {
+      "file": "table-layout-containment-20261017-build-recipe.mjs",
+      "sha256": "92d50a83a0893bda70da0716f810d82f268ddd56ac9781d5fdd2f27f34d3dddf"
+    },
+    "build-log": {
+      "file": "table-layout-containment-20261017-build-log.log",
+      "sha256": "3bb3006e7deae6f83edec1eafebeccfe422334d0463499fc63d14a4e004d1dc2"
+    },
+    "build-info": {
+      "file": "table-layout-containment-20261017-build-info.json",
+      "sha256": "fefb8259fce5efedb88013a902014d246e79bf021f4528cba23054699a533ef8"
+    }
+  }
+}
