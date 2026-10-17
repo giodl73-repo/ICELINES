@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "scope": "Local native-checksum prototype, not adopted or published. Normal full Windows workload; no forced GC, adjusted flags, baseline subtraction or device claim.",
+  "source": "d9b93cf859a4140789ee5e8a5659df57ef856718",
+  "decision": "Do not adopt: no demonstrated saving; 250 MiB target remains failed. Android deferred by user.",
+  "comparison_limit": "One candidate-first pair against retained Windows pre-prototype engine; same compiler/profile. Includes source-history differences; not exact causal attribution.",
+  "runs": {
+    "candidate": {
+      "private_peak_mib": 401.28125,
+      "blank_private_peak_mib": 228.75390625,
+      "warm_max_ms": 84.22580000000016,
+      "target": {
+        "sampled_private_bytes_below_target": false,
+        "sampled_sum_working_set_below_target": false,
+        "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+      },
+      "artifact": {
+        "commit": "d9b93cf859a4140789ee5e8a5659df57ef856718",
+        "shell_build": "361d020318207c846209a385fecda5fdb7ffc5b7204245b5a94f0c65c497184d",
+        "verified_files": 182,
+        "packages": 75
+      }
+    },
+    "control": {
+      "private_peak_mib": 384.5859375,
+      "blank_private_peak_mib": 227.359375,
+      "warm_max_ms": 83.51400000001013,
+      "target": {
+        "sampled_private_bytes_below_target": false,
+        "sampled_sum_working_set_below_target": false,
+        "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+      },
+      "artifact": {
+        "commit": "807e2adcd31cdd8cd31a74f87fdeec05247b7ef0",
+        "shell_build": "b18354d00bed4b1a92d50287b76bada82bdc4ebb7f87a7f7661a1cae78173385",
+        "verified_files": 182,
+        "packages": 75
+      }
+    }
+  },
+  "files": [
+    {
+      "label": "candidate-report.json",
+      "original_path": "target/browser-memory-xasfnd/report.json",
+      "file": "native-package-digest-20261017-candidate-report.json",
+      "sha256": "0e19c2e3c825b3384db3095d17d2d226d705cd202b7e9ed5f44c780fd301ac3c"
+    },
+    {
+      "label": "candidate-samples.json",
+      "original_path": "target/browser-memory-xasfnd/samples.json",
+      "file": "native-package-digest-20261017-candidate-samples.json.gz",
+      "sha256": "997f2c66e873d8b8c413664039ce61c2f1349db04c2bbc7a5799bb112b1da9eb",
+      "expanded_sha256": "38aef198c42e38f38b656e5e47dd7dd9bfb030bf8101df4c666aded62c0808dd"
+    },
+    {
+      "label": "control-report.json",
+      "original_path": "target/browser-memory-88BhO8/report.json",
+      "file": "native-package-digest-20261017-control-report.json",
+      "sha256": "667e6d31d73f34c7a3b09b1f90585798a629cea28fd8a801dbef6a248b643c4d"
+    },
+    {
+      "label": "control-samples.json",
+      "original_path": "target/browser-memory-88BhO8/samples.json",
+      "file": "native-package-digest-20261017-control-samples.json.gz",
+      "sha256": "e3ff48d7d2036fd876abba4561c10c384eab7e5125112d428854e665562d56a7",
+      "expanded_sha256": "a5f00c4b6a567614d75ac00eb07c5d19c638a395038d419e15d98c9a51748652"
+    },
+    {
+      "label": "abi-report.json",
+      "original_path": "target/native-package-digest-abi-report.json",
+      "file": "native-package-digest-20261017-abi-report.json",
+      "sha256": "b02681247dab0e54c3b783d84d79d201df4e55c83107d4955c187525af0b398f"
+    },
+    {
+      "label": "context-report.json",
+      "original_path": "target/catalog-context-Xatv88/report.json",
+      "file": "native-package-digest-20261017-context-report.json",
+      "sha256": "e1def96ba4e6106cbb565dabbe17c6859968370a197d63a2ab2560894a25ce10"
+    },
+    {
+      "label": "offline-report.json",
+      "original_path": "target/browser-acceptance-UaY3Xc/report.json",
+      "file": "native-package-digest-20261017-offline-report.json",
+      "sha256": "1745f6218df6e83d2f4274965e7aa375bc6220117eef80de14367c09a78f7f04"
+    },
+    {
+      "label": "transport-refusal-report.json",
+      "original_path": "target/gzip-delivery-refusal-vRdNMt/report.json",
+      "file": "native-package-digest-20261017-transport-refusal-report.json",
+      "sha256": "8b8480dad35a6ca80453d09d46831794ac70d8f5a84079296b23682b1595220f"
+    },
+    {
+      "label": "canonical-refusal-report.json",
+      "original_path": "target/native-digest-refusal-Y1JjR8/report.json",
+      "file": "native-package-digest-20261017-canonical-refusal-report.json",
+      "sha256": "84945d3fc189ed0f42c0b8eeae2ed6187b1f42512112c42ce0aff675e9193079"
+    },
+    {
+      "label": "full-build.log",
+      "original_path": "target/native-package-digest-full-build.log",
+      "file": "native-package-digest-20261017-full-build.log.gz",
+      "sha256": "f6a2686345ece1da9fc971c050839f75340d1dda42f52533e6d86d2b9aec13ef",
+      "expanded_sha256": "dd665c90e13d845474df890b1c0d5602fc00ce605a720c47464a69493d5646ff"
+    },
+    {
+      "label": "worker-tests.log",
+      "original_path": "target/native-package-digest-permanent-worker-tests.log",
+      "file": "native-package-digest-20261017-worker-tests.log.gz",
+      "sha256": "83a95a8fbd3309780b863ad44b47590ce4a69dff3c668f1422777d984a100cc8",
+      "expanded_sha256": "fb765c2c6c48ee7609c7dc63dadbaeb910f3dbb9ee7c7d854b0457e917f075a2"
+    },
+    {
+      "label": "rust-tests.log",
+      "original_path": "target/native-package-digest-rust-tests.log",
+      "file": "native-package-digest-20261017-rust-tests.log.gz",
+      "sha256": "6aa04c3abac22c8de24115f2046c756b3ab477701728bd1db513dadbb3241eab",
+      "expanded_sha256": "777079b0a53c9842d1c299bd11bea755cbf90b9dc8426172c8c963943a2da525"
+    },
+    {
+      "label": "abi.mjs",
+      "original_path": "target/native-package-digest-abi.mjs",
+      "file": "native-package-digest-20261017-abi.mjs.gz",
+      "sha256": "3b72847e30182e4afd8b07c1db11036d1a539bc3027ad7a71a6b76f43a2324ae",
+      "expanded_sha256": "dfc9da206403d668d427674ddcdd4583cab4b882612d2ad28d5677e56a4b3137"
+    },
+    {
+      "label": "prepare-refusal.py",
+      "original_path": "target/prepare-native-digest-refusal.py",
+      "file": "native-package-digest-20261017-prepare-refusal.py.gz",
+      "sha256": "d0dae0563e30c674484e249357f16c7b902677ac3e0a769ca85cbfe72142bb9c",
+      "expanded_sha256": "f19baa7659f1b8b74a31e007e92dc366879be9bc19c9d5fae023ed3c7a1e97d5"
+    },
+    {
+      "label": "canonical-refusal.mjs",
+      "original_path": "target/native-digest-refusal.mjs",
+      "file": "native-package-digest-20261017-canonical-refusal.mjs.gz",
+      "sha256": "a5509d5d8bacadb1a5e9361119ca0d4a254d8ac20119185341701a0585345fd9",
+      "expanded_sha256": "45a075c0da38a6053ab982f37e61e7e5c9b91a9e19b95cee195028758faad9c5"
+    },
+    {
+      "label": "archive.py",
+      "original_path": "target/archive-native-digest.py",
+      "file": "native-package-digest-20261017-archive.py.gz",
+      "sha256": "1175b7a4e973b0f353b6984371764dadc92e33388686eba62adf9baf4a397510",
+      "expanded_sha256": "bc2f2204d816650ddf10eca9bd775b23f7a11c34f6c37b7394775b4ef07ddccc"
+    }
+  ]
+}

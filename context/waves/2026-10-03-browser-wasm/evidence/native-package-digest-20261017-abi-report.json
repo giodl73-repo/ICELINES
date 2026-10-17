@@ -1,0 +1,9 @@
+{
+  "verified": true,
+  "scope": "Actual freshly built WASM in Node. SHA/offset/oversize/native-state preservation only; no browser memory or deployment acceptance.",
+  "wasm_sha256": "3e7abac787a2dcd0ea987ebe22ef60c33f744edb7460e26bb149c04d79cadaa4",
+  "cases": 4,
+  "input_offset_preserved": true,
+  "oversize_refused": true,
+  "two_resident_windows_and_complete_query_unchanged": true
+}

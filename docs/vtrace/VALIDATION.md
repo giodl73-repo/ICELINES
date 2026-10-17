@@ -197,3 +197,8 @@ Adoption requires preservation of previous good data on digest/context/cancellat
 failure, canonical export/revision parity and clean actual-WASM/browser evidence.
 The full original250 MiB whole-browser target and deferred physical Android remain
 required. Proposed copy reductions are a hypothesis until paired measurements.
+
+The CHG-124 first full candidate/control pair did not demonstrate a reduction:
+401.28125 versus384.5859375 MiB whole-browser private peaks. It is archived as a
+negative local trial, without adoption or public changes. The original250 MiB
+gate remains failed and physical Android remains deferred by the user.

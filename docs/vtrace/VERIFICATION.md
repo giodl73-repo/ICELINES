@@ -492,3 +492,13 @@ known SHA-256 vectors and size refusal, actual WASM export behavior, asynchronou
 abort/deadline and corruption rejection, saved-revision/context preservation,
 worker epoch behavior, offline reopening and unchanged full-workload memory.
 No previous WebCrypto result is relabeled as native-checksum proof.
+
+CHG-124 local trial outcome (2026-10-17): full build/check passed165 browser
+tests,270 actual-WASM/native parity cases and required native/Python checks.
+Four actual-WASM digest vectors/offsets, oversize/state preservation and three
+separate worker protocol tests pass. Browser context, offline and both transport
+and canonical corruption refusals pass. Original full memory runs complete with
+no missing phases: candidate401.28125 MiB, retained control384.5859375 MiB.
+No saving demonstrated; prototype remains unadopted/unpublished. Delayed browser
+cancellation, exact-source control/replication and promotion checks are not claimed.
+Evidence: `context/waves/2026-10-03-browser-wasm/evidence/native-package-digest-20261017-manifest.json`.
