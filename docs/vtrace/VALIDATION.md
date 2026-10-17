@@ -191,3 +191,9 @@ offline reopening, previous-version rollback and forward restore. Physical
 Android is explicitly deferred by the user and is still required for full
 acceptance. No native behavior, data coverage, resident limit or resource waiver
 is altered by this change.
+
+CHG-124 native-checksum local prototype does not close any resource/device gate.
+Adoption requires preservation of previous good data on digest/context/cancellation
+failure, canonical export/revision parity and clean actual-WASM/browser evidence.
+The full original250 MiB whole-browser target and deferred physical Android remain
+required. Proposed copy reductions are a hypothesis until paired measurements.

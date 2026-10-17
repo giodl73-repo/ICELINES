@@ -57,6 +57,21 @@ pub enum EngineError {
     Repository(#[from] icelines_core::stats_repository::RepoError),
 }
 
+fn digest_package_bytes(bytes: &[u8]) -> Result<String, EngineError> {
+    if bytes.len() > MAX_PACKAGE_BYTES {
+        return Err(EngineError::InvalidPackage(
+            "expanded package exceeds 100 MiB".into(),
+        ));
+    }
+    Ok(format!("{:x}", Sha256::digest(bytes)))
+}
+
+/// Stateless bounded checksum; does not select or replace a resident window.
+#[wasm_bindgen]
+pub fn package_digest(bytes: &[u8]) -> Result<String, JsValue> {
+    digest_package_bytes(bytes).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct QueryRequest {
@@ -255,12 +270,7 @@ impl BrowserEngine {
     }
 
     pub fn load_bytes(&mut self, bytes: &[u8]) -> Result<String, EngineError> {
-        if bytes.len() > MAX_PACKAGE_BYTES {
-            return Err(EngineError::InvalidPackage(
-                "expanded package exceeds 100 MiB".into(),
-            ));
-        }
-        let revision = format!("{:x}", Sha256::digest(bytes));
+        let revision = digest_package_bytes(bytes)?;
         if self.select_revision(&revision).is_ok() {
             return Ok(revision);
         }
@@ -530,6 +540,19 @@ impl BrowserEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn package_digest_matches_known_sha256_vectors_and_rejects_oversize() {
+        assert_eq!(
+            digest_package_bytes(b"").unwrap(),
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        );
+        assert_eq!(
+            digest_package_bytes(b"abc").unwrap(),
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
+        assert!(digest_package_bytes(&vec![0; MAX_PACKAGE_BYTES + 1]).is_err());
+    }
 
     fn package() -> serde_json::Value {
         // Hand-audited 82 GP, 20 G + 30 A = 50 P, 50 P/82 pace.

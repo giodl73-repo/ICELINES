@@ -486,3 +486,9 @@ full933-player viewport/AX/print/keyboard,77 goalies, offline933/fresh835 and re
 corrupt-transfer previous-good/exact export/905-player retry. Two clean opposite
 order full workloads use unchanged flags/sampler/WASM and no forced GC.
 No full resource, mobile, CI-master or production-origin proof is claimed yet.
+
+CHG-124 verification work is pending for the stateless native-checksum prototype:
+known SHA-256 vectors and size refusal, actual WASM export behavior, asynchronous
+abort/deadline and corruption rejection, saved-revision/context preservation,
+worker epoch behavior, offline reopening and unchanged full-workload memory.
+No previous WebCrypto result is relabeled as native-checksum proof.

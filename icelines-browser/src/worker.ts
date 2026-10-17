@@ -6,7 +6,7 @@ interface Engine {
   schedule_week(bytes: Uint8Array): string;
   select_resident(revision: string): void; resident_revisions(): string; unload_active(): void;
 }
-interface Bindings { default(): Promise<unknown>; BrowserEngine: new () => Engine; }
+interface Bindings { default(): Promise<unknown>; BrowserEngine: new () => Engine; package_digest(bytes: Uint8Array): string; }
 const ready = (async () => {
   const bindings = await import(new URL('../pkg/icelines_wasm.js', import.meta.url).href) as Bindings;
   await bindings.default();
@@ -29,6 +29,13 @@ self.onmessage = (event: MessageEvent<EngineRequest>) => {
       try { bindings = await ready; }
       catch { response.error = { kind: 'engine_failure', message: 'WASM engine initialization failed.' }; self.postMessage(response); return; }
       if (request.context_generation !== generation) throw new Error('cancelled: context changed');
+      if (request.operation === 'digest') {
+        // Reject before wasm-bindgen copies input into linear memory. Mirrors
+        // the native100 MiB package bound; this operation never needs an engine.
+        if (!(request.payload instanceof ArrayBuffer) || request.payload.byteLength > 100 * 1024 * 1024) throw new Error('Package checksum input exceeds 100 MiB or is not an ArrayBuffer');
+        response.value = bindings.package_digest(new Uint8Array(request.payload as ArrayBuffer));
+        self.postMessage(response); return;
+      }
       engine ??= new bindings.BrowserEngine();
       switch (request.operation) {
         case 'importArchive': {

@@ -193,3 +193,21 @@ remain open. CI/master/public-origin transfer and update/rollback evidence are
 required before promoting the delivery implementation.
 Trace updates: INTERFACES, WORK_PACKAGES, TRACE, VERIFICATION and VALIDATION.
 No resource waiver, native dependency change or hockey semantics change.
+
+## CHG-124: Stateless WASM catalog checksum prototype (2026-10-17)
+
+Decision: scoped local prototype and validation only; no adoption/publication claim.
+Reason: avoid repeated UI raw-byte checksum copies while retaining integrity.
+Affected: IF-BROWSER-001, REQ-BROWSER-001, WP-BW-05/06.
+Add a bounded stateless package_digest WASM export and worker digest operation.
+Network catalog raw-byte authentication uses that trusted worker; compressed-wire
+authentication stays in the acquisition adapter. Cached bytes retain loadSaved's
+revision/checksum/schema/context validation. UI context and acquisition-generation
+guards remain before activation; native load still hashes before repository use.
+Legacy downloadPackage callers retain the default WebCrypto verifier. Cancellation
+and deadlines are checked after asynchronous checksum completion as well.
+Canonical bytes, revisions, saved schema, exports, normalization and eight resident
+windows remain unchanged. No dependency, resource-budget or device-gate change.
+Required before adoption: native/actual-WASM checksum and size-bound tests, browser
+corruption/context/cancel/offline proof, original full-workload repeated memory
+comparison, clean CI build and relevant role review.250 MiB remains unmet.

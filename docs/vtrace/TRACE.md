@@ -370,3 +370,9 @@ Verification and validation remain pending until recorded command/browser result
 Raw prototype reports and provenance are under
 `context/waves/2026-10-03-browser-wasm/evidence/gzip-delivery-*`.
 The prototype source commit is recorded independently from this clean PR branch.
+
+CHG-124 trace: REQ-BROWSER-001 / IF-BROWSER-001 / WP-BW-05..06 map the proposed
+stateless worker digest to icelines-wasm package_digest, worker.ts, package-download.ts
+and main.ts. Known-vector/size tests and async verification refusal tests are
+implementation checks; actual WASM, context/offline, original memory and CI proof
+remain pending. No resource waiver, revision change or readiness promotion.

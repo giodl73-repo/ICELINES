@@ -732,3 +732,12 @@ or decompression failures preserve the previous active season and do not silentl
 retry an alternate representation. Old catalogs and browsers without gzip
 support use the retained raw JSON files. Saved/recovery/export bytes and revision
 identity remain canonical JSON. No live relay or worker query contract changes.
+
+CHG-124 local prototype: the existing worker may receive a version1 `digest`
+request carrying a transferred staging ArrayBuffer. Stateless WASM package_digest
+returns lowercase SHA-256, rejects more than100 MiB and does not create/select or
+replace a BrowserEngine window. Network expanded-byte authentication can use this
+trusted operation; transport authentication, context guards and native admission
+hashing remain required. Legacy download callers keep default WebCrypto hashing.
+Cached loadSaved bytes must still match the exact requested revision and validated
+schema/context. This is not adoption or resource acceptance evidence.

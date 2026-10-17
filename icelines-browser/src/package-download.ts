@@ -41,12 +41,15 @@ export async function expandPackage(bytes: Uint8Array, maximum: number, options:
 
 // JSON remains the interchange format and revision source. Transport bytes are
 // separately bounded/authenticated; decompression failures never downgrade reads.
-export async function downloadPackage(entry: CatalogEntry, base: URL, options: ReadOptions): Promise<Uint8Array> {
+export async function downloadPackage(entry: CatalogEntry, base: URL, options: ReadOptions,
+  hashExpanded: (bytes: Uint8Array) => Promise<string> = digest): Promise<Uint8Array> {
   const compressed = entry.transport && typeof DecompressionStream !== 'undefined';
   const wire = compressed ? entry.transport! : entry;
   const bytes = await readPublicBytes(new URL(wire.url,base),wire.bytes,options);
-  if (bytes.length !== wire.bytes || await digest(bytes) !== wire.sha256) throw new Error('Package transport size or checksum mismatch');
+  if (bytes.length !== wire.bytes || (compressed && await digest(bytes) !== wire.sha256)) throw new Error('Package transport size or checksum mismatch');
   const expanded = compressed ? await expandPackage(bytes,entry.bytes,options) : bytes;
-  if (expanded.length !== entry.bytes || await digest(expanded) !== entry.sha256) throw new Error('Package size or checksum mismatch');
+  if (expanded.length !== entry.bytes || await hashExpanded(expanded) !== entry.sha256) throw new Error('Package size or checksum mismatch');
+  options.signal.throwIfAborted();
+  if ((options.now ?? Date.now)() >= options.deadline) throw new Error('Package validation deadline exceeded');
   return expanded;
 }

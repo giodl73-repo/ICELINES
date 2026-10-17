@@ -10,6 +10,23 @@ const entry={url:`data/${hash(raw)}.json`,sha256:hash(raw),bytes:raw.length,tran
 const options=(bytes=compressed)=>({signal:new AbortController().signal,deadline:Date.now()+10000,fetch:async()=>new Response(bytes)});
 const base=new URL('https://example.test/ICELINES/workbench/');
 
+test('trusted raw checksum adapter sees exact expanded bytes and cannot bypass mismatch',async()=>{
+  let seen;
+  assert.deepEqual(await downloadPackage(entry,base,options(),async bytes=>{seen=bytes.slice();return hash(bytes);}),raw);
+  assert.deepEqual(seen,raw);
+  await assert.rejects(downloadPackage(entry,base,options(),async()=> '0'.repeat(64)),/Package size or checksum/);
+});
+
+test('abort or deadline during raw checksum never returns validated bytes',async()=>{
+  for(const mode of ['abort','deadline']){
+    const controller=new AbortController();let now=0;
+    await assert.rejects(downloadPackage(entry,base,{...options(),signal:controller.signal,now:()=>now,deadline:100},async bytes=>{
+      if(mode==='abort')controller.abort(new Error('cancelled during checksum'));else now=100;
+      return hash(bytes);
+    }),mode==='abort'?/cancelled during checksum/:/deadline/);
+  }
+});
+
 test('compressed and legacy download preserve exact Unicode package bytes',async()=>{
   let fetched;
   assert.deepEqual(await downloadPackage(entry,base,{...options(),fetch:async url=>{fetched=url.href;return new Response(compressed);}}),raw);
