@@ -1,0 +1,68 @@
+{
+  "scope": "One full75/eight/two/20/restart diagnostic pair on current retained75e6ba97, no runtime changes. Disabled condition adds only WebUIOmniboxPopup/WebUIOmniboxAimPopup to installed Playwright defaults; original disabled features preserved and actual Windows root-process command line asserted. Same sampler/channel, no forced GC; extra command-line and post-workload target observations. Changed flags mean neither condition establishes normal acceptance.",
+  "acceptance": null,
+  "runs": [
+    {
+      "condition": "disabled-first",
+      "peak_private_mib": 366.09375,
+      "blank_private_mib": 187.34375,
+      "omnibox_targets": []
+    },
+    {
+      "condition": "default-second",
+      "peak_private_mib": 406.671875,
+      "blank_private_mib": 231.06640625,
+      "omnibox_targets": [
+        "chrome://omnibox-popup.top-chrome/",
+        "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html"
+      ]
+    }
+  ],
+  "observations": [
+    "Both omnibox targets disappear only in the assigned disabled-feature condition.",
+    "Whole-browser private peak is lower in this single diagnostic pair, but remains above250 MiB even with preload disabled.",
+    "No baseline subtraction, universal savings, exact process-memory attribution or application leak claim. No reverse-order replication performed."
+  ],
+  "external_primary_report": {
+    "url": "https://github.com/gotenberg/gotenberg/issues/1656",
+    "scope": "Firsthand Chromium151/Linux report with matching target URLs and feature workaround; corroborating mechanism only, not proof of equal Windows153 byte cost or a Chromium upstream fix."
+  },
+  "initial_failure": "Browser.getBrowserCommandLine refused without --enable-automation. Initial run is terminal/incomplete and retained. Corrected recipe reads actual owned-root command line through Windows CIM without adding enable-automation. No workload measurements from failed attempt used.",
+  "disposition": "Keep official benchmark and resource requirement unchanged. Browser-owned preload is a corroborated overhead source; suppression alone does not close250 MiB gate. No app patch/publication or diagnostic promotion. Android remains deferred/untested.",
+  "evidence": {
+    "disabled-first-report": {
+      "file": "omnibox-overhead-20261017-disabled-first-report.json",
+      "sha256": "800e24b6ed584b0bbff8c5cdacb74872130997005343f029a2da6eb01fb084b7"
+    },
+    "disabled-first-samples": {
+      "file": "omnibox-overhead-20261017-disabled-first-samples.json.gz",
+      "sha256": "1e91d114c6c28eeacdb1e716e05cefcdbb664e4520c45e05f3d3a77b1188bbf0",
+      "expanded_sha256": "5c7153fdaa1dbe7eb0f0f1a94582ec33dfec7020b7ff7a5272d11060c52f0604"
+    },
+    "default-second-report": {
+      "file": "omnibox-overhead-20261017-default-second-report.json",
+      "sha256": "d1ea0f2cb7470b45a2933da244c7af20c17b164444a0fa950c5bc1c2485695c8"
+    },
+    "default-second-samples": {
+      "file": "omnibox-overhead-20261017-default-second-samples.json.gz",
+      "sha256": "55889ef1dcd0893ec6bd4170c263409ac518dab5c893cbef5abba8dcadc3c5b9",
+      "expanded_sha256": "cb7ff6e118d2132bc967339617283ab333aed0dd6ed36a437246333e2af7cdca"
+    },
+    "initial-failed-report": {
+      "file": "omnibox-overhead-20261017-initial-failed-report.json",
+      "sha256": "304e9043448d2187813013297da313669190b0d11b4a5357efb3526b0c66b1ef"
+    },
+    "initial-failed-log": {
+      "file": "omnibox-overhead-20261017-initial-failed-log.log",
+      "sha256": "fa02ba6b9c5e810696ed05d80956879c2f0c35bdf77cd73a91ec516c355bb9eb"
+    },
+    "recipe": {
+      "file": "omnibox-overhead-20261017-recipe.py",
+      "sha256": "53c3c6c1b05837323844f6afef208a273f52af5a0064feba8f88465dfe7ee2db"
+    },
+    "runner": {
+      "file": "omnibox-overhead-20261017-runner.mjs",
+      "sha256": "ebeb98f96d1f6ce488e364cc66a83052623e43ea785477a3b3d9015e90e072ec"
+    }
+  }
+}

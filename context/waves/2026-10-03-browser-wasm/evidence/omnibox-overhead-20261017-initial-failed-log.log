@@ -1,0 +1,13 @@
+Memory report: C:\Users\giodl\.codex\worktrees\browser-wasm\icelines\target\omnibox-overhead-diagnostic-vIg6TC\report.json
+node:internal/modules/run_main:123
+Completed: false; sampled private bytes: undefined; working set: undefined
+    triggerUncaughtException(
+    ^
+
+cdpSession.send: Protocol error (Browser.getBrowserCommandLine): Command line not returned because --enable-automation not set.
+    at C:\Users\giodl\.codex\worktrees\browser-wasm\icelines\target\omnibox-overhead-diagnostic.mjs:80:49 {
+  log: [],
+  name: 'Error'
+}
+
+Node.js v22.22.3

@@ -1,0 +1,57 @@
+{
+  "started_at": "2026-10-17T22:00:30.667Z",
+  "completed": false,
+  "host": {
+    "platform": "win32",
+    "arch": "x64",
+    "os_release": "10.0.26310",
+    "cpu": "12th Gen Intel(R) Core(TM) i7-12800HX",
+    "logical_cpus": 24,
+    "ram_bytes": 34042929152
+  },
+  "scope": "Single isolated headless Chromium on this Windows workstation. Includes owned browser/renderer/GPU/utility processes; excludes Node runner, local HTTP server and sampler. Working-set sums may count shared pages more than once. Private-byte sums measure private allocations, not just resident RAM. Sample maxima may miss transient spikes; lifetime working-set peaks are per-process, not concurrent group peaks. No physical-phone or remote-rollback claim.",
+  "sampling": {
+    "requested_interval_ms": 100,
+    "tree_discovery_interval_ms": 500
+  },
+  "packages": [],
+  "imports": [],
+  "warm_query_ms": [],
+  "artifact": {
+    "commit": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+    "shell_build": "e575ec099d635615476610b46ec106b97e83d28b66fc3980bbdcbbf4292c1a36",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "archive": {
+    "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca",
+    "bytes": 149672
+  },
+  "intervention": {
+    "disabled": true,
+    "extra_features": [
+      "WebUIOmniboxPopup",
+      "WebUIOmniboxAimPopup"
+    ],
+    "preserved_default_features": [
+      "AvoidUnnecessaryBeforeUnloadCheckSync",
+      "DestroyProfileOnBrowserClose",
+      "DialMediaRouteProvider",
+      "GlobalMediaControls",
+      "HttpsUpgrades",
+      "LensOverlay",
+      "MediaRouter",
+      "PaintHolding",
+      "ThirdPartyStoragePartitioning",
+      "BlockOriginHeaderModificationOnRedirect",
+      "Translate",
+      "AutoDeElevate",
+      "OptimizationHints",
+      "msForceBrowserSignIn",
+      "msEdgeUpdateLaunchServicesPreferredVersion"
+    ],
+    "playwright_bundle_sha256": "549070af3acabb3efcc4f55bfe6210f9f7c2fcf633cf7eaa59bfe60719969171"
+  },
+  "error": "Error: cdpSession.send: Protocol error (Browser.getBrowserCommandLine): Command line not returned because --enable-automation not set.",
+  "finished_at": "2026-10-17T22:00:35.586Z"
+}
