@@ -1,0 +1,1769 @@
+{
+  "method": "Manual causal review. Optional discover-causal skill stub was read, but referenced discover-causal.t3/SKILL.md is missing from installed skill tree; no claim full skill runbook executed.",
+  "scope": "One extra-observer diagnostic pair plus preserved four original normal workload runs. No app or official benchmark edits. Diagnostic flags null; full75/eight/two905332/20/restart, original flags/channel/sampler, no forced GC.",
+  "conditions": [
+    {
+      "condition": "twenty-rows",
+      "artifact": {
+        "commit": "89a436a93c1d53466fa19a525cde991f0ec1db47",
+        "shell_build": "c18c45b1f9fdb2e9e98046b8be425fc1f6b312a937eb053fa84ed854eb56225d",
+        "verified_files": 182,
+        "packages": 75
+      },
+      "maximum_sampled_main_heap_committed_bytes": 26550352,
+      "checkpoints": [
+        {
+          "label": "ready_before_engine",
+          "renderer_pid": 32264,
+          "trace_sha256": "ef2dc30900cd7cfe86a2e2e52bf245dcb02e9d6fe72f84d0b0c59be497807655",
+          "metrics": {
+            "committed_size": 3145728,
+            "size": 3145728,
+            "allocated_objects_size": 2244744,
+            "pooled_size": 0,
+            "non_object_reported_resident_bytes": 900984
+          },
+          "reported_freelist_bucket_bytes": 850056,
+          "selected_classes": [
+            {
+              "name": "blink::ConstraintSpace::RareData",
+              "bytes": 30360,
+              "objects": 253
+            },
+            {
+              "name": "blink::LayoutResult",
+              "bytes": 37680,
+              "objects": 471
+            },
+            {
+              "name": "blink::LogicalLineItems",
+              "bytes": 229824,
+              "objects": 126
+            }
+          ],
+          "latest_os_sample": {
+            "phase": "diagnostic_heap_ready_before_engine",
+            "elapsed_ms": 4652,
+            "app_renderer_private_bytes": 51793920,
+            "other_owned_private_bytes": 284184576,
+            "whole_browser_private_bytes": 335978496,
+            "not_simultaneous_with_native_dump": true,
+            "processes": [
+              {
+                "pid": 32264,
+                "trace_process_name": "Renderer",
+                "private_bytes": 51793920
+              },
+              {
+                "pid": 12440,
+                "trace_process_name": "Service: network.mojom.NetworkService",
+                "private_bytes": 18100224
+              },
+              {
+                "pid": 52148,
+                "trace_process_name": "WebUI Top Renderer",
+                "private_bytes": 47316992
+              },
+              {
+                "pid": 54696,
+                "trace_process_name": "Service: storage.mojom.StorageService",
+                "private_bytes": 10842112
+              },
+              {
+                "pid": 39956,
+                "trace_process_name": "Browser",
+                "private_bytes": 54362112
+              },
+              {
+                "pid": 47672,
+                "trace_process_name": "Service: tracing.mojom.TracingService",
+                "private_bytes": 36749312
+              },
+              {
+                "pid": 14436,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 3031040
+              },
+              {
+                "pid": 39984,
+                "trace_process_name": "Renderer",
+                "private_bytes": 18427904
+              },
+              {
+                "pid": 54876,
+                "trace_process_name": "GPU Process",
+                "private_bytes": 95354880
+              }
+            ]
+          }
+        },
+        {
+          "label": "loaded_1",
+          "renderer_pid": 32264,
+          "trace_sha256": "0510f038c3b32c744f41e314c0164e7f7ec8661daa649f366d26e8e637401164",
+          "metrics": {
+            "committed_size": 5505024,
+            "size": 5505024,
+            "allocated_objects_size": 4621192,
+            "pooled_size": 0,
+            "non_object_reported_resident_bytes": 883832
+          },
+          "reported_freelist_bucket_bytes": 794704,
+          "selected_classes": [
+            {
+              "name": "blink::ConstraintSpace::RareData",
+              "bytes": 126360,
+              "objects": 1053
+            },
+            {
+              "name": "blink::LayoutResult",
+              "bytes": 110480,
+              "objects": 1381
+            },
+            {
+              "name": "blink::LogicalLineItems",
+              "bytes": 921120,
+              "objects": 505
+            }
+          ],
+          "latest_os_sample": {
+            "phase": "diagnostic_heap_loaded_1",
+            "elapsed_ms": 5769,
+            "app_renderer_private_bytes": 77570048,
+            "other_owned_private_bytes": 268189696,
+            "whole_browser_private_bytes": 345759744,
+            "not_simultaneous_with_native_dump": true,
+            "processes": [
+              {
+                "pid": 32264,
+                "trace_process_name": "Renderer",
+                "private_bytes": 77570048
+              },
+              {
+                "pid": 12440,
+                "trace_process_name": "Service: network.mojom.NetworkService",
+                "private_bytes": 18100224
+              },
+              {
+                "pid": 52148,
+                "trace_process_name": "WebUI Top Renderer",
+                "private_bytes": 47333376
+              },
+              {
+                "pid": 54696,
+                "trace_process_name": "Service: storage.mojom.StorageService",
+                "private_bytes": 10895360
+              },
+              {
+                "pid": 39956,
+                "trace_process_name": "Browser",
+                "private_bytes": 54071296
+              },
+              {
+                "pid": 47672,
+                "trace_process_name": "Service: tracing.mojom.TracingService",
+                "private_bytes": 17047552
+              },
+              {
+                "pid": 14436,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 3031040
+              },
+              {
+                "pid": 39984,
+                "trace_process_name": "Renderer",
+                "private_bytes": 18497536
+              },
+              {
+                "pid": 54876,
+                "trace_process_name": "GPU Process",
+                "private_bytes": 99213312
+              }
+            ]
+          }
+        },
+        {
+          "label": "loaded_8",
+          "renderer_pid": 32264,
+          "trace_sha256": "5f9542f3a1b1235d7a40b574ef54a3c5880304d25142e8cb3c24960acf03f065",
+          "metrics": {
+            "committed_size": 17825792,
+            "size": 17825792,
+            "allocated_objects_size": 16247232,
+            "pooled_size": 0,
+            "non_object_reported_resident_bytes": 1578560
+          },
+          "reported_freelist_bucket_bytes": 1289936,
+          "selected_classes": [
+            {
+              "name": "blink::ConstraintSpace::RareData",
+              "bytes": 739680,
+              "objects": 6164
+            },
+            {
+              "name": "blink::LayoutResult",
+              "bytes": 545440,
+              "objects": 6818
+            },
+            {
+              "name": "blink::LogicalLineItems",
+              "bytes": 4979520,
+              "objects": 2730
+            }
+          ],
+          "latest_os_sample": {
+            "phase": "diagnostic_heap_loaded_8",
+            "elapsed_ms": 14669,
+            "app_renderer_private_bytes": 141463552,
+            "other_owned_private_bytes": 268517376,
+            "whole_browser_private_bytes": 409980928,
+            "not_simultaneous_with_native_dump": true,
+            "processes": [
+              {
+                "pid": 32264,
+                "trace_process_name": "Renderer",
+                "private_bytes": 141463552
+              },
+              {
+                "pid": 12440,
+                "trace_process_name": "Service: network.mojom.NetworkService",
+                "private_bytes": 18403328
+              },
+              {
+                "pid": 52148,
+                "trace_process_name": "WebUI Top Renderer",
+                "private_bytes": 47280128
+              },
+              {
+                "pid": 54696,
+                "trace_process_name": "Service: storage.mojom.StorageService",
+                "private_bytes": 10911744
+              },
+              {
+                "pid": 39956,
+                "trace_process_name": "Browser",
+                "private_bytes": 56397824
+              },
+              {
+                "pid": 47672,
+                "trace_process_name": "Service: tracing.mojom.TracingService",
+                "private_bytes": 14495744
+              },
+              {
+                "pid": 14436,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 3031040
+              },
+              {
+                "pid": 39984,
+                "trace_process_name": "Renderer",
+                "private_bytes": 18325504
+              },
+              {
+                "pid": 54876,
+                "trace_process_name": "GPU Process",
+                "private_bytes": 99672064
+              }
+            ]
+          }
+        },
+        {
+          "label": "loaded_10",
+          "renderer_pid": 32264,
+          "trace_sha256": "dc9dc859e6b218fd900048b2a8f3f4fd5ac2cebd1cb9a39da8c714a1abf8e4de",
+          "metrics": {
+            "committed_size": 21102592,
+            "size": 21102592,
+            "allocated_objects_size": 19578944,
+            "pooled_size": 0,
+            "non_object_reported_resident_bytes": 1523648
+          },
+          "reported_freelist_bucket_bytes": 1181952,
+          "selected_classes": [
+            {
+              "name": "blink::ConstraintSpace::RareData",
+              "bytes": 913680,
+              "objects": 7614
+            },
+            {
+              "name": "blink::LayoutResult",
+              "bytes": 667520,
+              "objects": 8344
+            },
+            {
+              "name": "blink::LogicalLineItems",
+              "bytes": 6115872,
+              "objects": 3353
+            }
+          ],
+          "latest_os_sample": {
+            "phase": "diagnostic_heap_loaded_10",
+            "elapsed_ms": 17896,
+            "app_renderer_private_bytes": 155848704,
+            "other_owned_private_bytes": 274661376,
+            "whole_browser_private_bytes": 430510080,
+            "not_simultaneous_with_native_dump": true,
+            "processes": [
+              {
+                "pid": 32264,
+                "trace_process_name": "Renderer",
+                "private_bytes": 155848704
+              },
+              {
+                "pid": 12440,
+                "trace_process_name": "Service: network.mojom.NetworkService",
+                "private_bytes": 18829312
+              },
+              {
+                "pid": 52148,
+                "trace_process_name": "WebUI Top Renderer",
+                "private_bytes": 47411200
+              },
+              {
+                "pid": 54696,
+                "trace_process_name": "Service: storage.mojom.StorageService",
+                "private_bytes": 10919936
+              },
+              {
+                "pid": 39956,
+                "trace_process_name": "Browser",
+                "private_bytes": 57892864
+              },
+              {
+                "pid": 47672,
+                "trace_process_name": "Service: tracing.mojom.TracingService",
+                "private_bytes": 14561280
+              },
+              {
+                "pid": 14436,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 3031040
+              },
+              {
+                "pid": 39984,
+                "trace_process_name": "Renderer",
+                "private_bytes": 18329600
+              },
+              {
+                "pid": 54876,
+                "trace_process_name": "GPU Process",
+                "private_bytes": 103686144
+              }
+            ]
+          }
+        },
+        {
+          "label": "loaded_11",
+          "renderer_pid": 32264,
+          "trace_sha256": "62caafd971cc4ab3cf86ca5064c5121e77c19614a8ad82914fa36d59e481cac4",
+          "metrics": {
+            "committed_size": 23068672,
+            "size": 23068672,
+            "allocated_objects_size": 21217200,
+            "pooled_size": 0,
+            "non_object_reported_resident_bytes": 1851472
+          },
+          "reported_freelist_bucket_bytes": 1477696,
+          "selected_classes": [
+            {
+              "name": "blink::ConstraintSpace::RareData",
+              "bytes": 1001280,
+              "objects": 8344
+            },
+            {
+              "name": "blink::LayoutResult",
+              "bytes": 729440,
+              "objects": 9118
+            },
+            {
+              "name": "blink::LogicalLineItems",
+              "bytes": 6694080,
+              "objects": 3670
+            }
+          ],
+          "latest_os_sample": {
+            "phase": "diagnostic_heap_loaded_11",
+            "elapsed_ms": 20013,
+            "app_renderer_private_bytes": 158842880,
+            "other_owned_private_bytes": 275898368,
+            "whole_browser_private_bytes": 434741248,
+            "not_simultaneous_with_native_dump": true,
+            "processes": [
+              {
+                "pid": 32264,
+                "trace_process_name": "Renderer",
+                "private_bytes": 158842880
+              },
+              {
+                "pid": 12440,
+                "trace_process_name": "Service: network.mojom.NetworkService",
+                "private_bytes": 18829312
+              },
+              {
+                "pid": 52148,
+                "trace_process_name": "WebUI Top Renderer",
+                "private_bytes": 47443968
+              },
+              {
+                "pid": 54696,
+                "trace_process_name": "Service: storage.mojom.StorageService",
+                "private_bytes": 10928128
+              },
+              {
+                "pid": 39956,
+                "trace_process_name": "Browser",
+                "private_bytes": 58404864
+              },
+              {
+                "pid": 47672,
+                "trace_process_name": "Service: tracing.mojom.TracingService",
+                "private_bytes": 14594048
+              },
+              {
+                "pid": 14436,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 3031040
+              },
+              {
+                "pid": 39984,
+                "trace_process_name": "Renderer",
+                "private_bytes": 18329600
+              },
+              {
+                "pid": 54876,
+                "trace_process_name": "GPU Process",
+                "private_bytes": 104337408
+              }
+            ]
+          }
+        },
+        {
+          "label": "loaded_26",
+          "renderer_pid": 32264,
+          "trace_sha256": "471a8ed8de0a57a00a6a1eddeaaf04e694c0bd5ae594020a6a66c125e1c337a5",
+          "metrics": {
+            "committed_size": 26476544,
+            "size": 26476544,
+            "allocated_objects_size": 5263736,
+            "pooled_size": 9175040,
+            "non_object_reported_resident_bytes": 21212808
+          },
+          "reported_freelist_bucket_bytes": 11757888,
+          "selected_classes": [
+            {
+              "name": "blink::ConstraintSpace::RareData",
+              "bytes": 224880,
+              "objects": 1874
+            },
+            {
+              "name": "blink::LayoutResult",
+              "bytes": 169760,
+              "objects": 2122
+            },
+            {
+              "name": "blink::LogicalLineItems",
+              "bytes": 1163712,
+              "objects": 638
+            }
+          ],
+          "latest_os_sample": {
+            "phase": "diagnostic_heap_loaded_26",
+            "elapsed_ms": 36340,
+            "app_renderer_private_bytes": 154124288,
+            "other_owned_private_bytes": 274911232,
+            "whole_browser_private_bytes": 429035520,
+            "not_simultaneous_with_native_dump": true,
+            "processes": [
+              {
+                "pid": 32264,
+                "trace_process_name": "Renderer",
+                "private_bytes": 154124288
+              },
+              {
+                "pid": 12440,
+                "trace_process_name": "Service: network.mojom.NetworkService",
+                "private_bytes": 18444288
+              },
+              {
+                "pid": 52148,
+                "trace_process_name": "WebUI Top Renderer",
+                "private_bytes": 41803776
+              },
+              {
+                "pid": 54696,
+                "trace_process_name": "Service: storage.mojom.StorageService",
+                "private_bytes": 10981376
+              },
+              {
+                "pid": 39956,
+                "trace_process_name": "Browser",
+                "private_bytes": 67239936
+              },
+              {
+                "pid": 47672,
+                "trace_process_name": "Service: tracing.mojom.TracingService",
+                "private_bytes": 14618624
+              },
+              {
+                "pid": 14436,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 3039232
+              },
+              {
+                "pid": 39984,
+                "trace_process_name": "Renderer",
+                "private_bytes": 18329600
+              },
+              {
+                "pid": 54876,
+                "trace_process_name": "GPU Process",
+                "private_bytes": 100454400
+              }
+            ]
+          }
+        },
+        {
+          "label": "loaded_75",
+          "renderer_pid": 32264,
+          "trace_sha256": "856421dcf91d9a23a12cc55f71b816bbf18e39eefa26b5cc960c54303eeee464",
+          "metrics": {
+            "committed_size": 26550352,
+            "size": 26550352,
+            "allocated_objects_size": 2099696,
+            "pooled_size": 8650752,
+            "non_object_reported_resident_bytes": 24450656
+          },
+          "reported_freelist_bucket_bytes": 15511472,
+          "selected_classes": [
+            {
+              "name": "blink::ConstraintSpace::RareData",
+              "bytes": 49200,
+              "objects": 410
+            },
+            {
+              "name": "blink::LayoutResult",
+              "bytes": 45280,
+              "objects": 566
+            }
+          ],
+          "latest_os_sample": {
+            "phase": "diagnostic_heap_loaded_75",
+            "elapsed_ms": 83135,
+            "app_renderer_private_bytes": 131133440,
+            "other_owned_private_bytes": 295452672,
+            "whole_browser_private_bytes": 426586112,
+            "not_simultaneous_with_native_dump": true,
+            "processes": [
+              {
+                "pid": 32264,
+                "trace_process_name": "Renderer",
+                "private_bytes": 131133440
+              },
+              {
+                "pid": 12440,
+                "trace_process_name": "Service: network.mojom.NetworkService",
+                "private_bytes": 18276352
+              },
+              {
+                "pid": 52148,
+                "trace_process_name": "WebUI Top Renderer",
+                "private_bytes": 41570304
+              },
+              {
+                "pid": 54696,
+                "trace_process_name": "Service: storage.mojom.StorageService",
+                "private_bytes": 10903552
+              },
+              {
+                "pid": 39956,
+                "trace_process_name": "Browser",
+                "private_bytes": 84992000
+              },
+              {
+                "pid": 47672,
+                "trace_process_name": "Service: tracing.mojom.TracingService",
+                "private_bytes": 18071552
+              },
+              {
+                "pid": 14436,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 2899968
+              },
+              {
+                "pid": 39984,
+                "trace_process_name": "Renderer",
+                "private_bytes": 18292736
+              },
+              {
+                "pid": 54876,
+                "trace_process_name": "GPU Process",
+                "private_bytes": 100446208
+              }
+            ]
+          }
+        },
+        {
+          "label": "after_twenty_queries",
+          "renderer_pid": 32264,
+          "trace_sha256": "80726640d169a830a411b807f0f2eb40517dd7fe8bebbc1243809cc135e9856f",
+          "metrics": {
+            "committed_size": 26542160,
+            "size": 26542160,
+            "allocated_objects_size": 2117176,
+            "pooled_size": 8126464,
+            "non_object_reported_resident_bytes": 24424984
+          },
+          "reported_freelist_bucket_bytes": 16001616,
+          "selected_classes": [
+            {
+              "name": "blink::ConstraintSpace::RareData",
+              "bytes": 49200,
+              "objects": 410
+            },
+            {
+              "name": "blink::LayoutResult",
+              "bytes": 45040,
+              "objects": 563
+            }
+          ],
+          "latest_os_sample": {
+            "phase": "diagnostic_heap_after_twenty_queries",
+            "elapsed_ms": 89234,
+            "app_renderer_private_bytes": 137838592,
+            "other_owned_private_bytes": 285839360,
+            "whole_browser_private_bytes": 423677952,
+            "not_simultaneous_with_native_dump": true,
+            "processes": [
+              {
+                "pid": 32264,
+                "trace_process_name": "Renderer",
+                "private_bytes": 137838592
+              },
+              {
+                "pid": 12440,
+                "trace_process_name": "Service: network.mojom.NetworkService",
+                "private_bytes": 18632704
+              },
+              {
+                "pid": 52148,
+                "trace_process_name": "WebUI Top Renderer",
+                "private_bytes": 41676800
+              },
+              {
+                "pid": 54696,
+                "trace_process_name": "Service: storage.mojom.StorageService",
+                "private_bytes": 10907648
+              },
+              {
+                "pid": 39956,
+                "trace_process_name": "Browser",
+                "private_bytes": 56860672
+              },
+              {
+                "pid": 47672,
+                "trace_process_name": "Service: tracing.mojom.TracingService",
+                "private_bytes": 32284672
+              },
+              {
+                "pid": 14436,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 2899968
+              },
+              {
+                "pid": 39984,
+                "trace_process_name": "Renderer",
+                "private_bytes": 18251776
+              },
+              {
+                "pid": 54876,
+                "trace_process_name": "GPU Process",
+                "private_bytes": 104325120
+              }
+            ]
+          }
+        },
+        {
+          "label": "after_restart",
+          "renderer_pid": 32264,
+          "trace_sha256": "6a9531b8cf4cf33db5913b8759cf10cfca44770786bcb791d66595fb0756a8ca",
+          "metrics": {
+            "committed_size": 26476544,
+            "size": 26476544,
+            "allocated_objects_size": 2492920,
+            "pooled_size": 8126464,
+            "non_object_reported_resident_bytes": 23983624
+          },
+          "reported_freelist_bucket_bytes": 15560328,
+          "selected_classes": [
+            {
+              "name": "blink::ConstraintSpace::RareData",
+              "bytes": 58560,
+              "objects": 488
+            },
+            {
+              "name": "blink::LayoutResult",
+              "bytes": 57440,
+              "objects": 718
+            },
+            {
+              "name": "blink::LogicalLineItems",
+              "bytes": 49248,
+              "objects": 27
+            }
+          ],
+          "latest_os_sample": {
+            "phase": "diagnostic_heap_after_restart",
+            "elapsed_ms": 92542,
+            "app_renderer_private_bytes": 112746496,
+            "other_owned_private_bytes": 264904704,
+            "whole_browser_private_bytes": 377651200,
+            "not_simultaneous_with_native_dump": true,
+            "processes": [
+              {
+                "pid": 32264,
+                "trace_process_name": "Renderer",
+                "private_bytes": 112746496
+              },
+              {
+                "pid": 12440,
+                "trace_process_name": "Service: network.mojom.NetworkService",
+                "private_bytes": 16130048
+              },
+              {
+                "pid": 52148,
+                "trace_process_name": "WebUI Top Renderer",
+                "private_bytes": 41504768
+              },
+              {
+                "pid": 54696,
+                "trace_process_name": "Service: storage.mojom.StorageService",
+                "private_bytes": 10899456
+              },
+              {
+                "pid": 39956,
+                "trace_process_name": "Browser",
+                "private_bytes": 55160832
+              },
+              {
+                "pid": 47672,
+                "trace_process_name": "Service: tracing.mojom.TracingService",
+                "private_bytes": 14106624
+              },
+              {
+                "pid": 14436,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 2899968
+              },
+              {
+                "pid": 39984,
+                "trace_process_name": "Renderer",
+                "private_bytes": 18325504
+              },
+              {
+                "pid": 54876,
+                "trace_process_name": "GPU Process",
+                "private_bytes": 105877504
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "condition": "fortyfour-rows",
+      "artifact": {
+        "commit": "807e2adcd31cdd8cd31a74f87fdeec05247b7ef0",
+        "shell_build": "b18354d00bed4b1a92d50287b76bada82bdc4ebb7f87a7f7661a1cae78173385",
+        "verified_files": 182,
+        "packages": 75
+      },
+      "maximum_sampled_main_heap_committed_bytes": 33038496,
+      "checkpoints": [
+        {
+          "label": "ready_before_engine",
+          "renderer_pid": 51932,
+          "trace_sha256": "5a08bd30621f6ce4acc56a317314987bf3ee66f2cb3255040ece12cd75f981fc",
+          "metrics": {
+            "committed_size": 3145728,
+            "size": 3145728,
+            "allocated_objects_size": 2256664,
+            "pooled_size": 0,
+            "non_object_reported_resident_bytes": 889064
+          },
+          "reported_freelist_bucket_bytes": 838136,
+          "selected_classes": [
+            {
+              "name": "blink::ConstraintSpace::RareData",
+              "bytes": 30720,
+              "objects": 256
+            },
+            {
+              "name": "blink::LayoutResult",
+              "bytes": 38480,
+              "objects": 481
+            },
+            {
+              "name": "blink::LogicalLineItems",
+              "bytes": 233472,
+              "objects": 128
+            }
+          ],
+          "latest_os_sample": {
+            "phase": "diagnostic_heap_ready_before_engine",
+            "elapsed_ms": 4450,
+            "app_renderer_private_bytes": 52080640,
+            "other_owned_private_bytes": 289726464,
+            "whole_browser_private_bytes": 341807104,
+            "not_simultaneous_with_native_dump": true,
+            "processes": [
+              {
+                "pid": 30172,
+                "trace_process_name": "GPU Process",
+                "private_bytes": 95748096
+              },
+              {
+                "pid": 53604,
+                "trace_process_name": "Service: tracing.mojom.TracingService",
+                "private_bytes": 36741120
+              },
+              {
+                "pid": 27824,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 3133440
+              },
+              {
+                "pid": 51572,
+                "trace_process_name": "WebUI Top Renderer",
+                "private_bytes": 51081216
+              },
+              {
+                "pid": 51932,
+                "trace_process_name": "Renderer",
+                "private_bytes": 52080640
+              },
+              {
+                "pid": 40928,
+                "trace_process_name": "Service: storage.mojom.StorageService",
+                "private_bytes": 10899456
+              },
+              {
+                "pid": 38360,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 2863104
+              },
+              {
+                "pid": 54692,
+                "trace_process_name": "Service: network.mojom.NetworkService",
+                "private_bytes": 17960960
+              },
+              {
+                "pid": 32692,
+                "trace_process_name": "Renderer",
+                "private_bytes": 18419712
+              },
+              {
+                "pid": 53924,
+                "trace_process_name": "Browser",
+                "private_bytes": 52879360
+              }
+            ]
+          }
+        },
+        {
+          "label": "loaded_1",
+          "renderer_pid": 51932,
+          "trace_sha256": "ba0cf498a4a73b889564294efd818f7174451c3cb4eb36be25a8a717dab9e7df",
+          "metrics": {
+            "committed_size": 7077888,
+            "size": 7077888,
+            "allocated_objects_size": 6145688,
+            "pooled_size": 0,
+            "non_object_reported_resident_bytes": 932200
+          },
+          "reported_freelist_bucket_bytes": 817416,
+          "selected_classes": [
+            {
+              "name": "blink::ConstraintSpace::RareData",
+              "bytes": 221760,
+              "objects": 1848
+            },
+            {
+              "name": "blink::LayoutResult",
+              "bytes": 178480,
+              "objects": 2231
+            },
+            {
+              "name": "blink::LogicalLineItems",
+              "bytes": 1668960,
+              "objects": 915
+            }
+          ],
+          "latest_os_sample": {
+            "phase": "diagnostic_heap_loaded_1",
+            "elapsed_ms": 5828,
+            "app_renderer_private_bytes": 79294464,
+            "other_owned_private_bytes": 270712832,
+            "whole_browser_private_bytes": 350007296,
+            "not_simultaneous_with_native_dump": true,
+            "processes": [
+              {
+                "pid": 30172,
+                "trace_process_name": "GPU Process",
+                "private_bytes": 99999744
+              },
+              {
+                "pid": 53604,
+                "trace_process_name": "Service: tracing.mojom.TracingService",
+                "private_bytes": 12591104
+              },
+              {
+                "pid": 27824,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 3133440
+              },
+              {
+                "pid": 51572,
+                "trace_process_name": "WebUI Top Renderer",
+                "private_bytes": 51081216
+              },
+              {
+                "pid": 51932,
+                "trace_process_name": "Renderer",
+                "private_bytes": 79294464
+              },
+              {
+                "pid": 40928,
+                "trace_process_name": "Service: storage.mojom.StorageService",
+                "private_bytes": 10903552
+              },
+              {
+                "pid": 38360,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 2863104
+              },
+              {
+                "pid": 54692,
+                "trace_process_name": "Service: network.mojom.NetworkService",
+                "private_bytes": 18038784
+              },
+              {
+                "pid": 32692,
+                "trace_process_name": "Renderer",
+                "private_bytes": 18419712
+              },
+              {
+                "pid": 53924,
+                "trace_process_name": "Browser",
+                "private_bytes": 53682176
+              }
+            ]
+          }
+        },
+        {
+          "label": "loaded_8",
+          "renderer_pid": 51932,
+          "trace_sha256": "c674ba46acf3bda15ef8d09d127df236b7eb2f2ed5733952e0aa39194e516e6a",
+          "metrics": {
+            "committed_size": 27205712,
+            "size": 27205712,
+            "allocated_objects_size": 25604928,
+            "pooled_size": 0,
+            "non_object_reported_resident_bytes": 1600784
+          },
+          "reported_freelist_bucket_bytes": 1160720,
+          "selected_classes": [
+            {
+              "name": "blink::ConstraintSpace::RareData",
+              "bytes": 1455720,
+              "objects": 12131
+            },
+            {
+              "name": "blink::LayoutResult",
+              "bytes": 1023840,
+              "objects": 12798
+            },
+            {
+              "name": "blink::LogicalLineItems",
+              "bytes": 10252704,
+              "objects": 5621
+            }
+          ],
+          "latest_os_sample": {
+            "phase": "diagnostic_heap_loaded_8",
+            "elapsed_ms": 12742,
+            "app_renderer_private_bytes": 153878528,
+            "other_owned_private_bytes": 326868992,
+            "whole_browser_private_bytes": 480747520,
+            "not_simultaneous_with_native_dump": true,
+            "processes": [
+              {
+                "pid": 30172,
+                "trace_process_name": "GPU Process",
+                "private_bytes": 101584896
+              },
+              {
+                "pid": 53604,
+                "trace_process_name": "Service: tracing.mojom.TracingService",
+                "private_bytes": 17498112
+              },
+              {
+                "pid": 27824,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 3133440
+              },
+              {
+                "pid": 51572,
+                "trace_process_name": "WebUI Top Renderer",
+                "private_bytes": 51200000
+              },
+              {
+                "pid": 51932,
+                "trace_process_name": "Renderer",
+                "private_bytes": 153878528
+              },
+              {
+                "pid": 40928,
+                "trace_process_name": "Service: storage.mojom.StorageService",
+                "private_bytes": 10960896
+              },
+              {
+                "pid": 38360,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 2863104
+              },
+              {
+                "pid": 54692,
+                "trace_process_name": "Service: network.mojom.NetworkService",
+                "private_bytes": 18272256
+              },
+              {
+                "pid": 32692,
+                "trace_process_name": "Renderer",
+                "private_bytes": 18305024
+              },
+              {
+                "pid": 53924,
+                "trace_process_name": "Browser",
+                "private_bytes": 103051264
+              }
+            ]
+          }
+        },
+        {
+          "label": "loaded_10",
+          "renderer_pid": 51932,
+          "trace_sha256": "d2df7af3ae5253d45b9e69a03936faea623467a73d056e206a2d1cde7a9c12bf",
+          "metrics": {
+            "committed_size": 33038496,
+            "size": 33038496,
+            "allocated_objects_size": 2568008,
+            "pooled_size": 11403264,
+            "non_object_reported_resident_bytes": 30470488
+          },
+          "reported_freelist_bucket_bytes": 18719392,
+          "selected_classes": [
+            {
+              "name": "blink::ConstraintSpace::RareData",
+              "bytes": 98160,
+              "objects": 818
+            },
+            {
+              "name": "blink::LayoutResult",
+              "bytes": 79840,
+              "objects": 998
+            }
+          ],
+          "latest_os_sample": {
+            "phase": "diagnostic_heap_loaded_10",
+            "elapsed_ms": 15072,
+            "app_renderer_private_bytes": 141254656,
+            "other_owned_private_bytes": 279384064,
+            "whole_browser_private_bytes": 420638720,
+            "not_simultaneous_with_native_dump": true,
+            "processes": [
+              {
+                "pid": 30172,
+                "trace_process_name": "GPU Process",
+                "private_bytes": 104894464
+              },
+              {
+                "pid": 53604,
+                "trace_process_name": "Service: tracing.mojom.TracingService",
+                "private_bytes": 13512704
+              },
+              {
+                "pid": 27824,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 3133440
+              },
+              {
+                "pid": 51572,
+                "trace_process_name": "WebUI Top Renderer",
+                "private_bytes": 51200000
+              },
+              {
+                "pid": 51932,
+                "trace_process_name": "Renderer",
+                "private_bytes": 141254656
+              },
+              {
+                "pid": 40928,
+                "trace_process_name": "Service: storage.mojom.StorageService",
+                "private_bytes": 10960896
+              },
+              {
+                "pid": 38360,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 2863104
+              },
+              {
+                "pid": 54692,
+                "trace_process_name": "Service: network.mojom.NetworkService",
+                "private_bytes": 18276352
+              },
+              {
+                "pid": 32692,
+                "trace_process_name": "Renderer",
+                "private_bytes": 18305024
+              },
+              {
+                "pid": 53924,
+                "trace_process_name": "Browser",
+                "private_bytes": 56238080
+              }
+            ]
+          }
+        },
+        {
+          "label": "loaded_11",
+          "renderer_pid": 51932,
+          "trace_sha256": "2d04006abc5edd803f2ad379e79955b12abc018600e2ffc64dd5a4197b1b4489",
+          "metrics": {
+            "committed_size": 32964688,
+            "size": 32964688,
+            "allocated_objects_size": 5277936,
+            "pooled_size": 11403264,
+            "non_object_reported_resident_bytes": 27686752
+          },
+          "reported_freelist_bucket_bytes": 15935712,
+          "selected_classes": [
+            {
+              "name": "blink::ConstraintSpace::RareData",
+              "bytes": 274560,
+              "objects": 2288
+            },
+            {
+              "name": "blink::LayoutResult",
+              "bytes": 200640,
+              "objects": 2508
+            },
+            {
+              "name": "blink::LogicalLineItems",
+              "bytes": 1227552,
+              "objects": 673
+            }
+          ],
+          "latest_os_sample": {
+            "phase": "package_20202021-playoff",
+            "elapsed_ms": 16182,
+            "app_renderer_private_bytes": 145162240,
+            "other_owned_private_bytes": 287383552,
+            "whole_browser_private_bytes": 432545792,
+            "not_simultaneous_with_native_dump": true,
+            "processes": [
+              {
+                "pid": 30172,
+                "trace_process_name": "GPU Process",
+                "private_bytes": 113364992
+              },
+              {
+                "pid": 53604,
+                "trace_process_name": "Service: tracing.mojom.TracingService",
+                "private_bytes": 13500416
+              },
+              {
+                "pid": 27824,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 3133440
+              },
+              {
+                "pid": 51572,
+                "trace_process_name": "WebUI Top Renderer",
+                "private_bytes": 51326976
+              },
+              {
+                "pid": 51932,
+                "trace_process_name": "Renderer",
+                "private_bytes": 145162240
+              },
+              {
+                "pid": 40928,
+                "trace_process_name": "Service: storage.mojom.StorageService",
+                "private_bytes": 10973184
+              },
+              {
+                "pid": 38360,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 2863104
+              },
+              {
+                "pid": 54692,
+                "trace_process_name": "Service: network.mojom.NetworkService",
+                "private_bytes": 18284544
+              },
+              {
+                "pid": 32692,
+                "trace_process_name": "Renderer",
+                "private_bytes": 18309120
+              },
+              {
+                "pid": 53924,
+                "trace_process_name": "Browser",
+                "private_bytes": 55627776
+              }
+            ]
+          }
+        },
+        {
+          "label": "loaded_26",
+          "renderer_pid": 51932,
+          "trace_sha256": "7d6382e3c917cfa9b47ff46013a48cb518e6c102ecfd6d14b055e5c29ff1903e",
+          "metrics": {
+            "committed_size": 32964688,
+            "size": 32964688,
+            "allocated_objects_size": 8140952,
+            "pooled_size": 13893632,
+            "non_object_reported_resident_bytes": 24823736
+          },
+          "reported_freelist_bucket_bytes": 10622552,
+          "selected_classes": [
+            {
+              "name": "blink::ConstraintSpace::RareData",
+              "bytes": 451920,
+              "objects": 3766
+            },
+            {
+              "name": "blink::LayoutResult",
+              "bytes": 322560,
+              "objects": 4032
+            },
+            {
+              "name": "blink::LogicalLineItems",
+              "bytes": 2467872,
+              "objects": 1353
+            }
+          ],
+          "latest_os_sample": {
+            "phase": "diagnostic_heap_loaded_26",
+            "elapsed_ms": 29989,
+            "app_renderer_private_bytes": 163655680,
+            "other_owned_private_bytes": 317038592,
+            "whole_browser_private_bytes": 480694272,
+            "not_simultaneous_with_native_dump": true,
+            "processes": [
+              {
+                "pid": 30172,
+                "trace_process_name": "GPU Process",
+                "private_bytes": 101257216
+              },
+              {
+                "pid": 53604,
+                "trace_process_name": "Service: tracing.mojom.TracingService",
+                "private_bytes": 18165760
+              },
+              {
+                "pid": 27824,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 3182592
+              },
+              {
+                "pid": 51572,
+                "trace_process_name": "WebUI Top Renderer",
+                "private_bytes": 51318784
+              },
+              {
+                "pid": 51932,
+                "trace_process_name": "Renderer",
+                "private_bytes": 163655680
+              },
+              {
+                "pid": 40928,
+                "trace_process_name": "Service: storage.mojom.StorageService",
+                "private_bytes": 10989568
+              },
+              {
+                "pid": 38360,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 2863104
+              },
+              {
+                "pid": 54692,
+                "trace_process_name": "Service: network.mojom.NetworkService",
+                "private_bytes": 18731008
+              },
+              {
+                "pid": 32692,
+                "trace_process_name": "Renderer",
+                "private_bytes": 18313216
+              },
+              {
+                "pid": 53924,
+                "trace_process_name": "Browser",
+                "private_bytes": 92217344
+              }
+            ]
+          }
+        },
+        {
+          "label": "loaded_75",
+          "renderer_pid": 51932,
+          "trace_sha256": "c7238ab4dd18a6f9dee1fb0d7004bf0e383b7411cc579e444aced64c02ce7673",
+          "metrics": {
+            "committed_size": 32964688,
+            "size": 32964688,
+            "allocated_objects_size": 8270160,
+            "pooled_size": 12845056,
+            "non_object_reported_resident_bytes": 24694528
+          },
+          "reported_freelist_bucket_bytes": 11524912,
+          "selected_classes": [
+            {
+              "name": "blink::ConstraintSpace::RareData",
+              "bytes": 452880,
+              "objects": 3774
+            },
+            {
+              "name": "blink::LayoutResult",
+              "bytes": 324320,
+              "objects": 4054
+            },
+            {
+              "name": "blink::LogicalLineItems",
+              "bytes": 2487936,
+              "objects": 1364
+            }
+          ],
+          "latest_os_sample": {
+            "phase": "diagnostic_heap_loaded_75",
+            "elapsed_ms": 75072,
+            "app_renderer_private_bytes": 134557696,
+            "other_owned_private_bytes": 265388032,
+            "whole_browser_private_bytes": 399945728,
+            "not_simultaneous_with_native_dump": true,
+            "processes": [
+              {
+                "pid": 30172,
+                "trace_process_name": "GPU Process",
+                "private_bytes": 100769792
+              },
+              {
+                "pid": 53604,
+                "trace_process_name": "Service: tracing.mojom.TracingService",
+                "private_bytes": 13402112
+              },
+              {
+                "pid": 27824,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 3043328
+              },
+              {
+                "pid": 51572,
+                "trace_process_name": "WebUI Top Renderer",
+                "private_bytes": 41410560
+              },
+              {
+                "pid": 51932,
+                "trace_process_name": "Renderer",
+                "private_bytes": 134557696
+              },
+              {
+                "pid": 40928,
+                "trace_process_name": "Service: storage.mojom.StorageService",
+                "private_bytes": 10686464
+              },
+              {
+                "pid": 38360,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 2723840
+              },
+              {
+                "pid": 54692,
+                "trace_process_name": "Service: network.mojom.NetworkService",
+                "private_bytes": 18059264
+              },
+              {
+                "pid": 32692,
+                "trace_process_name": "Renderer",
+                "private_bytes": 18235392
+              },
+              {
+                "pid": 53924,
+                "trace_process_name": "Browser",
+                "private_bytes": 57057280
+              }
+            ]
+          }
+        },
+        {
+          "label": "after_twenty_queries",
+          "renderer_pid": 51932,
+          "trace_sha256": "819eaf9d17b72f1394d7b760b5f0a00416aa54b0c349461c6cbfae2f8e99a3b2",
+          "metrics": {
+            "committed_size": 33030224,
+            "size": 33030224,
+            "allocated_objects_size": 2787208,
+            "pooled_size": 11665408,
+            "non_object_reported_resident_bytes": 30243016
+          },
+          "reported_freelist_bucket_bytes": 18234072,
+          "selected_classes": [
+            {
+              "name": "blink::ConstraintSpace::RareData",
+              "bytes": 98160,
+              "objects": 818
+            },
+            {
+              "name": "blink::LayoutResult",
+              "bytes": 79600,
+              "objects": 995
+            }
+          ],
+          "latest_os_sample": {
+            "phase": "resident_settled",
+            "elapsed_ms": 81065,
+            "app_renderer_private_bytes": 139436032,
+            "other_owned_private_bytes": 267534336,
+            "whole_browser_private_bytes": 406970368,
+            "not_simultaneous_with_native_dump": true,
+            "processes": [
+              {
+                "pid": 30172,
+                "trace_process_name": "GPU Process",
+                "private_bytes": 105066496
+              },
+              {
+                "pid": 53604,
+                "trace_process_name": "Service: tracing.mojom.TracingService",
+                "private_bytes": 13524992
+              },
+              {
+                "pid": 27824,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 3043328
+              },
+              {
+                "pid": 51572,
+                "trace_process_name": "WebUI Top Renderer",
+                "private_bytes": 42954752
+              },
+              {
+                "pid": 51932,
+                "trace_process_name": "Renderer",
+                "private_bytes": 139436032
+              },
+              {
+                "pid": 40928,
+                "trace_process_name": "Service: storage.mojom.StorageService",
+                "private_bytes": 10723328
+              },
+              {
+                "pid": 38360,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 2723840
+              },
+              {
+                "pid": 54692,
+                "trace_process_name": "Service: network.mojom.NetworkService",
+                "private_bytes": 17633280
+              },
+              {
+                "pid": 32692,
+                "trace_process_name": "Renderer",
+                "private_bytes": 18235392
+              },
+              {
+                "pid": 53924,
+                "trace_process_name": "Browser",
+                "private_bytes": 53628928
+              }
+            ]
+          }
+        },
+        {
+          "label": "after_restart",
+          "renderer_pid": 51932,
+          "trace_sha256": "4b8d8e3e51a979ca6cc05d82804fa99672f12f20e3bf2f302f98837fd638366f",
+          "metrics": {
+            "committed_size": 32964688,
+            "size": 32964688,
+            "allocated_objects_size": 3211632,
+            "pooled_size": 11665408,
+            "non_object_reported_resident_bytes": 29753056
+          },
+          "reported_freelist_bucket_bytes": 17744112,
+          "selected_classes": [
+            {
+              "name": "blink::ConstraintSpace::RareData",
+              "bytes": 107520,
+              "objects": 896
+            },
+            {
+              "name": "blink::LayoutResult",
+              "bytes": 92000,
+              "objects": 1150
+            },
+            {
+              "name": "blink::LogicalLineItems",
+              "bytes": 49248,
+              "objects": 27
+            }
+          ],
+          "latest_os_sample": {
+            "phase": "diagnostic_heap_after_restart",
+            "elapsed_ms": 84377,
+            "app_renderer_private_bytes": 120082432,
+            "other_owned_private_bytes": 316682240,
+            "whole_browser_private_bytes": 436764672,
+            "not_simultaneous_with_native_dump": true,
+            "processes": [
+              {
+                "pid": 30172,
+                "trace_process_name": "GPU Process",
+                "private_bytes": 112726016
+              },
+              {
+                "pid": 53604,
+                "trace_process_name": "Service: tracing.mojom.TracingService",
+                "private_bytes": 49852416
+              },
+              {
+                "pid": 27824,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 3043328
+              },
+              {
+                "pid": 51572,
+                "trace_process_name": "WebUI Top Renderer",
+                "private_bytes": 43057152
+              },
+              {
+                "pid": 51932,
+                "trace_process_name": "Renderer",
+                "private_bytes": 120082432
+              },
+              {
+                "pid": 40928,
+                "trace_process_name": "Service: storage.mojom.StorageService",
+                "private_bytes": 10866688
+              },
+              {
+                "pid": 38360,
+                "trace_process_name": "unmapped owned process",
+                "private_bytes": 2723840
+              },
+              {
+                "pid": 54692,
+                "trace_process_name": "Service: network.mojom.NetworkService",
+                "private_bytes": 18493440
+              },
+              {
+                "pid": 32692,
+                "trace_process_name": "Renderer",
+                "private_bytes": 18210816
+              },
+              {
+                "pid": 53924,
+                "trace_process_name": "Browser",
+                "private_bytes": 57708544
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "inference": "Smaller buffer shows lower sampled main Blink heap committed maximum in this diagnostic pair. The native-to-whole-OS saving bridge is not established by this or by the two opposite-order normal pairs. Do not reinterpret a measured native subsystem reduction as achieved250 MiB acceptance.",
+  "confounders": [
+    "Natural GC timing and unsampled peaks; class/object levels are not cumulative allocation rates or reachability.",
+    "Trace/heap observations create overhead; at after20 the tracing service is30.7890625 MiB in twenty-row condition versus12.8984375 MiB in control. These observations are not normal benchmark overhead.",
+    "Native committed/resident/used/pooled categories overlap and do not map one-for-one to process private bytes.",
+    "Latest OS samples are not simultaneous with native dumps. App PID is marker-mapped; all other owned PIDs remain included, each counted once."
+  ],
+  "archive_mapping": "Each original runtime report references a trace beneath its checkpoint label. Resolve condition+label via the corresponding compressed trace descriptor. Full summaries retain every checked GUID ownership join and disjoint free-list bucket.",
+  "primary_reference": "https://chromium.googlesource.com/chromium/src/+/HEAD/third_party/blink/renderer/platform/heap/blink_gc_memory_dump_provider.cc",
+  "reference_scope": "Current upstream provider explains statistics fields; not proof current HEAD equals installed binary. Local bytes, GUID/time intervals and class totals independently verified.",
+  "acceptance": null,
+  "normal_desktop_memory_gate": "FAILED; original250 MiB requirement unchanged",
+  "physical_android": "Deferred by user and untested",
+  "decision": "Keep the smaller-buffer trial unpublished as a whole-browser optimization. Further proposals must identify which retained process/allocator component changes and measure the end-to-end OS result; do not extrapolate from DOM count or named class bytes alone.",
+  "evidence": {
+    "twenty-rows-report": {
+      "file": "buffer-heap-bridge-20261017-twenty-rows-report.json.gz",
+      "sha256": "7e2e40e25d8141bc7568858ed3023072326f08e4d6882f6bf49254e3f2cd003a",
+      "expanded_sha256": "6a4b57ae8381308c30e22d62f44702decdf60d5634ff8b37bfd06ef8cda382f3"
+    },
+    "twenty-rows-summary": {
+      "file": "buffer-heap-bridge-20261017-twenty-rows-summary.json.gz",
+      "sha256": "621e0d7f34d08054405722782aaf8ba5e90eeff234ffd66651f09173788a6380",
+      "expanded_sha256": "2955c6e2b80fd6cb784ba902217ec5ad84f1614ccdd942d30e90abb4b29a9cc0"
+    },
+    "twenty-rows-samples": {
+      "file": "buffer-heap-bridge-20261017-twenty-rows-samples.json.gz",
+      "sha256": "25e1e0eef4c4fc5729fd499fef898831fda1779ac41e0bb89a45e67e13c8b6f1",
+      "expanded_sha256": "4111beee23668503e882e021fd1cc90a681c05512c1a117d70e5aabee99e84b1"
+    },
+    "twenty-rows-ready_before_engine-trace": {
+      "file": "buffer-heap-bridge-20261017-twenty-rows-ready_before_engine-trace.json.gz",
+      "sha256": "16a77bca64adb6a9220b2c5d69d1c7269768166f7230082e3e8330bf421248c5",
+      "expanded_sha256": "ef2dc30900cd7cfe86a2e2e52bf245dcb02e9d6fe72f84d0b0c59be497807655"
+    },
+    "twenty-rows-loaded_1-trace": {
+      "file": "buffer-heap-bridge-20261017-twenty-rows-loaded_1-trace.json.gz",
+      "sha256": "1fbd55819cf9463f02352d257a24fb3f0536d1ec40ec2c8b5cc0eef2a6e644bb",
+      "expanded_sha256": "0510f038c3b32c744f41e314c0164e7f7ec8661daa649f366d26e8e637401164"
+    },
+    "twenty-rows-loaded_8-trace": {
+      "file": "buffer-heap-bridge-20261017-twenty-rows-loaded_8-trace.json.gz",
+      "sha256": "c436db0ae786e70f4660fb5987f516dec1249cca837c76e540d7fed0c83e4e06",
+      "expanded_sha256": "5f9542f3a1b1235d7a40b574ef54a3c5880304d25142e8cb3c24960acf03f065"
+    },
+    "twenty-rows-loaded_10-trace": {
+      "file": "buffer-heap-bridge-20261017-twenty-rows-loaded_10-trace.json.gz",
+      "sha256": "e9deb2ca3448067a3e67bc1bdc13e626fd99a7fe25d886278f22b3e21627435c",
+      "expanded_sha256": "dc9dc859e6b218fd900048b2a8f3f4fd5ac2cebd1cb9a39da8c714a1abf8e4de"
+    },
+    "twenty-rows-loaded_11-trace": {
+      "file": "buffer-heap-bridge-20261017-twenty-rows-loaded_11-trace.json.gz",
+      "sha256": "022cf4302453ffd670bea98cf6dc23ee7ba70ff3a7befd65dd6b1e584ba06dfe",
+      "expanded_sha256": "62caafd971cc4ab3cf86ca5064c5121e77c19614a8ad82914fa36d59e481cac4"
+    },
+    "twenty-rows-loaded_26-trace": {
+      "file": "buffer-heap-bridge-20261017-twenty-rows-loaded_26-trace.json.gz",
+      "sha256": "f00f192d18d05eb0620b837bdc16c2c2f9efa44a2772f8ff2d42654882187141",
+      "expanded_sha256": "471a8ed8de0a57a00a6a1eddeaaf04e694c0bd5ae594020a6a66c125e1c337a5"
+    },
+    "twenty-rows-loaded_75-trace": {
+      "file": "buffer-heap-bridge-20261017-twenty-rows-loaded_75-trace.json.gz",
+      "sha256": "7ee5b6d4387a42d9bd884a5c3452764f0d132471a19d4f7f3c9858f4e5548450",
+      "expanded_sha256": "856421dcf91d9a23a12cc55f71b816bbf18e39eefa26b5cc960c54303eeee464"
+    },
+    "twenty-rows-after_twenty_queries-trace": {
+      "file": "buffer-heap-bridge-20261017-twenty-rows-after_twenty_queries-trace.json.gz",
+      "sha256": "857b197af69f27f4e8d418e6ecbcc2115dfc986371d0a88a414b935f3aa22e78",
+      "expanded_sha256": "80726640d169a830a411b807f0f2eb40517dd7fe8bebbc1243809cc135e9856f"
+    },
+    "twenty-rows-after_restart-trace": {
+      "file": "buffer-heap-bridge-20261017-twenty-rows-after_restart-trace.json.gz",
+      "sha256": "6be4dd2e7c03881b4d9131c4f65d0f0a6632e78889b311094287ede60f64032d",
+      "expanded_sha256": "6a9531b8cf4cf33db5913b8759cf10cfca44770786bcb791d66595fb0756a8ca"
+    },
+    "fortyfour-rows-report": {
+      "file": "buffer-heap-bridge-20261017-fortyfour-rows-report.json.gz",
+      "sha256": "c238a5fdb524493c59407676d71f7bfc6ce30458607c79d5cbeb295012c3758b",
+      "expanded_sha256": "9759eb0695bbfdc511189ce6c26e793f097d92628b9949612888e61e51aaec75"
+    },
+    "fortyfour-rows-summary": {
+      "file": "buffer-heap-bridge-20261017-fortyfour-rows-summary.json.gz",
+      "sha256": "1efa81b84aeca220fb64b7b173da16edd9ef3a0deabf5258de2ac0ebd6540368",
+      "expanded_sha256": "0ba5803fb594e7edc0772837a754522de544a828bf2d0274589882b00dca916b"
+    },
+    "fortyfour-rows-samples": {
+      "file": "buffer-heap-bridge-20261017-fortyfour-rows-samples.json.gz",
+      "sha256": "ff0b0406deb43bd2592f3a67bbecb4710fd9f7aa021e633cb5320fa4552e0862",
+      "expanded_sha256": "5c9cc3a64dc9c8c650c8f2f5b459afd675b45744a392a9e3105822dda8bfcf49"
+    },
+    "fortyfour-rows-ready_before_engine-trace": {
+      "file": "buffer-heap-bridge-20261017-fortyfour-rows-ready_before_engine-trace.json.gz",
+      "sha256": "0fb5340d17788558c53910ea63fa751c4d63e4666f7be9c45c22ca95c1e0110e",
+      "expanded_sha256": "5a08bd30621f6ce4acc56a317314987bf3ee66f2cb3255040ece12cd75f981fc"
+    },
+    "fortyfour-rows-loaded_1-trace": {
+      "file": "buffer-heap-bridge-20261017-fortyfour-rows-loaded_1-trace.json.gz",
+      "sha256": "a95507c646959703afa908420c35b5eaefceed47e9a7bba8063be90014167028",
+      "expanded_sha256": "ba0cf498a4a73b889564294efd818f7174451c3cb4eb36be25a8a717dab9e7df"
+    },
+    "fortyfour-rows-loaded_8-trace": {
+      "file": "buffer-heap-bridge-20261017-fortyfour-rows-loaded_8-trace.json.gz",
+      "sha256": "c34539d4769bb76bd0b56246ee87b2004317203a00496952d3b56d8fa5d92535",
+      "expanded_sha256": "c674ba46acf3bda15ef8d09d127df236b7eb2f2ed5733952e0aa39194e516e6a"
+    },
+    "fortyfour-rows-loaded_10-trace": {
+      "file": "buffer-heap-bridge-20261017-fortyfour-rows-loaded_10-trace.json.gz",
+      "sha256": "bc5c1dd9265e55c3322887eab710db81fd4124d1b738f4b5b799e31f50662e9c",
+      "expanded_sha256": "d2df7af3ae5253d45b9e69a03936faea623467a73d056e206a2d1cde7a9c12bf"
+    },
+    "fortyfour-rows-loaded_11-trace": {
+      "file": "buffer-heap-bridge-20261017-fortyfour-rows-loaded_11-trace.json.gz",
+      "sha256": "8d8e37121a121ecae855ba4bab7a9663f607c30ee30a620863d65723bc94acda",
+      "expanded_sha256": "2d04006abc5edd803f2ad379e79955b12abc018600e2ffc64dd5a4197b1b4489"
+    },
+    "fortyfour-rows-loaded_26-trace": {
+      "file": "buffer-heap-bridge-20261017-fortyfour-rows-loaded_26-trace.json.gz",
+      "sha256": "160d2e46a578d666e6397f059c7be56f7c79d62db2935a6e2c6c2c226ef36c6a",
+      "expanded_sha256": "7d6382e3c917cfa9b47ff46013a48cb518e6c102ecfd6d14b055e5c29ff1903e"
+    },
+    "fortyfour-rows-loaded_75-trace": {
+      "file": "buffer-heap-bridge-20261017-fortyfour-rows-loaded_75-trace.json.gz",
+      "sha256": "50c28645abf36a34d985f25d05ae83dc129b5ba78358a04cbdbb481b89788404",
+      "expanded_sha256": "c7238ab4dd18a6f9dee1fb0d7004bf0e383b7411cc579e444aced64c02ce7673"
+    },
+    "fortyfour-rows-after_twenty_queries-trace": {
+      "file": "buffer-heap-bridge-20261017-fortyfour-rows-after_twenty_queries-trace.json.gz",
+      "sha256": "e8cdc8e15d5e66cb58aff775c6c02f97a057c1eed4eacaa7d3035eaa85fe7fad",
+      "expanded_sha256": "819eaf9d17b72f1394d7b760b5f0a00416aa54b0c349461c6cbfae2f8e99a3b2"
+    },
+    "fortyfour-rows-after_restart-trace": {
+      "file": "buffer-heap-bridge-20261017-fortyfour-rows-after_restart-trace.json.gz",
+      "sha256": "1eb6021fd03b2ce9262c3eef1a352f5f0dc15b904c1ebaf5991060c61103bf64",
+      "expanded_sha256": "4b8d8e3e51a979ca6cc05d82804fa99672f12f20e3bf2f302f98837fd638366f"
+    },
+    "normal-candidate-first-report": {
+      "file": "buffer-heap-bridge-20261017-normal-candidate-first-report.json",
+      "sha256": "ab6623d5fe64eba5fb9a546d5fd985cf9ba27763712cee5f58fe6f9daa3253b2"
+    },
+    "normal-candidate-first-samples": {
+      "file": "buffer-heap-bridge-20261017-normal-candidate-first-samples.json.gz",
+      "sha256": "af740a05e432de623506a4f960771e71fadb7bf92725738ff17838c7c3c9e893",
+      "expanded_sha256": "26642a72f4b9402f2a4d94edafb71e03b222accb6b7ae050e29689c63166672b"
+    },
+    "normal-control-second-report": {
+      "file": "buffer-heap-bridge-20261017-normal-control-second-report.json",
+      "sha256": "db826cb4b72d8f3f09480606bf7acfb9bf49b8f0e3aea59c04710800c80b2b8d"
+    },
+    "normal-control-second-samples": {
+      "file": "buffer-heap-bridge-20261017-normal-control-second-samples.json.gz",
+      "sha256": "3fc61e40d38dfa12dc6194c6da800dcf2a61184f734892d76d9eb4c1f5bdd17a",
+      "expanded_sha256": "92a858f9d692d1f8b113bc2432391d12e41628bca5a2cc0d2e659986ecd0d1c2"
+    },
+    "normal-control-first-report": {
+      "file": "buffer-heap-bridge-20261017-normal-control-first-report.json",
+      "sha256": "a86e7321e7f06bfb1e83a64dc6a6bd8cbfbdd09f240729811b51ecfe9dc5c4db"
+    },
+    "normal-control-first-samples": {
+      "file": "buffer-heap-bridge-20261017-normal-control-first-samples.json.gz",
+      "sha256": "8d2437c22b901cbe752d19953abc7ff6bf25f57316e2be5828c2e06706f84713",
+      "expanded_sha256": "b6c0469046138ca75b28617fe52c26b94166e7caea6b36f665cdf2ae022c744c"
+    },
+    "normal-candidate-second-report": {
+      "file": "buffer-heap-bridge-20261017-normal-candidate-second-report.json",
+      "sha256": "5d1fa5873ad8e600149e5e015cf06639f67b5bd104ab3b434073a5a6a276a2f8"
+    },
+    "normal-candidate-second-samples": {
+      "file": "buffer-heap-bridge-20261017-normal-candidate-second-samples.json.gz",
+      "sha256": "c5a1b45928e4e58a22f452032083b7804b02eb0bef137bb72756cb5dae36c280",
+      "expanded_sha256": "264fcab44f2c81be47850bb8db44cf2f2ff2d2b84f96931eb3dee6ce745b1858"
+    },
+    "diagnostic-runner": {
+      "file": "buffer-heap-bridge-20261017-diagnostic-runner.mjs",
+      "sha256": "6a2e6e00be3de2786a49e65c4c974c561cf7ca67954cb9fc3fdb81f702558e8a"
+    },
+    "native-observer": {
+      "file": "buffer-heap-bridge-20261017-native-observer.mjs",
+      "sha256": "0957666dc0c9649c5976f58c4d1951742c4b763fd9877813392230b71ad88ad5"
+    },
+    "analysis-recipe": {
+      "file": "buffer-heap-bridge-20261017-analysis-recipe.py",
+      "sha256": "0a8bc980761809839b30b203b464ef5743bcb0c15d92aed213db4b5cbab1f9c2"
+    }
+  }
+}
