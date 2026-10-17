@@ -84,3 +84,15 @@ test('cancellation stops decoder input before forwarding the whole payload',asyn
     assert.ok(forwarded>0&&forwarded<input.length);assert.equal(input.byteLength,32769);
   }finally{globalThis.DecompressionStream=original;}
 });
+
+for(const mode of ['abort','deadline'])test('large expansion yields to a queued '+mode+' before finishing',async()=>{
+  const original=globalThis.DecompressionStream;
+  const abort=new AbortController();let forwarded=0;let clock=0;let timer;
+  const input=new Uint8Array(1024*1024);
+  try{
+    globalThis.DecompressionStream=class{constructor(){return new TransformStream({transform(chunk,controller){forwarded+=chunk.length;controller.enqueue(chunk);}});}};
+    timer=setTimeout(()=>{if(mode==='abort')abort.abort(new Error('queued decoder cancellation'));else clock=100;},0);
+    await assert.rejects(expandPackage(input,input.length,{...options(),signal:abort.signal,now:()=>clock,deadline:100}),mode==='abort'?/queued decoder cancellation/:/deadline/);
+    assert.ok(forwarded<input.length,'queued task must run before all input is consumed');
+  }finally{clearTimeout(timer);globalThis.DecompressionStream=original;}
+});

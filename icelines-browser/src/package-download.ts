@@ -24,7 +24,7 @@ export async function expandPackage(bytes: Uint8Array, maximum: number, options:
   } })
     .pipeThrough(new DecompressionStream('gzip'));
   const reader = stream.getReader();
-  const expanded = new Uint8Array(maximum); let length = 0;
+  const expanded = new Uint8Array(maximum); let length = 0; let sinceYield = 0;
   const stop = (): void => { void reader.cancel().catch(() => {}); };
   const timer = setTimeout(stop, Math.max(0, options.deadline - now()));
   options.signal.addEventListener('abort', stop, {once:true});
@@ -34,6 +34,14 @@ export async function expandPackage(bytes: Uint8Array, maximum: number, options:
       if (done) break;
       if (value.length > maximum - length) throw new Error('Expanded package exceeds its advertised byte limit');
       expanded.set(value,length); length += value.length;
+      sinceYield += value.length;
+      if (sinceYield >= 256 * 1024) {
+        sinceYield = 0;
+        // Promise-only decoder progress can monopolize one browser task. Let
+        // queued cancellation/UI work run without relaxing bounds or deadlines.
+        await new Promise<void>(resolve => setTimeout(resolve, 0));
+        check();
+      }
     }
     return expanded.subarray(0,length);
   } finally { clearTimeout(timer); options.signal.removeEventListener('abort',stop); await reader.cancel().catch(() => {}); }
