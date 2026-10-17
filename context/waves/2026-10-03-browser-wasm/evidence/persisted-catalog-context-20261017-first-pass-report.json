@@ -1,0 +1,47 @@
+{
+  "verified": true,
+  "artifact": {
+    "commit": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+    "shell_build": "e575ec099d635615476610b46ec106b97e83d28b66fc3980bbdcbbf4292c1a36",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "scope": "Retained release bytes, owned process-reopened profile and real IndexedDB, service workers blocked, unsigned two-entry catalog. Three saved-context refusals preserve previous full result/exact export/requery; correct saved retry succeeds without payload network requests. Not offline-shell, memory, production or physical-device acceptance.",
+  "evidence": {
+    "outcomes": [
+      {
+        "change": {
+          "season": 20262027
+        },
+        "process_reopened": true,
+        "indexeddb_candidate_read": true,
+        "previous_rows": 933,
+        "exact_previous_export": true,
+        "requery": true
+      },
+      {
+        "change": {
+          "season_type": "playoff"
+        },
+        "process_reopened": true,
+        "indexeddb_candidate_read": true,
+        "previous_rows": 933,
+        "exact_previous_export": true,
+        "requery": true
+      },
+      {
+        "change": {
+          "source": "wrong catalog source"
+        },
+        "process_reopened": true,
+        "indexeddb_candidate_read": true,
+        "previous_rows": 933,
+        "exact_previous_export": true,
+        "requery": true
+      }
+    ],
+    "retry_rows": 905,
+    "retry_saved": true,
+    "forbidden_payload_attempts": 0
+  }
+}

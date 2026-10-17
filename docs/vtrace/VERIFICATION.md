@@ -486,3 +486,20 @@ full933-player viewport/AX/print/keyboard,77 goalies, offline933/fresh835 and re
 corrupt-transfer previous-good/exact export/905-player retry. Two clean opposite
 order full workloads use unchanged flags/sampler/WASM and no forced GC.
 No full resource, mobile, CI-master or production-origin proof is claimed yet.
+
+Persisted catalog-context validation extension (2026-10-17): separately exercise
+IndexedDB selection after closing/reopening an owned browser profile. A saved
+second package must be read from IndexedDB (observed request), with its network
+payload unavailable and no resident copy, then reject mismatched catalog season,
+type and source while preserving the first package's full result and exact export.
+Restore the correct catalog and prove successful saved-data retry. This fixture
+is not offline-shell, production-origin, memory or physical-device acceptance.
+
+The retained75e6ba97 release passes this extension: three mismatches after one
+process reopening read the saved candidate from IndexedDB, preserve933 rows and
+exact canonical export/requery, and correct-catalog retry restores905 rows with
+zero candidate payload requests. Earlier fixture failures are retained separately:
+automatic saved restoration defeated isolation, a redundant load raced panel
+folding, and repeated process reopening with prior downloads hit a browser failure.
+The final fixture reopens once before all cases and asserts candidate nonresidency
+before each case. No browser flags, application assets or saved records changed.
