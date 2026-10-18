@@ -29,6 +29,7 @@ pub mod projection;
 pub mod roster_shape;
 pub mod scheme;
 pub mod scoring;
+pub mod season_read;
 pub mod season_stats;
 pub mod series_momentum;
 pub mod signal_metrics;
@@ -778,3 +779,5 @@ pub use workbench_layout::{
     WorkbenchLayoutContextPolicy, WorkbenchLayoutError, WorkbenchLayoutRecord,
     WorkbenchLayoutStore, WORKBENCH_LAYOUT_SCHEMA_VERSION,
 };
+
+pub use season_read::SeasonStatsRead;

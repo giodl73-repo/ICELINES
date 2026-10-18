@@ -54,14 +54,18 @@ pub fn cases() -> Vec<(PlayerIdentity, SeasonStats)> {
                             };
                             let position = if goalie {
                                 Position::Goalie
-                            } else if id % 2 == 0 {
+                            } else if id.is_multiple_of(2) {
                                 Position::Center
                             } else {
                                 Position::Defense
                             };
                             let mut builder = SeasonStatsBuilder::new(
                                 PlayerId(id),
-                                Season(if id % 2 == 0 { 20252026 } else { 19931994 }),
+                                Season(if id.is_multiple_of(2) {
+                                    20252026
+                                } else {
+                                    19931994
+                                }),
                                 kind,
                                 position,
                             )

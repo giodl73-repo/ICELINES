@@ -1,0 +1,13 @@
+{
+  "source_revision": "9af58a5dc45e456e8c3a9df2638447901504dc2b",
+  "production_base_revision": "663c4f2909905c9e1d3258e26478d36355d30f4a",
+  "production_changes_before_capture": false,
+  "source_dirty_before_capture": false,
+  "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+  "rows": 288,
+  "stats": 108,
+  "filters": 8,
+  "golden_sha256": "37de01058bb2c0145a44cd7725f4f7945f6ec8925359aff9f7ee0bb2f0e96d60",
+  "binary_sha256": "0e3902e3c922225ce4998b209d283112e6bbe6e9825fdb030e22a5bf31644e9f",
+  "fixture_source_sha256": "cbe09e8c4c1bf4ec3a383828709295a67b3d198d69be8ece7891502aea8ed547"
+}
