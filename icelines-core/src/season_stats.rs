@@ -637,6 +637,9 @@ impl SeasonStatsBuilder {
                 (None, Some(_)) => std::cmp::Ordering::Greater,
                 (None, None) => a.team.as_str().cmp(b.team.as_str()),
             });
+        // Finalized rows are long-lived; release builder growth capacity without
+        // changing stint values, canonical order, or the public Vec interface.
+        self.team_stints.shrink_to_fit();
         Ok(SeasonStats {
             player_id: self.player_id,
             season: self.season,
@@ -716,6 +719,42 @@ mod tests {
         .try_build()
         .unwrap_err();
         assert_eq!(err, SeasonStatsBuildError::MissingTeamStint);
+    }
+
+    #[test]
+    fn finalized_stints_release_builder_capacity_and_preserve_full_serialization() {
+        for mut stints in [
+            vec![stl_stint(38, 10, 11)],
+            vec![nyr_stint(31, 8, 13), stl_stint(38, 10, 11)],
+        ] {
+            stints.reserve(32);
+            let grown_capacity = stints.capacity();
+            let mut expected = stints.clone();
+            expected.sort_by(|a, b| a.started.cmp(&b.started));
+            let totals = skater_totals(
+                stints.iter().map(|s| s.gp).sum(),
+                stints.iter().map(|s| s.goals).sum(),
+                stints.iter().map(|s| s.assists).sum(),
+            );
+            let stats = SeasonStatsBuilder::new(
+                PlayerId(8475765),
+                Season(20222023),
+                SeasonType::Regular,
+                Position::RightWing,
+            )
+            .replace_team_stints(stints)
+            .with_totals(totals)
+            .try_build()
+            .unwrap();
+            assert!(stats.team_stints.capacity() < grown_capacity);
+            assert_eq!(stats.team_stints, expected);
+            let encoded = serde_json::to_vec(&stats).unwrap();
+            let decoded: SeasonStats = serde_json::from_slice(&encoded).unwrap();
+            assert_eq!(stats, decoded);
+            let mut spare_capacity = stats.clone();
+            spare_capacity.team_stints.reserve(32);
+            assert_eq!(encoded, serde_json::to_vec(&spare_capacity).unwrap());
+        }
     }
 
     #[test]
