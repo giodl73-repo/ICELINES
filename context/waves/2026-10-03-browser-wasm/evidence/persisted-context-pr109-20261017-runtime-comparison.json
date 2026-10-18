@@ -1,0 +1,35 @@
+{
+  "verified": true,
+  "scope": "Exact retained published-release versus CI file hashes, excluding three build-identity-dependent files. No executing-bytecode, offline, memory or device claim.",
+  "release": {
+    "schema_version": 1,
+    "commit": "75e6ba9709e31e2cdeed633958f923f0ae36c01d",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "8482c9fd825f773eb3fc0956e42f67f0931caf871d2bab89c76b01a4738aab3a"
+  },
+  "candidate": {
+    "schema_version": 1,
+    "commit": "34b0226bafa5401104f100154f8871f538f0d3ad",
+    "working_tree_dirty": false,
+    "tools": {
+      "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "node": "v22.22.3",
+      "python": "Python 3.14.2",
+      "wasm_bindgen": "wasm-bindgen 0.2.118"
+    },
+    "wasm_sha256": "8482c9fd825f773eb3fc0956e42f67f0931caf871d2bab89c76b01a4738aab3a"
+  },
+  "excluded": [
+    "build-info.json",
+    "shell-manifest.json",
+    "sw.js"
+  ],
+  "compared_files": 179,
+  "differences": []
+}

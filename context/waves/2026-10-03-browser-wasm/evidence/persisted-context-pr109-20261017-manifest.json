@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "scope": "PR109 source/CI artifact custody and supplemental IndexedDB browser validation. Merge-time check snapshot: remaining Windows fingerprint is pending, not passed. No claim of full native CI, publication, memory or Android acceptance.",
+  "head": "829bf5e938223f784012b89f1983558d67696905",
+  "preview_source": "34b0226bafa5401104f100154f8871f538f0d3ad",
+  "browser_run": 39079066084,
+  "native_run": 39079066044,
+  "artifact_id": 12118268272,
+  "unchanged_runtime_files": 179,
+  "identity_file_exclusions": [
+    "build-info.json",
+    "shell-manifest.json",
+    "sw.js"
+  ],
+  "checks_success": 28,
+  "checks_skipped": 1,
+  "pending_at_merge": [
+    "Window fingerprint / windows-latest"
+  ],
+  "merge_basis": "Test/evidence/docs and npm command only; no application/data/schema changes. Exact CI browser test passes and179 files match published runtime outside three build-identity files. Other28 checks pass; remaining nonrequired fingerprint tests unchanged native code. Branch protection does not require status checks. This decision does not waive a release acceptance gate.",
+  "merge_commit": "663c4f2909905c9e1d3258e26478d36355d30f4a",
+  "files": [
+    {
+      "file": "persisted-context-pr109-20261017-browser-report.json",
+      "sha256": "eca2898f9c5d9d64666e53d7a17ca0e4952990de0ad044f8033b9284d31c08bf",
+      "original_path": "target/persisted-catalog-context-GDFNGv/report.json"
+    },
+    {
+      "file": "persisted-context-pr109-20261017-runtime-comparison.json",
+      "sha256": "3d2cff250143cef9bb04b80834a3af66674ec5c109468f2d2a6918f7420898f2",
+      "original_path": "target/persisted-context-pr109-runtime-comparison.json"
+    },
+    {
+      "file": "persisted-context-pr109-20261017-merge-time-checks.json",
+      "sha256": "e575b7797f3ea9eeeb0938c9ceef222c2d465c3af5092352865a3e42073b1e6b",
+      "original_path": "target/persisted-context-pr109-merge-time-checks.json"
+    },
+    {
+      "file": "persisted-context-pr109-20261017-merged.json",
+      "sha256": "2fc9ceb10211dcd56949c7b10eecc717f37a5da1b1536f97a0948fe9ab8234d2",
+      "original_path": "target/persisted-context-pr109-merged.json"
+    },
+    {
+      "file": "persisted-context-pr109-20261017-source.json",
+      "sha256": "011e3b59d817fa977b7b893e4a283e5ceebf3d0e887284fa284dfa93056f393f",
+      "original_path": "target/persisted-context-pr109-source.json"
+    },
+    {
+      "file": "persisted-context-pr109-20261017-compare.py.gz",
+      "sha256": "002a71113e167882a8d0c11597dc586d5d880b559320ad04925b5f08b8425052",
+      "original_path": "target/compare-persisted-context-artifact.py",
+      "expanded_sha256": "5d6640fd32df2111d35563a3c3470825bf8e7626e346d866efb5ebfd45d662a2"
+    },
+    {
+      "file": "persisted-context-pr109-20261017-archive.py.gz",
+      "sha256": "e7d3ebbe56a92055539af9e900c635b191f8a092352e86978d00ec7c4e0db9b3",
+      "original_path": "target/archive-persisted-context-ci.py",
+      "expanded_sha256": "45b831b5e741427539dee3975f4e477887742ade40211e7aa852ad088e124d61"
+    }
+  ]
+}
