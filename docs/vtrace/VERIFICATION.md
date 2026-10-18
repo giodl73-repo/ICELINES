@@ -507,3 +507,15 @@ Re-run from the repository root with
 `node icelines-browser/e2e/persisted-catalog-context.mjs --artifact <retained-dist>`
 or use `npm run acceptance:persisted-catalog-context -- --artifact <retained-dist>`
 from `icelines-browser`. Artifact paths are relative to the repository root.
+
+CHG-121 finalized stint capacity verification (2026-10-17): the regression test
+`finalized_stints_release_builder_capacity_and_preserve_full_serialization` checks
+single/multi-stint builder capacity, chronological order, typed equality and JSON
+independence from spare capacity. Existing missing-stint, trade, goalie, nullable,
+repository/index/LRU and serialization tests remain applicable. The selected
+core/data/WASM native suites pass 1,237 tests/doc-tests with serialized compilation;
+44 loader/native-parity integration tests pass, and fresh native expectations match
+270 distributed-WASM cases (33,613 full rows, 90 empty results). Browser units,
+offline reopening and viewport/export/keyboard/retry checks pass. Controlled
+native/WASM/component and whole-browser outcomes are recorded in the pulse;
+these metrics are separate and do not certify the full browser budget or a phone.

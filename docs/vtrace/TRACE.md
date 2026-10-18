@@ -370,3 +370,11 @@ Verification and validation remain pending until recorded command/browser result
 Raw prototype reports and provenance are under
 `context/waves/2026-10-03-browser-wasm/evidence/gzip-delivery-*`.
 The prototype source commit is recorded independently from this clean PR branch.
+
+CHG-121 trace: REQ-PARITY-001 / IF-BROWSER-001 ->
+`icelines-core/src/season_stats.rs::SeasonStatsBuilder::try_build` ->
+`finalized_stints_release_builder_capacity_and_preserve_full_serialization`,
+core/data/WASM suites, native loader and 270-case native/WASM parity ->
+`context/waves/2026-10-03-browser-wasm/pulses/miser-stint-capacity.md` and local
+HART/FORGE/BENCH/PACE/KEEL/EDGE review. This is storage finalization only; no new
+surface capability, persistence schema or completeness claim is introduced.

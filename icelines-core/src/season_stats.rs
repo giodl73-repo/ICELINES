@@ -731,6 +731,11 @@ mod tests {
             let grown_capacity = stints.capacity();
             let mut expected = stints.clone();
             expected.sort_by(|a, b| a.started.cmp(&b.started));
+            let totals = skater_totals(
+                stints.iter().map(|s| s.gp).sum(),
+                stints.iter().map(|s| s.goals).sum(),
+                stints.iter().map(|s| s.assists).sum(),
+            );
             let stats = SeasonStatsBuilder::new(
                 PlayerId(8475765),
                 Season(20222023),
@@ -738,7 +743,7 @@ mod tests {
                 Position::RightWing,
             )
             .replace_team_stints(stints)
-            .with_totals(skater_totals(69, 18, 24))
+            .with_totals(totals)
             .try_build()
             .unwrap();
             assert!(stats.team_stints.capacity() < grown_capacity);

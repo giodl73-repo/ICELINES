@@ -188,8 +188,28 @@ The version1 catalog may add an optional gzip transport descriptor while raw JSO
 URLs, dataset revisions, local storage, recovery and exports stay unchanged.
 Review: BENCH / WIRE / KEEL / FORGE / EDGE; one agent applying five lenses.
 Local prototype evidence passes; two opposite-order full-workload pairs show about
-44–45 MiB lower private peaks. The fixed 250 MiB target and physical Android gate
+44â€“45 MiB lower private peaks. The fixed 250 MiB target and physical Android gate
 remain open. CI/master/public-origin transfer and update/rollback evidence are
 required before promoting the delivery implementation.
 Trace updates: INTERFACES, WORK_PACKAGES, TRACE, VERIFICATION and VALIDATION.
 No resource waiver, native dependency change or hockey semantics change.
+
+## CHG-121: Compact finalized stint-vector capacity (2026-10-17)
+
+Decision: scoped performance implementation for review. `SeasonStatsBuilder::try_build`
+releases spare stint Vec capacity after its existing nonempty check and canonical
+sort. The public Vec type, all field values, missingness, primary keys, borrowed views,
+source export/revision and interchange schema stay the same. No requirement or
+interface version changes. Affects REQ-PARITY-001 and IF-BROWSER-001 verification.
+
+MISER EXP-003 provided the direct-construction hypothesis and field/JSON parity.
+The isolated consumer candidate is tested at c4232db05168c8f6c14853e84de2ac39ddb52953.
+Actual native BrowserEngine retained/peak allocations and distributed WASM linear
+memory are measured separately from whole-Chromium process counters. Extra
+reallocation calls/cumulative allocation traffic are reported, not hidden.
+
+Review: HART, FORGE, BENCH, PACE, KEEL and EDGE; one agent applying local lenses.
+See `signals/roles/check/miser-stint-capacity-roles-check-2026-10-17.md` and
+`context/waves/2026-10-03-browser-wasm/pulses/miser-stint-capacity.md`.
+The 250 MiB whole-browser criterion and deferred physical Android gate remain.
+No browser publication, hosting change, data revision change or resource waiver.
