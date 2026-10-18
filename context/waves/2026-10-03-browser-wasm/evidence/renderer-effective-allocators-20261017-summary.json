@@ -1,0 +1,2868 @@
+{
+  "acceptance": null,
+  "scope": "Reanalysis of existing additional-observer control traces, source807e2ad. Effective allocator sizes are provider/ownership-accounted component metrics, not Windows private-byte partition, physical RAM or a normal benchmark. Ancestor and child nodes overlap; never sum both. Virtual reservations, hard limits and maxima are not current allocations.",
+  "primary_reference": "https://chromium.googlesource.com/chromium/src/+/lkgr/docs/memory-infra/",
+  "artifact": {
+    "commit": "807e2adcd31cdd8cd31a74f87fdeec05247b7ef0",
+    "shell_build": "b18354d00bed4b1a92d50287b76bada82bdc4ebb7f87a7f7661a1cae78173385",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "checkpoints": [
+    {
+      "label": "ready_before_engine",
+      "renderer_pid": 51932,
+      "trace_file": "ready_before_engine\\target-process-markers-trace.json",
+      "trace_sha256": "5a08bd30621f6ce4acc56a317314987bf3ee66f2cb3255040ece12cd75f981fc",
+      "dump_guid": "0x3",
+      "root_metrics": {
+        "blink_gc": {
+          "effective_size": 1425753,
+          "size": 4325376
+        },
+        "blink_objects": {
+          "effective_size": 2899608,
+          "size": 2899608
+        },
+        "cc": {
+          "effective_size": 10485760,
+          "size": 10485760
+        },
+        "discardable": {},
+        "gpu": {
+          "effective_size": 2359168,
+          "size": 2359168
+        },
+        "malloc": {
+          "effective_size": 21423912,
+          "size": 21719968
+        },
+        "mojo": {},
+        "parkable_images": {},
+        "parkable_strings": {},
+        "partition_alloc": {
+          "effective_size": 6875925,
+          "size": 6881280
+        },
+        "shared_memory": {
+          "effective_size": 110080,
+          "size": 2563968
+        },
+        "site_storage": {},
+        "skia": {
+          "effective_size": 18464,
+          "size": 18464
+        },
+        "v8": {
+          "effective_size": 7154732,
+          "size": 7154732
+        },
+        "web_cache": {
+          "effective_size": 5587,
+          "size": 5587
+        }
+      },
+      "selected_overlapping_nodes": {
+        "blink_gc/main/heap": {
+          "allocated_objects_size": 2256664,
+          "committed_size": 3145728,
+          "effective_size": 889056,
+          "pooled_size": 0,
+          "size": 3145728
+        },
+        "malloc/allocated_objects/<unspecified>": {
+          "effective_size": 16103675,
+          "size": 16103675
+        },
+        "malloc/metadata_fragmentation_caches": {
+          "effective_size": 32801,
+          "size": 32801
+        },
+        "malloc/partitions/allocator": {
+          "allocated_objects_size": 15034968,
+          "decommittable_size": 1204224,
+          "discardable_size": 40960,
+          "effective_size": 4050119,
+          "size": 20240144,
+          "virtual_committed_size": 16449536,
+          "wasted": 1414568
+        },
+        "malloc/partitions/allocator/thread_cache": {
+          "effective_size": 758517,
+          "size": 3790608
+        },
+        "malloc/win_heap": {
+          "effective_size": 1184879,
+          "size": 1184879
+        },
+        "partition_alloc/allocated_objects/<unspecified>": {
+          "effective_size": 5966640,
+          "size": 5966640
+        },
+        "partition_alloc/allocated_objects/__2023455f03c0e8a3": {},
+        "partition_alloc/allocated_objects/__8705ce15acb7ac86": {},
+        "partition_alloc/allocated_objects/__e16d7741751319ea": {},
+        "partition_alloc/allocated_objects/__e21fcf3476c51bee": {
+          "size": 5324
+        },
+        "partition_alloc/partitions/array_buffer": {
+          "allocated_objects_size": 2243356,
+          "decommittable_size": 0,
+          "discardable_size": 20480,
+          "effective_size": 303097,
+          "size": 2293760,
+          "virtual_committed_size": 2293760,
+          "wasted": 50404
+        },
+        "partition_alloc/partitions/buffer": {
+          "allocated_objects_size": 3728608,
+          "decommittable_size": 565248,
+          "discardable_size": 180224,
+          "effective_size": 606188,
+          "size": 4587520,
+          "virtual_committed_size": 4587520,
+          "wasted": 858912
+        },
+        "v8/main/heap/code_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/code_space": {
+          "allocated_objects_size": 48448,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/main/heap/large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/new_large_object_space": {
+          "allocated_objects_size": 321164,
+          "effective_size": 323584,
+          "size": 323584
+        },
+        "v8/main/heap/new_space": {
+          "allocated_objects_size": 783804,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/main/heap/old_space": {
+          "allocated_objects_size": 1591220,
+          "effective_size": 2359296,
+          "size": 2359296
+        },
+        "v8/main/heap/read_only_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_trusted_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_trusted_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/trusted_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/trusted_space": {
+          "allocated_objects_size": 99068,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/code_stats": {},
+        "v8/workers/code_stats/isolate_0x29FC010AC000": {},
+        "v8/workers/contexts": {},
+        "v8/workers/contexts/detached_context": {},
+        "v8/workers/contexts/detached_context/isolate_0x29FC010AC000": {},
+        "v8/workers/contexts/native_context": {},
+        "v8/workers/contexts/native_context/isolate_0x29FC010AC000": {},
+        "v8/workers/global_handles": {
+          "effective_size": 43976,
+          "size": 43976
+        },
+        "v8/workers/global_handles/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 32784,
+          "effective_size": 43976,
+          "size": 43976
+        },
+        "v8/workers/heap": {
+          "effective_size": 2097152,
+          "size": 2097152
+        },
+        "v8/workers/heap/code_large_object_space": {},
+        "v8/workers/heap/code_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/code_space": {
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/code_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 11008,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/large_object_space": {},
+        "v8/workers/heap/large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_large_object_space": {},
+        "v8/workers/heap/new_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_space": {
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/new_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 340556,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/old_space": {
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/old_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 344868,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/read_only_space": {},
+        "v8/workers/heap/read_only_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_large_object_space": {},
+        "v8/workers/heap/shared_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_space": {},
+        "v8/workers/heap/shared_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_large_object_space": {},
+        "v8/workers/heap/shared_trusted_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_space": {},
+        "v8/workers/heap/shared_trusted_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_large_object_space": {},
+        "v8/workers/heap/trusted_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_space": {
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/trusted_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 10248,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/malloc": {
+          "effective_size": 61496,
+          "size": 61496
+        },
+        "v8/workers/malloc/isolate_0x29FC010AC000": {
+          "effective_size": 61496,
+          "size": 61496
+        }
+      }
+    },
+    {
+      "label": "loaded_1",
+      "renderer_pid": 51932,
+      "trace_file": "loaded_1\\target-process-markers-trace.json",
+      "trace_sha256": "ba0cf498a4a73b889564294efd818f7174451c3cb4eb36be25a8a717dab9e7df",
+      "dump_guid": "0x5",
+      "root_metrics": {
+        "blink_gc": {
+          "effective_size": 2163870,
+          "size": 9043968
+        },
+        "blink_objects": {
+          "effective_size": 6880040,
+          "size": 6880040
+        },
+        "cc": {
+          "effective_size": 14352384,
+          "size": 14352384
+        },
+        "discardable": {},
+        "gpu": {
+          "effective_size": 2424704,
+          "size": 2424704
+        },
+        "malloc": {
+          "effective_size": 32825667,
+          "size": 33236384
+        },
+        "mojo": {},
+        "parkable_images": {},
+        "parkable_strings": {},
+        "partition_alloc": {
+          "effective_size": 13630224,
+          "size": 13635584
+        },
+        "shared_memory": {
+          "effective_size": 177664,
+          "size": 2719616
+        },
+        "site_storage": {},
+        "skia": {
+          "effective_size": 22528,
+          "size": 22528
+        },
+        "v8": {
+          "effective_size": 9686052,
+          "size": 9686052
+        },
+        "web_cache": {
+          "effective_size": 5587,
+          "size": 5587
+        }
+      },
+      "selected_overlapping_nodes": {
+        "blink_gc/main/heap": {
+          "allocated_objects_size": 6145688,
+          "committed_size": 7077888,
+          "effective_size": 932148,
+          "pooled_size": 0,
+          "size": 7077888
+        },
+        "malloc/allocated_objects/<unspecified>": {
+          "effective_size": 24732890,
+          "size": 24732890
+        },
+        "malloc/metadata_fragmentation_caches": {
+          "effective_size": 36819,
+          "size": 36819
+        },
+        "malloc/partitions/allocator": {
+          "allocated_objects_size": 23648305,
+          "decommittable_size": 1638400,
+          "discardable_size": 24576,
+          "effective_size": 6685034,
+          "size": 31621888,
+          "virtual_committed_size": 25464832,
+          "wasted": 1816527
+        },
+        "malloc/partitions/allocator/thread_cache": {
+          "effective_size": 1301639,
+          "size": 6157056
+        },
+        "malloc/win_heap": {
+          "effective_size": 1315533,
+          "size": 1315533
+        },
+        "partition_alloc/allocated_objects/<unspecified>": {
+          "effective_size": 12998563,
+          "size": 12998563
+        },
+        "partition_alloc/allocated_objects/__2023455f03c0e8a3": {},
+        "partition_alloc/allocated_objects/__8705ce15acb7ac86": {},
+        "partition_alloc/allocated_objects/__e16d7741751319ea": {},
+        "partition_alloc/allocated_objects/__e21fcf3476c51bee": {
+          "size": 5324
+        },
+        "partition_alloc/partitions/array_buffer": {
+          "allocated_objects_size": 7371771,
+          "decommittable_size": 98304,
+          "discardable_size": 86016,
+          "effective_size": 351607,
+          "size": 7589888,
+          "virtual_committed_size": 7589888,
+          "wasted": 218117
+        },
+        "partition_alloc/partitions/buffer": {
+          "allocated_objects_size": 5632116,
+          "decommittable_size": 147456,
+          "discardable_size": 159744,
+          "effective_size": 280054,
+          "size": 6045696,
+          "virtual_committed_size": 6045696,
+          "wasted": 413580
+        },
+        "v8/main/heap/code_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/code_space": {
+          "allocated_objects_size": 151040,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/main/heap/large_object_space": {
+          "allocated_objects_size": 321164,
+          "effective_size": 323584,
+          "size": 323584
+        },
+        "v8/main/heap/new_large_object_space": {
+          "allocated_objects_size": 321164,
+          "effective_size": 323584,
+          "size": 323584
+        },
+        "v8/main/heap/new_space": {
+          "allocated_objects_size": 647776,
+          "effective_size": 1835008,
+          "size": 1835008
+        },
+        "v8/main/heap/old_space": {
+          "allocated_objects_size": 2187728,
+          "effective_size": 2359296,
+          "size": 2359296
+        },
+        "v8/main/heap/read_only_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_trusted_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_trusted_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/trusted_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/trusted_space": {
+          "allocated_objects_size": 203796,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/code_stats": {},
+        "v8/workers/code_stats/isolate_0x29FC010AC000": {},
+        "v8/workers/code_stats/isolate_0x29FC02220000": {},
+        "v8/workers/contexts": {},
+        "v8/workers/contexts/detached_context": {},
+        "v8/workers/contexts/detached_context/isolate_0x29FC010AC000": {},
+        "v8/workers/contexts/detached_context/isolate_0x29FC02220000": {},
+        "v8/workers/contexts/native_context": {},
+        "v8/workers/contexts/native_context/isolate_0x29FC010AC000": {},
+        "v8/workers/contexts/native_context/isolate_0x29FC02220000": {},
+        "v8/workers/global_handles": {
+          "effective_size": 57280,
+          "size": 57280
+        },
+        "v8/workers/global_handles/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 34960,
+          "effective_size": 43976,
+          "size": 43976
+        },
+        "v8/workers/global_handles/isolate_0x29FC02220000": {
+          "allocated_objects_size": 2096,
+          "effective_size": 13304,
+          "size": 13304
+        },
+        "v8/workers/heap": {
+          "effective_size": 3145728,
+          "size": 3145728
+        },
+        "v8/workers/heap/code_large_object_space": {},
+        "v8/workers/heap/code_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/code_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/code_space": {
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/code_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 11008,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/code_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/large_object_space": {},
+        "v8/workers/heap/large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_large_object_space": {},
+        "v8/workers/heap/new_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_space": {
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/new_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 348872,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/new_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 240968,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/old_space": {
+          "effective_size": 1310720,
+          "size": 1310720
+        },
+        "v8/workers/heap/old_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 354008,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/old_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 322956,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/read_only_space": {},
+        "v8/workers/heap/read_only_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/read_only_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_large_object_space": {},
+        "v8/workers/heap/shared_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_space": {},
+        "v8/workers/heap/shared_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_large_object_space": {},
+        "v8/workers/heap/shared_trusted_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_space": {},
+        "v8/workers/heap/shared_trusted_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_large_object_space": {},
+        "v8/workers/heap/trusted_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_space": {
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/trusted_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 10292,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/trusted_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 12696,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/malloc": {
+          "effective_size": 122992,
+          "size": 122992
+        },
+        "v8/workers/malloc/isolate_0x29FC010AC000": {
+          "effective_size": 61496,
+          "size": 61496
+        },
+        "v8/workers/malloc/isolate_0x29FC02220000": {
+          "effective_size": 61496,
+          "size": 61496
+        }
+      }
+    },
+    {
+      "label": "loaded_8",
+      "renderer_pid": 51932,
+      "trace_file": "loaded_8\\target-process-markers-trace.json",
+      "trace_sha256": "c674ba46acf3bda15ef8d09d127df236b7eb2f2ed5733952e0aa39194e516e6a",
+      "dump_guid": "0x6",
+      "root_metrics": {
+        "blink_gc": {
+          "effective_size": 2904268,
+          "size": 29302864
+        },
+        "blink_objects": {
+          "effective_size": 26398528,
+          "size": 26398528
+        },
+        "cc": {
+          "effective_size": 14352384,
+          "size": 14352384
+        },
+        "discardable": {},
+        "gpu": {
+          "effective_size": 2424704,
+          "size": 2424704
+        },
+        "malloc": {
+          "effective_size": 40961244,
+          "size": 41475904
+        },
+        "mojo": {},
+        "parkable_images": {},
+        "parkable_strings": {},
+        "partition_alloc": {
+          "effective_size": 43977481,
+          "size": 43982848
+        },
+        "shared_memory": {
+          "effective_size": 128512,
+          "size": 2682752
+        },
+        "site_storage": {},
+        "skia": {
+          "effective_size": 23200,
+          "size": 23200
+        },
+        "v8": {
+          "effective_size": 11624348,
+          "size": 11624348
+        },
+        "web_cache": {
+          "effective_size": 5587,
+          "size": 5587
+        }
+      },
+      "selected_overlapping_nodes": {
+        "blink_gc/main/heap": {
+          "allocated_objects_size": 25604928,
+          "committed_size": 27205712,
+          "effective_size": 1600726,
+          "pooled_size": 0,
+          "size": 27205712
+        },
+        "malloc/allocated_objects/<unspecified>": {
+          "effective_size": 29231618,
+          "size": 29231618
+        },
+        "malloc/metadata_fragmentation_caches": {
+          "effective_size": 36819,
+          "size": 36819
+        },
+        "malloc/partitions/allocator": {
+          "allocated_objects_size": 28250993,
+          "decommittable_size": 3739648,
+          "discardable_size": 126976,
+          "effective_size": 10309488,
+          "size": 39861408,
+          "virtual_committed_size": 32456704,
+          "wasted": 4205711
+        },
+        "malloc/partitions/allocator/thread_cache": {
+          "effective_size": 1915107,
+          "size": 7404704
+        },
+        "malloc/win_heap": {
+          "effective_size": 1315533,
+          "size": 1315533
+        },
+        "partition_alloc/allocated_objects/<unspecified>": {
+          "effective_size": 42889802,
+          "size": 42889802
+        },
+        "partition_alloc/allocated_objects/__2023455f03c0e8a3": {},
+        "partition_alloc/allocated_objects/__8705ce15acb7ac86": {},
+        "partition_alloc/allocated_objects/__e16d7741751319ea": {},
+        "partition_alloc/allocated_objects/__e21fcf3476c51bee": {
+          "size": 5324
+        },
+        "partition_alloc/partitions/array_buffer": {
+          "allocated_objects_size": 32551822,
+          "decommittable_size": 98304,
+          "discardable_size": 139264,
+          "effective_size": 812278,
+          "size": 32845824,
+          "virtual_committed_size": 32845824,
+          "wasted": 294002
+        },
+        "partition_alloc/partitions/buffer": {
+          "allocated_objects_size": 10343304,
+          "decommittable_size": 475136,
+          "discardable_size": 212992,
+          "effective_size": 275401,
+          "size": 11137024,
+          "virtual_committed_size": 11137024,
+          "wasted": 793720
+        },
+        "v8/main/heap/code_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/code_space": {
+          "allocated_objects_size": 355456,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/main/heap/large_object_space": {
+          "allocated_objects_size": 642328,
+          "effective_size": 647168,
+          "size": 647168
+        },
+        "v8/main/heap/new_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/new_space": {
+          "allocated_objects_size": 744224,
+          "effective_size": 1048576,
+          "size": 1048576
+        },
+        "v8/main/heap/old_space": {
+          "allocated_objects_size": 3442792,
+          "effective_size": 3932160,
+          "size": 3932160
+        },
+        "v8/main/heap/read_only_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_trusted_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_trusted_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/trusted_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/trusted_space": {
+          "allocated_objects_size": 257500,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/code_stats": {},
+        "v8/workers/code_stats/isolate_0x29FC010AC000": {},
+        "v8/workers/code_stats/isolate_0x29FC02220000": {},
+        "v8/workers/contexts": {},
+        "v8/workers/contexts/detached_context": {},
+        "v8/workers/contexts/detached_context/isolate_0x29FC010AC000": {},
+        "v8/workers/contexts/detached_context/isolate_0x29FC02220000": {},
+        "v8/workers/contexts/native_context": {},
+        "v8/workers/contexts/native_context/isolate_0x29FC010AC000": {},
+        "v8/workers/contexts/native_context/isolate_0x29FC02220000": {},
+        "v8/workers/global_handles": {
+          "effective_size": 57280,
+          "size": 57280
+        },
+        "v8/workers/global_handles/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 35632,
+          "effective_size": 43976,
+          "size": 43976
+        },
+        "v8/workers/global_handles/isolate_0x29FC02220000": {
+          "allocated_objects_size": 3696,
+          "effective_size": 13304,
+          "size": 13304
+        },
+        "v8/workers/heap": {
+          "effective_size": 4194304,
+          "size": 4194304
+        },
+        "v8/workers/heap/code_large_object_space": {},
+        "v8/workers/heap/code_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/code_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/code_space": {
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/code_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 11008,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/code_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 9088,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/large_object_space": {},
+        "v8/workers/heap/large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_large_object_space": {},
+        "v8/workers/heap/new_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_space": {
+          "effective_size": 1310720,
+          "size": 1310720
+        },
+        "v8/workers/heap/new_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 350652,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/new_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 768812,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/old_space": {
+          "effective_size": 1572864,
+          "size": 1572864
+        },
+        "v8/workers/heap/old_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 354908,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/old_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 330980,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/read_only_space": {},
+        "v8/workers/heap/read_only_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/read_only_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_large_object_space": {},
+        "v8/workers/heap/shared_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_space": {},
+        "v8/workers/heap/shared_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_large_object_space": {},
+        "v8/workers/heap/shared_trusted_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_space": {},
+        "v8/workers/heap/shared_trusted_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_large_object_space": {},
+        "v8/workers/heap/trusted_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_space": {
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/trusted_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 10292,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/trusted_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 14168,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/malloc": {
+          "effective_size": 122992,
+          "size": 122992
+        },
+        "v8/workers/malloc/isolate_0x29FC010AC000": {
+          "effective_size": 61496,
+          "size": 61496
+        },
+        "v8/workers/malloc/isolate_0x29FC02220000": {
+          "effective_size": 61496,
+          "size": 61496
+        }
+      }
+    },
+    {
+      "label": "loaded_10",
+      "renderer_pid": 51932,
+      "trace_file": "loaded_10\\target-process-markers-trace.json",
+      "trace_sha256": "d2df7af3ae5253d45b9e69a03936faea623467a73d056e206a2d1cde7a9c12bf",
+      "dump_guid": "0x7",
+      "root_metrics": {
+        "blink_gc": {
+          "effective_size": 31751403,
+          "size": 35135648
+        },
+        "blink_objects": {
+          "effective_size": 3384232,
+          "size": 3384232
+        },
+        "cc": {
+          "effective_size": 14352384,
+          "size": 14352384
+        },
+        "discardable": {},
+        "gpu": {
+          "effective_size": 2424704,
+          "size": 2424704
+        },
+        "malloc": {
+          "effective_size": 37667906,
+          "size": 38151792
+        },
+        "mojo": {},
+        "parkable_images": {},
+        "parkable_strings": {},
+        "partition_alloc": {
+          "effective_size": 25795346,
+          "size": 25800704
+        },
+        "shared_memory": {
+          "effective_size": 140800,
+          "size": 2707328
+        },
+        "site_storage": {},
+        "skia": {
+          "effective_size": 23200,
+          "size": 23200
+        },
+        "v8": {
+          "effective_size": 12642148,
+          "size": 12642148
+        },
+        "web_cache": {
+          "effective_size": 5587,
+          "size": 5587
+        }
+      },
+      "selected_overlapping_nodes": {
+        "blink_gc/main/heap": {
+          "allocated_objects_size": 2568008,
+          "committed_size": 33038496,
+          "effective_size": 30470475,
+          "pooled_size": 11403264,
+          "size": 33038496
+        },
+        "malloc/allocated_objects/<unspecified>": {
+          "effective_size": 26040788,
+          "size": 26040788
+        },
+        "malloc/metadata_fragmentation_caches": {
+          "effective_size": 37165,
+          "size": 37165
+        },
+        "malloc/partitions/allocator": {
+          "allocated_objects_size": 25017669,
+          "decommittable_size": 2260992,
+          "discardable_size": 237568,
+          "effective_size": 10189588,
+          "size": 36525232,
+          "virtual_committed_size": 28651520,
+          "wasted": 3633851
+        },
+        "malloc/partitions/allocator/thread_cache": {
+          "effective_size": 2196565,
+          "size": 7873712
+        },
+        "malloc/win_heap": {
+          "effective_size": 1327251,
+          "size": 1327251
+        },
+        "partition_alloc/allocated_objects/<unspecified>": {
+          "effective_size": 21586718,
+          "size": 21586718
+        },
+        "partition_alloc/allocated_objects/__2023455f03c0e8a3": {},
+        "partition_alloc/allocated_objects/__8705ce15acb7ac86": {},
+        "partition_alloc/allocated_objects/__e16d7741751319ea": {},
+        "partition_alloc/allocated_objects/__e21fcf3476c51bee": {
+          "size": 5324
+        },
+        "partition_alloc/partitions/array_buffer": {
+          "allocated_objects_size": 13931058,
+          "decommittable_size": 1081344,
+          "discardable_size": 65536,
+          "effective_size": 2463449,
+          "size": 15101952,
+          "virtual_committed_size": 15101952,
+          "wasted": 1170894
+        },
+        "partition_alloc/partitions/buffer": {
+          "allocated_objects_size": 7660984,
+          "decommittable_size": 1327104,
+          "discardable_size": 536576,
+          "effective_size": 1745179,
+          "size": 10698752,
+          "virtual_committed_size": 10698752,
+          "wasted": 3037768
+        },
+        "v8/main/heap/code_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/code_space": {
+          "allocated_objects_size": 385152,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/main/heap/large_object_space": {
+          "allocated_objects_size": 642328,
+          "effective_size": 647168,
+          "size": 647168
+        },
+        "v8/main/heap/new_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/new_space": {
+          "allocated_objects_size": 232328,
+          "effective_size": 2097152,
+          "size": 2097152
+        },
+        "v8/main/heap/old_space": {
+          "allocated_objects_size": 2071892,
+          "effective_size": 4194304,
+          "size": 4194304
+        },
+        "v8/main/heap/read_only_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_trusted_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_trusted_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/trusted_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/trusted_space": {
+          "allocated_objects_size": 257124,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/code_stats": {},
+        "v8/workers/code_stats/isolate_0x29FC010AC000": {},
+        "v8/workers/code_stats/isolate_0x29FC02220000": {},
+        "v8/workers/contexts": {},
+        "v8/workers/contexts/detached_context": {},
+        "v8/workers/contexts/detached_context/isolate_0x29FC010AC000": {},
+        "v8/workers/contexts/detached_context/isolate_0x29FC02220000": {},
+        "v8/workers/contexts/native_context": {},
+        "v8/workers/contexts/native_context/isolate_0x29FC010AC000": {},
+        "v8/workers/contexts/native_context/isolate_0x29FC02220000": {},
+        "v8/workers/global_handles": {
+          "effective_size": 57280,
+          "size": 57280
+        },
+        "v8/workers/global_handles/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 35824,
+          "effective_size": 43976,
+          "size": 43976
+        },
+        "v8/workers/global_handles/isolate_0x29FC02220000": {
+          "allocated_objects_size": 4224,
+          "effective_size": 13304,
+          "size": 13304
+        },
+        "v8/workers/heap": {
+          "effective_size": 3670016,
+          "size": 3670016
+        },
+        "v8/workers/heap/code_large_object_space": {},
+        "v8/workers/heap/code_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/code_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/code_space": {
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/code_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 11008,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/code_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 13888,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/large_object_space": {},
+        "v8/workers/heap/large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_large_object_space": {},
+        "v8/workers/heap/new_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_space": {
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/new_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 350848,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/new_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 137840,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/old_space": {
+          "effective_size": 1572864,
+          "size": 1572864
+        },
+        "v8/workers/heap/old_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 354996,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/old_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 333164,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/read_only_space": {},
+        "v8/workers/heap/read_only_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/read_only_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_large_object_space": {},
+        "v8/workers/heap/shared_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_space": {},
+        "v8/workers/heap/shared_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_large_object_space": {},
+        "v8/workers/heap/shared_trusted_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_space": {},
+        "v8/workers/heap/shared_trusted_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_large_object_space": {},
+        "v8/workers/heap/trusted_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_space": {
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/trusted_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 10292,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/trusted_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 15436,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/malloc": {
+          "effective_size": 122992,
+          "size": 122992
+        },
+        "v8/workers/malloc/isolate_0x29FC010AC000": {
+          "effective_size": 61496,
+          "size": 61496
+        },
+        "v8/workers/malloc/isolate_0x29FC02220000": {
+          "effective_size": 61496,
+          "size": 61496
+        }
+      }
+    },
+    {
+      "label": "loaded_11",
+      "renderer_pid": 51932,
+      "trace_file": "loaded_11\\target-process-markers-trace.json",
+      "trace_sha256": "2d04006abc5edd803f2ad379e79955b12abc018600e2ffc64dd5a4197b1b4489",
+      "dump_guid": "0x8",
+      "root_metrics": {
+        "blink_gc": {
+          "effective_size": 28952131,
+          "size": 35061840
+        },
+        "blink_objects": {
+          "effective_size": 6109664,
+          "size": 6109664
+        },
+        "cc": {
+          "effective_size": 14352384,
+          "size": 14352384
+        },
+        "discardable": {},
+        "gpu": {
+          "effective_size": 2424704,
+          "size": 2424704
+        },
+        "malloc": {
+          "effective_size": 38469053,
+          "size": 38952944
+        },
+        "mojo": {},
+        "parkable_images": {},
+        "parkable_strings": {},
+        "partition_alloc": {
+          "effective_size": 27241219,
+          "size": 27246592
+        },
+        "shared_memory": {
+          "effective_size": 208384,
+          "size": 2785152
+        },
+        "site_storage": {},
+        "skia": {
+          "effective_size": 23200,
+          "size": 23200
+        },
+        "v8": {
+          "effective_size": 12642148,
+          "size": 12642148
+        },
+        "web_cache": {
+          "effective_size": 5587,
+          "size": 5587
+        }
+      },
+      "selected_overlapping_nodes": {
+        "blink_gc/main/heap": {
+          "allocated_objects_size": 5277936,
+          "committed_size": 32964688,
+          "effective_size": 27686715,
+          "pooled_size": 11403264,
+          "size": 32964688
+        },
+        "malloc/allocated_objects/<unspecified>": {
+          "effective_size": 27297247,
+          "size": 27297247
+        },
+        "malloc/metadata_fragmentation_caches": {
+          "effective_size": 37165,
+          "size": 37165
+        },
+        "malloc/partitions/allocator": {
+          "allocated_objects_size": 26274128,
+          "decommittable_size": 1806336,
+          "discardable_size": 163840,
+          "effective_size": 9739012,
+          "size": 37326384,
+          "virtual_committed_size": 29089792,
+          "wasted": 2815664
+        },
+        "malloc/partitions/allocator/thread_cache": {
+          "effective_size": 2149055,
+          "size": 8236592
+        },
+        "malloc/win_heap": {
+          "effective_size": 1327251,
+          "size": 1327251
+        },
+        "partition_alloc/allocated_objects/<unspecified>": {
+          "effective_size": 23656396,
+          "size": 23656396
+        },
+        "partition_alloc/allocated_objects/__2023455f03c0e8a3": {},
+        "partition_alloc/allocated_objects/__8705ce15acb7ac86": {},
+        "partition_alloc/allocated_objects/__e16d7741751319ea": {},
+        "partition_alloc/allocated_objects/__e21fcf3476c51bee": {
+          "size": 5324
+        },
+        "partition_alloc/partitions/array_buffer": {
+          "allocated_objects_size": 15542368,
+          "decommittable_size": 1081344,
+          "discardable_size": 114688,
+          "effective_size": 2207383,
+          "size": 16777216,
+          "virtual_committed_size": 16777216,
+          "wasted": 1234848
+        },
+        "partition_alloc/partitions/buffer": {
+          "allocated_objects_size": 8119352,
+          "decommittable_size": 856064,
+          "discardable_size": 471040,
+          "effective_size": 1377440,
+          "size": 10469376,
+          "virtual_committed_size": 10469376,
+          "wasted": 2350024
+        },
+        "v8/main/heap/code_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/code_space": {
+          "allocated_objects_size": 387968,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/main/heap/large_object_space": {
+          "allocated_objects_size": 642328,
+          "effective_size": 647168,
+          "size": 647168
+        },
+        "v8/main/heap/new_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/new_space": {
+          "allocated_objects_size": 252512,
+          "effective_size": 2097152,
+          "size": 2097152
+        },
+        "v8/main/heap/old_space": {
+          "allocated_objects_size": 2129796,
+          "effective_size": 4194304,
+          "size": 4194304
+        },
+        "v8/main/heap/read_only_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_trusted_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_trusted_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/trusted_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/trusted_space": {
+          "allocated_objects_size": 259096,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/code_stats": {},
+        "v8/workers/code_stats/isolate_0x29FC010AC000": {},
+        "v8/workers/code_stats/isolate_0x29FC02220000": {},
+        "v8/workers/contexts": {},
+        "v8/workers/contexts/detached_context": {},
+        "v8/workers/contexts/detached_context/isolate_0x29FC010AC000": {},
+        "v8/workers/contexts/detached_context/isolate_0x29FC02220000": {},
+        "v8/workers/contexts/native_context": {},
+        "v8/workers/contexts/native_context/isolate_0x29FC010AC000": {},
+        "v8/workers/contexts/native_context/isolate_0x29FC02220000": {},
+        "v8/workers/global_handles": {
+          "effective_size": 57280,
+          "size": 57280
+        },
+        "v8/workers/global_handles/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 35920,
+          "effective_size": 43976,
+          "size": 43976
+        },
+        "v8/workers/global_handles/isolate_0x29FC02220000": {
+          "allocated_objects_size": 4576,
+          "effective_size": 13304,
+          "size": 13304
+        },
+        "v8/workers/heap": {
+          "effective_size": 3670016,
+          "size": 3670016
+        },
+        "v8/workers/heap/code_large_object_space": {},
+        "v8/workers/heap/code_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/code_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/code_space": {
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/code_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 11008,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/code_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 13888,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/large_object_space": {},
+        "v8/workers/heap/large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_large_object_space": {},
+        "v8/workers/heap/new_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_space": {
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/new_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 350976,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/new_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 176232,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/old_space": {
+          "effective_size": 1572864,
+          "size": 1572864
+        },
+        "v8/workers/heap/old_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 355064,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/old_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 333916,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/read_only_space": {},
+        "v8/workers/heap/read_only_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/read_only_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_large_object_space": {},
+        "v8/workers/heap/shared_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_space": {},
+        "v8/workers/heap/shared_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_large_object_space": {},
+        "v8/workers/heap/shared_trusted_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_space": {},
+        "v8/workers/heap/shared_trusted_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_large_object_space": {},
+        "v8/workers/heap/trusted_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_space": {
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/trusted_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 10292,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/trusted_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 15436,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/malloc": {
+          "effective_size": 122992,
+          "size": 122992
+        },
+        "v8/workers/malloc/isolate_0x29FC010AC000": {
+          "effective_size": 61496,
+          "size": 61496
+        },
+        "v8/workers/malloc/isolate_0x29FC02220000": {
+          "effective_size": 61496,
+          "size": 61496
+        }
+      }
+    },
+    {
+      "label": "loaded_26",
+      "renderer_pid": 51932,
+      "trace_file": "loaded_26\\target-process-markers-trace.json",
+      "trace_sha256": "7d6382e3c917cfa9b47ff46013a48cb518e6c102ecfd6d14b055e5c29ff1903e",
+      "dump_guid": "0x9",
+      "root_metrics": {
+        "blink_gc": {
+          "effective_size": 25973892,
+          "size": 35061840
+        },
+        "blink_objects": {
+          "effective_size": 9087864,
+          "size": 9087864
+        },
+        "cc": {
+          "effective_size": 14352384,
+          "size": 14352384
+        },
+        "discardable": {},
+        "gpu": {
+          "effective_size": 2555776,
+          "size": 2555776
+        },
+        "malloc": {
+          "effective_size": 41137008,
+          "size": 41620896
+        },
+        "mojo": {},
+        "parkable_images": {},
+        "parkable_strings": {},
+        "partition_alloc": {
+          "effective_size": 43936519,
+          "size": 43941888
+        },
+        "shared_memory": {
+          "effective_size": 280064,
+          "size": 2998144
+        },
+        "site_storage": {},
+        "skia": {
+          "effective_size": 23200,
+          "size": 23200
+        },
+        "v8": {
+          "effective_size": 12380004,
+          "size": 12380004
+        },
+        "web_cache": {
+          "effective_size": 5587,
+          "size": 5587
+        }
+      },
+      "selected_overlapping_nodes": {
+        "blink_gc/main/heap": {
+          "allocated_objects_size": 8140952,
+          "committed_size": 32964688,
+          "effective_size": 24823664,
+          "pooled_size": 13893632,
+          "size": 32964688
+        },
+        "malloc/allocated_objects/<unspecified>": {
+          "effective_size": 28523087,
+          "size": 28523087
+        },
+        "malloc/metadata_fragmentation_caches": {
+          "effective_size": 37165,
+          "size": 37165
+        },
+        "malloc/partitions/allocator": {
+          "allocated_objects_size": 27499968,
+          "decommittable_size": 2883584,
+          "discardable_size": 282624,
+          "effective_size": 11176267,
+          "size": 39994336,
+          "virtual_committed_size": 31244288,
+          "wasted": 3744320
+        },
+        "malloc/partitions/allocator/thread_cache": {
+          "effective_size": 2445173,
+          "size": 8750048
+        },
+        "malloc/win_heap": {
+          "effective_size": 1327251,
+          "size": 1327251
+        },
+        "partition_alloc/allocated_objects/<unspecified>": {
+          "effective_size": 41365181,
+          "size": 41365181
+        },
+        "partition_alloc/allocated_objects/__2023455f03c0e8a3": {},
+        "partition_alloc/allocated_objects/__8705ce15acb7ac86": {},
+        "partition_alloc/allocated_objects/__e16d7741751319ea": {},
+        "partition_alloc/allocated_objects/__e21fcf3476c51bee": {
+          "size": 5324
+        },
+        "partition_alloc/partitions/array_buffer": {
+          "allocated_objects_size": 28910757,
+          "decommittable_size": 49152,
+          "discardable_size": 262144,
+          "effective_size": 1712561,
+          "size": 29265920,
+          "virtual_committed_size": 29265920,
+          "wasted": 355163
+        },
+        "partition_alloc/partitions/buffer": {
+          "allocated_objects_size": 12459748,
+          "decommittable_size": 1183744,
+          "discardable_size": 319488,
+          "effective_size": 858777,
+          "size": 14675968,
+          "virtual_committed_size": 14675968,
+          "wasted": 2216220
+        },
+        "v8/main/heap/code_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/code_space": {
+          "allocated_objects_size": 418752,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/main/heap/large_object_space": {
+          "allocated_objects_size": 642328,
+          "effective_size": 647168,
+          "size": 647168
+        },
+        "v8/main/heap/new_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/new_space": {
+          "allocated_objects_size": 1471128,
+          "effective_size": 2883584,
+          "size": 2883584
+        },
+        "v8/main/heap/old_space": {
+          "allocated_objects_size": 2293476,
+          "effective_size": 2883584,
+          "size": 2883584
+        },
+        "v8/main/heap/read_only_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_trusted_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_trusted_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/trusted_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/trusted_space": {
+          "allocated_objects_size": 281144,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/code_stats": {},
+        "v8/workers/code_stats/isolate_0x29FC010AC000": {},
+        "v8/workers/code_stats/isolate_0x29FC02220000": {},
+        "v8/workers/contexts": {},
+        "v8/workers/contexts/detached_context": {},
+        "v8/workers/contexts/detached_context/isolate_0x29FC010AC000": {},
+        "v8/workers/contexts/detached_context/isolate_0x29FC02220000": {},
+        "v8/workers/contexts/native_context": {},
+        "v8/workers/contexts/native_context/isolate_0x29FC010AC000": {},
+        "v8/workers/contexts/native_context/isolate_0x29FC02220000": {},
+        "v8/workers/global_handles": {
+          "effective_size": 57280,
+          "size": 57280
+        },
+        "v8/workers/global_handles/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 37360,
+          "effective_size": 43976,
+          "size": 43976
+        },
+        "v8/workers/global_handles/isolate_0x29FC02220000": {
+          "allocated_objects_size": 7840,
+          "effective_size": 13304,
+          "size": 13304
+        },
+        "v8/workers/heap": {
+          "effective_size": 4194304,
+          "size": 4194304
+        },
+        "v8/workers/heap/code_large_object_space": {},
+        "v8/workers/heap/code_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/code_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/code_space": {
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/code_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 11008,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/code_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 13888,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/large_object_space": {},
+        "v8/workers/heap/large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_large_object_space": {},
+        "v8/workers/heap/new_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_space": {
+          "effective_size": 1048576,
+          "size": 1048576
+        },
+        "v8/workers/heap/new_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 352056,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/new_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 429048,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/old_space": {
+          "effective_size": 1835008,
+          "size": 1835008
+        },
+        "v8/workers/heap/old_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 355412,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/old_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 431056,
+          "effective_size": 1048576,
+          "size": 1048576
+        },
+        "v8/workers/heap/read_only_space": {},
+        "v8/workers/heap/read_only_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/read_only_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_large_object_space": {},
+        "v8/workers/heap/shared_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_space": {},
+        "v8/workers/heap/shared_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_large_object_space": {},
+        "v8/workers/heap/shared_trusted_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_space": {},
+        "v8/workers/heap/shared_trusted_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_large_object_space": {},
+        "v8/workers/heap/trusted_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_space": {
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/trusted_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 10292,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/trusted_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 15436,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/malloc": {
+          "effective_size": 122992,
+          "size": 122992
+        },
+        "v8/workers/malloc/isolate_0x29FC010AC000": {
+          "effective_size": 61496,
+          "size": 61496
+        },
+        "v8/workers/malloc/isolate_0x29FC02220000": {
+          "effective_size": 61496,
+          "size": 61496
+        }
+      }
+    },
+    {
+      "label": "loaded_75",
+      "renderer_pid": 51932,
+      "trace_file": "loaded_75\\target-process-markers-trace.json",
+      "trace_sha256": "c7238ab4dd18a6f9dee1fb0d7004bf0e383b7411cc579e444aced64c02ce7673",
+      "dump_guid": "0xc",
+      "root_metrics": {
+        "blink_gc": {
+          "effective_size": 25880812,
+          "size": 35323984
+        },
+        "blink_objects": {
+          "effective_size": 9443048,
+          "size": 9443048
+        },
+        "cc": {
+          "effective_size": 14352384,
+          "size": 14352384
+        },
+        "discardable": {},
+        "gpu": {
+          "effective_size": 10682240,
+          "size": 10682240
+        },
+        "malloc": {
+          "effective_size": 26922751,
+          "size": 27403680
+        },
+        "mojo": {},
+        "parkable_images": {},
+        "parkable_strings": {},
+        "partition_alloc": {
+          "effective_size": 26331920,
+          "size": 26337280
+        },
+        "shared_memory": {
+          "effective_size": 173568,
+          "size": 11030400
+        },
+        "site_storage": {},
+        "skia": {
+          "effective_size": 23344,
+          "size": 23344
+        },
+        "v8": {
+          "effective_size": 11590472,
+          "size": 11590472
+        },
+        "web_cache": {
+          "effective_size": 5587,
+          "size": 5587
+        }
+      },
+      "selected_overlapping_nodes": {
+        "blink_gc/main/heap": {
+          "allocated_objects_size": 8270160,
+          "committed_size": 32964688,
+          "effective_size": 24694414,
+          "pooled_size": 12845056,
+          "size": 32964688
+        },
+        "malloc/allocated_objects/<unspecified>": {
+          "effective_size": 21387043,
+          "size": 21387043
+        },
+        "malloc/metadata_fragmentation_caches": {
+          "effective_size": 37093,
+          "size": 37093
+        },
+        "malloc/partitions/allocator": {
+          "allocated_objects_size": 20364112,
+          "decommittable_size": 1474560,
+          "discardable_size": 434176,
+          "effective_size": 4134473,
+          "size": 25792624,
+          "virtual_committed_size": 23203840,
+          "wasted": 2839728
+        },
+        "malloc/partitions/allocator/thread_cache": {
+          "effective_size": 414975,
+          "size": 2588784
+        },
+        "malloc/win_heap": {
+          "effective_size": 1324107,
+          "size": 1324107
+        },
+        "partition_alloc/allocated_objects/<unspecified>": {
+          "effective_size": 24803183,
+          "size": 24803183
+        },
+        "partition_alloc/allocated_objects/__2023455f03c0e8a3": {},
+        "partition_alloc/allocated_objects/__8705ce15acb7ac86": {},
+        "partition_alloc/allocated_objects/__e16d7741751319ea": {},
+        "partition_alloc/allocated_objects/__e21fcf3476c51bee": {
+          "size": 5324
+        },
+        "partition_alloc/partitions/array_buffer": {
+          "allocated_objects_size": 11277600,
+          "decommittable_size": 0,
+          "discardable_size": 81920,
+          "effective_size": 661666,
+          "size": 11399168,
+          "virtual_committed_size": 11399168,
+          "wasted": 121568
+        },
+        "partition_alloc/partitions/buffer": {
+          "allocated_objects_size": 13530907,
+          "decommittable_size": 782336,
+          "discardable_size": 139264,
+          "effective_size": 867071,
+          "size": 14938112,
+          "virtual_committed_size": 14938112,
+          "wasted": 1407205
+        },
+        "v8/main/heap/code_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/code_space": {
+          "allocated_objects_size": 469184,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/main/heap/large_object_space": {
+          "allocated_objects_size": 642328,
+          "effective_size": 647168,
+          "size": 647168
+        },
+        "v8/main/heap/new_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/new_space": {
+          "allocated_objects_size": 1519356,
+          "effective_size": 2621440,
+          "size": 2621440
+        },
+        "v8/main/heap/old_space": {
+          "allocated_objects_size": 2547116,
+          "effective_size": 3145728,
+          "size": 3145728
+        },
+        "v8/main/heap/read_only_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_trusted_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_trusted_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/trusted_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/trusted_space": {
+          "allocated_objects_size": 317632,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/code_stats": {},
+        "v8/workers/code_stats/isolate_0x29FC010AC000": {},
+        "v8/workers/code_stats/isolate_0x29FC02220000": {},
+        "v8/workers/contexts": {},
+        "v8/workers/contexts/detached_context": {},
+        "v8/workers/contexts/detached_context/isolate_0x29FC010AC000": {},
+        "v8/workers/contexts/detached_context/isolate_0x29FC02220000": {},
+        "v8/workers/contexts/native_context": {},
+        "v8/workers/contexts/native_context/isolate_0x29FC010AC000": {},
+        "v8/workers/contexts/native_context/isolate_0x29FC02220000": {},
+        "v8/workers/global_handles": {
+          "effective_size": 62392,
+          "size": 62392
+        },
+        "v8/workers/global_handles/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 42064,
+          "effective_size": 49088,
+          "size": 49088
+        },
+        "v8/workers/global_handles/isolate_0x29FC02220000": {
+          "allocated_objects_size": 1616,
+          "effective_size": 13304,
+          "size": 13304
+        },
+        "v8/workers/heap": {
+          "effective_size": 3407872,
+          "size": 3407872
+        },
+        "v8/workers/heap/code_large_object_space": {},
+        "v8/workers/heap/code_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/code_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/code_space": {
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/code_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 11008,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/code_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 16128,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/large_object_space": {},
+        "v8/workers/heap/large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_large_object_space": {},
+        "v8/workers/heap/new_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_space": {
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/new_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 355448,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/new_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 117780,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/old_space": {
+          "effective_size": 1310720,
+          "size": 1310720
+        },
+        "v8/workers/heap/old_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 356440,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/old_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 377380,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/read_only_space": {},
+        "v8/workers/heap/read_only_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/read_only_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_large_object_space": {},
+        "v8/workers/heap/shared_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_space": {},
+        "v8/workers/heap/shared_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_large_object_space": {},
+        "v8/workers/heap/shared_trusted_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_space": {},
+        "v8/workers/heap/shared_trusted_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_large_object_space": {},
+        "v8/workers/heap/trusted_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_space": {
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/trusted_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 10292,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/trusted_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 16644,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/malloc": {
+          "effective_size": 114780,
+          "size": 114780
+        },
+        "v8/workers/malloc/isolate_0x29FC010AC000": {
+          "effective_size": 61496,
+          "size": 61496
+        },
+        "v8/workers/malloc/isolate_0x29FC02220000": {
+          "effective_size": 53284,
+          "size": 53284
+        }
+      }
+    },
+    {
+      "label": "after_twenty_queries",
+      "renderer_pid": 51932,
+      "trace_file": "after_twenty_queries\\target-process-markers-trace.json",
+      "trace_sha256": "819eaf9d17b72f1394d7b760b5f0a00416aa54b0c349461c6cbfae2f8e99a3b2",
+      "dump_guid": "0xd",
+      "root_metrics": {
+        "blink_gc": {
+          "effective_size": 31460806,
+          "size": 35520592
+        },
+        "blink_objects": {
+          "effective_size": 4059672,
+          "size": 4059672
+        },
+        "cc": {
+          "effective_size": 18219008,
+          "size": 18219008
+        },
+        "discardable": {},
+        "gpu": {
+          "effective_size": 131008,
+          "size": 131008
+        },
+        "malloc": {
+          "effective_size": 28577426,
+          "size": 29068608
+        },
+        "mojo": {},
+        "parkable_images": {},
+        "parkable_strings": {},
+        "partition_alloc": {
+          "effective_size": 23960336,
+          "size": 23965696
+        },
+        "shared_memory": {
+          "effective_size": 183808,
+          "size": 499648
+        },
+        "site_storage": {},
+        "skia": {
+          "effective_size": 23392,
+          "size": 23392
+        },
+        "v8": {
+          "effective_size": 15532856,
+          "size": 15532856
+        },
+        "web_cache": {
+          "effective_size": 5587,
+          "size": 5587
+        }
+      },
+      "selected_overlapping_nodes": {
+        "blink_gc/main/heap": {
+          "allocated_objects_size": 2787208,
+          "committed_size": 33030224,
+          "effective_size": 30242905,
+          "pooled_size": 11665408,
+          "size": 33030224
+        },
+        "malloc/allocated_objects/<unspecified>": {
+          "effective_size": 21233043,
+          "size": 21233043
+        },
+        "malloc/metadata_fragmentation_caches": {
+          "effective_size": 37093,
+          "size": 37093
+        },
+        "malloc/partitions/allocator": {
+          "allocated_objects_size": 20220384,
+          "decommittable_size": 2138112,
+          "discardable_size": 393216,
+          "effective_size": 5929241,
+          "size": 27457552,
+          "virtual_committed_size": 23969792,
+          "wasted": 3749408
+        },
+        "malloc/partitions/allocator/thread_cache": {
+          "effective_size": 753155,
+          "size": 3487760
+        },
+        "malloc/win_heap": {
+          "effective_size": 1324107,
+          "size": 1324107
+        },
+        "partition_alloc/allocated_objects/<unspecified>": {
+          "effective_size": 20610212,
+          "size": 20610212
+        },
+        "partition_alloc/allocated_objects/__2023455f03c0e8a3": {},
+        "partition_alloc/allocated_objects/__8705ce15acb7ac86": {},
+        "partition_alloc/allocated_objects/__e16d7741751319ea": {},
+        "partition_alloc/allocated_objects/__e21fcf3476c51bee": {
+          "size": 5324
+        },
+        "partition_alloc/partitions/array_buffer": {
+          "allocated_objects_size": 7863056,
+          "decommittable_size": 589824,
+          "discardable_size": 12288,
+          "effective_size": 1186943,
+          "size": 8491008,
+          "virtual_committed_size": 8491008,
+          "wasted": 627952
+        },
+        "partition_alloc/partitions/buffer": {
+          "allocated_objects_size": 12752480,
+          "decommittable_size": 1593344,
+          "discardable_size": 229376,
+          "effective_size": 2163181,
+          "size": 15474688,
+          "virtual_committed_size": 15474688,
+          "wasted": 2722208
+        },
+        "v8/main/heap/code_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/code_space": {
+          "allocated_objects_size": 642432,
+          "effective_size": 1048576,
+          "size": 1048576
+        },
+        "v8/main/heap/large_object_space": {
+          "allocated_objects_size": 642328,
+          "effective_size": 647168,
+          "size": 647168
+        },
+        "v8/main/heap/new_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/new_space": {
+          "allocated_objects_size": 60,
+          "effective_size": 3932160,
+          "size": 3932160
+        },
+        "v8/main/heap/old_space": {
+          "allocated_objects_size": 2549548,
+          "effective_size": 4456448,
+          "size": 4456448
+        },
+        "v8/main/heap/read_only_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_trusted_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_trusted_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/trusted_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/trusted_space": {
+          "allocated_objects_size": 393492,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/code_stats": {},
+        "v8/workers/code_stats/isolate_0x29FC010AC000": {},
+        "v8/workers/code_stats/isolate_0x29FC02220000": {},
+        "v8/workers/contexts": {},
+        "v8/workers/contexts/detached_context": {},
+        "v8/workers/contexts/detached_context/isolate_0x29FC010AC000": {},
+        "v8/workers/contexts/detached_context/isolate_0x29FC02220000": {},
+        "v8/workers/contexts/native_context": {},
+        "v8/workers/contexts/native_context/isolate_0x29FC010AC000": {},
+        "v8/workers/contexts/native_context/isolate_0x29FC02220000": {},
+        "v8/workers/global_handles": {
+          "effective_size": 72616,
+          "size": 72616
+        },
+        "v8/workers/global_handles/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 42064,
+          "effective_size": 49088,
+          "size": 49088
+        },
+        "v8/workers/global_handles/isolate_0x29FC02220000": {
+          "allocated_objects_size": 2304,
+          "effective_size": 23528,
+          "size": 23528
+        },
+        "v8/workers/heap": {
+          "effective_size": 4194304,
+          "size": 4194304
+        },
+        "v8/workers/heap/code_large_object_space": {},
+        "v8/workers/heap/code_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/code_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/code_space": {
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/code_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 11008,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/code_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 37568,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/large_object_space": {},
+        "v8/workers/heap/large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_large_object_space": {},
+        "v8/workers/heap/new_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_space": {
+          "effective_size": 1310720,
+          "size": 1310720
+        },
+        "v8/workers/heap/new_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 355508,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/new_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 653052,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/old_space": {
+          "effective_size": 1310720,
+          "size": 1310720
+        },
+        "v8/workers/heap/old_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 356488,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/old_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 393300,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/read_only_space": {},
+        "v8/workers/heap/read_only_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/read_only_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_large_object_space": {},
+        "v8/workers/heap/shared_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_space": {},
+        "v8/workers/heap/shared_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_large_object_space": {},
+        "v8/workers/heap/shared_trusted_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_space": {},
+        "v8/workers/heap/shared_trusted_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_large_object_space": {},
+        "v8/workers/heap/trusted_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_space": {
+          "effective_size": 1048576,
+          "size": 1048576
+        },
+        "v8/workers/heap/trusted_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 10292,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/trusted_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 25028,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/malloc": {
+          "effective_size": 114780,
+          "size": 114780
+        },
+        "v8/workers/malloc/isolate_0x29FC010AC000": {
+          "effective_size": 61496,
+          "size": 61496
+        },
+        "v8/workers/malloc/isolate_0x29FC02220000": {
+          "effective_size": 53284,
+          "size": 53284
+        }
+      }
+    },
+    {
+      "label": "after_restart",
+      "renderer_pid": 51932,
+      "trace_file": "after_restart\\target-process-markers-trace.json",
+      "trace_sha256": "4b8d8e3e51a979ca6cc05d82804fa99672f12f20e3bf2f302f98837fd638366f",
+      "dump_guid": "0xe",
+      "root_metrics": {
+        "blink_gc": {
+          "effective_size": 30926405,
+          "size": 35455056
+        },
+        "blink_objects": {
+          "effective_size": 4528624,
+          "size": 4528624
+        },
+        "cc": {
+          "effective_size": 20840448,
+          "size": 20840448
+        },
+        "discardable": {},
+        "gpu": {
+          "effective_size": 131008,
+          "size": 131008
+        },
+        "malloc": {
+          "effective_size": 24734726,
+          "size": 25224016
+        },
+        "mojo": {},
+        "parkable_images": {},
+        "parkable_strings": {},
+        "partition_alloc": {
+          "effective_size": 21687044,
+          "size": 21692416
+        },
+        "shared_memory": {
+          "effective_size": 194048,
+          "size": 520128
+        },
+        "site_storage": {},
+        "skia": {
+          "effective_size": 23488,
+          "size": 23488
+        },
+        "v8": {
+          "effective_size": 14482268,
+          "size": 14482268
+        },
+        "web_cache": {
+          "effective_size": 5587,
+          "size": 5587
+        }
+      },
+      "selected_overlapping_nodes": {
+        "blink_gc/main/heap": {
+          "allocated_objects_size": 3211632,
+          "committed_size": 32964688,
+          "effective_size": 29753035,
+          "pooled_size": 11665408,
+          "size": 32964688
+        },
+        "malloc/allocated_objects/<unspecified>": {
+          "effective_size": 19590345,
+          "size": 19590345
+        },
+        "malloc/metadata_fragmentation_caches": {
+          "effective_size": 37093,
+          "size": 37093
+        },
+        "malloc/partitions/allocator": {
+          "allocated_objects_size": 18575770,
+          "decommittable_size": 1683456,
+          "discardable_size": 1253376,
+          "effective_size": 3743583,
+          "size": 23612960,
+          "virtual_committed_size": 23199744,
+          "wasted": 4623974
+        },
+        "malloc/partitions/allocator/thread_cache": {
+          "effective_size": 65510,
+          "size": 413216
+        },
+        "malloc/win_heap": {
+          "effective_size": 1324107,
+          "size": 1324107
+        },
+        "partition_alloc/allocated_objects/<unspecified>": {
+          "effective_size": 18779796,
+          "size": 18779796
+        },
+        "partition_alloc/allocated_objects/__2023455f03c0e8a3": {},
+        "partition_alloc/allocated_objects/__8705ce15acb7ac86": {},
+        "partition_alloc/allocated_objects/__e16d7741751319ea": {},
+        "partition_alloc/allocated_objects/__e21fcf3476c51bee": {
+          "size": 5324
+        },
+        "partition_alloc/partitions/array_buffer": {
+          "allocated_objects_size": 6204016,
+          "decommittable_size": 888832,
+          "discardable_size": 12288,
+          "effective_size": 955175,
+          "size": 7127040,
+          "virtual_committed_size": 7127040,
+          "wasted": 923024
+        },
+        "partition_alloc/partitions/buffer": {
+          "allocated_objects_size": 12581104,
+          "decommittable_size": 856064,
+          "discardable_size": 282624,
+          "effective_size": 1952073,
+          "size": 14565376,
+          "virtual_committed_size": 14565376,
+          "wasted": 1984272
+        },
+        "v8/main/heap/code_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/code_space": {
+          "allocated_objects_size": 655168,
+          "effective_size": 1048576,
+          "size": 1048576
+        },
+        "v8/main/heap/large_object_space": {
+          "allocated_objects_size": 642328,
+          "effective_size": 647168,
+          "size": 647168
+        },
+        "v8/main/heap/new_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/new_space": {
+          "allocated_objects_size": 255848,
+          "effective_size": 3932160,
+          "size": 3932160
+        },
+        "v8/main/heap/old_space": {
+          "allocated_objects_size": 2589192,
+          "effective_size": 4456448,
+          "size": 4456448
+        },
+        "v8/main/heap/read_only_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_trusted_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/shared_trusted_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/trusted_large_object_space": {
+          "allocated_objects_size": 0
+        },
+        "v8/main/heap/trusted_space": {
+          "allocated_objects_size": 399468,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/code_stats": {},
+        "v8/workers/code_stats/isolate_0x29FC010AC000": {},
+        "v8/workers/code_stats/isolate_0x29FC02220000": {},
+        "v8/workers/contexts": {},
+        "v8/workers/contexts/detached_context": {},
+        "v8/workers/contexts/detached_context/isolate_0x29FC010AC000": {},
+        "v8/workers/contexts/detached_context/isolate_0x29FC02220000": {},
+        "v8/workers/contexts/native_context": {},
+        "v8/workers/contexts/native_context/isolate_0x29FC010AC000": {},
+        "v8/workers/contexts/native_context/isolate_0x29FC02220000": {},
+        "v8/workers/global_handles": {
+          "effective_size": 62392,
+          "size": 62392
+        },
+        "v8/workers/global_handles/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 44048,
+          "effective_size": 49088,
+          "size": 49088
+        },
+        "v8/workers/global_handles/isolate_0x29FC02220000": {
+          "allocated_objects_size": 1872,
+          "effective_size": 13304,
+          "size": 13304
+        },
+        "v8/workers/heap": {
+          "effective_size": 3145728,
+          "size": 3145728
+        },
+        "v8/workers/heap/code_large_object_space": {},
+        "v8/workers/heap/code_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/code_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/code_space": {
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/code_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 11008,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/code_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/large_object_space": {},
+        "v8/workers/heap/large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_large_object_space": {},
+        "v8/workers/heap/new_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/new_space": {
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/new_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 359248,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/new_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 112072,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/heap/old_space": {
+          "effective_size": 1310720,
+          "size": 1310720
+        },
+        "v8/workers/heap/old_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 360024,
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/old_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 316480,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/read_only_space": {},
+        "v8/workers/heap/read_only_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/read_only_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_large_object_space": {},
+        "v8/workers/heap/shared_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_space": {},
+        "v8/workers/heap/shared_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_large_object_space": {},
+        "v8/workers/heap/shared_trusted_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_space": {},
+        "v8/workers/heap/shared_trusted_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/shared_trusted_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_large_object_space": {},
+        "v8/workers/heap/trusted_large_object_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_large_object_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 0
+        },
+        "v8/workers/heap/trusted_space": {
+          "effective_size": 786432,
+          "size": 786432
+        },
+        "v8/workers/heap/trusted_space/isolate_0x29FC010AC000": {
+          "allocated_objects_size": 10292,
+          "effective_size": 524288,
+          "size": 524288
+        },
+        "v8/workers/heap/trusted_space/isolate_0x29FC02220000": {
+          "allocated_objects_size": 10900,
+          "effective_size": 262144,
+          "size": 262144
+        },
+        "v8/workers/malloc": {
+          "effective_size": 122992,
+          "size": 122992
+        },
+        "v8/workers/malloc/isolate_0x29FC010AC000": {
+          "effective_size": 61496,
+          "size": 61496
+        },
+        "v8/workers/malloc/isolate_0x29FC02220000": {
+          "effective_size": 61496,
+          "size": 61496
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "acceptance": null,
+  "scope": "Reanalysis of existing additional-observer control traces, source807e2ad. Effective allocator sizes are provider/ownership-accounted component metrics, not Windows private-byte partition, physical RAM or a normal benchmark. Ancestor and child nodes overlap; never sum both. Virtual reservations, hard limits and maxima are not current allocations.",
+  "artifact": {
+    "commit": "807e2adcd31cdd8cd31a74f87fdeec05247b7ef0",
+    "shell_build": "b18354d00bed4b1a92d50287b76bada82bdc4ebb7f87a7f7661a1cae78173385",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "decision": "No new runtime optimization or allocator ownership claim follows from unspecified bytes. Continue only with stronger allocation-site evidence;250 MiB remains unmet, Android deferred.",
+  "findings": "Before engine: allocator-owned malloc effective20.43 MiB, partition_alloc6.56, V8 6.82, Blink objects2.77, Blink overhead1.36, compositor10. At eight: array_buffer allocated31.04 MiB; after warm queries7.50 MiB. Main V8 heap is much smaller than the whole renderer. Unspecified native categories remain unnamed. Do not sum root/descendant size or reservations/limits.",
+  "primary_reference": "https://chromium.googlesource.com/chromium/src/+/lkgr/docs/memory-infra/",
+  "files": [
+    {
+      "file": "renderer-effective-allocators-20261017-ready_before_engine-trace.json.gz",
+      "sha256": "0fb5340d17788558c53910ea63fa751c4d63e4666f7be9c45c22ca95c1e0110e",
+      "original_path": "target/buffer-heap-bridge-BnBxro/ready_before_engine/target-process-markers-trace.json",
+      "expanded_sha256": "5a08bd30621f6ce4acc56a317314987bf3ee66f2cb3255040ece12cd75f981fc"
+    },
+    {
+      "file": "renderer-effective-allocators-20261017-loaded_1-trace.json.gz",
+      "sha256": "a95507c646959703afa908420c35b5eaefceed47e9a7bba8063be90014167028",
+      "original_path": "target/buffer-heap-bridge-BnBxro/loaded_1/target-process-markers-trace.json",
+      "expanded_sha256": "ba0cf498a4a73b889564294efd818f7174451c3cb4eb36be25a8a717dab9e7df"
+    },
+    {
+      "file": "renderer-effective-allocators-20261017-loaded_8-trace.json.gz",
+      "sha256": "c34539d4769bb76bd0b56246ee87b2004317203a00496952d3b56d8fa5d92535",
+      "original_path": "target/buffer-heap-bridge-BnBxro/loaded_8/target-process-markers-trace.json",
+      "expanded_sha256": "c674ba46acf3bda15ef8d09d127df236b7eb2f2ed5733952e0aa39194e516e6a"
+    },
+    {
+      "file": "renderer-effective-allocators-20261017-loaded_10-trace.json.gz",
+      "sha256": "bc5c1dd9265e55c3322887eab710db81fd4124d1b738f4b5b799e31f50662e9c",
+      "original_path": "target/buffer-heap-bridge-BnBxro/loaded_10/target-process-markers-trace.json",
+      "expanded_sha256": "d2df7af3ae5253d45b9e69a03936faea623467a73d056e206a2d1cde7a9c12bf"
+    },
+    {
+      "file": "renderer-effective-allocators-20261017-loaded_11-trace.json.gz",
+      "sha256": "8d8e37121a121ecae855ba4bab7a9663f607c30ee30a620863d65723bc94acda",
+      "original_path": "target/buffer-heap-bridge-BnBxro/loaded_11/target-process-markers-trace.json",
+      "expanded_sha256": "2d04006abc5edd803f2ad379e79955b12abc018600e2ffc64dd5a4197b1b4489"
+    },
+    {
+      "file": "renderer-effective-allocators-20261017-loaded_26-trace.json.gz",
+      "sha256": "160d2e46a578d666e6397f059c7be56f7c79d62db2935a6e2c6c2c226ef36c6a",
+      "original_path": "target/buffer-heap-bridge-BnBxro/loaded_26/target-process-markers-trace.json",
+      "expanded_sha256": "7d6382e3c917cfa9b47ff46013a48cb518e6c102ecfd6d14b055e5c29ff1903e"
+    },
+    {
+      "file": "renderer-effective-allocators-20261017-loaded_75-trace.json.gz",
+      "sha256": "50c28645abf36a34d985f25d05ae83dc129b5ba78358a04cbdbb481b89788404",
+      "original_path": "target/buffer-heap-bridge-BnBxro/loaded_75/target-process-markers-trace.json",
+      "expanded_sha256": "c7238ab4dd18a6f9dee1fb0d7004bf0e383b7411cc579e444aced64c02ce7673"
+    },
+    {
+      "file": "renderer-effective-allocators-20261017-after_twenty_queries-trace.json.gz",
+      "sha256": "e8cdc8e15d5e66cb58aff775c6c02f97a057c1eed4eacaa7d3035eaa85fe7fad",
+      "original_path": "target/buffer-heap-bridge-BnBxro/after_twenty_queries/target-process-markers-trace.json",
+      "expanded_sha256": "819eaf9d17b72f1394d7b760b5f0a00416aa54b0c349461c6cbfae2f8e99a3b2"
+    },
+    {
+      "file": "renderer-effective-allocators-20261017-after_restart-trace.json.gz",
+      "sha256": "1eb6021fd03b2ce9262c3eef1a352f5f0dc15b904c1ebaf5991060c61103bf64",
+      "original_path": "target/buffer-heap-bridge-BnBxro/after_restart/target-process-markers-trace.json",
+      "expanded_sha256": "4b8d8e3e51a979ca6cc05d82804fa99672f12f20e3bf2f302f98837fd638366f"
+    },
+    {
+      "file": "renderer-effective-allocators-20261017-source-report.json.gz",
+      "sha256": "c238a5fdb524493c59407676d71f7bfc6ce30458607c79d5cbeb295012c3758b",
+      "original_path": "target/buffer-heap-bridge-BnBxro/report.json",
+      "expanded_sha256": "9759eb0695bbfdc511189ce6c26e793f097d92628b9949612888e61e51aaec75"
+    },
+    {
+      "file": "renderer-effective-allocators-20261017-summary.json",
+      "sha256": "5b3a0d1179b44e8a088b3e894eabdbcb86b9299f49805771b7b4f74a3fdad2ef",
+      "original_path": "target/renderer-effective-allocator-summary.json"
+    },
+    {
+      "file": "renderer-effective-allocators-20261017-analyze.py.gz",
+      "sha256": "a99f100efbdd6a4f8d8e8ce9902e08824f9d7923e9323fc0486e42561f15701a",
+      "original_path": "target/analyze-renderer-effective-allocators.py",
+      "expanded_sha256": "b86be74dade9871f10c6d35f6a4b8a88241eca4a7ce0e871dca47d3d7259a8c4"
+    },
+    {
+      "file": "renderer-effective-allocators-20261017-archive.py.gz",
+      "sha256": "a3bb0a6dfbb506941a2ec2d7c06f5a5c632f615d8465447c5e938f5862df9ac1",
+      "original_path": "target/archive-effective-allocators.py",
+      "expanded_sha256": "2764ef939db62d7cb9d66f16a42127b483cf325133a1bc381c0a33dc9cd362ca"
+    }
+  ]
+}
