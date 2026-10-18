@@ -33,6 +33,9 @@ owned for exports. Revision calculation, staging-before-activation, source expor
 player details, query/result schemas, selection, eight-window/64MiB input limits,
 error handling and prepared-data/provider restrictions retain their contracts.
 The feature is opt-in and does not enable/publish a new browser artifact by default.
+`node scripts/build-browser.mjs --sparse-storage` builds an explicit candidate
+distribution. Build-info records `wasm_features`; ordinary builds record an empty
+list. The backend choice is a build property and changes no application controls.
 
 Verification: frozen original catalog bits/order over 288 boundary rows, exact
 typed/JSON payload parity, 1,200 mixed update/remove operations, slot invariants,

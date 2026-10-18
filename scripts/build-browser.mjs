@@ -10,6 +10,7 @@ const config = JSON.parse(await readFile(new URL('../icelines-browser/toolchain.
 const buildEnvironment = { ...process.env, RUSTUP_TOOLCHAIN: config.rust };
 const offline = process.argv.includes('--offline') ? ['--offline'] : [];
 const check = process.argv.includes('--check');
+const wasmFeatures = process.argv.includes('--sparse-storage') ? ['sparse-storage'] : [];
 const temporary = fileURLToPath(new URL('../target/browser-test-tmp/', import.meta.url));
 await mkdir(temporary, { recursive: true });
 function run(command, args) {
@@ -31,10 +32,11 @@ if (cliVersion !== `wasm-bindgen ${config.wasm_bindgen}`) {
   run('cargo', ['install', 'wasm-bindgen-cli', '--version', config.wasm_bindgen, '--locked', '--root', 'target/browser-tools', '--target-dir', 'target/browser-tools-build', ...offline]);
 }
 if (capture(cli, ['--version']) !== `wasm-bindgen ${config.wasm_bindgen}`) throw new Error('Wrong binding CLI version');
-run('cargo', ['build', '-p', 'icelines-wasm', '--target', 'wasm32-unknown-unknown', '--profile', 'browser-release', '--target-dir', 'target/browser', '--locked', ...offline]);
+run('cargo', ['build', '-p', 'icelines-wasm', '--target', 'wasm32-unknown-unknown', '--profile', 'browser-release', '--target-dir', 'target/browser', '--locked', ...offline, ...(wasmFeatures.length ? ['--features', wasmFeatures.join(',')] : [])]);
 run(cli, ['target/browser/wasm32-unknown-unknown/browser-release/icelines_wasm.wasm', '--target', 'web', '--out-dir', 'icelines-browser/public/pkg', '--out-name', 'icelines_wasm']);
 run('python', ['scripts/build-browser-catalog.py']);
 const info = { schema_version: 1, commit: capture('git', ['rev-parse', 'HEAD']),
+  wasm_features: wasmFeatures,
   working_tree_dirty: capture('git', ['status', '--porcelain', '--untracked-files=normal']).length > 0,
   tools: { rust: capture('rustc', ['--version']), node: process.version, python: capture('python', ['--version']), wasm_bindgen: capture(cli, ['--version']) },
   wasm_sha256: createHash('sha256').update(await readFile(new URL('../icelines-browser/public/pkg/icelines_wasm_bg.wasm', import.meta.url))).digest('hex') };
