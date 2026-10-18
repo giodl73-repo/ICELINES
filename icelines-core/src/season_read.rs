@@ -7,7 +7,7 @@ use crate::{
     identity::PlayerId,
     model::{PaceScore, Position, Season},
     season_stats::*,
-    stats_repository::PlayerView,
+    stats_repository::ReadPlayerView,
 };
 
 /// Read-only access to one coherent season row, without requiring `&SeasonStats`.
@@ -193,50 +193,98 @@ impl SeasonStatsRead for SeasonStats {
     }
 }
 
-impl SeasonStatsRead for PlayerView<'_> {
+impl<R: SeasonStatsRead> SeasonStatsRead for ReadPlayerView<'_, R> {
     fn player_id(&self) -> PlayerId {
         self.identity.id
     }
     fn season(&self) -> Season {
-        self.stats.season
+        self.stats.season()
     }
     fn season_type(&self) -> SeasonType {
-        self.stats.season_type
+        self.stats.season_type()
     }
     fn position(&self) -> Position {
-        self.stats.position
+        self.stats.position()
     }
     fn sweater_number(&self) -> Option<u32> {
-        self.stats.sweater_number
+        self.stats.sweater_number()
     }
     fn totals(&self) -> &StatTotals {
-        &self.stats.totals
+        self.stats.totals()
     }
     fn team_stints(&self) -> &[TeamStint] {
-        &self.stats.team_stints
+        self.stats.team_stints()
     }
     fn realtime(&self) -> Option<&RealtimeStats> {
-        self.stats.realtime.as_ref()
+        self.stats.realtime()
     }
     fn advanced(&self) -> Option<&AdvancedStats> {
-        self.stats.advanced.as_ref()
+        self.stats.advanced()
     }
     fn goalie(&self) -> Option<&GoalieSeasonStats> {
-        self.stats.goalie.as_ref()
+        self.stats.goalie()
     }
     fn time_on_ice(&self) -> Option<&TimeOnIceStats> {
-        self.stats.time_on_ice.as_ref()
+        self.stats.time_on_ice()
     }
     fn goals_for_against(&self) -> Option<&GoalsForAgainstStats> {
-        self.stats.goals_for_against.as_ref()
+        self.stats.goals_for_against()
     }
     fn goalie_advanced(&self) -> Option<&GoalieAdvancedStats> {
-        self.stats.goalie_advanced.as_ref()
+        self.stats.goalie_advanced()
     }
     fn goalie_saves_by_strength(&self) -> Option<&GoalieSavesByStrengthStats> {
-        self.stats.goalie_saves_by_strength.as_ref()
+        self.stats.goalie_saves_by_strength()
     }
     fn goalie_bios(&self) -> Option<&GoalieBios> {
-        self.stats.goalie_bios.as_ref()
+        self.stats.goalie_bios()
+    }
+}
+
+impl<T: SeasonStatsRead + ?Sized> SeasonStatsRead for &T {
+    fn player_id(&self) -> PlayerId {
+        (**self).player_id()
+    }
+    fn season(&self) -> Season {
+        (**self).season()
+    }
+    fn season_type(&self) -> SeasonType {
+        (**self).season_type()
+    }
+    fn position(&self) -> Position {
+        (**self).position()
+    }
+    fn sweater_number(&self) -> Option<u32> {
+        (**self).sweater_number()
+    }
+    fn totals(&self) -> &StatTotals {
+        (**self).totals()
+    }
+    fn team_stints(&self) -> &[TeamStint] {
+        (**self).team_stints()
+    }
+    fn realtime(&self) -> Option<&RealtimeStats> {
+        (**self).realtime()
+    }
+    fn advanced(&self) -> Option<&AdvancedStats> {
+        (**self).advanced()
+    }
+    fn goalie(&self) -> Option<&GoalieSeasonStats> {
+        (**self).goalie()
+    }
+    fn time_on_ice(&self) -> Option<&TimeOnIceStats> {
+        (**self).time_on_ice()
+    }
+    fn goals_for_against(&self) -> Option<&GoalsForAgainstStats> {
+        (**self).goals_for_against()
+    }
+    fn goalie_advanced(&self) -> Option<&GoalieAdvancedStats> {
+        (**self).goalie_advanced()
+    }
+    fn goalie_saves_by_strength(&self) -> Option<&GoalieSavesByStrengthStats> {
+        (**self).goalie_saves_by_strength()
+    }
+    fn goalie_bios(&self) -> Option<&GoalieBios> {
+        (**self).goalie_bios()
     }
 }

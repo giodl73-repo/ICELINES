@@ -216,3 +216,14 @@ provider/clock/context policies remain unchanged. A clean pre-edit oracle freeze
 813 constraints over 288 synthetic rows; separate-payload and dynamic readers must
 match. See IF-QUERY-READ-001 and design/specs/borrowed-player-query.md.
 Production repository/surface ownership, wire schemas and resource criteria remain.
+
+## CHG-124: Opt-in prepared browser sparse ownership (2026-10-18)
+
+Add a separate SparseSeasonRepository and generic ReadPlayerView with concrete-reference PlayerView alias;
+existing concrete-reference repository APIs retain their default types. Both browser
+paths use common borrowed queries/sorts/serialization; sparse-storage explicitly
+selects compact ownership for prepared packages. No roster/report/LRU replacement
+claim: BrowserEngine owns prepared-window eviction and does not use those indexes.
+Contract: design/specs/browser-sparse-season.md / IF-BROWSER-SPARSE-001. Native/WASM
+parity, exact exports/revisions and resource measurements remain separate gates;
+default artifact selection, schemas, budgets and Android requirements are unchanged.

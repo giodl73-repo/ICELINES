@@ -6,6 +6,10 @@ edition.workspace = true
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[features]
+default = []
+sparse-storage = []
+
 [dependencies]
 icelines-core = { path = "../icelines-core" }
 icelines-data = { path = "../icelines-data" }
