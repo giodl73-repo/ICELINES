@@ -370,3 +370,8 @@ Verification and validation remain pending until recorded command/browser result
 Raw prototype reports and provenance are under
 `context/waves/2026-10-03-browser-wasm/evidence/gzip-delivery-*`.
 The prototype source commit is recorded independently from this clean PR branch.
+
+CHG-126 local native catalog gzip expansion prototype maps to IF-BROWSER-001,
+REQ-BROWSER-001 and WP-BW-05/06. Verification plan is in VERIFICATION; operation
+and unchanged admission boundaries are in INTERFACES; CHANGE_CONTROL records
+hypothesis, bounds and nonpromotion/resource/device limitations.

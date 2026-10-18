@@ -1845,6 +1845,7 @@ name = "icelines-wasm"
 version = "0.26.0"
 dependencies = [
  "chrono",
+ "flate2",
  "icelines-core",
  "icelines-data",
  "icelines-query",

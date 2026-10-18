@@ -269,7 +269,10 @@ async function loadCatalog(entry: CatalogEntry): Promise<void> {
   const retained = saved.find(item => item.id === entry.id && item.revision === entry.sha256);
   const stored = retained ? await loadSaved(retained.id, retained.revision) : undefined;
   const bytes = stored ? stored.bytes : await downloadPackage(entry, new URL(location.href.split('#')[0]),
-    {signal:controller.signal,deadline:Date.now() + 120000});
+    {signal:controller.signal,deadline:Date.now() + 120000}, async (compressed, maximum) => {
+      const input = compressed.slice().buffer;
+      return new Uint8Array(await engine.request<ArrayBuffer>('expandGzip', {bytes:input,maximum}, [input]));
+    });
   if (bytes.length !== entry.bytes || await digest(bytes) !== entry.sha256) throw new Error('Package size or checksum mismatch');
   const context = metadataForVerifiedCatalogBytes(bytes,entry.sha256);
   if (context.season !== entry.season || context.season_type !== entry.season_type || context.source !== entry.source) throw new Error('Package does not match catalog context');

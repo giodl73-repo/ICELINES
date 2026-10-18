@@ -16,4 +16,5 @@ serde_json.workspace = true
 thiserror.workspace = true
 chrono.workspace = true
 sha2.workspace = true
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
 wasm-bindgen = "=0.2.118"

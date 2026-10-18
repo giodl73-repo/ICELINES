@@ -6,7 +6,7 @@ interface Engine {
   schedule_week(bytes: Uint8Array): string;
   select_resident(revision: string): void; resident_revisions(): string; unload_active(): void;
 }
-interface Bindings { default(): Promise<unknown>; BrowserEngine: new () => Engine; }
+interface Bindings { default(): Promise<unknown>; BrowserEngine: new () => Engine; expand_catalog_gzip(bytes: Uint8Array, maximum: number): Uint8Array; }
 const ready = (async () => {
   const bindings = await import(new URL('../pkg/icelines_wasm.js', import.meta.url).href) as Bindings;
   await bindings.default();
@@ -29,6 +29,16 @@ self.onmessage = (event: MessageEvent<EngineRequest>) => {
       try { bindings = await ready; }
       catch { response.error = { kind: 'engine_failure', message: 'WASM engine initialization failed.' }; self.postMessage(response); return; }
       if (request.context_generation !== generation) throw new Error('cancelled: context changed');
+      if (request.operation === 'expandGzip') {
+        const input = request.payload as { bytes?: unknown; maximum?: unknown } | null;
+        // Validate before wasm-bindgen copies the compressed input into memory.
+        if (!(input?.bytes instanceof ArrayBuffer) || input.bytes.byteLength > 100 * 1024 * 1024
+          || typeof input.maximum !== 'number' || !Number.isSafeInteger(input.maximum)
+          || input.maximum <= 0 || input.maximum > 100 * 1024 * 1024) throw new Error('Invalid gzip byte limit or input');
+        const bytes = bindings.expand_catalog_gzip(new Uint8Array(input.bytes), input.maximum);
+        const buffer = bytes.byteOffset === 0 && bytes.byteLength === bytes.buffer.byteLength ? bytes.buffer : bytes.slice().buffer;
+        response.value = buffer; self.postMessage(response, {transfer:[buffer as ArrayBuffer]}); return;
+      }
       engine ??= new bindings.BrowserEngine();
       switch (request.operation) {
         case 'importArchive': {

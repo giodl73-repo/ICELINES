@@ -10,6 +10,30 @@ const entry={url:`data/${hash(raw)}.json`,sha256:hash(raw),bytes:raw.length,tran
 const options=(bytes=compressed)=>({signal:new AbortController().signal,deadline:Date.now()+10000,fetch:async()=>new Response(bytes)});
 const base=new URL('https://example.test/ICELINES/workbench/');
 
+test('trusted expansion backend receives authenticated wire bytes without browser gzip support',async()=>{
+  const original=globalThis.DecompressionStream;let calls=0;
+  try{
+    globalThis.DecompressionStream=undefined;
+    const expand=async(bytes,maximum)=>{calls++;assert.deepEqual(bytes,compressed);assert.equal(maximum,raw.length);return raw.slice();};
+    assert.deepEqual(await downloadPackage(entry,base,options(),expand),raw);
+    assert.equal(calls,1);
+    await assert.rejects(downloadPackage({...entry,transport:{...entry.transport,sha256:'0'.repeat(64)}},base,options(),expand),/transport.*checksum/);
+    assert.equal(calls,1,'Do not expand unauthenticated wire bytes');
+    await assert.rejects(downloadPackage(entry,base,options(),async()=>raw.slice(1)),/Package size or checksum/);
+    await assert.rejects(downloadPackage(entry,base,options(),async()=>{const wrong=raw.slice();wrong[0]^=1;return wrong;}),/Package size or checksum/);
+  }finally{globalThis.DecompressionStream=original;}
+});
+
+test('abort and deadline during asynchronous expansion refuse the result without fallback',async()=>{
+  for(const mode of ['abort','deadline']){
+    const controller=new AbortController();let now=1;let requests=0;
+    await assert.rejects(downloadPackage(entry,base,{...options(),signal:controller.signal,deadline:100,now:()=>now,fetch:async()=>{requests++;return new Response(compressed);}},async()=>{
+      await Promise.resolve();if(mode==='abort')controller.abort(new Error('cancelled during expansion'));else now=100;return raw.slice();
+    }),mode==='abort'?/cancelled during expansion/:/deadline/);
+    assert.equal(requests,1,'Expansion failure must not fetch raw fallback');
+  }
+});
+
 test('compressed and legacy download preserve exact Unicode package bytes',async()=>{
   let fetched;
   assert.deepEqual(await downloadPackage(entry,base,{...options(),fetch:async url=>{fetched=url.href;return new Response(compressed);}}),raw);

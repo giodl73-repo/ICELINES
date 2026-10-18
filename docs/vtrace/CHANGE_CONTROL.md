@@ -193,3 +193,18 @@ remain open. CI/master/public-origin transfer and update/rollback evidence are
 required before promoting the delivery implementation.
 Trace updates: INTERFACES, WORK_PACKAGES, TRACE, VERIFICATION and VALIDATION.
 No resource waiver, native dependency change or hockey semantics change.
+
+## CHG-126: Bounded native catalog gzip expansion prototype (2026-10-17)
+
+Local hypothesis: replace browser-stream catalog gzip expansion with a stateless
+worker/WASM operation using the locked flate2 Rust backend. This might reduce
+decoder-related native allocations; no saving is assumed. Preserve authenticated
+compressed bytes, exact canonical size/hash, context/epoch/abort/deadline guards,
+previous-good data, canonical exports and eight resident seasons. Existing native
+engine admission hashes and UI hashes remain. Old adapter callers retain browser
+decompression/raw fallback; new operation never constructs or mutates an engine.
+Both worker pre-copy and Rust bounds remain100 MiB; decode into at most the
+advertised output plus a one-byte oversize probe. Validate CRC/truncation/member
+boundaries and actual-WASM behavior before the unchanged full memory workload.
+No adoption/publication without repeatable benefit and normal review/validation.
+The250 MiB gate and user-deferred physical Android remain open.

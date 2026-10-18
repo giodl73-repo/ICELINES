@@ -486,3 +486,10 @@ full933-player viewport/AX/print/keyboard,77 goalies, offline933/fresh835 and re
 corrupt-transfer previous-good/exact export/905-player retry. Two clean opposite
 order full workloads use unchanged flags/sampler/WASM and no forced GC.
 No full resource, mobile, CI-master or production-origin proof is claimed yet.
+
+CHG-126 prototype requires native/actual-WASM gzip bytes/offset/member/CRC/size
+checks; worker pre-copy/no-engine/generation checks; adapter wire/canonical
+integrity, unavailable-browser-decoder and delayed abort/deadline checks; and
+actual browser previous-good context/export/retry/offline evidence. Only then
+run the original full memory workload against retained control. No saving,
+promotion or resource/device gate closure is claimed by this prototype.

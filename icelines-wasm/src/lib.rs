@@ -21,11 +21,18 @@ use sha2::{Digest, Sha256};
 use thiserror::Error;
 use wasm_bindgen::prelude::*;
 
+mod catalog_gzip;
 mod package_limits;
 
 const MAX_PACKAGE_BYTES: usize = 100 * 1024 * 1024;
 const MAX_RESIDENT_WINDOWS: usize = 8;
 const MAX_RESIDENT_INPUT_BYTES: usize = 64 * 1024 * 1024;
+
+/// Stateless transport decoding; integrity/context admission remains separate.
+#[wasm_bindgen]
+pub fn expand_catalog_gzip(bytes: &[u8], maximum: usize) -> Result<Vec<u8>, JsValue> {
+    catalog_gzip::expand(bytes, maximum).map_err(|error| JsValue::from_str(&error.to_string()))
+}
 
 /// Versioned interchange envelope. Missing optional reports stay unavailable.
 #[derive(Debug, Serialize, Deserialize)]

@@ -732,3 +732,14 @@ or decompression failures preserve the previous active season and do not silentl
 retry an alternate representation. Old catalogs and browsers without gzip
 support use the retained raw JSON files. Saved/recovery/export bytes and revision
 identity remain canonical JSON. No live relay or worker query contract changes.
+
+CHG-126 local prototype extends the version1 worker operation set with
+`expandGzip`: owned compressed ArrayBuffer plus positive safe-integer maximum
+(each at most100 MiB), returning transferred canonical bytes or a typed engine
+error. Worker validates before native copying; Rust uses locked pure-Rust gzip
+decoding with bounded output and CRC/member/truncation checks. This stateless
+operation creates no BrowserEngine and does not select/load a season. Caller
+still authenticates transport and canonical bytes, checks acquisition epoch,
+abort/deadline and catalog context before normal unchanged engine admission.
+Synchronous native decoding is bounded but not internally preemptible; worker
+termination and post-result checks retain existing recovery/cancellation policy.
