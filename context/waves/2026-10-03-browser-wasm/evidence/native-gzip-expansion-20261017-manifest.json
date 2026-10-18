@@ -1,0 +1,225 @@
+{
+  "schema_version": 1,
+  "scope": "Local bounded native gzip prototype, unchanged original Windows75/eight/two/20/restart workload and sampler/flags/channel, no forced GC or baseline-subtracted acceptance. No publication/device claim.",
+  "source": "0079d0bf2ff4ac3f2b24fe3cd489a058af26f300",
+  "control_source": "807e2adcd31cdd8cd31a74f87fdeec05247b7ef0",
+  "comparison_limit": "Retained control includes source-history differences; same pinned Windows compiler/profile. These pairs are observations, not exact causal attribution.",
+  "decision": "Unadopted;250 MiB remains failed. Assess both orderings without discarding any observation.",
+  "fixture_failure": "Initial CRC route used Uint8Array body and timed out with Loading status. Corrected to Buffer and explicit fulfilled-route assertion; original false report/script retained. No application change was needed.",
+  "runs": [
+    {
+      "label": "candidate-first",
+      "private_peak_mib": 391.4375,
+      "blank_peak_mib": 229.390625,
+      "warm_max_ms": 73.41120000000228,
+      "target": {
+        "sampled_private_bytes_below_target": false,
+        "sampled_sum_working_set_below_target": false,
+        "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+      },
+      "artifact": {
+        "commit": "0079d0bf2ff4ac3f2b24fe3cd489a058af26f300",
+        "shell_build": "56546cac9f4fadef9486645b675014a3a6ca019ed918d39ab4a07f38acaf184e",
+        "verified_files": 182,
+        "packages": 75
+      }
+    },
+    {
+      "label": "control-second",
+      "private_peak_mib": 393.3359375,
+      "blank_peak_mib": 225.27734375,
+      "warm_max_ms": 84.86530000000494,
+      "target": {
+        "sampled_private_bytes_below_target": false,
+        "sampled_sum_working_set_below_target": false,
+        "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+      },
+      "artifact": {
+        "commit": "807e2adcd31cdd8cd31a74f87fdeec05247b7ef0",
+        "shell_build": "b18354d00bed4b1a92d50287b76bada82bdc4ebb7f87a7f7661a1cae78173385",
+        "verified_files": 182,
+        "packages": 75
+      }
+    },
+    {
+      "label": "control-reverse",
+      "private_peak_mib": 390.48046875,
+      "blank_peak_mib": 230.3046875,
+      "warm_max_ms": 80.96749999999884,
+      "target": {
+        "sampled_private_bytes_below_target": false,
+        "sampled_sum_working_set_below_target": false,
+        "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+      },
+      "artifact": {
+        "commit": "807e2adcd31cdd8cd31a74f87fdeec05247b7ef0",
+        "shell_build": "b18354d00bed4b1a92d50287b76bada82bdc4ebb7f87a7f7661a1cae78173385",
+        "verified_files": 182,
+        "packages": 75
+      }
+    },
+    {
+      "label": "candidate-reverse",
+      "private_peak_mib": 392.92578125,
+      "blank_peak_mib": 230.2265625,
+      "warm_max_ms": 76.7109000000055,
+      "target": {
+        "sampled_private_bytes_below_target": false,
+        "sampled_sum_working_set_below_target": false,
+        "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+      },
+      "artifact": {
+        "commit": "0079d0bf2ff4ac3f2b24fe3cd489a058af26f300",
+        "shell_build": "56546cac9f4fadef9486645b675014a3a6ca019ed918d39ab4a07f38acaf184e",
+        "verified_files": 182,
+        "packages": 75
+      }
+    }
+  ],
+  "files": [
+    {
+      "file": "native-gzip-expansion-20261017-candidate-first-report.json",
+      "sha256": "18e1cbe31750033962cca6cb4b9a3ae91ab6ba2d2c354752846ee953738e93aa",
+      "original_path": "target/browser-memory-OKkmGZ/report.json"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-candidate-first-samples.json.gz",
+      "sha256": "5ae09d12fe8e405e550abafb35a4409b01fae3d0dd56e2b6abd5b12ed8de7d65",
+      "original_path": "target/browser-memory-OKkmGZ/samples.json",
+      "expanded_sha256": "1fdeb3c0b0d1287de0305e7cc7bf95024bf2b26110d349acd0d579477dfcfdca"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-control-second-report.json",
+      "sha256": "29b5595b1d62b6dc96512b8200c3ad6f2bc155eebfdcad98edea0914854e6139",
+      "original_path": "target/browser-memory-DmKYoZ/report.json"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-control-second-samples.json.gz",
+      "sha256": "788ce4f1cc89830bd267e2912ac124d7dc40406c5ed0975440a92a1781ae0087",
+      "original_path": "target/browser-memory-DmKYoZ/samples.json",
+      "expanded_sha256": "3d6259bb2ddba19b7b6d752cf11aecee99cc23e5a42abb8e14052e00a59f407c"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-control-reverse-report.json",
+      "sha256": "6ca626b0d0ac07c943aa160833e41816ff9cd3ef76a45f8b3984b5f293c0197c",
+      "original_path": "target/browser-memory-gkR4Yd/report.json"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-control-reverse-samples.json.gz",
+      "sha256": "504e588f227cff5d64ea65a634384a864b415f90a92db13549f1d7ab88aaa5e3",
+      "original_path": "target/browser-memory-gkR4Yd/samples.json",
+      "expanded_sha256": "b37ea1017fe9255a8cc66c10f246a987bed3ce493e4f44103d1aebdae7b158ef"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-candidate-reverse-report.json",
+      "sha256": "32fc999d56654cde791efd847181f48dbe6fdbb78d68dfd3ab4c98fc2295b5f5",
+      "original_path": "target/browser-memory-gP6dln/report.json"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-candidate-reverse-samples.json.gz",
+      "sha256": "da4749fda3a5164790b6ab035ba2187f7f7219fa6227307f69f5bbd003bc426c",
+      "original_path": "target/browser-memory-gP6dln/samples.json",
+      "expanded_sha256": "b770c23d600fc8f8ff7099ed2ee3d73e0d1fb6037a9a1e7b7f35df5a0ac6c716"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-abi-report.json",
+      "sha256": "7d28647ce641fb4e40e5f870758729904427ed71c831330bfc1929d13e6ef141",
+      "original_path": "target/native-gzip-abi-report.json"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-context-report.json",
+      "sha256": "155323102f91af748b82547fc3294d1704e56e0c38d8820aa33812caefa8a723",
+      "original_path": "target/catalog-context-wA1fnc/report.json"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-offline-report.json",
+      "sha256": "d9793fe007f7e84f9a5960f610e2da7847e44c35789f5304c54d24ae0b87c2f3",
+      "original_path": "target/browser-acceptance-1n4oEs/report.json"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-canonical-refusal-report.json",
+      "sha256": "a05536faf724ae7e2529897cf897328cab28aee55003b97e0b60a7ea98eaf00a",
+      "original_path": "target/native-gzip-canonical-refusal-dqQODa/report.json"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-crc-fixture-failure.json",
+      "sha256": "ea28dcf5a2100359590ebbd9f77256332f0dcd6d21c8e00878b71f55967bfdd3",
+      "original_path": "target/native-gzip-crc-refusal-2CxdEx/report.json"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-crc-refusal-report.json",
+      "sha256": "619ca08074c81a6a6df8515f73bdd6dbf1a6f66f5f9a55e9f05beac86bcec60c",
+      "original_path": "target/native-gzip-crc-refusal-L98dop/report.json"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-build-info.json",
+      "sha256": "434d1432c0d407ba6a63ae37d3871dd6d1dfba9f7e39a69f59c0b279f3541081",
+      "original_path": "target/native-gzip-expansion-artifact/build-info.json"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-shell-manifest.json",
+      "sha256": "00adb57e01acfbc18a22bb3ddc53575557a5b285c64ad678e24e91c5548b5126",
+      "original_path": "target/native-gzip-expansion-artifact/shell-manifest.json"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-full-build.log.gz",
+      "sha256": "dbf84cd7bf3e0a1922e80db1e64ebc836a628e37d83c5a80ec86dc966856fa9b",
+      "original_path": "target/native-gzip-full-build.log",
+      "expanded_sha256": "8ff792cbfe3a6d71e4445b3f04ec98979c762c7cb7694f26ebc7fe606784be51"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-rust-tests.log.gz",
+      "sha256": "b863b7aced3c2ee96c813e33a356033940c6bf312431ea9b5b870214b472e688",
+      "original_path": "target/native-gzip-rust-tests.log",
+      "expanded_sha256": "230bdc0b44a742809765d13cdd20bc257aeeb89405925cb36bc15a6280280413"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-adapter-worker-tests.log.gz",
+      "sha256": "6f591040c546166e9f5a1d161a53fc0f21b36a7d5ce383ab1daab93ae551c861",
+      "original_path": "target/native-gzip-adapter-worker-tests.log",
+      "expanded_sha256": "cbd10b0861f8b0968f2fa02510052e7fbc9693b3f0fbc3affc8e6a8e50f3013b"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-feature-tree.log.gz",
+      "sha256": "fb2cbcab02273729f1213c47497c01a7379299f5b5349795a1a0e04896128a36",
+      "original_path": "target/native-gzip-feature-tree.log",
+      "expanded_sha256": "255f0ed2247b4ed5204c2eb25e4d26d2ac889d134b9e1ed724f2b033e6f8c127"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-abi.mjs.gz",
+      "sha256": "ace8596960f16686380c07d818bbdd2999e9acc0c7696ccbcd3a589383d7ffca",
+      "original_path": "target/native-gzip-abi.mjs",
+      "expanded_sha256": "3b979f5d46c7620e8b65145755cdfb3c1dba7dbc7d378b9983d0fae83c1cc66f"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-prepare-refusals.py.gz",
+      "sha256": "6d318028975f6be64d3a68cfb07899a891baf9fcff2ea0b4b798d6f088e51f61",
+      "original_path": "target/prepare-native-gzip-refusals.py",
+      "expanded_sha256": "d03e397cc3ce475d27dc35960b0f4000d191fd23fd97e95a28b65bfb2b452aa8"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-initial-crc-fixture.mjs.gz",
+      "sha256": "8cb9c7fd1b2df51fc0eca49849085056943f9d735a5862d9f360c0aad28cf46e",
+      "original_path": "target/native-gzip-crc-refusal-initial.mjs",
+      "expanded_sha256": "d30d55aa4017770f89b3cf39c09183565c4ae98883b3fc7a9cb8ba53f422ab60"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-crc-fixture.mjs.gz",
+      "sha256": "462e0c6c7408e56f127416083d1570b5c7df991a9e547045543f11dd3a569aa9",
+      "original_path": "target/native-gzip-crc-refusal.mjs",
+      "expanded_sha256": "b3df276ec5c149226f501ae01725d222f53b3a888420ddce7a31c6d1a99ba005"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-canonical-fixture.mjs.gz",
+      "sha256": "dd1fa5e4555c00157e43a25d2d6676da4fecbd35aecffea51de489cc2245625a",
+      "original_path": "target/native-gzip-canonical-refusal.mjs",
+      "expanded_sha256": "34786f08a274d427c6c92a942cf65a6dfe542f32f916fe8a19dcd78013b9aac8"
+    },
+    {
+      "file": "native-gzip-expansion-20261017-archive.py.gz",
+      "sha256": "756c8a4d3b8163ee51ea28174b93e1e211b7f4d2224873575fca201702435f06",
+      "original_path": "target/archive-native-gzip.py",
+      "expanded_sha256": "2a2fd5782c4c94161954287f3720c21bb2b077f01e645aec032fbbddafa94c96"
+    }
+  ]
+}

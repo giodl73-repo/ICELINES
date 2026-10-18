@@ -1,0 +1,11 @@
+{
+  "verified": false,
+  "artifact": {
+    "commit": "0079d0bf2ff4ac3f2b24fe3cd489a058af26f300",
+    "shell_build": "56546cac9f4fadef9486645b675014a3a6ca019ed918d39ab4a07f38acaf184e",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "scope": "Owned browser catalog-context fixture; unsigned two-entry catalog, handler-driven reload, fresh/cached rejection and previous-good export. Not memory/offline/mobile acceptance.",
+  "error": "Error: expect(locator).toContainText(expected) failed\n\nLocator: locator('#status')\nExpected substring: \"Invalid gzip\"\nReceived string:    \"Loading season into memory…\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"toContainText\" locator('#status') with timeout 5000ms\n  - waiting for locator('#status')\n    14 × locator resolved to <p id=\"status\" role=\"status\" aria-live=\"polite\">Loading season into memory…</p>\n       - unexpected value \"Loading season into memory…\"\n"
+}

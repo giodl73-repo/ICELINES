@@ -493,3 +493,11 @@ integrity, unavailable-browser-decoder and delayed abort/deadline checks; and
 actual browser previous-good context/export/retry/offline evidence. Only then
 run the original full memory workload against retained control. No saving,
 promotion or resource/device gate closure is claimed by this prototype.
+
+CHG-126 outcome: source0079d0bf fresh build/check passes168 browser tests,270
+native/WASM parity cases and required native/Python checks; actual-WASM75-package
+expansion/state checks and browser context/canonical/CRC/offline checks pass.
+Opposite-order original memory runs measure candidate391.4375/392.92578 MiB
+against controls393.33594/390.48047 MiB. Initial saving does not repeat. Archive
+all reports and the initial CRC fixture failure; do not adopt/publish this trial.
+Evidence: `context/waves/2026-10-03-browser-wasm/evidence/native-gzip-expansion-20261017-manifest.json`.

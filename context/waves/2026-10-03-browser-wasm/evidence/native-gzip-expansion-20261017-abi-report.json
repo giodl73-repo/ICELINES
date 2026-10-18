@@ -1,0 +1,8 @@
+{
+  "verified": true,
+  "scope": "Actual fresh WASM in Node:75 package byte/offset/state comparisons,8 MiB patterned payload, CRC/truncation/trailing/member/bomb/output-limit refusal. Not browser memory, cancellation, production or device acceptance.",
+  "wasm_sha256": "8919b37d3faab719e557598b3befeb3ae953ebeb16d59c45fa5a36b3722428cd",
+  "packages": 75,
+  "two_resident_windows_and_complete_query_unchanged": true,
+  "outputs_own_buffers": true
+}

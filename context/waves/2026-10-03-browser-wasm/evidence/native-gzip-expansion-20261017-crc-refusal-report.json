@@ -1,0 +1,22 @@
+{
+  "verified": true,
+  "artifact": {
+    "commit": "0079d0bf2ff4ac3f2b24fe3cd489a058af26f300",
+    "shell_build": "56546cac9f4fadef9486645b675014a3a6ca019ed918d39ab4a07f38acaf184e",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "scope": "Actual native WASM gzip decoder refuses invalid CRC after wire size/hash match. Canonical entry unchanged. Unsigned two-entry catalog/reload fixture; previous-good result/exact export/requery and retry. Not offline/memory/mobile/publication proof.",
+  "evidence": {
+    "outcomes": [
+      {
+        "wire_digest_matches_corrupt_gzip": true,
+        "crc_failure_rejected": true,
+        "previous_rows": 933,
+        "exact_previous_export": true,
+        "requery": true
+      }
+    ],
+    "retry_rows": 905
+  }
+}

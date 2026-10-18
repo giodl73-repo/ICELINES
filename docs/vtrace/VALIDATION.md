@@ -191,3 +191,8 @@ offline reopening, previous-version rollback and forward restore. Physical
 Android is explicitly deferred by the user and is still required for full
 acceptance. No native behavior, data coverage, resident limit or resource waiver
 is altered by this change.
+
+CHG-126 native gzip expansion is a closed negative local trial. Functional and
+actual-WASM/browser preservation checks pass, but whole-browser candidate/control
+peaks391.44/393.34 and392.93/390.48 MiB do not show repeated saving. No adoption or
+publication; fixed250 MiB remains failed and physical Android is user-deferred.
