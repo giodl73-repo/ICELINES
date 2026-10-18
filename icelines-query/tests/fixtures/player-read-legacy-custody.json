@@ -1,0 +1,11 @@
+{
+  "producer_revision": "0a82da65028efc03f21334b4b5b3e31765431365",
+  "production_query_base": "fdd9f9b9cbc5bafc7d88b53536ed4a7706118d2c",
+  "scope": "synthetic original PlayerView evaluator observations before production query edits",
+  "rows": 288,
+  "constraints": 813,
+  "golden_sha256": "8eac305db1d764e117b67a7f07e0931ef843b61e6d86838ccccdfb724be75369",
+  "producer_exe_sha256": "ad5ee8fa9c2cb43a466068af0b314d3b6d59b632f09c292e7f3d6a9d4083795e",
+  "cases_sha256": "6109b6a78fc5ea4d7226a61a4a5f691914c75329e79b20942ab2c626c73856d5",
+  "core_cases_sha256": "ce00ca3cd08d6b0b0db07e9410072eaaa4b7e80c94d2b4a30e2e8ac843faabc0"
+}

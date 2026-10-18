@@ -207,3 +207,12 @@ and eight filter vectors over 288 boundary rows. New inline, legacy and independ
 owned payload readers must match exact values and existing guard semantics. Native
 and WASM compilation plus downstream regression gates retain separate outcomes.
 No schema change, backend switch, deployment, resource waiver or Android acceptance.
+
+## CHG-123: Borrowed player constraint evaluation (2026-10-18)
+
+Decision: add PlayerRead and Constraint::matches_read atop CHG-122, preserving the
+existing PlayerView evaluator API through delegation. Identity/contract owners and
+provider/clock/context policies remain unchanged. A clean pre-edit oracle freezes
+813 constraints over 288 synthetic rows; separate-payload and dynamic readers must
+match. See IF-QUERY-READ-001 and design/specs/borrowed-player-query.md.
+Production repository/surface ownership, wire schemas and resource criteria remain.
