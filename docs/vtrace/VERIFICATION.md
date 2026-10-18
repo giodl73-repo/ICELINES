@@ -531,3 +531,35 @@ No new backend, engine/export/revision or browser/device resource acceptance.
 ## Borrowed Constraint evaluator (CHG-123 / IF-QUERY-READ-001)
 
 `icelines-query/tests/player_read.rs` compares the pre-edit 813 x 288 oracle with legacy, inline, separate-payload and dynamic readers; checks provider identity, historical bio references, goalie fallback, contract borrows and short-circuiting. PlayerRead's compile-fail doctest rejects mutation of its borrowed owner. Local 657 query tests/docs, 20 downstream tests, Clippy, native workspace and WASM-target checks pass; evidence is retained in `context/waves/2026-10-03-browser-wasm/evidence/miser-query-read-local.json`. Full hosted CI, repository ownership and complete browser resource acceptance remain separate.
+
+## VER-BROWSER-SPARSE-001: Opt-in prepared-season ownership
+
+CHG-124 / IF-BROWSER-SPARSE-001 preserves concrete PlayerView references/coercions,
+Copy, catalog/query/goalie/pace behavior and original player-detail JSON while
+BrowserEngine can opt into a separate sparse prepared owner. Independent catalog
+bits/order over 288 synthetic boundary rows, typed/JSON equality, 1,200 mixed mutations,
+slot-width/swap invariants and borrow rejection pass. Native nine-crate workspace,
+1,885 core/query/data tests/docs, 18 browser tests in each mode (1,921 production
+executions total), core/browser all-target Clippy and default WASM check pass.
+Actual original and sparse browser-release WASM binaries both build.
+
+Nine native processes compare immutable original/default/sparse engines over 75
+packages,20 query profiles at 78 states, exports/details/metadata, two imports,
+failed refresh and resident selection. Original/migrated inline allocations match;
+sparse retains 38.09%/30.61% fewer requested bytes in initial/final eight-window states.
+Query peaks are unchanged; initial-window cumulative query allocation rises 0.76%.
+Four fresh actual-WASM Node runs reduce linear-memory high-water 17,891,328 to
+16,121,856 bytes (-9.89%). Direct complete-output comparison passes 1,560 queries,
+51,435 player details and 78 exports; original 75 states also match native/WASM.
+
+Evidence: context/waves/2026-10-03-browser-wasm/evidence/miser-browser-sparse-local.json
+and compressed compiler/test logs. Private MISER EXP010 retains raw samples, exact
+source/build/input/report hashes, four rejecting guard checks and all 73 lab/probe
+test executions. The shared-cache WASM failure and explicit workspace rebuild are
+retained. Native adapter and product WASM locks differ but each platform comparison
+uses identical non-consumer versions. Prepared owner omits unused roster/Tier2/LRU
+structures and retains source packages; those facts bound the savings claim.
+
+This verifies an opt-in candidate. Full roster/report repository adoption, acquired
+rich-density measurements, hosted full CI, fixed 250 MiB whole-browser and Android
+acceptance remain separate. Default builds retain StatsRepository; no publication.

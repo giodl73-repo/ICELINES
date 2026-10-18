@@ -1,0 +1,546 @@
+{
+  "schema_version": 1,
+  "change_id": "CHG-124",
+  "interface": "IF-BROWSER-SPARSE-001",
+  "source_revision": "fc0d320be5c10257e676f26eca963c6229a674e9",
+  "parent_revision": "43629445b8cfa349bac77bd3acf86d940933e5e8",
+  "feature": "icelines-wasm/sparse-storage",
+  "default_enabled": false,
+  "production_test_doc_executions": 1921,
+  "core_query_data_test_docs": 1885,
+  "browser_tests_per_mode": 18,
+  "lab_test_executions": 73,
+  "checks": [
+    {
+      "scope": "native nine-crate workspace check",
+      "result": "passed",
+      "log": "miser-browser-sparse-logs/browser-sparse-workspace-check.log.gz",
+      "raw_sha256": "7070986cf6b3d1f088c2acd1d5a4a1ce97f28c7aaff51e6e8a69a8252323a9c1",
+      "gzip_sha256": "334502fbfaa178ca0fb8d2ed6c82f8392f6a012caab881694b426476fc6d9bd9"
+    },
+    {
+      "scope": "core/query/data tests and doctests",
+      "result": "passed",
+      "log": "miser-browser-sparse-logs/browser-sparse-final-regression.log.gz",
+      "raw_sha256": "00e7f135f5beb08e0cf10b4d84fefcffc41d4604769f6b0a948cf3332e3af8e8",
+      "gzip_sha256": "5e5a8a838069517b17cf7caf10a604906dc54549dd56e3ee29cb96965f215999"
+    },
+    {
+      "scope": "18 browser tests, default feature",
+      "result": "passed",
+      "log": "miser-browser-sparse-logs/browser-sparse-final-default.log.gz",
+      "raw_sha256": "8947444ad370e74f7123eb55c0bb5f533382f133043b4977601b5f8fe88e828c",
+      "gzip_sha256": "dfe758c3e11f78225b1dfbfda991d5da0c16edfaf3292d49bc1ac6f8ffbfeae2"
+    },
+    {
+      "scope": "18 browser tests, sparse-storage feature",
+      "result": "passed",
+      "log": "miser-browser-sparse-logs/browser-sparse-final-feature.log.gz",
+      "raw_sha256": "ead6b35ece4b3389a220de2117dcf9f74ae9b953e0b03bedab0b0efda47c288e",
+      "gzip_sha256": "aa367664fdc16fdfc7cceba109a3b8f8a60ccce55611a1b62c7cbc1a5a6b4122"
+    },
+    {
+      "scope": "core/browser all-target sparse-feature Clippy",
+      "result": "passed",
+      "log": "miser-browser-sparse-logs/browser-sparse-final-clippy.log.gz",
+      "raw_sha256": "d0a2ab6f9845abd05d77d4606453c234779c1845d4a7dc5717728439f65541e0",
+      "gzip_sha256": "1a19e0873af318ce22acd6d22394847d99d77106cb87d35de01e32064d9c2811"
+    },
+    {
+      "scope": "candidate default-feature WASM target check",
+      "result": "passed",
+      "log": "miser-browser-sparse-logs/browser-sparse-final-wasm-default-check.log.gz",
+      "raw_sha256": "e334f53ef280c0eabdc60f1abf7a94da90a99d544c701cbad2eeff93a23dd549",
+      "gzip_sha256": "61802e3ce40c26838c5dde14bee45faab2983d2647b05c2f5e9aaeeb3bc0dda8"
+    },
+    {
+      "scope": "earlier compiler failure retained; resolved before final source commit",
+      "result": "failed-then-fixed",
+      "log": "miser-browser-sparse-logs/browser-sparse-first-check.log.gz",
+      "raw_sha256": "3765f6c536e8f281660b1d18a43bf68338699acb9244872f28f3adb248e955f1",
+      "gzip_sha256": "d6c2be42de780fbfea0350162eb81c310f6568c8567eb901b75afb2f0412ceec"
+    },
+    {
+      "scope": "earlier compiler failure retained; resolved before final source commit",
+      "result": "failed-then-fixed",
+      "log": "miser-browser-sparse-logs/browser-sparse-check-recovery.log.gz",
+      "raw_sha256": "2138d58def45cdbda1dd712db74d9c2965274beee216c252346ea7238f8a383d",
+      "gzip_sha256": "87b99a980b2c4374cde01c610bc2824b596380012c4ed57f8fcfc4fc96a6e8ac"
+    },
+    {
+      "scope": "earlier compiler failure retained; resolved before final source commit",
+      "result": "failed-then-fixed",
+      "log": "miser-browser-sparse-logs/browser-sparse-wasm-native-tests.log.gz",
+      "raw_sha256": "5533fa2834312c02276d625ba6d527b366ec7a1b08d6ed35cf76ce6873e76c9a",
+      "gzip_sha256": "f7cdc3d782db8bf222fd512c04b28689e8dd32221a7a07f82f342c663c324f1e"
+    }
+  ],
+  "native_measurements": {
+    "experiment": "MISER-EXP-010",
+    "native_complete_semantic_parity": true,
+    "states_per_sample": 78,
+    "queries_per_state": 20,
+    "fresh_process_orders": [
+      [
+        "control",
+        "inline",
+        "sparse"
+      ],
+      [
+        "sparse",
+        "inline",
+        "control"
+      ],
+      [
+        "control",
+        "sparse",
+        "inline"
+      ]
+    ],
+    "variants": {
+      "control": {
+        "first_eight": {
+          "allocation": {
+            "allocation_calls": {
+              "min": 247274,
+              "median": 247274,
+              "max": 247274
+            },
+            "cumulative_requested_bytes": {
+              "min": 37975009,
+              "median": 37975009,
+              "max": 37975009
+            },
+            "peak_requested_bytes": {
+              "min": 21278653,
+              "median": 21278653,
+              "max": 21278653
+            },
+            "retained_requested_bytes": {
+              "min": 20479341,
+              "median": 20479341,
+              "max": 20479341
+            }
+          },
+          "query_20": {
+            "allocation_calls": {
+              "min": 28909,
+              "median": 28909,
+              "max": 28909
+            },
+            "cumulative_requested_bytes": {
+              "min": 7085044,
+              "median": 7085044,
+              "max": 7085044
+            },
+            "peak_requested_bytes": {
+              "min": 455821,
+              "median": 455821,
+              "max": 455821
+            },
+            "retained_requested_bytes": {
+              "min": 0,
+              "median": 0,
+              "max": 0
+            }
+          }
+        },
+        "all_75": {
+          "allocation": {
+            "allocation_calls": {
+              "min": 1857224,
+              "median": 1857224,
+              "max": 1857224
+            },
+            "cumulative_requested_bytes": {
+              "min": 285175584,
+              "median": 285175584,
+              "max": 285175584
+            },
+            "peak_requested_bytes": {
+              "min": 23255110,
+              "median": 23255110,
+              "max": 23255110
+            },
+            "retained_requested_bytes": {
+              "min": 12660316,
+              "median": 12660316,
+              "max": 12660316
+            }
+          },
+          "query_20": {
+            "allocation_calls": {
+              "min": 8770,
+              "median": 8770,
+              "max": 8770
+            },
+            "cumulative_requested_bytes": {
+              "min": 2589977,
+              "median": 2589977,
+              "max": 2589977
+            },
+            "peak_requested_bytes": {
+              "min": 201533,
+              "median": 201533,
+              "max": 201533
+            },
+            "retained_requested_bytes": {
+              "min": 0,
+              "median": 0,
+              "max": 0
+            }
+          }
+        }
+      },
+      "inline": {
+        "first_eight": {
+          "allocation": {
+            "allocation_calls": {
+              "min": 247274,
+              "median": 247274,
+              "max": 247274
+            },
+            "cumulative_requested_bytes": {
+              "min": 37975009,
+              "median": 37975009,
+              "max": 37975009
+            },
+            "peak_requested_bytes": {
+              "min": 21278653,
+              "median": 21278653,
+              "max": 21278653
+            },
+            "retained_requested_bytes": {
+              "min": 20479341,
+              "median": 20479341,
+              "max": 20479341
+            }
+          },
+          "query_20": {
+            "allocation_calls": {
+              "min": 28874,
+              "median": 28874,
+              "max": 28874
+            },
+            "cumulative_requested_bytes": {
+              "min": 7139132,
+              "median": 7139132,
+              "max": 7139132
+            },
+            "peak_requested_bytes": {
+              "min": 455821,
+              "median": 455821,
+              "max": 455821
+            },
+            "retained_requested_bytes": {
+              "min": 0,
+              "median": 0,
+              "max": 0
+            }
+          }
+        },
+        "all_75": {
+          "allocation": {
+            "allocation_calls": {
+              "min": 1857224,
+              "median": 1857224,
+              "max": 1857224
+            },
+            "cumulative_requested_bytes": {
+              "min": 285175584,
+              "median": 285175584,
+              "max": 285175584
+            },
+            "peak_requested_bytes": {
+              "min": 23255110,
+              "median": 23255110,
+              "max": 23255110
+            },
+            "retained_requested_bytes": {
+              "min": 12660316,
+              "median": 12660316,
+              "max": 12660316
+            }
+          },
+          "query_20": {
+            "allocation_calls": {
+              "min": 8738,
+              "median": 8738,
+              "max": 8738
+            },
+            "cumulative_requested_bytes": {
+              "min": 2541681,
+              "median": 2541681,
+              "max": 2541681
+            },
+            "peak_requested_bytes": {
+              "min": 201533,
+              "median": 201533,
+              "max": 201533
+            },
+            "retained_requested_bytes": {
+              "min": 0,
+              "median": 0,
+              "max": 0
+            }
+          }
+        }
+      },
+      "sparse": {
+        "first_eight": {
+          "allocation": {
+            "allocation_calls": {
+              "min": 232045,
+              "median": 232045,
+              "max": 232045
+            },
+            "cumulative_requested_bytes": {
+              "min": 22386438,
+              "median": 22386438,
+              "max": 22386438
+            },
+            "peak_requested_bytes": {
+              "min": 12723409,
+              "median": 12723409,
+              "max": 12723409
+            },
+            "retained_requested_bytes": {
+              "min": 12678257,
+              "median": 12678257,
+              "max": 12678257
+            }
+          },
+          "query_20": {
+            "allocation_calls": {
+              "min": 28874,
+              "median": 28874,
+              "max": 28874
+            },
+            "cumulative_requested_bytes": {
+              "min": 7139132,
+              "median": 7139132,
+              "max": 7139132
+            },
+            "peak_requested_bytes": {
+              "min": 455821,
+              "median": 455821,
+              "max": 455821
+            },
+            "retained_requested_bytes": {
+              "min": 0,
+              "median": 0,
+              "max": 0
+            }
+          }
+        },
+        "all_75": {
+          "allocation": {
+            "allocation_calls": {
+              "min": 1742509,
+              "median": 1742509,
+              "max": 1742509
+            },
+            "cumulative_requested_bytes": {
+              "min": 169462503,
+              "median": 169462503,
+              "max": 169462503
+            },
+            "peak_requested_bytes": {
+              "min": 14043457,
+              "median": 14043457,
+              "max": 14043457
+            },
+            "retained_requested_bytes": {
+              "min": 8784976,
+              "median": 8784976,
+              "max": 8784976
+            }
+          },
+          "query_20": {
+            "allocation_calls": {
+              "min": 8738,
+              "median": 8738,
+              "max": 8738
+            },
+            "cumulative_requested_bytes": {
+              "min": 2541681,
+              "median": 2541681,
+              "max": 2541681
+            },
+            "peak_requested_bytes": {
+              "min": 201533,
+              "median": 201533,
+              "max": 201533
+            },
+            "retained_requested_bytes": {
+              "min": 0,
+              "median": 0,
+              "max": 0
+            }
+          }
+        }
+      }
+    }
+  },
+  "wasm_measurements": {
+    "experiment": "MISER-EXP-010",
+    "scope": "actual browser-release WASM under Node22; linear-memory capacity highwater, not browser RSS/live allocations",
+    "fresh_process_order": [
+      "control001",
+      "sparse001",
+      "sparse002",
+      "control002"
+    ],
+    "complete_semantic_parity": true,
+    "native_wasm_original_package_states_equal": 75,
+    "import_boundary": "Import JSON object ordering differs between Rust Value and JS. Compare original and sparse imports within each platform; import raw revision hashes are not required to match across platforms.",
+    "variants": {
+      "control": {
+        "highwater_bytes": 17891328,
+        "startup_bytes": 1245184,
+        "first_eight_bytes": 16449536,
+        "samples": 2
+      },
+      "sparse": {
+        "highwater_bytes": 16121856,
+        "startup_bytes": 1245184,
+        "first_eight_bytes": 13893632,
+        "samples": 2
+      }
+    }
+  },
+  "wasm_direct_output_comparison": {
+    "experiment": "MISER-EXP-010",
+    "scope": "direct full-output byte/string comparison of actual original/sparse WASM engines; no memory measurement",
+    "states": 78,
+    "query_results_compared": 1560,
+    "player_details_compared": 51435,
+    "canonical_exports_compared": 78,
+    "metadata_and_resident_sequences_compared": 78,
+    "invalid_refresh_preserved": true,
+    "complete_output_comparison": true
+  },
+  "experiment_producer": "97cfbdf245fecbb24d9f3a7520c2c49792e4d895",
+  "experiment_private_repository": "https://github.com/giodl73-repo/MISER",
+  "experiment_evidence_path": "evidence/EXP-010.md",
+  "native_builds": {
+    "control": {
+      "variant": "control",
+      "consumer_revision": "43629445b8cfa349bac77bd3acf86d940933e5e8",
+      "consumer_clean": true,
+      "manifest_sha256": "6c1b2045303d7dfdd5928a204e65a612b8a82be84cbf404a1cd5303a65aab398",
+      "lock_sha256": "88bebf268f139c25d645857204198281ebc86bbe860f5c5dea91195726ba0dc9",
+      "executable_sha256": "fa49ca3774e3c28ab4c87b064b5942d36c51f562f87d01a7ce4c7bb2b6fae8e0",
+      "profile": "debug",
+      "incremental": false,
+      "dev_debug": 0,
+      "jobs": 1,
+      "icelines_wasm_features": [],
+      "external_lock_records": 100
+    },
+    "inline": {
+      "variant": "inline",
+      "consumer_revision": "fc0d320be5c10257e676f26eca963c6229a674e9",
+      "consumer_clean": true,
+      "manifest_sha256": "cc1d1af9792cde417b9be75fd8fd7e700492360f4b4f7f6830b6ab99742708c3",
+      "lock_sha256": "3b90dca4de5e5c671c60f472754715cc2b5729cb65472b75ae32857914194454",
+      "executable_sha256": "901764d326dbb31ad3702da63c23ba82528e160c5c4a9f0a36b8e1331d46d8af",
+      "profile": "debug",
+      "incremental": false,
+      "dev_debug": 0,
+      "jobs": 1,
+      "icelines_wasm_features": [],
+      "external_lock_records": 100
+    },
+    "sparse": {
+      "variant": "sparse",
+      "consumer_revision": "fc0d320be5c10257e676f26eca963c6229a674e9",
+      "consumer_clean": true,
+      "manifest_sha256": "0ac688384c503a5e8e5b9ddb72609be15949bd824e8c20175b8fa669c61403b6",
+      "lock_sha256": "0a89f19b00215a8ba47252ebec77b1e98adb36afeb5ffc3dd9d2fadea56c23a1",
+      "executable_sha256": "5f2dffc99ce90e191fe759948fddcf896d50191184569bc8fa7f271d9c9231b0",
+      "profile": "debug",
+      "incremental": false,
+      "dev_debug": 0,
+      "jobs": 1,
+      "icelines_wasm_features": [
+        "sparse-storage"
+      ],
+      "external_lock_records": 100
+    }
+  },
+  "wasm_builds": {
+    "control": {
+      "variant": "control",
+      "consumer_revision": "43629445b8cfa349bac77bd3acf86d940933e5e8",
+      "source_clean": true,
+      "profile": "browser-release",
+      "features": [],
+      "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "bindgen": "wasm-bindgen 0.2.118",
+      "consumer_lock_sha256": "ca4e4769113f1c3a4d863d9bb1b09b3ab6d9969592b5d5c7da481957c6910198",
+      "raw_wasm_sha256": "2df6d83e64a0ac06977c697dd31032f984c180bca5b7c4a0b76ae1dea0630aad",
+      "bound_wasm_sha256": "41f309fe90c1ffacf086ba08a9b4ccffe7ddd0d506bc50f0da5a842b9f77ca27",
+      "bound_wasm_bytes": 638794,
+      "javascript_sha256": "7680176d0b6e7cc9a692b4e3754435798f197a26151bf5d70308a472efaedac7",
+      "command": [
+        "cargo",
+        "+1.95.0",
+        "build",
+        "-p",
+        "icelines-wasm",
+        "--target",
+        "wasm32-unknown-unknown",
+        "--profile",
+        "browser-release",
+        "--locked",
+        "-j",
+        "1"
+      ],
+      "instrumented_javascript_sha256": "2c5b52de61ca25ca64ca53dbd3d3a3dc23ab388af123b67a4309ef871b71b01a",
+      "instrumentation": "Unmodified generated JS plus one export of existing wasm.memory in a separate wrapper; WASM bytes unchanged"
+    },
+    "sparse-recovery": {
+      "variant": "sparse-recovery",
+      "consumer_revision": "fc0d320be5c10257e676f26eca963c6229a674e9",
+      "source_clean": true,
+      "profile": "browser-release",
+      "features": [
+        "sparse-storage"
+      ],
+      "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+      "bindgen": "wasm-bindgen 0.2.118",
+      "consumer_lock_sha256": "ca4e4769113f1c3a4d863d9bb1b09b3ab6d9969592b5d5c7da481957c6910198",
+      "raw_wasm_sha256": "3bc14ddc2e351ab720769acc2fd2cdc9f7e022b24a1713898b1a3e1b9202b0f0",
+      "bound_wasm_sha256": "f0f6c2f1c84cd3a4f0aa9ccabfc460ab3f01cc9592c5e694a390fc49d738cb99",
+      "bound_wasm_bytes": 620100,
+      "javascript_sha256": "7680176d0b6e7cc9a692b4e3754435798f197a26151bf5d70308a472efaedac7",
+      "command": [
+        "cargo",
+        "+1.95.0",
+        "build",
+        "-p",
+        "icelines-wasm",
+        "--target",
+        "wasm32-unknown-unknown",
+        "--profile",
+        "browser-release",
+        "--locked",
+        "-j",
+        "1",
+        "--features",
+        "sparse-storage"
+      ],
+      "instrumented_javascript_sha256": "2c5b52de61ca25ca64ca53dbd3d3a3dc23ab388af123b67a4309ef871b71b01a",
+      "instrumentation": "Unmodified generated JS plus one export of existing wasm.memory in a separate wrapper; WASM bytes unchanged"
+    }
+  },
+  "limits": [
+    "Prepared owner intentionally omits roster/Tier2/internal LRU; savings are not solely payload layout.",
+    "Native requested bytes and WASM capacity measure different scopes, neither is whole-browser RSS or Android acceptance.",
+    "Dense rich-report production gains remain unmeasured; full StatsRepository adoption remains open.",
+    "Browser250MiB criterion unchanged and not established; physical Android deferred.",
+    "No merge, Pages publication or default feature change."
+  ],
+  "build_recovery": "The original shared-cache sparse attempt reused parent core APIs and failed. All candidate workspace library roots/manifests were touched without content changes; recovery log explicitly compiles all five candidate crates. Separate source-specific target directories are recommended (F11). Both source/build outputs and failure/recovery retained."
+}
