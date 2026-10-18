@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "scope": "Supplemental actual IndexedDB saved-context validation on retained release75e6ba97. No runtime edits, deployment, resource/device acceptance or offline-shell claim.",
+  "fixture": "Unsigned two-entry catalog; service workers blocked; owned profile reopened once before three cases; candidate absent from resident library, actual IndexedDB get observed, candidate payload unavailable; previous933 rows/export/requery and saved905 retry verified.",
+  "failures": "Three earlier fixture/browser failures retained as failures, never relabeled passing. First restored candidate resident at startup; second redundant load raced panel folding; third repeated reopening with downloads encountered page/context/browser closure. Final runner avoids repeated post-download process reopen without changing application or stored data.",
+  "files": [
+    {
+      "original_path": "target/persisted-catalog-context-nNtnoZ/report.json",
+      "file": "persisted-catalog-context-20261017-final-report.json",
+      "sha256": "eb766354511859c2f53e49036beec3594e967fa386b0abb4583d649fdb1e4964"
+    },
+    {
+      "original_path": "target/persisted-catalog-context-V9feVT/report.json",
+      "file": "persisted-catalog-context-20261017-first-pass-report.json",
+      "sha256": "b5bba4704f840847f6c5be93ab38ac68224c8685e7cdcff65d5bc39d49a7cbf5"
+    },
+    {
+      "original_path": "target/persisted-catalog-context-eIB6AF/report.json",
+      "file": "persisted-catalog-context-20261017-resident-fixture-failure.json",
+      "sha256": "89c8d68e238960a419903116ef86d35743620646e1ba58d1b793c5788cc33051"
+    },
+    {
+      "original_path": "target/persisted-catalog-context-KiKiNs/report.json",
+      "file": "persisted-catalog-context-20261017-panel-fixture-failure.json",
+      "sha256": "09e527f08759559df32819f423b3e7267c30b310965772b7cc77029f04363c20"
+    },
+    {
+      "original_path": "target/persisted-catalog-context-z1oDgQ/report.json",
+      "file": "persisted-catalog-context-20261017-download-browser-failure.json",
+      "sha256": "0713fc9027517babdb1a1f9ff1d9dee618377032cf1d0d55c62ddc8208e5b90b"
+    },
+    {
+      "original_path": "icelines-browser/e2e/persisted-catalog-context.mjs",
+      "file": "persisted-catalog-context-20261017-runner.mjs.gz",
+      "sha256": "b668eb4189c70ff14e3537f3ff3fb2e9f8d94315b9da8cfcef4cc792fc9b7083",
+      "expanded_sha256": "b2fc6b478b64bd1fed01f36d5bed332bbede4eb4155bb33ddff7a4da884f112a"
+    },
+    {
+      "original_path": "target/archive-persisted-context.py",
+      "file": "persisted-catalog-context-20261017-archive.py.gz",
+      "sha256": "6b23e528b837efc17b8d99881a9e40170e9da1cc2ee9a6de9c7fbbd2f973e0e3",
+      "expanded_sha256": "b0bc9974f5741bb95935e931378ec46a18e64ceb2f378f7a45dc2e14ac33f401"
+    }
+  ]
+}
