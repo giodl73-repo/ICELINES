@@ -475,13 +475,13 @@ acceptance remains open.
 ## CHG-120 browser transport verification
 
 Verify both transport and canonical digests/sizes and bounded gzip expansion for
-all75 retained files, then load every original package through actual WASM.
+all 75 retained files, then load every original package through actual WASM.
 Unit/refusal cases cover invalid transport path/hash/size, malformed gzip,
 expansion bombs, cancellation/deadline, old catalogs and unavailable gzip support.
 The offline runner verifies full result count and bounded mounted rows after
 process reopening, then compares all names for a fresh filtered query using the
 full-table accessibility option. It also supports the previous classic renderer.
-Prototype evidence:154 browser units,9 artifact tests, all75 distributed loads,
+Prototype evidence:154 browser units,9 artifact tests, all 75 distributed loads,
 full933-player viewport/AX/print/keyboard,77 goalies, offline933/fresh835 and real
 corrupt-transfer previous-good/exact export/905-player retry. Two clean opposite
 order full workloads use unchanged flags/sampler/WASM and no forced GC.
@@ -563,3 +563,26 @@ structures and retains source packages; those facts bound the savings claim.
 This verifies an opt-in candidate. Full roster/report repository adoption, acquired
 rich-density measurements, hosted full CI, fixed 250 MiB whole-browser and Android
 acceptance remain separate. Default builds retain StatsRepository; no publication.
+
+## VER-BROWSER-SPARSE-PROCESS-001: Whole-browser follow-through
+
+CHG-124 / IF-BROWSER-SPARSE-001 / REQ-BROWSER-001: four fresh Windows Chromium
+153.0.8010.12 runs use one clean source c92d4e00, identical frontend/data, explicit
+build features, 1280x800 viewport and the unchanged 75-package/archive/warm-query/
+restart workload. Every run completes all 82 required phases and eight-window/full
+result-count checks. Peak private MiB in default/sparse/sparse/default order are
+389.7422 /387.6563 /404.8125 /390.4570. The first pair improves 2.0859 MiB; the second
+regresses 14.3555 MiB. A repeatable whole-browser reduction is not established.
+Every normal private and summed-working-set comparison fails the fixed 250 MiB gate.
+
+Separate diagnostic GC observes 14.25 MiB WASM capacity and about 333 MiB private after
+collection. GPU private bytes are about 99 MiB and all renderers together 192 MiB before
+collection. These are different, non-additive CDP/OS scopes, not normal budget
+acceptance or proof of a particular allocator/CSS cause. Android stays deferred.
+
+The actual standard --sparse-storage build passes all 75-package distribution checks
+and reproduces the measured WASM hash. TypeScript and 163 browser tests pass. Raw
+evidence/failures/traces/source hashes remain in private MISER EXP011. Public bounded
+evidence and compressed local verification logs are in
+context/waves/2026-10-03-browser-wasm/evidence/miser-browser-sparse-process-memory.json.
+Default selection is unchanged; this result does not approve full resource adoption.

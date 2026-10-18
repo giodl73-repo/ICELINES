@@ -227,3 +227,8 @@ claim: BrowserEngine owns prepared-window eviction and does not use those indexe
 Contract: design/specs/browser-sparse-season.md / IF-BROWSER-SPARSE-001. Native/WASM
 parity, exact exports/revisions and resource measurements remain separate gates;
 default artifact selection, schemas, budgets and Android requirements are unchanged.
+
+CHG-124 follow-through: the product builder exposes --sparse-storage and records
+wasm_features in build-info; ordinary builds keep an empty list. Actual whole-browser
+EXP011 evidence is mixed and fails the unchanged 250 MiB criterion. The candidate
+remains opt-in, with no default adoption or publication implied by component gains.

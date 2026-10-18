@@ -1,0 +1,381 @@
+{
+  "schema_version": 1,
+  "change_id": "CHG-124",
+  "interface": "IF-BROWSER-SPARSE-001",
+  "experiment": "MISER-EXP-011",
+  "normal_series": {
+    "schema_version": 1,
+    "experiment": "MISER-EXP-011",
+    "scope": "Unchanged actual Windows whole-Chromium process sampler/workload; headless153,1280x800; sampled private and summed working-set bytes are separate metrics",
+    "source": "c92d4e006027bf7cb6f1480527399250582d2754",
+    "producer": "7845d0de1520aa04dbb3c8c4070720537d99d8df",
+    "order": [
+      "default-1",
+      "sparse-1",
+      "sparse-2",
+      "default-2"
+    ],
+    "runs": [
+      {
+        "label": "default-1",
+        "variant": "default",
+        "browser": "153.0.8010.12",
+        "artifact": {
+          "commit": "c92d4e006027bf7cb6f1480527399250582d2754",
+          "shell_build": "91719f34cf03e37c911ee878db9af45c05574e8057b623df6ebba7bb737e6e19",
+          "verified_files": 182,
+          "packages": 75
+        },
+        "peak_private_bytes": 408674304,
+        "peak_working_set_bytes": 697745408,
+        "target": {
+          "sampled_private_bytes_below_target": false,
+          "sampled_sum_working_set_below_target": false,
+          "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+        },
+        "phases": 82,
+        "startup_private_bytes": 284061696,
+        "blank_private_bytes": 235851776,
+        "settled_private_bytes": 380809216,
+        "restart_private_bytes": 361680896,
+        "sampler": {
+          "requested_interval_ms": 100,
+          "tree_discovery_interval_ms": 500,
+          "actual_median_interval_ms": 185,
+          "actual_max_interval_ms": 925
+        },
+        "packages": 75,
+        "imports": [
+          {
+            "season_type": "regular",
+            "import_and_render_ms": 171.45650000000023,
+            "rows": 905
+          },
+          {
+            "season_type": "playoff",
+            "import_and_render_ms": 124.39979999999923,
+            "rows": 332
+          }
+        ],
+        "warm_queries": 20
+      },
+      {
+        "label": "sparse-1",
+        "variant": "sparse",
+        "browser": "153.0.8010.12",
+        "artifact": {
+          "commit": "c92d4e006027bf7cb6f1480527399250582d2754",
+          "shell_build": "f98c2c05a5f13868cc2a329d817e80762297116b489e8674db77b12eb25e73f6",
+          "verified_files": 182,
+          "packages": 75
+        },
+        "peak_private_bytes": 406487040,
+        "peak_working_set_bytes": 693583872,
+        "target": {
+          "sampled_private_bytes_below_target": false,
+          "sampled_sum_working_set_below_target": false,
+          "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+        },
+        "phases": 82,
+        "startup_private_bytes": 288063488,
+        "blank_private_bytes": 236687360,
+        "settled_private_bytes": 377565184,
+        "restart_private_bytes": 357982208,
+        "sampler": {
+          "requested_interval_ms": 100,
+          "tree_discovery_interval_ms": 500,
+          "actual_median_interval_ms": 184,
+          "actual_max_interval_ms": 928
+        },
+        "packages": 75,
+        "imports": [
+          {
+            "season_type": "regular",
+            "import_and_render_ms": 179.2346000000107,
+            "rows": 905
+          },
+          {
+            "season_type": "playoff",
+            "import_and_render_ms": 146.61299999999756,
+            "rows": 332
+          }
+        ],
+        "warm_queries": 20
+      },
+      {
+        "label": "sparse-2",
+        "variant": "sparse",
+        "browser": "153.0.8010.12",
+        "artifact": {
+          "commit": "c92d4e006027bf7cb6f1480527399250582d2754",
+          "shell_build": "f98c2c05a5f13868cc2a329d817e80762297116b489e8674db77b12eb25e73f6",
+          "verified_files": 182,
+          "packages": 75
+        },
+        "peak_private_bytes": 424476672,
+        "peak_working_set_bytes": 716529664,
+        "target": {
+          "sampled_private_bytes_below_target": false,
+          "sampled_sum_working_set_below_target": false,
+          "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+        },
+        "phases": 82,
+        "startup_private_bytes": 298663936,
+        "blank_private_bytes": 249118720,
+        "settled_private_bytes": 392712192,
+        "restart_private_bytes": 374431744,
+        "sampler": {
+          "requested_interval_ms": 100,
+          "tree_discovery_interval_ms": 500,
+          "actual_median_interval_ms": 197,
+          "actual_max_interval_ms": 1008
+        },
+        "packages": 75,
+        "imports": [
+          {
+            "season_type": "regular",
+            "import_and_render_ms": 142.76020000000426,
+            "rows": 905
+          },
+          {
+            "season_type": "playoff",
+            "import_and_render_ms": 122.14890000000014,
+            "rows": 332
+          }
+        ],
+        "warm_queries": 20
+      },
+      {
+        "label": "default-2",
+        "variant": "default",
+        "browser": "153.0.8010.12",
+        "artifact": {
+          "commit": "c92d4e006027bf7cb6f1480527399250582d2754",
+          "shell_build": "91719f34cf03e37c911ee878db9af45c05574e8057b623df6ebba7bb737e6e19",
+          "verified_files": 182,
+          "packages": 75
+        },
+        "peak_private_bytes": 409423872,
+        "peak_working_set_bytes": 706351104,
+        "target": {
+          "sampled_private_bytes_below_target": false,
+          "sampled_sum_working_set_below_target": false,
+          "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+        },
+        "phases": 82,
+        "startup_private_bytes": 291164160,
+        "blank_private_bytes": 248819712,
+        "settled_private_bytes": 392544256,
+        "restart_private_bytes": 371785728,
+        "sampler": {
+          "requested_interval_ms": 100,
+          "tree_discovery_interval_ms": 500,
+          "actual_median_interval_ms": 188,
+          "actual_max_interval_ms": 945
+        },
+        "packages": 75,
+        "imports": [
+          {
+            "season_type": "regular",
+            "import_and_render_ms": 127.86260000000766,
+            "rows": 905
+          },
+          {
+            "season_type": "playoff",
+            "import_and_render_ms": 77.78820000000997,
+            "rows": 332
+          }
+        ],
+        "warm_queries": 20
+      }
+    ],
+    "pairs": [
+      {
+        "pair": 1,
+        "default_private_bytes": 408674304,
+        "sparse_private_bytes": 406487040,
+        "private_reduction_bytes": 2187264,
+        "working_set_reduction_bytes": 4161536
+      },
+      {
+        "pair": 2,
+        "default_private_bytes": 409423872,
+        "sparse_private_bytes": 424476672,
+        "private_reduction_bytes": -15052800,
+        "working_set_reduction_bytes": -10178560
+      }
+    ],
+    "all_four_complete": true,
+    "fixed_target_bytes": 262144000,
+    "all_private_target_fail": true,
+    "all_working_set_target_fail": true,
+    "both_private_pairs_lower": false,
+    "interpretation": "Two pairs show observed direction only, not a statistical general effect. No baseline subtraction, forced GC, workload reduction or Android extrapolation."
+  },
+  "standard_product_entrypoint": {
+    "command": [
+      "node",
+      "scripts/build-browser.mjs",
+      "--sparse-storage",
+      "--offline"
+    ],
+    "source": "c92d4e006027bf7cb6f1480527399250582d2754",
+    "features": [
+      "sparse-storage"
+    ],
+    "wasm_sha256": "f0f6c2f1c84cd3a4f0aa9ccabfc460ab3f01cc9592c5e694a390fc49d738cb99",
+    "matches_measured_sparse_wasm": true,
+    "production_builder_and_verifier_pass": true,
+    "cache_scope": "Warm browser-release artifacts copied from the same source checkout with unchanged Rust/manifests/lock; Cargo revalidates fingerprints. All OS sampling completed before build."
+  },
+  "browser_unit_tests": 163,
+  "typescript_check": "passed",
+  "diagnostic": {
+    "scope": "Separate fifth sparse run after normal ABBA; forced GC is an attribution intervention, never normal acceptance",
+    "checkpoints": {
+      "before": {
+        "main_heap": {
+          "usedSize": 4235984,
+          "totalSize": 15065088,
+          "embedderHeapUsedSize": 3188744,
+          "backingStorageSize": 4599830
+        },
+        "worker_heap": {
+          "usedSize": 1132668,
+          "totalSize": 4194304,
+          "embedderHeapUsedSize": 722448,
+          "backingStorageSize": 8149820
+        },
+        "worker_wasm": {
+          "linear_memory_bytes": 14942208
+        },
+        "main_dom": {
+          "documents": 3,
+          "nodes": 1895,
+          "jsEventListeners": 133
+        }
+      },
+      "after_main_gc": {
+        "main_heap": {
+          "usedSize": 3371392,
+          "totalSize": 4055040,
+          "embedderHeapUsedSize": 2832376,
+          "backingStorageSize": 4064767
+        },
+        "worker_heap": {
+          "usedSize": 1134380,
+          "totalSize": 4194304,
+          "embedderHeapUsedSize": 722448,
+          "backingStorageSize": 8149820
+        },
+        "worker_wasm": {
+          "linear_memory_bytes": 14942208
+        },
+        "main_dom": {
+          "documents": 3,
+          "nodes": 1895,
+          "jsEventListeners": 133
+        }
+      },
+      "after_worker_gc": {
+        "main_heap": {
+          "usedSize": 3371392,
+          "totalSize": 4055040,
+          "embedderHeapUsedSize": 2832376,
+          "backingStorageSize": 4064767
+        },
+        "worker_heap": {
+          "usedSize": 449920,
+          "totalSize": 1572864,
+          "embedderHeapUsedSize": 438104,
+          "backingStorageSize": 24843
+        },
+        "worker_wasm": {
+          "linear_memory_bytes": 14942208
+        },
+        "main_dom": {
+          "documents": 3,
+          "nodes": 1895,
+          "jsEventListeners": 133
+        }
+      }
+    },
+    "phase_end_private_bytes": {
+      "diagnostic_before_gc": 389128192,
+      "diagnostic_main_gc": 351461376,
+      "diagnostic_worker_gc": 349581312,
+      "engine_restarted": 348344320
+    }
+  },
+  "process_attribution": {
+    "experiment": "MISER-EXP-011",
+    "scope": "Separate sparse diagnostic; last sample per phase grouped by CDP process IDs at that phase snapshot. Roles do not identify individual JS heaps; unmatched child processes retained as unmapped. Times are not exactly simultaneous with CDP snapshots.",
+    "phases": [
+      {
+        "phase": "diagnostic_before_gc",
+        "sample_elapsed_ms": 77072,
+        "private_bytes_by_cdp_type": {
+          "renderer": 201687040,
+          "browser": 49532928,
+          "network.mojom.NetworkService": 17465344,
+          "unmapped": 5812224,
+          "GPU": 104288256,
+          "storage.mojom.StorageService": 10342400
+        },
+        "total_private_bytes": 389128192
+      },
+      {
+        "phase": "diagnostic_main_gc",
+        "sample_elapsed_ms": 79406,
+        "private_bytes_by_cdp_type": {
+          "renderer": 164036608,
+          "browser": 49532928,
+          "network.mojom.NetworkService": 17465344,
+          "unmapped": 5812224,
+          "GPU": 104271872,
+          "storage.mojom.StorageService": 10342400
+        },
+        "total_private_bytes": 351461376
+      },
+      {
+        "phase": "diagnostic_worker_gc",
+        "sample_elapsed_ms": 80552,
+        "private_bytes_by_cdp_type": {
+          "renderer": 162885632,
+          "browser": 49369088,
+          "network.mojom.NetworkService": 17465344,
+          "unmapped": 5812224,
+          "GPU": 103706624,
+          "storage.mojom.StorageService": 10342400
+        },
+        "total_private_bytes": 349581312
+      }
+    ],
+    "observation": "GPU approximately99MiB before collection versus14.25MiB WASM capacity. All renderers together approximately192MiB before main GC, approximately155MiB after worker GC. Neither category is interchangeable with live Rust allocation."
+  },
+  "logs": [
+    {
+      "path": "miser-browser-sparse-process-logs/exp011-typescript-check.log.gz",
+      "raw_sha256": "9e252acce0b00f3157c32fa281639ec618b2d10e5c9292635e134c48a59e3cf6",
+      "gzip_sha256": "297accb7a732f80bb70b09c7086fb8bc7d1f130973058f8f23c913c1c00dafbf"
+    },
+    {
+      "path": "miser-browser-sparse-process-logs/exp011-browser-unit-tests.log.gz",
+      "raw_sha256": "06ee6a1512336cb60794942af17083600a2b844ba84a9e4449cda856179b385b",
+      "gzip_sha256": "9b12303ad8b31896fefd93c91f60974835e9627ce05c675c1bf04c3a006a8f02"
+    },
+    {
+      "path": "miser-browser-sparse-process-logs/exp011-standard-entrypoint.log.gz",
+      "raw_sha256": "082e5b2624451dc00c564be88f9bcc6226e96f6264b1812cd99e3c2d4d99ca4b",
+      "gzip_sha256": "94b2dabf62882a5bfa8596e012aa28e33b14d296402213ad8df41992c900b3b2"
+    },
+    {
+      "path": "miser-browser-sparse-process-logs/exp011-standard-build-validation.log.gz",
+      "raw_sha256": "bbb4cebf2f5b7e084ca2c1cf684521de29465e5a2273f9c0c0ec92cf21d4c7fb",
+      "gzip_sha256": "3f55b27c117ae96bb22ca7b66e84c5d7ba3b123a4c61008d5b6e2705f17d81d3"
+    }
+  ],
+  "raw_evidence_private_repository": "https://github.com/giodl73-repo/MISER",
+  "raw_evidence_path": "evidence/EXP-011.md",
+  "conclusion": "Native and WASM component savings do not establish repeatable whole-browser peak reduction: pair1 lower2.09MiB, pair2 higher14.36MiB. All four normal250MiB comparisons fail. Backend stays opt-in; Android deferred."
+}

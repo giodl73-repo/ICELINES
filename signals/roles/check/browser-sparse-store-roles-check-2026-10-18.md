@@ -4,7 +4,7 @@ topic: browser-sparse-store
 date: 2026-10-18
 roles_used: 6
 p1_count: 0
-verdict: APPROVED-SCOPED
+verdict: APPROVED-WITH-CONDITIONS
 ---
 
 # Prepared browser sparse ownership review
@@ -40,3 +40,13 @@ parity plus measured owner/query/platform tradeoffs. All five P2 resolved.
 Native/WASM checks and actual replay pass; scoped approval covers this opt-in
 candidate. See context/waves/2026-10-03-browser-wasm/evidence/miser-browser-sparse-local.json. Browser 250 MiB
 and Android acceptance remain separate, with no budget waiver or publication claim.
+
+
+Whole-browser follow-through (EXP011): four fresh complete ABBA runs pass all 75
+package/two archive/20 warm-query/restart checks. Pair directions are mixed
+(-2.09 MiB and +14.36 MiB sparse private peaks). All normal 250 MiB comparisons fail;
+this is a failed resource gate, not full adoption approval. The opt-in build and
+faithful evidence retain scoped approval. Standard feature build, artifact identity,
+TypeScript and 163 browser tests pass. Separate GC attribution and raw cadence/source
+checks are retained; physical Android stays deferred. See the process-memory JSON
+beside the original native/WASM evidence. MISER-011 tracks next renderer/GPU/JS work.
