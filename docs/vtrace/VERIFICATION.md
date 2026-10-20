@@ -664,3 +664,18 @@ now uses all-targets. Private hosted Linux is still blocked by billing. Raw trac
 source/hardware metadata stay in MISER; public identity extracts and OS samples are
 beside miser-startup-attribution-20261020.json. Instrumented values do not establish
 normal250MiB acceptance. No product change, publication or Android claim.
+
+
+## VER-BROWSER-ALLOCATOR-ATTRIBUTION-001: Provider/identity diagnostics
+
+CHG-124 / REQ-BROWSER-001: two unchanged-artifact seven-stage startup diagnostics
+return ten successful detailed deterministic:false requests. Native async spans
+bridge original GUIDs to exported IDs and app PID; phase bounds/unique group/provider
+metrics validate. Rust types keep ID namespaces distinct. Hex byte decoding preserves
+other units; roots/children/ownership are not summed or equated with OS private.
+Local16 tests and EXP014 exact replay pass. Source/trace/ownership custody is retained
+in MISER (14 raw/source archives), with public request/native-span extracts beside
+miser-allocator-attribution-20261020.json. Reported startup malloc/V8 and growing cc
+metrics are descriptive, not a proven leak, CSS saving or full-workload result.
+No product edit, GC request, worker attachment, service-worker block, launch change
+or normal budget waiver. All original250MiB/mobile/private-hosted gates remain open.

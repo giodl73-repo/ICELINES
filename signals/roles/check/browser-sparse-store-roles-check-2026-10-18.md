@@ -96,3 +96,12 @@ attachment and40s running status do not prove a causal lifetime mechanism. Six
 MISER lenses approve diagnostic reporting with conditions; shared-renderer allocator
 attribution remains next. New Rust streaming guards run in all-target tests (12 local
 passes), without a hosted-private success claim. See the EXP014 bounded receipt.
+
+
+EXP015 addendum: BENCH verifies ten successful detailed nondeterministic dumps,
+original/native/export ID linkage and16 local guards plus exact legacy replay.
+PACE/KEEL require provider units/ownership, two ID namespaces and diagnostic scope
+to stay explicit; no roots/children sum or equation with OS private bytes. Growing
+compositor accounting is not a proven CSS cause or leak. Six MISER lenses approve
+evidence/tooling with conditions. No application changes or normal250MiB/mobile/
+private-hosted acceptance. Full-workload compositor/native lifetimes remain next.

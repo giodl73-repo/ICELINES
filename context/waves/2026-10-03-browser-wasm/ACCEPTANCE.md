@@ -66,6 +66,19 @@ budget evidence. See `evidence/miser-startup-attribution-20261020.json` and sele
 identity/OS archives. No application changes. Allocator-level renderer attribution
 is next; all original resource/mobile and private-hosted gates remain open.
 
+EXP015 collects ten successful detailed deterministic:false dumps across two fresh
+seven-stage diagnostics. Rust analysis links each original CDP GUID through its
+native async span to the unique exported group and app PID; the two ID namespaces
+are deliberately distinct. Offline-ready provider effective_size is21.19/24.61MiB
+for malloc and6.57/6.32MiB for V8. Compositor cc reports5.625MiB at startup,15.5625MiB
+after one season/detail and20.5625MiB after restart. These ownership-adjusted provider
+metrics are kept separate, not summed or equated with OS private bytes; no leak or
+specific CSS cause is established. All16 local tests and exact EXP014 replay pass.
+See `evidence/miser-allocator-attribution-20261020.json` and request/native-span
+extracts. Full traces/ownership graphs stay in MISER. No application change; the
+full75-package compositor/native lifecycle investigation remains next. None of
+these instrumented observations replaces the normal250MiB gate.
+
 The original 250 MiB gate still fails in EXP011; physical Android, full repository
 adoption and rich-report density remain open. This candidate does not replace
 the current public release below.
