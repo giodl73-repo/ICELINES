@@ -633,7 +633,7 @@ remain; private MISER hosted Linux is independently blocked by account billing.
 CHG-124 / REQ-BROWSER-001: EXP013 uses unchanged engine/input/styles/launch/sampler
 with four full82-phase normal controls. Private peaks387.14/402.25/386.92/399.96MiB
 are mixed; repeated10MiB criterion fails and every250MiB gate fails. DOM mutations
-60/60→0/0 do not establish whole-browser savings. UI trialff77c214 is reverted at
+60/60â†’0/0 do not establish whole-browser savings. UI trialff77c214 is reverted at
 023138e8. Actual standard build restores exact original main.js/WASM;163 units,
 resident selection/eviction/export/unload, offline/viewport/keyboard/AX/catalog/
 persisted and24-page/two-parser PDF checks pass. Fresh-load completion and nested
@@ -641,7 +641,7 @@ Session-library probe failures are retained and corrected. Hosted39488159830 is 
 success for rejected trial477e7675; restored product paths match earlierda22174c.
 Receipt: context/waves/2026-10-03-browser-wasm/evidence/miser-resident-trial-20261020.json.
 All66 raw/source archives and traces remain in MISER; public raw reports/PDF/logs
-are adjacent. Startup private277.70–281.84MiB already fails the budget. Governing
+are adjacent. Startup private277.70â€“281.84MiB already fails the budget. Governing
 500ms warm target passes (166.78ms retained); Android/private Linux billing remain.
 
 
@@ -679,3 +679,19 @@ miser-allocator-attribution-20261020.json. Reported startup malloc/V8 and growin
 metrics are descriptive, not a proven leak, CSS saving or full-workload result.
 No product edit, GC request, worker attachment, service-worker block, launch change
 or normal budget waiver. All original250MiB/mobile/private-hosted gates remain open.
+
+
+## VER-BROWSER-FULL-ALLOCATOR-LIFETIMES-001: Full workload diagnostics
+
+CHG-124 / REQ-BROWSER-001: EXP016 retains two failed-after8 captures and two complete
+full75 diagnostics. The latter preserve eight residents,905/332 imports,20 committed
+queries and restart, with18 successful linked requests and trace-loss:false. Rust
+validates ten ordered checkpoints, package/count/residency/import identities, clocks
+and separate global-only export blocks. cc is nonmonotonic; native allocator roots
+are higher near the first8-window than after75. Loading/eviction attribution remains
+next, with no leak/Rust ownership/CSS saving claim.20 tests, strictClippy, byte-exact
+legacy replays and a synthetic strict/partial failure guard pass. Public receipt:
+miser-full-allocator-lifetimes-20261020.json with four original request-marker
+extracts. Complete32 raw/source/guard archives remain in MISER. Instrumentation
+causes substantial overhead; normal250MiB controls, Android and private-hosted
+Linux requirements remain open. Application/Rust/build paths remain unchanged.

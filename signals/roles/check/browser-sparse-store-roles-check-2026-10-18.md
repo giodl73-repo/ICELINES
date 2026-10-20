@@ -105,3 +105,12 @@ to stay explicit; no roots/children sum or equation with OS private bytes. Growi
 compositor accounting is not a proven CSS cause or leak. Six MISER lenses approve
 evidence/tooling with conditions. No application changes or normal250MiB/mobile/
 private-hosted acceptance. Full-workload compositor/native lifetimes remain next.
+
+
+EXP016 evidence addendum (2026-10-20): two failed initial captures and two complete
+full75 diagnostics retained. All18 final requests pass strict linkage and no-loss
+checks;20 lab tests and exact legacy replays pass. Separate global namespaces and
+failed-request omission guards preserve measurement boundaries. Nonmonotonic cc
+refutes steady growth at observed checkpoints; transient native loading/eviction
+lifetimes remain next. Six MISER role lenses approve evidence scope with conditions.
+No product change, optimization saving, normal250MiB acceptance or mobile claim.
