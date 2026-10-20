@@ -4,7 +4,7 @@ Updated: 2026-10-20. Requirement: REQ-BROWSER-001; work packages WP-BW-01..06.
 This reconciles implemented features with the plan's remaining acceptance gates.
 It does not declare the full plan complete.
 
-## Unpublished sparse-storage candidate validation â€” 2026-10-20
+## Unpublished sparse-storage candidate validation — 2026-10-20
 
 PR #113 remains opt-in and unpublished. Retained sparse source c92d4e00 passes
 owned Chromium process-close/offline reopening, fresh 835-player query/detail,
@@ -48,7 +48,7 @@ build,163 units, restored browser suites and two-parser PDF pass; original main.
 and sparse WASM bytes match. Hosted39488159830 passes for the rejected trial477e7675,
 not the restored head. Restored application/Rust/build source matches the earlier
 hostedda22174c. See `evidence/miser-resident-trial-20261020.json` and adjacent raw
-reports. Startup alone277.70â€“281.84MiB fails250MiB before the package loop; startup
+reports. Startup alone277.70–281.84MiB fails250MiB before the package loop; startup
 process attribution is next. The166.78ms warm observation remains below the governing
 500ms target and above the stricter100ms observation. No requirement changes.
 
@@ -350,7 +350,7 @@ recorded separately in MEMORY-ATTRIBUTION.md and the catalog-context artifacts.
 | Responsive UI, keyboard, share routes and source disclosures | Selected 360px/desktop tests and deployed export/view checks | Partial acceptance; not a physical-phone or full assistive-technology claim |
 | Appearance choices | Night Game, Fresh Ice, Hockey Club; live switching, preference reload and cross-tab observations | Implemented |
 | Exact release publication and documentation preservation | Master38495299888; publication38497514039; final restore38499320777; final static aggregate272 files, original503 retained | Current validation bytes/documentation verified; complete upload guard covers hidden files |
-| Application update with saved data | Public one-tab4d1f513eâ†’2e265236 update and2e265236â†’4d1f513e rollback preserve saved933-player season/frozen schedule; actual gzip execution/source SHA | Selected public path passes; not arbitrary user data or a new two-tab proof |
+| Application update with saved data | Public one-tab4d1f513e→2e265236 update and2e265236→4d1f513e rollback preserve saved933-player season/frozen schedule; actual gzip execution/source SHA | Selected public path passes; not arbitrary user data or a new two-tab proof |
 | Deployed offline reopening and saved query | gzip-delivery-public-final-offline-20261013.json: saved bytes restore, uncached probe fails, navigator offline, fresh eight-player filter/detail and executing-module SHA match | Current desktop path passes; physical mobile separate |
 | Previous-version rollback and forward restore | Rollback38498071961 and restore38499320777; exact code/data hashes, final offline/export after backed-up automation-history workaround | Scoped public roundtrip verified; failed export-time browser closures retained and qualified |
 | Whole-browser staging/resident peak memory | gzip-delivery-master-memory-20261013.json: all75 packages,8 residents,905/332 imports,20 committed queries/restart, original flags/sampler;388.74 MiB private peak | OPEN: fixed250 MiB target fails; no baseline subtraction, forced GC or workload reduction. Counters are not exact physical RAM |
@@ -396,7 +396,7 @@ Sources: `design/plans/2026-10-03-browser-wasm-workbench.md` section11.C and
 3. Continue whole-browser allocation optimization. The original isolated Windows
    process sampler covers every package phase, both 905/332-player archive imports,
    20 warm queries and restart. The corrected attached-row candidate shows repeated
-   private peaks near 540â€“542 MiB versus controls near 570â€“571 MiB. A corrected
+   private peaks near 540–542 MiB versus controls near 570–571 MiB. A corrected
    readiness barrier now proves commit of each warm query and measures the
    existing renderer at 548.02 MiB. The original
    total 250 MiB target is retained. Baseline-subtracted or forced-GC measurements
@@ -432,7 +432,7 @@ historical preparation. The authorized public rehearsal and final restore are
 now recorded in `evidence/public-rehearsal-provenance-20261013.json`; approval is
 no longer pending for that completed rehearsal.
 
-## Historical viewport candidate â€” superseded by current release
+## Historical viewport candidate — superseded by current release
 
 83da9b55 retains complete query results/exports while rendering a bounded viewport.
 Actual browser traversal covers all 933 skaters, correct last-player detail, forward
