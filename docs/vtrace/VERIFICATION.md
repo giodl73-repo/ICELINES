@@ -711,3 +711,25 @@ source contains one explicit JS input copy per digest; workers/native snapshots
 are outside this probe. View-based digest candidate is next with snapshot/offset/
 shared/transfer tests and normal ABBA checks. No application/default/publication
 change or250MiB/mobile/private-hosted acceptance.
+
+
+## VER-BROWSER-DIGEST-VIEW-TRIAL-001: Rejected trial and exact restoration
+
+CHG-124 / REQ-BROWSER-001: finalC09ce9a5c passes173 units/typecheck, ten Chromium
+semantic cases and offline/catalog/persisted/resident suites. Initial shared
+iterator/getter hash mismatches and revisionB browser-RAB rejection are retained.
+Fresh final normal ABBA passes all82-phase/75-package/eight/905-and332/20/restart
+coverage but private peaks391.12/393.00/420.58/383.19MiB fail the predeclared repeated
+10MiB adoption criterion. Raw samples independently reproduce each phase maximum;
+archive/package order/browser identities agree. All final warm maxima pass500ms;
+every original250MiB private/working-set gate fails. No observer/trace/GC/launch change.
+
+Reverted9bae39fd restores exact original application assets; only three build/offline
+metadata files differ from control. Restored172 units, ten original-copy browser
+cases and four focused suites pass. Nine generic semantic tests stay in consumer;
+allocation-specific assertions remain with the rejected source/probe. Public
+miser-digest-view-trial-20261020.json and31 raw archives retain reports/samples/failures/
+restoration checks;112 raw/source/log archives stay in MISER. Two initial normal
+runs are separate from finalC ABBA. No adopted memory gain, causal GC inference,
+merge/publication, Android or private hosted Linux acceptance. Next acquisition/
+staging ownership must preserve last-good recovery and exact bytes.

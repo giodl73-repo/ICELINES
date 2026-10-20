@@ -1,0 +1,857 @@
+{
+  "schema_version": 1,
+  "experiment": "MISER-EXP-018",
+  "change_id": "CHG-124",
+  "scope": "Rejected digest-view trial; normal final C ABBA distinct from initial semantically invalid pair; original application restored",
+  "summary": {
+    "experiment": "MISER-EXP-018",
+    "scope": "Final revision C normal full75 ABBA; initial A semantic failures and B browser failure retained separately",
+    "runs": [
+      {
+        "label": "final-control-1",
+        "artifact": {
+          "commit": "6a22d3fe10c0bf2cc7c2a2befe7cc1bc8a9d559d",
+          "shell_build": "7e7034fb011c0919634ddd74a7c5efb98a3c241308a9744165e14bb6222d7e88",
+          "verified_files": 182,
+          "packages": 75
+        },
+        "browser": "153.0.8010.12",
+        "archive": {
+          "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca",
+          "bytes": 149672
+        },
+        "peak_private_bytes": 410120192,
+        "peak_working_set_bytes": 706629632,
+        "warm_query_ms": [
+          54.50770000000193,
+          92.76369999999588,
+          61.825700000001234,
+          70.58280000000377,
+          55.916400000001886,
+          77.26579999999376,
+          65.23300000000745,
+          71.13289999999688,
+          63.71889999999257,
+          42.881200000003446,
+          91.7618000000075,
+          67.88259999999718,
+          65.77429999999003,
+          66.83439999999246,
+          65.26499999999942,
+          60.12510000000475,
+          62.58950000000186,
+          80.08969999999681,
+          61.96460000000661,
+          69.78949999999895
+        ],
+        "normal_phases": 82,
+        "package_ids": [
+          "20252026-regular",
+          "20242025-regular",
+          "20242025-playoff",
+          "20232024-regular",
+          "20232024-playoff",
+          "20222023-regular",
+          "20222023-playoff",
+          "20212022-regular",
+          "20212022-playoff",
+          "20202021-regular",
+          "20202021-playoff",
+          "20192020-regular",
+          "20192020-playoff",
+          "20182019-regular",
+          "20182019-playoff",
+          "20172018-regular",
+          "20172018-playoff",
+          "20162017-regular",
+          "20162017-playoff",
+          "20152016-regular",
+          "20152016-playoff",
+          "20142015-regular",
+          "20142015-playoff",
+          "20132014-regular",
+          "20132014-playoff",
+          "20122013-regular",
+          "20122013-playoff",
+          "20112012-regular",
+          "20112012-playoff",
+          "20102011-regular",
+          "20102011-playoff",
+          "20092010-regular",
+          "20092010-playoff",
+          "20082009-regular",
+          "20082009-playoff",
+          "20072008-regular",
+          "20072008-playoff",
+          "20062007-regular",
+          "20062007-playoff",
+          "20052006-regular",
+          "20052006-playoff",
+          "20032004-regular",
+          "20032004-playoff",
+          "20022003-regular",
+          "20022003-playoff",
+          "20012002-regular",
+          "20012002-playoff",
+          "20002001-regular",
+          "20002001-playoff",
+          "19992000-regular",
+          "19992000-playoff",
+          "19981999-regular",
+          "19981999-playoff",
+          "19971998-regular",
+          "19971998-playoff",
+          "19961997-regular",
+          "19961997-playoff",
+          "19951996-regular",
+          "19951996-playoff",
+          "19941995-regular",
+          "19941995-playoff",
+          "19931994-regular",
+          "19931994-playoff",
+          "19921993-regular",
+          "19921993-playoff",
+          "19911992-regular",
+          "19911992-playoff",
+          "19901991-regular",
+          "19901991-playoff",
+          "19891990-regular",
+          "19891990-playoff",
+          "19881989-regular",
+          "19881989-playoff",
+          "19871988-regular",
+          "19871988-playoff"
+        ],
+        "target": {
+          "sampled_private_bytes_below_target": false,
+          "sampled_sum_working_set_below_target": false,
+          "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+        },
+        "report_sha256": "fa3e91304cb7d6a62fb4594925f27f6a19516f9c8648692bcf3a586fdf50b4d5",
+        "samples_sha256": "d77acb7c979c24956e6551e138044f7ebcfe21eac4fb06a44ab9ef95a686cf35"
+      },
+      {
+        "label": "final-candidate-1",
+        "artifact": {
+          "commit": "09ce9a5c7f1859f02fde44e5cfcebf909cfca239",
+          "shell_build": "07cef715c1efe67d7700e66362b3bf2bd041b0cfc33d1318e2ca8eae58cd3219",
+          "verified_files": 182,
+          "packages": 75
+        },
+        "browser": "153.0.8010.12",
+        "archive": {
+          "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca",
+          "bytes": 149672
+        },
+        "peak_private_bytes": 412090368,
+        "peak_working_set_bytes": 695713792,
+        "warm_query_ms": [
+          54.087200000009034,
+          90.45590000000084,
+          70.12400000001071,
+          65.85099999999511,
+          59.51780000000144,
+          73.12350000000151,
+          39.048399999999674,
+          93.90690000000177,
+          64.72460000000137,
+          70.17970000000787,
+          60.50710000000254,
+          71.02070000000822,
+          65.01819999999134,
+          56.35359999998764,
+          65.77760000000126,
+          79.05040000000736,
+          56.589300000006915,
+          78.53239999999641,
+          52.71710000000894,
+          73.17809999999008
+        ],
+        "normal_phases": 82,
+        "package_ids": [
+          "20252026-regular",
+          "20242025-regular",
+          "20242025-playoff",
+          "20232024-regular",
+          "20232024-playoff",
+          "20222023-regular",
+          "20222023-playoff",
+          "20212022-regular",
+          "20212022-playoff",
+          "20202021-regular",
+          "20202021-playoff",
+          "20192020-regular",
+          "20192020-playoff",
+          "20182019-regular",
+          "20182019-playoff",
+          "20172018-regular",
+          "20172018-playoff",
+          "20162017-regular",
+          "20162017-playoff",
+          "20152016-regular",
+          "20152016-playoff",
+          "20142015-regular",
+          "20142015-playoff",
+          "20132014-regular",
+          "20132014-playoff",
+          "20122013-regular",
+          "20122013-playoff",
+          "20112012-regular",
+          "20112012-playoff",
+          "20102011-regular",
+          "20102011-playoff",
+          "20092010-regular",
+          "20092010-playoff",
+          "20082009-regular",
+          "20082009-playoff",
+          "20072008-regular",
+          "20072008-playoff",
+          "20062007-regular",
+          "20062007-playoff",
+          "20052006-regular",
+          "20052006-playoff",
+          "20032004-regular",
+          "20032004-playoff",
+          "20022003-regular",
+          "20022003-playoff",
+          "20012002-regular",
+          "20012002-playoff",
+          "20002001-regular",
+          "20002001-playoff",
+          "19992000-regular",
+          "19992000-playoff",
+          "19981999-regular",
+          "19981999-playoff",
+          "19971998-regular",
+          "19971998-playoff",
+          "19961997-regular",
+          "19961997-playoff",
+          "19951996-regular",
+          "19951996-playoff",
+          "19941995-regular",
+          "19941995-playoff",
+          "19931994-regular",
+          "19931994-playoff",
+          "19921993-regular",
+          "19921993-playoff",
+          "19911992-regular",
+          "19911992-playoff",
+          "19901991-regular",
+          "19901991-playoff",
+          "19891990-regular",
+          "19891990-playoff",
+          "19881989-regular",
+          "19881989-playoff",
+          "19871988-regular",
+          "19871988-playoff"
+        ],
+        "target": {
+          "sampled_private_bytes_below_target": false,
+          "sampled_sum_working_set_below_target": false,
+          "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+        },
+        "report_sha256": "ebcd36c5b98e94fc6127e52af459feac8f24a585a87fb9c2bc4d0803c5eff0f0",
+        "samples_sha256": "275daaa2b11a1767036cbe48fc64b98d83085446ffdb4aca6743d1cd910aeea9"
+      },
+      {
+        "label": "final-candidate-2",
+        "artifact": {
+          "commit": "09ce9a5c7f1859f02fde44e5cfcebf909cfca239",
+          "shell_build": "07cef715c1efe67d7700e66362b3bf2bd041b0cfc33d1318e2ca8eae58cd3219",
+          "verified_files": 182,
+          "packages": 75
+        },
+        "browser": "153.0.8010.12",
+        "archive": {
+          "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca",
+          "bytes": 149672
+        },
+        "peak_private_bytes": 441012224,
+        "peak_working_set_bytes": 739422208,
+        "warm_query_ms": [
+          76.09010000000126,
+          69.5332999999955,
+          63.05879999999888,
+          60.27870000000985,
+          65.37880000000587,
+          66.56810000000405,
+          79.04879999998957,
+          61.79099999999744,
+          69.6420999999973,
+          61.55610000000161,
+          72.45799999999872,
+          49.259699999995064,
+          72.70789999999397,
+          76.90380000000005,
+          56.48759999999311,
+          78.95960000000196,
+          65.24180000000342,
+          57.01520000000892,
+          69.13799999999173,
+          76.20059999999648
+        ],
+        "normal_phases": 82,
+        "package_ids": [
+          "20252026-regular",
+          "20242025-regular",
+          "20242025-playoff",
+          "20232024-regular",
+          "20232024-playoff",
+          "20222023-regular",
+          "20222023-playoff",
+          "20212022-regular",
+          "20212022-playoff",
+          "20202021-regular",
+          "20202021-playoff",
+          "20192020-regular",
+          "20192020-playoff",
+          "20182019-regular",
+          "20182019-playoff",
+          "20172018-regular",
+          "20172018-playoff",
+          "20162017-regular",
+          "20162017-playoff",
+          "20152016-regular",
+          "20152016-playoff",
+          "20142015-regular",
+          "20142015-playoff",
+          "20132014-regular",
+          "20132014-playoff",
+          "20122013-regular",
+          "20122013-playoff",
+          "20112012-regular",
+          "20112012-playoff",
+          "20102011-regular",
+          "20102011-playoff",
+          "20092010-regular",
+          "20092010-playoff",
+          "20082009-regular",
+          "20082009-playoff",
+          "20072008-regular",
+          "20072008-playoff",
+          "20062007-regular",
+          "20062007-playoff",
+          "20052006-regular",
+          "20052006-playoff",
+          "20032004-regular",
+          "20032004-playoff",
+          "20022003-regular",
+          "20022003-playoff",
+          "20012002-regular",
+          "20012002-playoff",
+          "20002001-regular",
+          "20002001-playoff",
+          "19992000-regular",
+          "19992000-playoff",
+          "19981999-regular",
+          "19981999-playoff",
+          "19971998-regular",
+          "19971998-playoff",
+          "19961997-regular",
+          "19961997-playoff",
+          "19951996-regular",
+          "19951996-playoff",
+          "19941995-regular",
+          "19941995-playoff",
+          "19931994-regular",
+          "19931994-playoff",
+          "19921993-regular",
+          "19921993-playoff",
+          "19911992-regular",
+          "19911992-playoff",
+          "19901991-regular",
+          "19901991-playoff",
+          "19891990-regular",
+          "19891990-playoff",
+          "19881989-regular",
+          "19881989-playoff",
+          "19871988-regular",
+          "19871988-playoff"
+        ],
+        "target": {
+          "sampled_private_bytes_below_target": false,
+          "sampled_sum_working_set_below_target": false,
+          "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+        },
+        "report_sha256": "ea1298ee6cab8b7fdcc34b511d530c9d0ba632c5f7923e6997e2ec60a9aad8b3",
+        "samples_sha256": "6260e2dc698be57cd1575cda9641742539ed97afb50c96bf65b102decb89e4c2"
+      },
+      {
+        "label": "final-control-2",
+        "artifact": {
+          "commit": "6a22d3fe10c0bf2cc7c2a2befe7cc1bc8a9d559d",
+          "shell_build": "7e7034fb011c0919634ddd74a7c5efb98a3c241308a9744165e14bb6222d7e88",
+          "verified_files": 182,
+          "packages": 75
+        },
+        "browser": "153.0.8010.12",
+        "archive": {
+          "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca",
+          "bytes": 149672
+        },
+        "peak_private_bytes": 401805312,
+        "peak_working_set_bytes": 683589632,
+        "warm_query_ms": [
+          55.80109999999695,
+          89.42770000000019,
+          66.59819999999308,
+          60.00380000000587,
+          73.73530000000028,
+          62.2277000000031,
+          60.2667999999976,
+          67.75149999999849,
+          81.17270000001008,
+          58.999299999995856,
+          60.28669999999693,
+          76.97490000000107,
+          60.76980000000913,
+          61.63439999999537,
+          54.86059999999998,
+          90.38999999999942,
+          60.53889999999956,
+          73.36000000000058,
+          62.31140000000596,
+          65.79690000000119
+        ],
+        "normal_phases": 82,
+        "package_ids": [
+          "20252026-regular",
+          "20242025-regular",
+          "20242025-playoff",
+          "20232024-regular",
+          "20232024-playoff",
+          "20222023-regular",
+          "20222023-playoff",
+          "20212022-regular",
+          "20212022-playoff",
+          "20202021-regular",
+          "20202021-playoff",
+          "20192020-regular",
+          "20192020-playoff",
+          "20182019-regular",
+          "20182019-playoff",
+          "20172018-regular",
+          "20172018-playoff",
+          "20162017-regular",
+          "20162017-playoff",
+          "20152016-regular",
+          "20152016-playoff",
+          "20142015-regular",
+          "20142015-playoff",
+          "20132014-regular",
+          "20132014-playoff",
+          "20122013-regular",
+          "20122013-playoff",
+          "20112012-regular",
+          "20112012-playoff",
+          "20102011-regular",
+          "20102011-playoff",
+          "20092010-regular",
+          "20092010-playoff",
+          "20082009-regular",
+          "20082009-playoff",
+          "20072008-regular",
+          "20072008-playoff",
+          "20062007-regular",
+          "20062007-playoff",
+          "20052006-regular",
+          "20052006-playoff",
+          "20032004-regular",
+          "20032004-playoff",
+          "20022003-regular",
+          "20022003-playoff",
+          "20012002-regular",
+          "20012002-playoff",
+          "20002001-regular",
+          "20002001-playoff",
+          "19992000-regular",
+          "19992000-playoff",
+          "19981999-regular",
+          "19981999-playoff",
+          "19971998-regular",
+          "19971998-playoff",
+          "19961997-regular",
+          "19961997-playoff",
+          "19951996-regular",
+          "19951996-playoff",
+          "19941995-regular",
+          "19941995-playoff",
+          "19931994-regular",
+          "19931994-playoff",
+          "19921993-regular",
+          "19921993-playoff",
+          "19911992-regular",
+          "19911992-playoff",
+          "19901991-regular",
+          "19901991-playoff",
+          "19891990-regular",
+          "19891990-playoff",
+          "19881989-regular",
+          "19881989-playoff",
+          "19871988-regular",
+          "19871988-playoff"
+        ],
+        "target": {
+          "sampled_private_bytes_below_target": false,
+          "sampled_sum_working_set_below_target": false,
+          "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+        },
+        "report_sha256": "2ef88d1f4e036cbbd408eba9e5b574e472ea0c84889046d68a04e18941e9ede5",
+        "samples_sha256": "5ebd352da23d77e5af97a75fc9a575eed20439e6c23815b1cc1089c239b9bf52"
+      }
+    ],
+    "pair_private_reductions_bytes": [
+      -1970176,
+      -39206912
+    ],
+    "predeclared_required_reduction_bytes_each": 10485760,
+    "adoption_criterion_passed": false,
+    "original_250_mib_gate_passed_all_runs": false,
+    "warm_500ms_passed_all_runs": true,
+    "initial_normal_runs": [
+      {
+        "label": "control-1",
+        "artifact": {
+          "commit": "6a22d3fe10c0bf2cc7c2a2befe7cc1bc8a9d559d",
+          "shell_build": "7e7034fb011c0919634ddd74a7c5efb98a3c241308a9744165e14bb6222d7e88",
+          "verified_files": 182,
+          "packages": 75
+        },
+        "peak_private_bytes": 404406272,
+        "completed": true,
+        "scope": "Initial semantically rejected candidate; not part of final C ABBA"
+      },
+      {
+        "label": "candidate-1",
+        "artifact": {
+          "commit": "0bafb033f04e598e7df9464d0973d53d37bb7d1d",
+          "shell_build": "1d206c93f1cdfd18a0f5967408eb918c07ef10e2848e164e91625961bcff1668",
+          "verified_files": 182,
+          "packages": 75
+        },
+        "peak_private_bytes": 409382912,
+        "completed": true,
+        "scope": "Initial semantically rejected candidate; not part of final C ABBA"
+      }
+    ],
+    "decision": "Rejected/reverted application at9bae39fd; retained semantic tests and negative evidence",
+    "restoration": {
+      "restored_source": "9bae39fd6f7682d0d3468fe0417daf20ad120894",
+      "control_source": "6a22d3fe10c0bf2cc7c2a2befe7cc1bc8a9d559d",
+      "artifact_differences": [
+        "build-info.json",
+        "shell-manifest.json",
+        "sw.js"
+      ],
+      "application_assets_exactly_equal": true,
+      "restored_units": 172,
+      "restored_semantics": 10,
+      "four_focused_browser_suites": true
+    },
+    "candidate_node_tests": 173,
+    "restored_node_tests": 172,
+    "lab_all_target_tests": 22,
+    "functional_checks": [
+      {
+        "variant": "initial",
+        "runner": "offline-reopen",
+        "verified": true,
+        "report_sha256": "cae8d7b4c78e42212dd4e39fe2cfa8a724751bc5091a3e09b1b02aad06c5a1f8"
+      },
+      {
+        "variant": "initial",
+        "runner": "catalog-context",
+        "verified": true,
+        "report_sha256": "cea65a871ea208b1022d4dd31f9d67f8113ea1a9861dfdcc3d00b7c3e203c4b6"
+      },
+      {
+        "variant": "initial",
+        "runner": "persisted-catalog-context",
+        "verified": true,
+        "report_sha256": "220f006b0498acd2615cfc0b9c55f0a51fc4d0d2ed7c00c75f17188377166548"
+      },
+      {
+        "variant": "initial",
+        "runner": "resident-library",
+        "verified": true,
+        "report_sha256": "5466471e0d6b2170e7a1258bb29d14d4618fe07ec69bfbc25629b788b270850b"
+      },
+      {
+        "variant": "revised",
+        "runner": "offline-reopen",
+        "verified": true,
+        "report_sha256": "273b6e1c2df07fe8cae5daeb3327d2cad2b08e074126c9b92edc8e09baa47d69"
+      },
+      {
+        "variant": "revised",
+        "runner": "catalog-context",
+        "verified": true,
+        "report_sha256": "c6bbc2b821a522b50d8f5c6a190210a33cf29c8a135df103816107f5ae0dcbce"
+      },
+      {
+        "variant": "revised",
+        "runner": "persisted-catalog-context",
+        "verified": true,
+        "report_sha256": "3cf8acaeb7d18e3fc918c53d82af1a1d4f03074bcdb839a02423e80db0651aa2"
+      },
+      {
+        "variant": "revised",
+        "runner": "resident-library",
+        "verified": true,
+        "report_sha256": "4ad0721f8c5b6e28147e0b15773a8895cce0b6d7e0855ff3b7f1018590b551eb"
+      },
+      {
+        "variant": "final",
+        "runner": "offline-reopen",
+        "verified": true,
+        "report_sha256": "ca4b900f7506c820fe0a28f6dceb39139d6007c4df75b0727c157c0e6038bb68"
+      },
+      {
+        "variant": "final",
+        "runner": "catalog-context",
+        "verified": true,
+        "report_sha256": "bb41316d7d1879bb0cfc58e8f28f178f5c9eb87fc229a138b0f28077d2a7d399"
+      },
+      {
+        "variant": "final",
+        "runner": "persisted-catalog-context",
+        "verified": true,
+        "report_sha256": "a475a0034f7e6ea23d72f95860d3cc3cc70d1a86f8567cff5ca4b688a2f98a6e"
+      },
+      {
+        "variant": "final",
+        "runner": "resident-library",
+        "verified": true,
+        "report_sha256": "2ea07373afb788d0fa87635a9b2e1a1150d329535bb0f2875b045dedbfd8230a"
+      },
+      {
+        "variant": "restored",
+        "runner": "offline-reopen",
+        "verified": true,
+        "report_sha256": "78e85b9a79ab08ed452f3617f558937912aaa3b814a8f52a6fc5350d7248bc79"
+      },
+      {
+        "variant": "restored",
+        "runner": "catalog-context",
+        "verified": true,
+        "report_sha256": "add848f24ecd705732b3f8e214332c0dbb217c157e6343d9e5e5c0fdfcdd807c"
+      },
+      {
+        "variant": "restored",
+        "runner": "persisted-catalog-context",
+        "verified": true,
+        "report_sha256": "b890f4cc61e8104716cbebfa207113e665c6c43008460a3b1cb32c1bcd29352c"
+      },
+      {
+        "variant": "restored",
+        "runner": "resident-library",
+        "verified": true,
+        "report_sha256": "752d2e3b46d0087885961f908d625a74017c6cc46c118e601ef811017adfb40f"
+      }
+    ]
+  },
+  "raw_archives": [
+    {
+      "path": "normal-control-1-report.json.gz",
+      "bytes": 5791,
+      "sha256": "694d6b2e1174fef2807e3810c97423c6c6b81725cbb4437eb4924da55fd5ca59",
+      "expanded_sha256": "0bf4a63b150873b93b6cff2afe57c8e71075806354bb32c3cded915abb20b502"
+    },
+    {
+      "path": "normal-control-1-samples.json.gz",
+      "bytes": 8135,
+      "sha256": "7dc26694e212dfcb723df456f9777bc27b3fc22f763be2d11b1b8d90a9f38784",
+      "expanded_sha256": "eaa7fa5437c7f107106a5d9fbfabfd68c502a3f4dbfd10009684b9d58b66ba6c"
+    },
+    {
+      "path": "normal-candidate-1-report.json.gz",
+      "bytes": 5738,
+      "sha256": "f1b8e3f10fb40952a918c96f8e50d6ed7aea6af10f045b4612e3a51747cb728a",
+      "expanded_sha256": "ed2b45c4721ede95a995d096a5d37e35531bc59903e9d00efae1197f88654c7d"
+    },
+    {
+      "path": "normal-candidate-1-samples.json.gz",
+      "bytes": 7986,
+      "sha256": "4d36b08936cdd75838d68b237f49db08f88545483d1b47205a821c058cc84e52",
+      "expanded_sha256": "6b039f6d71b64f132c260ab7b470a58edde5b7a4042199aa1cd7084e3c688ef2"
+    },
+    {
+      "path": "normal-final-control-1-report.json.gz",
+      "bytes": 5786,
+      "sha256": "8132238a8ed4b8872d26efd6fa98e380a82ce8e056a77dfce638b0b3e3cebdb1",
+      "expanded_sha256": "fa3e91304cb7d6a62fb4594925f27f6a19516f9c8648692bcf3a586fdf50b4d5"
+    },
+    {
+      "path": "normal-final-control-1-samples.json.gz",
+      "bytes": 8273,
+      "sha256": "9188a3b137f2fbc89562c6d08c8265bc3af635047b5a11358ca573c99cd66b2c",
+      "expanded_sha256": "d77acb7c979c24956e6551e138044f7ebcfe21eac4fb06a44ab9ef95a686cf35"
+    },
+    {
+      "path": "normal-final-candidate-1-report.json.gz",
+      "bytes": 5801,
+      "sha256": "56cb26409694bcb35b068313b3dbb469cc2d4b4f8f6aa6e8f6de04f0f43ecbd3",
+      "expanded_sha256": "ebcd36c5b98e94fc6127e52af459feac8f24a585a87fb9c2bc4d0803c5eff0f0"
+    },
+    {
+      "path": "normal-final-candidate-1-samples.json.gz",
+      "bytes": 7914,
+      "sha256": "bc6da92a6c9af8bf55d8b6eb1c79c52ce3e2d58d7657e3c46eb7219e69769772",
+      "expanded_sha256": "275daaa2b11a1767036cbe48fc64b98d83085446ffdb4aca6743d1cd910aeea9"
+    },
+    {
+      "path": "normal-final-candidate-2-report.json.gz",
+      "bytes": 5794,
+      "sha256": "301f0ff3d1e0a356c35711f7ffbb19b598f992634b7890ad446a37050154badd",
+      "expanded_sha256": "ea1298ee6cab8b7fdcc34b511d530c9d0ba632c5f7923e6997e2ec60a9aad8b3"
+    },
+    {
+      "path": "normal-final-candidate-2-samples.json.gz",
+      "bytes": 8242,
+      "sha256": "7166fffb25b91169a8af0dea713f9b97443ca8f5d18ffb3b1fef163d5332370b",
+      "expanded_sha256": "6260e2dc698be57cd1575cda9641742539ed97afb50c96bf65b102decb89e4c2"
+    },
+    {
+      "path": "normal-final-control-2-report.json.gz",
+      "bytes": 5797,
+      "sha256": "881731ddf93150f40bfff2d682675be59423d278e207e6f21087712f03607cdc",
+      "expanded_sha256": "2ef88d1f4e036cbbd408eba9e5b574e472ea0c84889046d68a04e18941e9ede5"
+    },
+    {
+      "path": "normal-final-control-2-samples.json.gz",
+      "bytes": 7681,
+      "sha256": "67b1ed0fee19e7620f85ceb4fd3f4f1b4367f853c6b8f418b7658f221157cef0",
+      "expanded_sha256": "5ebd352da23d77e5af97a75fc9a575eed20439e6c23815b1cc1089c239b9bf52"
+    },
+    {
+      "path": "exp018-digest-semantics.json.gz",
+      "bytes": 389,
+      "sha256": "b2eb19b8e545ca6104c7000c50ea49b22b41e89198d5031e149003bfcfe074d9",
+      "expanded_sha256": "9f870298c02047cdda7d940cf83368ca57ec4680c2b55e04aa626260706605e6"
+    },
+    {
+      "path": "exp018-revised-digest-semantics.json.gz",
+      "bytes": 492,
+      "sha256": "27899e105107571577dfe71bb3e9c78c19dc583dfd10bece5669302451c88835",
+      "expanded_sha256": "5d1ccf3ce9e9ad98a1d3333d4dd57b18100efcb14d2a1b5c2b2014183a0110b7"
+    },
+    {
+      "path": "exp018-final-digest-semantics.json.gz",
+      "bytes": 411,
+      "sha256": "737666df0b25cfdd8e69423402e8415f425e7b3c188fb19fb75744e4b90592db",
+      "expanded_sha256": "1b7fcd44b5f062044d126ab87a17dd96b958d38868e79d7bfe6487c7c7deacf1"
+    },
+    {
+      "path": "exp018-restored-digest-semantics.json.gz",
+      "bytes": 422,
+      "sha256": "f9d675fc570e003cf7f5d84fb059a50f205d05955dcff1a842472753b6726be9",
+      "expanded_sha256": "bfe69a7cfa98f711c62055126bd32b70d7556fe438af2c5ff4e25c8fe9dc3982"
+    },
+    {
+      "path": "exp018-initial-semantic-regressions.json.gz",
+      "bytes": 219,
+      "sha256": "0e74ff09f9e514659a2adc01aa894d299cf65f595996c33cf1213dd9a1291886",
+      "expanded_sha256": "9f42671c2e5f9886bdc7e1e85bb3c658ff3e18d888ec4f567dd2daa2d2cf462e"
+    },
+    {
+      "path": "exp018-restoration.json.gz",
+      "bytes": 252,
+      "sha256": "90b0802be835ee1dd7c079c1dc3ff506d66e32025a9440e5009996ccdad067fb",
+      "expanded_sha256": "fdec1f25b148e4d5c64fec00c532be069175428c87115c16fe47606b469675cd"
+    },
+    {
+      "path": "exp018-final-artifact-diff.json.gz",
+      "bytes": 130,
+      "sha256": "1a2389b599262b56a6ec88b56fcef65f34385b9d19dabea2a9301bd6e9f6e287",
+      "expanded_sha256": "0d5be69edef9e3df0d31751e36bd4d96d4281f0bb845f3893540413d85dae19b"
+    },
+    {
+      "path": "final-functional-offline-reopen-report.json.gz",
+      "bytes": 933,
+      "sha256": "95eb1e7d01f45ff30f0261969a5edb5e591000b784774b1914b680695a3fc996",
+      "expanded_sha256": "ca4b900f7506c820fe0a28f6dceb39139d6007c4df75b0727c157c0e6038bb68"
+    },
+    {
+      "path": "final-functional-catalog-context-report.json.gz",
+      "bytes": 539,
+      "sha256": "84de0e6ab42dfc013f884732bb60daa7979d09415b3b82f6377cb85aa02d78f1",
+      "expanded_sha256": "bb41316d7d1879bb0cfc58e8f28f178f5c9eb87fc229a138b0f28077d2a7d399"
+    },
+    {
+      "path": "final-functional-persisted-catalog-context-report.json.gz",
+      "bytes": 595,
+      "sha256": "4802fd7aa0018b78e3183a2023a37c2473211f99f88b57c962efea2ca074bc99",
+      "expanded_sha256": "a475a0034f7e6ea23d72f95860d3cc3cc70d1a86f8567cff5ca4b688a2f98a6e"
+    },
+    {
+      "path": "final-functional-resident-library-report.json.gz",
+      "bytes": 454,
+      "sha256": "cb5eb2db9d2100f581bdc018833c31c0c3f9a8f1afbddfd5a54646f5023ced57",
+      "expanded_sha256": "2ea07373afb788d0fa87635a9b2e1a1150d329535bb0f2875b045dedbfd8230a"
+    },
+    {
+      "path": "final-browser-units.log.gz",
+      "bytes": 8000,
+      "sha256": "1c6adb3b5a7e8bca565be86a935cf07c9f29f6a9926c703550991c84a12a64e9",
+      "expanded_sha256": "e54acabe28c7a43cc8c6cd973d6936911b424697c77e6b86ee1be59d2aacdab3"
+    },
+    {
+      "path": "final-build.log.gz",
+      "bytes": 395,
+      "sha256": "13613340c3dec0f81ed6ce39d081309efa3565890dbbdb66004c68c36210ad01",
+      "expanded_sha256": "1286c2892138fbf8329706ee825ea16c26efa4afffbbc3aa6c32dd9b8f7d327e"
+    },
+    {
+      "path": "restored-functional-offline-reopen-report.json.gz",
+      "bytes": 932,
+      "sha256": "80d141a054afb827f737ced6fa6de3e14dd9543bded577651df4e018d059bae2",
+      "expanded_sha256": "78e85b9a79ab08ed452f3617f558937912aaa3b814a8f52a6fc5350d7248bc79"
+    },
+    {
+      "path": "restored-functional-catalog-context-report.json.gz",
+      "bytes": 543,
+      "sha256": "90ff83302cd11f440e6aa9a2801a2f63c70e857d6963381cfc7d51fcff7f6b31",
+      "expanded_sha256": "add848f24ecd705732b3f8e214332c0dbb217c157e6343d9e5e5c0fdfcdd807c"
+    },
+    {
+      "path": "restored-functional-persisted-catalog-context-report.json.gz",
+      "bytes": 598,
+      "sha256": "06266121a52707dd5670fc3923777393c77395b90ce6ed7a3780ab281b6da983",
+      "expanded_sha256": "b890f4cc61e8104716cbebfa207113e665c6c43008460a3b1cb32c1bcd29352c"
+    },
+    {
+      "path": "restored-functional-resident-library-report.json.gz",
+      "bytes": 458,
+      "sha256": "faeb1dac21a9aa71415dd53465d9a2692a6764b5ab9ae27ec093025fbf141f43",
+      "expanded_sha256": "752d2e3b46d0087885961f908d625a74017c6cc46c118e601ef811017adfb40f"
+    },
+    {
+      "path": "restored-browser-units.log.gz",
+      "bytes": 7962,
+      "sha256": "d73467960d460f1db26d6f1adad8e904f053fe2c6c1f22a4bcec4fbaa176ed54",
+      "expanded_sha256": "6b23da8b025b7116a5434764989acab274c60cd2b16374e06b940df330f87bf6"
+    },
+    {
+      "path": "restored-build.log.gz",
+      "bytes": 397,
+      "sha256": "7d8fee27b37df0556c672a68c171bab2236eb1bcd08f71b7dcb35929f7d96e9b",
+      "expanded_sha256": "ec2a44668d609d894f93528b10463f2e8436aa95e828b8ebe5c70a52110d3d50"
+    }
+  ],
+  "decision": "Reject/revert application after both pairs miss predeclared10MiB private-peak improvement",
+  "semantic_history": [
+    "Initial shared-subclass iterator and ordinary overridden-getter cases change hash; raw hashes retained",
+    "RevisionB passes Node but Chromium rejects valid resizable view; failed report retained",
+    "FinalC passes173 Node units, ten actual-browser cases and four focused suites",
+    "Restored9bae39fd passes172 retained units, ten original-copy browser cases and four focused suites"
+  ],
+  "restoration": "Exact original acquisition.js and all application/data/WASM bytes match control; only build/offline metadata differs",
+  "private_custody": "MISER evidence/exp018-custody.json retains112 raw/source/log archives, with Git blobs explicitly labeled",
+  "limitations": [
+    "Component removes extra ordinary fixed-buffer JS copy; native WebCrypto snapshot still exists",
+    "Normal private directions regress in both sampled pairs; no general causal or GC scheduling claim",
+    "Original250MiB acceptance failed; Android user-deferred; private hosted Linux unverified after billing rejection",
+    "No default sparse adoption, PR merge, publication or new hosted CI retry"
+  ],
+  "next": "Investigate acquisition/staging ownership handoff while preserving last-good recovery and exact bytes"
+}

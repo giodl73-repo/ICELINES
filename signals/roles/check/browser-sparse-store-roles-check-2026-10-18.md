@@ -123,3 +123,12 @@ certify liveness/leaks or exact OS savings. Source/custody guards and six MISER
 lenses approve evidence scope only; future candidate must preserve offset/shared/
 snapshot/transfer semantics and pass normal-workload comparisons. Original gates
 remain open. No application change in this evidence update.
+
+
+EXP018 addendum: reject/revert the digest view application trial. Final semantic
+checks pass (173 units/ten browser cases/four suites), but normal private pairs
+regress1.88/37.39MiB and miss repeated10MiB improvement. Preserve initial subclass/
+RAB failures and all six normal runs. Restored9bae39fd has exact original application
+assets,172 units/ten browser cases/four suites pass; nine semantic regressions stay.
+Six MISER lenses approve negative evidence/guidance scope, not adoption.250MiB,
+Android and private-hosted gates stay open; no causal collection claim.

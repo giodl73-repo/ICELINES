@@ -103,6 +103,22 @@ A view-based digest is the next candidate, requiring offset/shared/snapshot and
 normal ABBA validation. No product change or implemented saving. Observer peaks
 389.78/410.93MiB are diagnostic; workers/native snapshots are outside this census.
 
+EXP018 tests the view-based digest candidate. Initial subclass hash mismatches and
+a later Chromium resizable-input rejection are preserved. Final corrected candidate
+passes173 units, ten real-browser semantic cases and four focused suites, but full
+normal ABBA private peaks391.12/393.00/420.58/383.19MiB fail the predeclared repeated
+10MiB improvement criterion. Both private pairs are worse; working-set directions
+are mixed. All82 phases/75 packages/eight residents/905-and332 imports/20 queries/
+restart complete, with original launch/sampler and no observer/GC/trace intervention.
+Reverted9bae39fd restores exact control application/data/WASM bytes. Restored172
+units/typecheck, ten semantic cases and offline/catalog/persisted/resident suites
+pass. Nine generic digest regression tests remain; the candidate-only allocation
+assertion is retained in archived source/probe. All112 raw/source/log archives stay
+in MISER; receipt and31 selected public archives are beside
+`evidence/miser-digest-view-trial-20261020.json`. The two initial normal runs remain
+separate. Original250MiB still fails; all final warm maxima are below500ms. Next is
+acquisition/staging ownership, not an adopted digest optimization or a causal GC claim.
+
 The original 250 MiB gate still fails in EXP011; physical Android, full repository
 adoption and rich-report density remain open. This candidate does not replace
 the current public release below.
