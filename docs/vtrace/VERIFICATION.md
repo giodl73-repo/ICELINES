@@ -784,3 +784,20 @@ full-input/post-marker and25 private archive hashes pass. Public receipt plus ni
 raw archives retained. Legacy EXP020 parser validates structure/markers only;
 its normal_* fields do not reclassify diagnostics. No application/default/hosted/
 publication/mobile acceptance change. Next renderer ownership inventory.
+
+
+## VER-BROWSER-RENDERER-OWNER-INVENTORY-001: Alias-aware module/isolate diagnostics
+
+CHG-124 / REQ-BROWSER-001: EXP022 reads existing updateState module frame via
+storage retry, plus distinct page/worker/SW isolate heaps and cached initialized
+WASM exports. All7 checkpoints/full82 phases pass twice. Named buffer totals and
+WASM capacities agree exactly across runs; active/resident and result/viewport
+aliases prevent double counting. Restart preserves259,408B recovery; cold engine
+unavailable is not zero. No10MiB named-owner lead or rewrite selected.46 lab tests/
+strictClippy and eight raw-report mutations validate alias/backing conservation,
+required metrics, full rows and isolate identity. Original raw counter maxima and
+post-sampler source/input/marker boundaries pass unchanged legacy structural reader;
+its normal_* labels do not confer normality. Added debugger/retry/CDP affects
+timing/liveness, so387.98/390.56MiB private and170.24/100.36ms warm values are
+diagnostic; original250MiB remains unmet. Nine public/28 private archives retained.
+No app/default/merge/publication or Android/private-hosted acceptance change.

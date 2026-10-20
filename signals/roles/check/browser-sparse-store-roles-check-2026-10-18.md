@@ -159,3 +159,14 @@ acceptance substitution.40 tests, seven actual-capture corruption cases, source
 selection/accounting parity and full-input/post-marker validation pass. Nine public/
 25 private archives survive. Six single-agent MISER lenses approve evidence scope
 only;250MiB/Android/private-hosted requirements and application remain unchanged.
+
+
+EXP022 addendum: module/isolates are inspected in two explicitly instrumented
+full workloads. Named buffer totals5.20MiB first8/3.73MiB after imports and intact
+active/result aliases do not justify a10MiB JS owner rewrite. Recovery0.25MiB
+remains exportable; cold engine unavailable is not zero. Separate heap/backing/
+WASM/OS fields are not additive causal costs.46 lab tests/eight actual-report
+mutations/full source-input-marker checks pass; nine public/28 private archives
+survive. Six MISER single-agent lenses approve evidence scope only. Next native
+package/repository split, with no implemented cold-cache change or saving claimed.
+Original250MiB/Android/private-hosted/default/publication boundaries remain.

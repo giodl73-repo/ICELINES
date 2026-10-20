@@ -538,3 +538,20 @@ checks pass. Public miser-transient-process-metadata-20261020.json and nine arch
 25 private source/raw/audit archives retained. No app/default/merge/publication
 change. Next dominant workbench JS/backing-store ownership inventory and remaining
 target-unbound renderer. Android/private-hosted gates remain open.
+
+
+## EXP022 renderer owner inventory (diagnostic)
+
+Two7-checkpoint/full82-phase workloads agree exactly on main unique backing and
+WASM capacity:5,457,141B at8,3,912,464B after imports,259,408B recovery after restart;
+WASM peaks14,942,208B and bare restart1,245,184B. Active/resident and result/viewport
+aliases remain intact. Named owners do not meet the repeated removable10MiB lead;
+keep export/recovery/handoff semantics. V8 used/allocated/embedder/backing storage,
+explicit owners, WASM and OS counters remain separate; no additive residual claim.
+Debugger/storage-retry/CDP alters timing/liveness: private387.98/390.56MiB are
+diagnostic, not replacement normal controls. Warm170.24/100.36ms remain below500ms.
+46 lab tests/eight actual-report mutations/source and full-input/post-marker checks
+pass. Public miser-renderer-owner-inventory-20261020.json plus nine raw archives;
+28 private source/raw/audit archives retained. Next native source/repository ownership
+split before cold-cache prototype; not implemented, saving unproven.250MiB/Android/
+private-hosted gates stay open; application/default/publication unchanged.
