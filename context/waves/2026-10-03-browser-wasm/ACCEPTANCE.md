@@ -1,8 +1,31 @@
 # Browser WASM acceptance ledger
 
-Updated: 2026-10-14. Requirement: REQ-BROWSER-001; work packages WP-BW-01..06.
+Updated: 2026-10-20. Requirement: REQ-BROWSER-001; work packages WP-BW-01..06.
 This reconciles implemented features with the plan's remaining acceptance gates.
 It does not declare the full plan complete.
+
+## Unpublished sparse-storage candidate validation — 2026-10-20
+
+PR #113 remains opt-in and unpublished. Retained sparse source c92d4e00 passes
+owned Chromium process-close/offline reopening, fresh 835-player query/detail,
+saved versus unsaved behavior, failed-query clearing and retry. Viewport checks
+preserve all 933 ranks/names, 120 keyboard steps in each direction, 77 goalies,
+exports, AX names and print restoration. Six fresh/cached catalog-context refusals
+and three process-reopened IndexedDB refusals preserve previous results and exact
+exports; a correct saved retry uses no payload network requests. The 24-page PDF
+passes both text extractors for every name/rank, accents, pace and page bounds.
+The narrow screenshot is readable desktop emulation, not Android evidence.
+
+Hosted run 39156515143 passes for head cdac8098. Its default-feature artifact is
+merge commit 53a4df14 with an identical Git tree; all 182 files/75 packages verify,
+and a separate offline reopening check passes. This does not establish hosted
+sparse-feature execution. Raw reports, PDF, screenshots, artifact identities and
+commands are in `evidence/miser-sparse-browser-validation-20261020.json` and its
+adjacent directory. No executable code changed during this validation.
+
+The original 250 MiB gate still fails in EXP011; physical Android, full repository
+adoption and rich-report density remain open. This candidate does not replace
+the current public release below.
 
 ## Current release
 

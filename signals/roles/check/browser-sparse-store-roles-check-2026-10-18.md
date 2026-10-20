@@ -50,3 +50,14 @@ faithful evidence retain scoped approval. Standard feature build, artifact ident
 TypeScript and 163 browser tests pass. Separate GC attribution and raw cadence/source
 checks are retained; physical Android stays deferred. See the process-memory JSON
 beside the original native/WASM evidence. MISER-011 tracks next renderer/GPU/JS work.
+
+
+2026-10-20 validation addendum: BENCH/EDGE find the retained sparse artifact now
+passes offline process reopen, viewport/keyboard/full export/AX, six fresh/cached
+and three persisted context-refusal cases, correct no-network saved retry, and
+24-page/two-parser print checks. KEEL/PACE require the successful hosted default
+artifact to remain distinct from sparse evidence: merge53a4df14 and headcdac8098
+have identical trees, but CI features are empty. The acceptance ledger and receipt
+state that distinction. No executable changes or change in scoped approval; failed
+250 MiB acceptance and deferred Android remain open. See
+context/waves/2026-10-03-browser-wasm/evidence/miser-sparse-browser-validation-20261020.json.

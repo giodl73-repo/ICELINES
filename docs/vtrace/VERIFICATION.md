@@ -586,3 +586,21 @@ evidence/failures/traces/source hashes remain in private MISER EXP011. Public bo
 evidence and compressed local verification logs are in
 context/waves/2026-10-03-browser-wasm/evidence/miser-browser-sparse-process-memory.json.
 Default selection is unchanged; this result does not approve full resource adoption.
+
+
+## VER-BROWSER-SPARSE-FUNCTIONAL-001: Retained artifact checks (2026-10-20)
+
+CHG-124 / IF-BROWSER-SPARSE-001: exact retained sparse c92d4e00 artifact passes
+process-close offline reopening, saved/unsaved distinction, fresh query/detail,
+viewport/keyboard/export/AX checks, six fresh/cached catalog-context refusals and
+three process-reopened IndexedDB refusals. Correct saved retry makes no payload
+network requests. The actual 24-page PDF passes two independent extractors for all
+933 names/ranks, accents, pace and bounds. Ten raw artifacts have retained digests,
+including compressed PDF and desktop/narrow captures. No executable code changed.
+
+Hosted browser run39156515143 succeeds for reviewed head cdac8098; the downloaded
+default-feature artifact53a4df14 has the identical Git tree and independently passes
+182-file/75-package verification plus offline reopening. Hosted sparse-feature
+execution is not implied. Receipt and raw reports:
+context/waves/2026-10-03-browser-wasm/evidence/miser-sparse-browser-validation-20261020.json.
+Whole-browser250 MiB still fails; physical Android is deferred; no publication.
