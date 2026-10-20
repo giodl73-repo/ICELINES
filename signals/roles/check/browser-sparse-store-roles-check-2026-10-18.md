@@ -114,3 +114,12 @@ failed-request omission guards preserve measurement boundaries. Nonmonotonic cc
 refutes steady growth at observed checkpoints; transient native loading/eviction
 lifetimes remain next. Six MISER role lenses approve evidence scope with conditions.
 No product change, optimization saving, normal250MiB acceptance or mobile claim.
+
+
+EXP017 addendum: two complete full75 digest-buffer observations, independent
+catalog call/byte parity and22 local tests pass.11.07MiB by8 and84.06MiB cumulative
+through imports select a view-based digest trial. Weak cohort collection does not
+certify liveness/leaks or exact OS savings. Source/custody guards and six MISER
+lenses approve evidence scope only; future candidate must preserve offset/shared/
+snapshot/transfer semantics and pass normal-workload comparisons. Original gates
+remain open. No application change in this evidence update.

@@ -1,0 +1,210 @@
+{
+  "schema_version": 1,
+  "experiment": "MISER-EXP-017",
+  "change_id": "CHG-124",
+  "scope": "Two main-context WebCrypto-call/WeakRef instrumented full75 workloads, not normal memory acceptance",
+  "summary": {
+    "experiment": "MISER-EXP-017",
+    "runs": [
+      {
+        "artifact": {
+          "commit": "023138e8705d39a41472fcad8e935143506b97c9",
+          "packages": 75,
+          "shell_build": "3ed407485fff619001ecb46f6158c6f9dac0da9c4f5112677049a5f6e3e2d372",
+          "verified_files": 182
+        },
+        "browser": "153.0.8010.12",
+        "instrumented_peak_private_bytes": 408711168,
+        "scope": "Cumulative main-context explicit JS digest input clones in this verified source; weak observations are not exact liveness. Not native/RSS/normal acceptance.",
+        "source_acquisition_sha256": "0f00abb38bfe32175283bc7941c8a93a4351c57f3fbb8baeaa88710cd3e6cddf",
+        "source_memory_sha256": "65c70f10d721bb6d5a126a1c9af725e1e52d99a71b16f0670c07ea0a7407be7c",
+        "stages": [
+          {
+            "calls": 0,
+            "checkpoint": "catalog_ready",
+            "explicit_clone_input_bytes": 0,
+            "not_collected_buffers": 0,
+            "not_collected_bytes": 0
+          },
+          {
+            "calls": 3,
+            "checkpoint": "after_1",
+            "explicit_clone_input_bytes": 1973812,
+            "not_collected_buffers": 3,
+            "not_collected_bytes": 1973812
+          },
+          {
+            "calls": 24,
+            "checkpoint": "after_8",
+            "explicit_clone_input_bytes": 11611747,
+            "not_collected_buffers": 24,
+            "not_collected_bytes": 11611747
+          },
+          {
+            "calls": 27,
+            "checkpoint": "after_9",
+            "explicit_clone_input_bytes": 12168081,
+            "not_collected_buffers": 27,
+            "not_collected_bytes": 12168081
+          },
+          {
+            "calls": 225,
+            "checkpoint": "after_75",
+            "explicit_clone_input_bytes": 86973999,
+            "not_collected_buffers": 0,
+            "not_collected_bytes": 0
+          },
+          {
+            "calls": 226,
+            "checkpoint": "archive_regular",
+            "explicit_clone_input_bytes": 87881752,
+            "not_collected_buffers": 1,
+            "not_collected_bytes": 907753
+          },
+          {
+            "calls": 227,
+            "checkpoint": "archive_playoff",
+            "explicit_clone_input_bytes": 88141160,
+            "not_collected_buffers": 2,
+            "not_collected_bytes": 1167161
+          },
+          {
+            "calls": 227,
+            "checkpoint": "queries_settled",
+            "explicit_clone_input_bytes": 88141160,
+            "not_collected_buffers": 0,
+            "not_collected_bytes": 0
+          },
+          {
+            "calls": 227,
+            "checkpoint": "engine_restarted",
+            "explicit_clone_input_bytes": 88141160,
+            "not_collected_buffers": 0,
+            "not_collected_bytes": 0
+          }
+        ]
+      },
+      {
+        "artifact": {
+          "commit": "023138e8705d39a41472fcad8e935143506b97c9",
+          "packages": 75,
+          "shell_build": "3ed407485fff619001ecb46f6158c6f9dac0da9c4f5112677049a5f6e3e2d372",
+          "verified_files": 182
+        },
+        "browser": "153.0.8010.12",
+        "instrumented_peak_private_bytes": 430891008,
+        "scope": "Cumulative main-context explicit JS digest input clones in this verified source; weak observations are not exact liveness. Not native/RSS/normal acceptance.",
+        "source_acquisition_sha256": "0f00abb38bfe32175283bc7941c8a93a4351c57f3fbb8baeaa88710cd3e6cddf",
+        "source_memory_sha256": "65c70f10d721bb6d5a126a1c9af725e1e52d99a71b16f0670c07ea0a7407be7c",
+        "stages": [
+          {
+            "calls": 0,
+            "checkpoint": "catalog_ready",
+            "explicit_clone_input_bytes": 0,
+            "not_collected_buffers": 0,
+            "not_collected_bytes": 0
+          },
+          {
+            "calls": 3,
+            "checkpoint": "after_1",
+            "explicit_clone_input_bytes": 1973812,
+            "not_collected_buffers": 3,
+            "not_collected_bytes": 1973812
+          },
+          {
+            "calls": 24,
+            "checkpoint": "after_8",
+            "explicit_clone_input_bytes": 11611747,
+            "not_collected_buffers": 24,
+            "not_collected_bytes": 11611747
+          },
+          {
+            "calls": 27,
+            "checkpoint": "after_9",
+            "explicit_clone_input_bytes": 12168081,
+            "not_collected_buffers": 27,
+            "not_collected_bytes": 12168081
+          },
+          {
+            "calls": 225,
+            "checkpoint": "after_75",
+            "explicit_clone_input_bytes": 86973999,
+            "not_collected_buffers": 3,
+            "not_collected_bytes": 596041
+          },
+          {
+            "calls": 226,
+            "checkpoint": "archive_regular",
+            "explicit_clone_input_bytes": 87881752,
+            "not_collected_buffers": 4,
+            "not_collected_bytes": 1503794
+          },
+          {
+            "calls": 227,
+            "checkpoint": "archive_playoff",
+            "explicit_clone_input_bytes": 88141160,
+            "not_collected_buffers": 1,
+            "not_collected_bytes": 259408
+          },
+          {
+            "calls": 227,
+            "checkpoint": "queries_settled",
+            "explicit_clone_input_bytes": 88141160,
+            "not_collected_buffers": 0,
+            "not_collected_bytes": 0
+          },
+          {
+            "calls": 227,
+            "checkpoint": "engine_restarted",
+            "explicit_clone_input_bytes": 88141160,
+            "not_collected_buffers": 0,
+            "not_collected_bytes": 0
+          }
+        ]
+      }
+    ]
+  },
+  "raw_archives": [
+    {
+      "path": "run-1-report.json.gz",
+      "sha256": "b1e258e4e833910cc8d95cffeb8f4b47739fe1be6b9cd10bf2215adea3b2b1d1",
+      "expanded_sha256": "c1e4c634be86a467cf9ade3f2dc8b9576240ac21b2fdfefcd06efc300f47a0db"
+    },
+    {
+      "path": "run-1-samples.json.gz",
+      "sha256": "68c99ec21871c31e57f3e0bca09a20ec8e8ebe433227f6aa7b0f95d01d294981",
+      "expanded_sha256": "4fdea7b99d5a28dce871c3d52c9674e9d7787cbb97cded5bfc7c9463bea40da5"
+    },
+    {
+      "path": "run-2-report.json.gz",
+      "sha256": "1d42b20718bcd52614ddf3999c04e0e92712a9a6863cf44003194db9ffc012ae",
+      "expanded_sha256": "8fe78daa690bda30ade828546828d3787ba1340854bb35ad6068f5b0df41d494"
+    },
+    {
+      "path": "run-2-samples.json.gz",
+      "sha256": "30f403268df0db189d3f30ddc208cfb5ca1451698cf5304574b7f5a7c2527a5a",
+      "expanded_sha256": "4728802138890aac10717673bd7f880c4f76340048055626ccc4a552501bf4e3"
+    }
+  ],
+  "findings": [
+    "24 explicit digest input clones total11,611,747B by8 in both runs; all remain observable at that checkpoint",
+    "225 calls/86,973,999B by75;227 calls/88,141,160B through imports in both",
+    "Both observe zero of this input cohort by queries/restart; not proof of exact liveness or no other leaks"
+  ],
+  "checks": {
+    "local_all_target_tests": 22,
+    "strict_clippy": true,
+    "independent_catalog_call_byte_validation": true,
+    "source_hashes_match_both_runs": true,
+    "dropped_observations": 0
+  },
+  "next_candidate": "Regular ArrayBuffer view digest with offset/length, SharedArrayBuffer fallback and mutation/transfer semantics tests, followed by unchanged normal ABBA workload",
+  "limitations": [
+    "Cumulative allocation is not retained or physical memory; no summation across scopes",
+    "WeakRef dereference may keep a buffer through the current job; not-collected does not prove strong ownership",
+    "Workers, service workers, native digest snapshots, decoder and WASM copies are not observed",
+    "Instrumentation adds overhead:389.7773/410.9297MiB private peaks are not normal controls",
+    "No product edit or saving; original250MiB, Android and private hosted Linux gates remain open"
+  ],
+  "private_custody": "MISER evidence/exp017-custody.json retains12 exact raw/source archives"
+}

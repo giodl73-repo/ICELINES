@@ -92,6 +92,17 @@ extracts. All32 raw/source/guard archives stay in MISER. Diagnostic private peak
 712.56/771.19MiB have tracing/dump overhead and never replace normal controls.
 No product/default/publication change; normal250MiB and Android remain open.
 
+EXP017 observes main-context digest buffers in two complete unchanged75-package
+workloads. Independent Rust catalog totals match24 copies/11,611,747B by8 and
+227 calls/88,141,160B cumulatively through imports. All first8 input buffers remain
+WeakRef-observable at that checkpoint; none of the cohort is observed by queries/
+restart. This supports temporary copy churn, not exact live ownership or a leak.
+22 local tests/strictClippy/source hashes pass with zero dropped observations.
+See `evidence/miser-digest-buffer-census-20261020.json` and four raw archives.
+A view-based digest is the next candidate, requiring offset/shared/snapshot and
+normal ABBA validation. No product change or implemented saving. Observer peaks
+389.78/410.93MiB are diagnostic; workers/native snapshots are outside this census.
+
 The original 250 MiB gate still fails in EXP011; physical Android, full repository
 adoption and rich-report density remain open. This candidate does not replace
 the current public release below.

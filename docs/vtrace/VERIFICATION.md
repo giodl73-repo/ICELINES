@@ -695,3 +695,19 @@ miser-full-allocator-lifetimes-20261020.json with four original request-marker
 extracts. Complete32 raw/source/guard archives remain in MISER. Instrumentation
 causes substantial overhead; normal250MiB controls, Android and private-hosted
 Linux requirements remain open. Application/Rust/build paths remain unchanged.
+
+
+## VER-BROWSER-DIGEST-BUFFER-CENSUS-001: Temporary input-copy observations
+
+CHG-124 / REQ-BROWSER-001: EXP017 completes two full75/eight/905/332/20/restart
+workloads with a main-context WebCrypto observer and WeakRefs. Independent Rust
+catalog-derived byte/call totals agree:11,611,747B by8,88,141,160B cumulatively
+through imports; zero dropped entries. First8 copy cohort remains observable there
+and is no longer observed by queries/restart in both.22 local tests, strictClippy
+and matching source hashes pass.12 exact raw/source archives retained privately;
+public summary/reports/samples: miser-digest-buffer-census-20261020.json. Cumulative
+and uncollected bytes do not establish live native/RAM usage or a saving. Exact
+source contains one explicit JS input copy per digest; workers/native snapshots
+are outside this probe. View-based digest candidate is next with snapshot/offset/
+shared/transfer tests and normal ABBA checks. No application/default/publication
+change or250MiB/mobile/private-hosted acceptance.
