@@ -75,3 +75,14 @@ as well as GC. No Rust/application-source change after the hosted revision; foll
 files are E2E/tests/evidence only. MISER six-lens review approves EXP012's faithful
 reporting with conditions. Original scoped approval remains; memory/Android and
 full repository/rich-density adoption stay open. See both20261020 evidence receipts.
+
+
+EXP013 addendum: BENCH/KEEL verify fresh original and both candidate storage-mode
+resident probes, candidate/restored browser suites, exact restored main/engine
+bytes and actual standard build. PACE rejects a whole-browser gain from DOM reuse:
+private-peak pair directions are mixed and the declared repeated10MiB criterion
+fails. Main.ts is reverted; only the optional functional probe and evidence remain.
+The hosted trial success is explicitly separate from restored-source equivalence
+to earlierda22174c. MISER six-lens review approves faithful rejection/restoration
+reporting, with all250MiB/Android/private billing gates retained. No scoped approval
+of the rejected UI optimization or whole-goal completion. See EXP013 public receipt.

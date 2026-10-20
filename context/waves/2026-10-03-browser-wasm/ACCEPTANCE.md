@@ -38,6 +38,20 @@ fail250MiB and exclude diagnostics/subsequent restart; they do not replace EXP01
 normal controls. See `evidence/miser-rendering-diagnostic-20261020.json`. Private
 MISER current-source Linux run39484014027 remains blocked before steps by billing.
 
+Subsequent EXP013 trials keyed resident rows and delegated selection. Both storage
+backends reduce resident-row mutations60/60 to0/0 over ten queries and preserve
+selection/export/eviction/unload behavior. Four complete normal ABBA runs peak at
+387.14/402.25/386.92/399.96MiB private. One pair regresses15.11MiB; the reverse improves
+13.04MiB. The repeated10MiB criterion fails, so the UI trial is rejected/reverted
+at023138e8. The optional probe and all raw negative evidence remain. Fresh standard
+build,163 units, restored browser suites and two-parser PDF pass; original main.js
+and sparse WASM bytes match. Hosted39488159830 passes for the rejected trial477e7675,
+not the restored head. Restored application/Rust/build source matches the earlier
+hostedda22174c. See `evidence/miser-resident-trial-20261020.json` and adjacent raw
+reports. Startup alone277.70–281.84MiB fails250MiB before the package loop; startup
+process attribution is next. The166.78ms warm observation remains below the governing
+500ms target and above the stricter100ms observation. No requirement changes.
+
 The original 250 MiB gate still fails in EXP011; physical Android, full repository
 adoption and rich-report density remain open. This candidate does not replace
 the current public release below.

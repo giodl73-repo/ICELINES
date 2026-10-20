@@ -626,3 +626,20 @@ covers GC and rendering diagnostics. All13 exact raw/source files and initial
 analysis failure remain in private MISER. Public bounded rendering evidence is
 miser-rendering-diagnostic-20261020.json. Original250MiB failure and deferred Android
 remain; private MISER hosted Linux is independently blocked by account billing.
+
+
+## VER-BROWSER-RESIDENT-ALLOCATION-001: Rejected trial and restoration
+
+CHG-124 / REQ-BROWSER-001: EXP013 uses unchanged engine/input/styles/launch/sampler
+with four full82-phase normal controls. Private peaks387.14/402.25/386.92/399.96MiB
+are mixed; repeated10MiB criterion fails and every250MiB gate fails. DOM mutations
+60/60→0/0 do not establish whole-browser savings. UI trialff77c214 is reverted at
+023138e8. Actual standard build restores exact original main.js/WASM;163 units,
+resident selection/eviction/export/unload, offline/viewport/keyboard/AX/catalog/
+persisted and24-page/two-parser PDF checks pass. Fresh-load completion and nested
+Session-library probe failures are retained and corrected. Hosted39488159830 is a
+success for rejected trial477e7675; restored product paths match earlierda22174c.
+Receipt: context/waves/2026-10-03-browser-wasm/evidence/miser-resident-trial-20261020.json.
+All66 raw/source archives and traces remain in MISER; public raw reports/PDF/logs
+are adjacent. Startup private277.70–281.84MiB already fails the budget. Governing
+500ms warm target passes (166.78ms retained); Android/private Linux billing remain.
