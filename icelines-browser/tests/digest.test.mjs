@@ -37,3 +37,15 @@ test('native synchronous and asynchronous digest errors remain rejections',async
 test('already detached input remains an error',async()=>{
   const bytes=new Uint8Array([1]);structuredClone(bytes.buffer,{transfer:[bytes.buffer]});await assert.rejects(digest(bytes),TypeError);
 });
+
+test('subclass accessors and iterators do not replace the stored bytes',async()=>{
+  class SharedView extends Uint8Array { *[Symbol.iterator]() { yield 9; } }
+  class ShadowView extends Uint8Array { get buffer() { return new Uint8Array([9,9,9]).buffer; } get byteOffset() { return 2; } get byteLength() { return 0; } }
+  for(const bytes of [new SharedView(new SharedArrayBuffer(3)),new ShadowView(3)]) {
+    bytes.set([1,2,3]);assert.equal(await digest(bytes),expected(new Uint8Array([1,2,3])));
+  }
+});
+test('resizable out-of-bounds views stay rejected and valid empty views hash empty',async()=>{
+  const buffer=new ArrayBuffer(4,{maxByteLength:8});const view=new Uint8Array(buffer,2,2);buffer.resize(1);
+  await assert.rejects(digest(view),TypeError);assert.equal(await digest(new Uint8Array(buffer,0,0)),expected(new Uint8Array()));
+});
