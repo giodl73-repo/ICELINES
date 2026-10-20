@@ -750,3 +750,21 @@ change lifecycle and timing, WeakRefs do not certify liveness/native release/lea
 and compressed archive/tar/main/native storage is excluded. No application change,
 normal250MiB/mobile/private-hosted acceptance, merge or publication. Next residual
 normal-process mapping must occur outside the measured sample interval.
+
+
+## VER-BROWSER-NORMAL-PROCESS-ATTRIBUTION-001: Post-sampler process annotation
+
+CHG-124 / REQ-BROWSER-001: two EXP020 original82-phase/75/eight/905-and332/20/restart
+normal prefixes stop sampling before new CDP/trace/evaluation. Counts247/245 freeze;
+monotonic boundaries, <=100ms endpoint clock drift, source/action fragments, input
+identity and raw maxima validate. Performance nonces bind page/current engine/SW/
+Chrome UI to native renderer PIDs; birth-qualified historical labels preserve every
+original byte and unknown PID. Post-only tracing processes are absent from prefix.
+Private peaks428.08/387.61MiB and working-set709.21/655.68MiB still fail250MiB; warm
+maxima89.373/89.958ms pass500ms. Workbench groups121.37/144.68MiB and GPU105.13/103.48MiB
+at each full peak are not independent/thread/Rust costs. Run1 includes73.72MiB PID
+observed once with unavailable late identity, left counted/unclassified. No immutable
+floor or causal leak claim.33 lab tests/strictClippy and final-parser replay pass.
+Public miser-normal-process-attribution-20261020.json plus nine raw archives;30
+private raw/source/audit archives remain. Next transient OS identity diagnostic;
+no application/default/publication/mobile/private-hosted acceptance change.

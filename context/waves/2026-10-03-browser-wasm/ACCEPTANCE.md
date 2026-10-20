@@ -133,6 +133,20 @@ Clippy, source hashes and raw OS recomputation pass. See
 private archives remain. No application change or250MiB acceptance. Next map normal
 process costs after sampling stops, with unknown processes retained.
 
+EXP020 completes two original normal82-phase workloads, then stops the sampler
+before any added CDP/trace/performance markers. Counts freeze at247/245; boundaries,
+source fragments, inputs/order, type/target/nonce/birth guards and all raw maxima
+validate. Normal private peaks428.08/387.61MiB still fail250MiB; all warm samples
+pass500ms. At respective full peaks, mapped workbench PID groups are121.37/144.68MiB
+and GPU105.13/103.48MiB. These are same-sample process labels, not thread/Rust costs
+or independent overhead. A73.72MiB PID seen once in run1 lacks late identity and
+remains unclassified AND counted; the unbound renderer stays unbound. No budget
+subtraction or causal attribution.33 lab tests/strictClippy/replay checks pass;
+30 private archives and nine selected raw public archives remain beside
+`evidence/miser-normal-process-attribution-20261020.json`. Next capture transient
+OS process identity in a separate diagnostic before changing labels/accounting.
+No application change; all original mobile/private-hosted/resource gates remain.
+
 The original 250 MiB gate still fails in EXP011; physical Android, full repository
 adoption and rich-report density remain open. This candidate does not replace
 the current public release below.

@@ -141,3 +141,12 @@ evidence scope only: priming/evaluation affect timing, termination is unavailabl
 not-collected is not liveness, and native/compressed/main storage is outside this
 census.18 private archives/four public raw files retained. Original gates stay open;
 next normal process mapping keeps instrumentation outside the measured interval.
+
+
+EXP020 addendum: two complete normal prefixes with attribution after sampler exit.
+Source/boundary/marker/target/type/birth and all-byte accounting checks pass with33
+lab tests. Full private peaks428.08/387.61MiB still fail250MiB. Keep73.72MiB transient
+PID unknown/counted and renderer without target unbound; final engine cannot label
+terminated old workers. Six MISER lenses approve qualified evidence only, with no
+independent-floor/thread-cost/causal leak inference. Nine raw public/30 private
+archives retained. Next transient OS metadata; application and original gates remain.

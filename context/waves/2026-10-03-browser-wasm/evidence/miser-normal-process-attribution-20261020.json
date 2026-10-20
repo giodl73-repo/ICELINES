@@ -1,0 +1,1526 @@
+{
+  "schema_version": 1,
+  "experiment": "MISER-EXP-020",
+  "change_id": "CHG-124",
+  "scope": "Two complete original normal prefixes with qualified process attribution only after sampler exit; all original PIDs/bytes remain counted",
+  "summary": {
+    "experiment": "MISER-EXP-020",
+    "runs": [
+      {
+        "archive": {
+          "bytes": 149672,
+          "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca"
+        },
+        "artifact": {
+          "commit": "9bae39fd6f7682d0d3468fe0417daf20ad120894",
+          "packages": 75,
+          "shell_build": "243c11d765bfc3eb378f90b6d48355eb3b70c6e7fabddaafb4374957e161913d",
+          "verified_files": 182
+        },
+        "birth_qualification": "Live creation <= root creation + previous sample elapsed -1000ms; first sample unknown. Endpoint clock drift <=100ms; unobserved clock changes not attested.",
+        "browser": "153.0.8010.12",
+        "markers": [
+          {
+            "name": "MISER_PROCESS_workbench_page_63eaa727-7804-4911-a3aa-29ca3cb329ff",
+            "pid": 64312,
+            "role": "workbench_page",
+            "url": "http://127.0.0.1:52896/ICELINES/workbench/#/leaders?season=20242025&type=playoff&kind=skaters&sort=points&gp=&data=local"
+          },
+          {
+            "name": "MISER_PROCESS_current_engine_0faabb24-e801-4d0e-9e30-5146d1b2fe2f",
+            "pid": 64312,
+            "role": "current_engine",
+            "url": "http://127.0.0.1:52896/ICELINES/workbench/src/worker.js"
+          },
+          {
+            "name": "MISER_PROCESS_service_worker_0311771c-4d7c-426c-a708-099ee7874cf9",
+            "pid": 64312,
+            "role": "service_worker",
+            "url": "http://127.0.0.1:52896/ICELINES/workbench/sw.js"
+          },
+          {
+            "name": "MISER_PROCESS_browser_ui_e44c8482-e9ee-4fe1-8f64-5fff788fc9fd",
+            "pid": 72456,
+            "role": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html"
+          },
+          {
+            "name": "MISER_PROCESS_browser_ui_0a857eee-7afb-4fa6-a708-2f149563283a",
+            "pid": 72456,
+            "role": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/"
+          }
+        ],
+        "normal_peak": {
+          "elapsed_ms": 120282,
+          "phase": "package_19871988-playoff",
+          "private_bytes": 448876544,
+          "private_bytes_by_role": {
+            "GPU": 110239744,
+            "browser": 47575040,
+            "chrome_browser_ui_renderer": 38031360,
+            "network.mojom.NetworkService": 15212544,
+            "storage.mojom.StorageService": 10285056,
+            "unclassified": 83034112,
+            "unclassified_renderer": 17235968,
+            "workbench_renderer_group": 127262720
+          },
+          "processes": [
+            {
+              "pid": 67336,
+              "private_bytes": 15212544,
+              "role": "network.mojom.NetworkService"
+            },
+            {
+              "pid": 24372,
+              "private_bytes": 3031040,
+              "role": "unclassified"
+            },
+            {
+              "pid": 57256,
+              "private_bytes": 77299712,
+              "role": "unclassified"
+            },
+            {
+              "pid": 48628,
+              "private_bytes": 2703360,
+              "role": "unclassified"
+            },
+            {
+              "pid": 47248,
+              "private_bytes": 17235968,
+              "role": "unclassified_renderer"
+            },
+            {
+              "pid": 73664,
+              "private_bytes": 47575040,
+              "role": "browser"
+            },
+            {
+              "pid": 56528,
+              "private_bytes": 110239744,
+              "role": "GPU"
+            },
+            {
+              "pid": 72456,
+              "private_bytes": 38031360,
+              "role": "chrome_browser_ui_renderer"
+            },
+            {
+              "pid": 64312,
+              "private_bytes": 127262720,
+              "role": "workbench_renderer_group"
+            },
+            {
+              "pid": 35156,
+              "private_bytes": 10285056,
+              "role": "storage.mojom.StorageService"
+            }
+          ]
+        },
+        "normal_phase_count": 82,
+        "normal_sample_count": 247,
+        "package_ids": [
+          "20252026-regular",
+          "20242025-regular",
+          "20242025-playoff",
+          "20232024-regular",
+          "20232024-playoff",
+          "20222023-regular",
+          "20222023-playoff",
+          "20212022-regular",
+          "20212022-playoff",
+          "20202021-regular",
+          "20202021-playoff",
+          "20192020-regular",
+          "20192020-playoff",
+          "20182019-regular",
+          "20182019-playoff",
+          "20172018-regular",
+          "20172018-playoff",
+          "20162017-regular",
+          "20162017-playoff",
+          "20152016-regular",
+          "20152016-playoff",
+          "20142015-regular",
+          "20142015-playoff",
+          "20132014-regular",
+          "20132014-playoff",
+          "20122013-regular",
+          "20122013-playoff",
+          "20112012-regular",
+          "20112012-playoff",
+          "20102011-regular",
+          "20102011-playoff",
+          "20092010-regular",
+          "20092010-playoff",
+          "20082009-regular",
+          "20082009-playoff",
+          "20072008-regular",
+          "20072008-playoff",
+          "20062007-regular",
+          "20062007-playoff",
+          "20052006-regular",
+          "20052006-playoff",
+          "20032004-regular",
+          "20032004-playoff",
+          "20022003-regular",
+          "20022003-playoff",
+          "20012002-regular",
+          "20012002-playoff",
+          "20002001-regular",
+          "20002001-playoff",
+          "19992000-regular",
+          "19992000-playoff",
+          "19981999-regular",
+          "19981999-playoff",
+          "19971998-regular",
+          "19971998-playoff",
+          "19961997-regular",
+          "19961997-playoff",
+          "19951996-regular",
+          "19951996-playoff",
+          "19941995-regular",
+          "19941995-playoff",
+          "19931994-regular",
+          "19931994-playoff",
+          "19921993-regular",
+          "19921993-playoff",
+          "19911992-regular",
+          "19911992-playoff",
+          "19901991-regular",
+          "19901991-playoff",
+          "19891990-regular",
+          "19891990-playoff",
+          "19881989-regular",
+          "19881989-playoff",
+          "19871988-regular",
+          "19871988-playoff"
+        ],
+        "post_measurement_role_candidates": {
+          "35156": "storage.mojom.StorageService",
+          "47248": "unclassified_renderer",
+          "56528": "GPU",
+          "64312": "workbench_renderer_group",
+          "67336": "network.mojom.NetworkService",
+          "72456": "chrome_browser_ui_renderer",
+          "72812": "tracing.mojom.TracingService",
+          "73664": "browser"
+        },
+        "post_trace_events_streamed": 19,
+        "private_250_mib_passed": false,
+        "process_births": {
+          "35156": 1792536910828,
+          "47248": 1792536911022,
+          "56528": 1792536910792,
+          "64312": 1792536911035,
+          "67336": 1792536910806,
+          "72456": 1792536910985,
+          "72812": 1792537040852,
+          "73664": 1792536909963
+        },
+        "root_birth_unix_ms": 1792536909963,
+        "scope": "Process labels are not thread allocations or causal/independent app costs. All PIDs/bytes remain in each total; post-only tracing processes absent from prefix add no bytes.",
+        "selected_phase_maxima": [
+          {
+            "elapsed_ms": 3523,
+            "phase": "blank_browser",
+            "private_bytes": 246194176,
+            "private_bytes_by_role": {
+              "GPU": 78135296,
+              "browser": 46202880,
+              "chrome_browser_ui_renderer": 48214016,
+              "network.mojom.NetworkService": 16728064,
+              "storage.mojom.StorageService": 10301440,
+              "unclassified": 5951488,
+              "unclassified_renderer": 17641472,
+              "workbench_renderer_group": 23019520
+            },
+            "processes": [
+              {
+                "pid": 67336,
+                "private_bytes": 16728064,
+                "role": "network.mojom.NetworkService"
+              },
+              {
+                "pid": 24372,
+                "private_bytes": 3108864,
+                "role": "unclassified"
+              },
+              {
+                "pid": 48628,
+                "private_bytes": 2842624,
+                "role": "unclassified"
+              },
+              {
+                "pid": 47248,
+                "private_bytes": 17641472,
+                "role": "unclassified_renderer"
+              },
+              {
+                "pid": 73664,
+                "private_bytes": 46202880,
+                "role": "browser"
+              },
+              {
+                "pid": 56528,
+                "private_bytes": 78135296,
+                "role": "GPU"
+              },
+              {
+                "pid": 72456,
+                "private_bytes": 48214016,
+                "role": "chrome_browser_ui_renderer"
+              },
+              {
+                "pid": 64312,
+                "private_bytes": 23019520,
+                "role": "workbench_renderer_group"
+              },
+              {
+                "pid": 35156,
+                "private_bytes": 10301440,
+                "role": "storage.mojom.StorageService"
+              }
+            ]
+          },
+          {
+            "elapsed_ms": 5143,
+            "phase": "startup",
+            "private_bytes": 295034880,
+            "private_bytes_by_role": {
+              "GPU": 95023104,
+              "browser": 50839552,
+              "chrome_browser_ui_renderer": 48254976,
+              "network.mojom.NetworkService": 17817600,
+              "storage.mojom.StorageService": 10399744,
+              "unclassified": 5951488,
+              "unclassified_renderer": 17641472,
+              "workbench_renderer_group": 49106944
+            },
+            "processes": [
+              {
+                "pid": 67336,
+                "private_bytes": 17817600,
+                "role": "network.mojom.NetworkService"
+              },
+              {
+                "pid": 24372,
+                "private_bytes": 3108864,
+                "role": "unclassified"
+              },
+              {
+                "pid": 48628,
+                "private_bytes": 2842624,
+                "role": "unclassified"
+              },
+              {
+                "pid": 47248,
+                "private_bytes": 17641472,
+                "role": "unclassified_renderer"
+              },
+              {
+                "pid": 73664,
+                "private_bytes": 50839552,
+                "role": "browser"
+              },
+              {
+                "pid": 56528,
+                "private_bytes": 95023104,
+                "role": "GPU"
+              },
+              {
+                "pid": 72456,
+                "private_bytes": 48254976,
+                "role": "chrome_browser_ui_renderer"
+              },
+              {
+                "pid": 64312,
+                "private_bytes": 49106944,
+                "role": "workbench_renderer_group"
+              },
+              {
+                "pid": 35156,
+                "private_bytes": 10399744,
+                "role": "storage.mojom.StorageService"
+              }
+            ]
+          },
+          {
+            "elapsed_ms": 17562,
+            "phase": "package_20212022-regular",
+            "private_bytes": 407445504,
+            "private_bytes_by_role": {
+              "GPU": 113016832,
+              "browser": 51691520,
+              "chrome_browser_ui_renderer": 47058944,
+              "network.mojom.NetworkService": 18038784,
+              "storage.mojom.StorageService": 10399744,
+              "unclassified": 5951488,
+              "unclassified_renderer": 17338368,
+              "workbench_renderer_group": 143949824
+            },
+            "processes": [
+              {
+                "pid": 67336,
+                "private_bytes": 18038784,
+                "role": "network.mojom.NetworkService"
+              },
+              {
+                "pid": 24372,
+                "private_bytes": 3108864,
+                "role": "unclassified"
+              },
+              {
+                "pid": 48628,
+                "private_bytes": 2842624,
+                "role": "unclassified"
+              },
+              {
+                "pid": 47248,
+                "private_bytes": 17338368,
+                "role": "unclassified_renderer"
+              },
+              {
+                "pid": 73664,
+                "private_bytes": 51691520,
+                "role": "browser"
+              },
+              {
+                "pid": 56528,
+                "private_bytes": 113016832,
+                "role": "GPU"
+              },
+              {
+                "pid": 72456,
+                "private_bytes": 47058944,
+                "role": "chrome_browser_ui_renderer"
+              },
+              {
+                "pid": 64312,
+                "private_bytes": 143949824,
+                "role": "workbench_renderer_group"
+              },
+              {
+                "pid": 35156,
+                "private_bytes": 10399744,
+                "role": "storage.mojom.StorageService"
+              }
+            ]
+          },
+          {
+            "elapsed_ms": 19084,
+            "phase": "package_20212022-playoff",
+            "private_bytes": 411779072,
+            "private_bytes_by_role": {
+              "GPU": 112934912,
+              "browser": 51716096,
+              "chrome_browser_ui_renderer": 47063040,
+              "network.mojom.NetworkService": 18042880,
+              "storage.mojom.StorageService": 10399744,
+              "unclassified": 5951488,
+              "unclassified_renderer": 17338368,
+              "workbench_renderer_group": 148332544
+            },
+            "processes": [
+              {
+                "pid": 67336,
+                "private_bytes": 18042880,
+                "role": "network.mojom.NetworkService"
+              },
+              {
+                "pid": 24372,
+                "private_bytes": 3108864,
+                "role": "unclassified"
+              },
+              {
+                "pid": 48628,
+                "private_bytes": 2842624,
+                "role": "unclassified"
+              },
+              {
+                "pid": 47248,
+                "private_bytes": 17338368,
+                "role": "unclassified_renderer"
+              },
+              {
+                "pid": 73664,
+                "private_bytes": 51716096,
+                "role": "browser"
+              },
+              {
+                "pid": 56528,
+                "private_bytes": 112934912,
+                "role": "GPU"
+              },
+              {
+                "pid": 72456,
+                "private_bytes": 47063040,
+                "role": "chrome_browser_ui_renderer"
+              },
+              {
+                "pid": 64312,
+                "private_bytes": 148332544,
+                "role": "workbench_renderer_group"
+              },
+              {
+                "pid": 35156,
+                "private_bytes": 10399744,
+                "role": "storage.mojom.StorageService"
+              }
+            ]
+          },
+          {
+            "elapsed_ms": 122151,
+            "phase": "archive_regular",
+            "private_bytes": 376156160,
+            "private_bytes_by_role": {
+              "GPU": 110600192,
+              "browser": 48463872,
+              "chrome_browser_ui_renderer": 38031360,
+              "network.mojom.NetworkService": 15212544,
+              "storage.mojom.StorageService": 10285056,
+              "unclassified": 5734400,
+              "unclassified_renderer": 17235968,
+              "workbench_renderer_group": 130592768
+            },
+            "processes": [
+              {
+                "pid": 67336,
+                "private_bytes": 15212544,
+                "role": "network.mojom.NetworkService"
+              },
+              {
+                "pid": 24372,
+                "private_bytes": 3031040,
+                "role": "unclassified"
+              },
+              {
+                "pid": 48628,
+                "private_bytes": 2703360,
+                "role": "unclassified"
+              },
+              {
+                "pid": 47248,
+                "private_bytes": 17235968,
+                "role": "unclassified_renderer"
+              },
+              {
+                "pid": 73664,
+                "private_bytes": 48463872,
+                "role": "browser"
+              },
+              {
+                "pid": 56528,
+                "private_bytes": 110600192,
+                "role": "GPU"
+              },
+              {
+                "pid": 72456,
+                "private_bytes": 38031360,
+                "role": "chrome_browser_ui_renderer"
+              },
+              {
+                "pid": 64312,
+                "private_bytes": 130592768,
+                "role": "workbench_renderer_group"
+              },
+              {
+                "pid": 35156,
+                "private_bytes": 10285056,
+                "role": "storage.mojom.StorageService"
+              }
+            ]
+          },
+          {
+            "elapsed_ms": 123491,
+            "phase": "archive_playoff",
+            "private_bytes": 380190720,
+            "private_bytes_by_role": {
+              "GPU": 110604288,
+              "browser": 48472064,
+              "chrome_browser_ui_renderer": 38031360,
+              "network.mojom.NetworkService": 15179776,
+              "storage.mojom.StorageService": 10285056,
+              "unclassified": 5734400,
+              "unclassified_renderer": 17235968,
+              "workbench_renderer_group": 134647808
+            },
+            "processes": [
+              {
+                "pid": 67336,
+                "private_bytes": 15179776,
+                "role": "network.mojom.NetworkService"
+              },
+              {
+                "pid": 24372,
+                "private_bytes": 3031040,
+                "role": "unclassified"
+              },
+              {
+                "pid": 48628,
+                "private_bytes": 2703360,
+                "role": "unclassified"
+              },
+              {
+                "pid": 47248,
+                "private_bytes": 17235968,
+                "role": "unclassified_renderer"
+              },
+              {
+                "pid": 73664,
+                "private_bytes": 48472064,
+                "role": "browser"
+              },
+              {
+                "pid": 56528,
+                "private_bytes": 110604288,
+                "role": "GPU"
+              },
+              {
+                "pid": 72456,
+                "private_bytes": 38031360,
+                "role": "chrome_browser_ui_renderer"
+              },
+              {
+                "pid": 64312,
+                "private_bytes": 134647808,
+                "role": "workbench_renderer_group"
+              },
+              {
+                "pid": 35156,
+                "private_bytes": 10285056,
+                "role": "storage.mojom.StorageService"
+              }
+            ]
+          },
+          {
+            "elapsed_ms": 126635,
+            "phase": "resident_settled",
+            "private_bytes": 381431808,
+            "private_bytes_by_role": {
+              "GPU": 110551040,
+              "browser": 47706112,
+              "chrome_browser_ui_renderer": 38035456,
+              "network.mojom.NetworkService": 15151104,
+              "storage.mojom.StorageService": 10264576,
+              "unclassified": 5734400,
+              "unclassified_renderer": 17235968,
+              "workbench_renderer_group": 136753152
+            },
+            "processes": [
+              {
+                "pid": 67336,
+                "private_bytes": 15151104,
+                "role": "network.mojom.NetworkService"
+              },
+              {
+                "pid": 24372,
+                "private_bytes": 3031040,
+                "role": "unclassified"
+              },
+              {
+                "pid": 48628,
+                "private_bytes": 2703360,
+                "role": "unclassified"
+              },
+              {
+                "pid": 47248,
+                "private_bytes": 17235968,
+                "role": "unclassified_renderer"
+              },
+              {
+                "pid": 73664,
+                "private_bytes": 47706112,
+                "role": "browser"
+              },
+              {
+                "pid": 56528,
+                "private_bytes": 110551040,
+                "role": "GPU"
+              },
+              {
+                "pid": 72456,
+                "private_bytes": 38035456,
+                "role": "chrome_browser_ui_renderer"
+              },
+              {
+                "pid": 64312,
+                "private_bytes": 136753152,
+                "role": "workbench_renderer_group"
+              },
+              {
+                "pid": 35156,
+                "private_bytes": 10264576,
+                "role": "storage.mojom.StorageService"
+              }
+            ]
+          },
+          {
+            "elapsed_ms": 126878,
+            "phase": "engine_restarted",
+            "private_bytes": 380739584,
+            "private_bytes_by_role": {
+              "GPU": 109989888,
+              "browser": 47706112,
+              "chrome_browser_ui_renderer": 38035456,
+              "network.mojom.NetworkService": 15151104,
+              "storage.mojom.StorageService": 10264576,
+              "unclassified": 5734400,
+              "unclassified_renderer": 17235968,
+              "workbench_renderer_group": 136622080
+            },
+            "processes": [
+              {
+                "pid": 67336,
+                "private_bytes": 15151104,
+                "role": "network.mojom.NetworkService"
+              },
+              {
+                "pid": 24372,
+                "private_bytes": 3031040,
+                "role": "unclassified"
+              },
+              {
+                "pid": 48628,
+                "private_bytes": 2703360,
+                "role": "unclassified"
+              },
+              {
+                "pid": 47248,
+                "private_bytes": 17235968,
+                "role": "unclassified_renderer"
+              },
+              {
+                "pid": 73664,
+                "private_bytes": 47706112,
+                "role": "browser"
+              },
+              {
+                "pid": 56528,
+                "private_bytes": 109989888,
+                "role": "GPU"
+              },
+              {
+                "pid": 72456,
+                "private_bytes": 38035456,
+                "role": "chrome_browser_ui_renderer"
+              },
+              {
+                "pid": 64312,
+                "private_bytes": 136622080,
+                "role": "workbench_renderer_group"
+              },
+              {
+                "pid": 35156,
+                "private_bytes": 10264576,
+                "role": "storage.mojom.StorageService"
+              }
+            ]
+          }
+        ],
+        "source_workload_sha256": "65c70f10d721bb6d5a126a1c9af725e1e52d99a71b16f0670c07ea0a7407be7c",
+        "working_set_250_mib_passed": false
+      },
+      {
+        "archive": {
+          "bytes": 149672,
+          "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca"
+        },
+        "artifact": {
+          "commit": "9bae39fd6f7682d0d3468fe0417daf20ad120894",
+          "packages": 75,
+          "shell_build": "243c11d765bfc3eb378f90b6d48355eb3b70c6e7fabddaafb4374957e161913d",
+          "verified_files": 182
+        },
+        "birth_qualification": "Live creation <= root creation + previous sample elapsed -1000ms; first sample unknown. Endpoint clock drift <=100ms; unobserved clock changes not attested.",
+        "browser": "153.0.8010.12",
+        "markers": [
+          {
+            "name": "MISER_PROCESS_workbench_page_54834875-967c-4def-acae-451e0aa1c3d7",
+            "pid": 60784,
+            "role": "workbench_page",
+            "url": "http://127.0.0.1:60723/ICELINES/workbench/#/leaders?season=20242025&type=playoff&kind=skaters&sort=points&gp=&data=local"
+          },
+          {
+            "name": "MISER_PROCESS_current_engine_51e614a1-f536-4cbf-be56-527a92de6e9b",
+            "pid": 60784,
+            "role": "current_engine",
+            "url": "http://127.0.0.1:60723/ICELINES/workbench/src/worker.js"
+          },
+          {
+            "name": "MISER_PROCESS_service_worker_db2c4cf6-6dad-4ef6-81df-64128d8b6146",
+            "pid": 60784,
+            "role": "service_worker",
+            "url": "http://127.0.0.1:60723/ICELINES/workbench/sw.js"
+          },
+          {
+            "name": "MISER_PROCESS_browser_ui_6bd79bcb-8012-4941-bd58-fe5c063686c9",
+            "pid": 74252,
+            "role": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html"
+          },
+          {
+            "name": "MISER_PROCESS_browser_ui_b5f52a74-e519-4913-9093-948ed3d3cbde",
+            "pid": 74252,
+            "role": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/"
+          }
+        ],
+        "normal_peak": {
+          "elapsed_ms": 18189,
+          "phase": "package_20212022-playoff",
+          "private_bytes": 406437888,
+          "private_bytes_by_role": {
+            "GPU": 108507136,
+            "browser": 52404224,
+            "chrome_browser_ui_renderer": 44863488,
+            "network.mojom.NetworkService": 18219008,
+            "storage.mojom.StorageService": 10424320,
+            "unclassified": 3039232,
+            "unclassified_renderer": 17268736,
+            "workbench_renderer_group": 151711744
+          },
+          "processes": [
+            {
+              "pid": 59124,
+              "private_bytes": 10424320,
+              "role": "storage.mojom.StorageService"
+            },
+            {
+              "pid": 74252,
+              "private_bytes": 44863488,
+              "role": "chrome_browser_ui_renderer"
+            },
+            {
+              "pid": 60784,
+              "private_bytes": 151711744,
+              "role": "workbench_renderer_group"
+            },
+            {
+              "pid": 73448,
+              "private_bytes": 18219008,
+              "role": "network.mojom.NetworkService"
+            },
+            {
+              "pid": 33352,
+              "private_bytes": 52404224,
+              "role": "browser"
+            },
+            {
+              "pid": 41964,
+              "private_bytes": 3039232,
+              "role": "unclassified"
+            },
+            {
+              "pid": 67136,
+              "private_bytes": 108507136,
+              "role": "GPU"
+            },
+            {
+              "pid": 49948,
+              "private_bytes": 17268736,
+              "role": "unclassified_renderer"
+            }
+          ]
+        },
+        "normal_phase_count": 82,
+        "normal_sample_count": 245,
+        "package_ids": [
+          "20252026-regular",
+          "20242025-regular",
+          "20242025-playoff",
+          "20232024-regular",
+          "20232024-playoff",
+          "20222023-regular",
+          "20222023-playoff",
+          "20212022-regular",
+          "20212022-playoff",
+          "20202021-regular",
+          "20202021-playoff",
+          "20192020-regular",
+          "20192020-playoff",
+          "20182019-regular",
+          "20182019-playoff",
+          "20172018-regular",
+          "20172018-playoff",
+          "20162017-regular",
+          "20162017-playoff",
+          "20152016-regular",
+          "20152016-playoff",
+          "20142015-regular",
+          "20142015-playoff",
+          "20132014-regular",
+          "20132014-playoff",
+          "20122013-regular",
+          "20122013-playoff",
+          "20112012-regular",
+          "20112012-playoff",
+          "20102011-regular",
+          "20102011-playoff",
+          "20092010-regular",
+          "20092010-playoff",
+          "20082009-regular",
+          "20082009-playoff",
+          "20072008-regular",
+          "20072008-playoff",
+          "20062007-regular",
+          "20062007-playoff",
+          "20052006-regular",
+          "20052006-playoff",
+          "20032004-regular",
+          "20032004-playoff",
+          "20022003-regular",
+          "20022003-playoff",
+          "20012002-regular",
+          "20012002-playoff",
+          "20002001-regular",
+          "20002001-playoff",
+          "19992000-regular",
+          "19992000-playoff",
+          "19981999-regular",
+          "19981999-playoff",
+          "19971998-regular",
+          "19971998-playoff",
+          "19961997-regular",
+          "19961997-playoff",
+          "19951996-regular",
+          "19951996-playoff",
+          "19941995-regular",
+          "19941995-playoff",
+          "19931994-regular",
+          "19931994-playoff",
+          "19921993-regular",
+          "19921993-playoff",
+          "19911992-regular",
+          "19911992-playoff",
+          "19901991-regular",
+          "19901991-playoff",
+          "19891990-regular",
+          "19891990-playoff",
+          "19881989-regular",
+          "19881989-playoff",
+          "19871988-regular",
+          "19871988-playoff"
+        ],
+        "post_measurement_role_candidates": {
+          "33352": "browser",
+          "49948": "unclassified_renderer",
+          "59124": "storage.mojom.StorageService",
+          "60784": "workbench_renderer_group",
+          "67136": "GPU",
+          "68380": "tracing.mojom.TracingService",
+          "73448": "network.mojom.NetworkService",
+          "74252": "chrome_browser_ui_renderer"
+        },
+        "post_trace_events_streamed": 19,
+        "private_250_mib_passed": false,
+        "process_births": {
+          "33352": 1792537069023,
+          "49948": 1792537069882,
+          "59124": 1792537069676,
+          "60784": 1792537069893,
+          "67136": 1792537069641,
+          "68380": 1792537195879,
+          "73448": 1792537069653,
+          "74252": 1792537069851
+        },
+        "root_birth_unix_ms": 1792537069023,
+        "scope": "Process labels are not thread allocations or causal/independent app costs. All PIDs/bytes remain in each total; post-only tracing processes absent from prefix add no bytes.",
+        "selected_phase_maxima": [
+          {
+            "elapsed_ms": 3100,
+            "phase": "blank_browser",
+            "private_bytes": 240459776,
+            "private_bytes_by_role": {
+              "GPU": 78319616,
+              "browser": 45260800,
+              "chrome_browser_ui_renderer": 46305280,
+              "network.mojom.NetworkService": 16498688,
+              "storage.mojom.StorageService": 10305536,
+              "unclassified": 3039232,
+              "unclassified_renderer": 17596416,
+              "workbench_renderer_group": 23134208
+            },
+            "processes": [
+              {
+                "pid": 59124,
+                "private_bytes": 10305536,
+                "role": "storage.mojom.StorageService"
+              },
+              {
+                "pid": 74252,
+                "private_bytes": 46305280,
+                "role": "chrome_browser_ui_renderer"
+              },
+              {
+                "pid": 60784,
+                "private_bytes": 23134208,
+                "role": "workbench_renderer_group"
+              },
+              {
+                "pid": 73448,
+                "private_bytes": 16498688,
+                "role": "network.mojom.NetworkService"
+              },
+              {
+                "pid": 33352,
+                "private_bytes": 45260800,
+                "role": "browser"
+              },
+              {
+                "pid": 41964,
+                "private_bytes": 3039232,
+                "role": "unclassified"
+              },
+              {
+                "pid": 67136,
+                "private_bytes": 78319616,
+                "role": "GPU"
+              },
+              {
+                "pid": 49948,
+                "private_bytes": 17596416,
+                "role": "unclassified_renderer"
+              }
+            ]
+          },
+          {
+            "elapsed_ms": 4565,
+            "phase": "startup",
+            "private_bytes": 291622912,
+            "private_bytes_by_role": {
+              "GPU": 94879744,
+              "browser": 50044928,
+              "chrome_browser_ui_renderer": 46395392,
+              "network.mojom.NetworkService": 17780736,
+              "storage.mojom.StorageService": 10424320,
+              "unclassified": 3039232,
+              "unclassified_renderer": 17596416,
+              "workbench_renderer_group": 51462144
+            },
+            "processes": [
+              {
+                "pid": 59124,
+                "private_bytes": 10424320,
+                "role": "storage.mojom.StorageService"
+              },
+              {
+                "pid": 74252,
+                "private_bytes": 46395392,
+                "role": "chrome_browser_ui_renderer"
+              },
+              {
+                "pid": 60784,
+                "private_bytes": 51462144,
+                "role": "workbench_renderer_group"
+              },
+              {
+                "pid": 73448,
+                "private_bytes": 17780736,
+                "role": "network.mojom.NetworkService"
+              },
+              {
+                "pid": 33352,
+                "private_bytes": 50044928,
+                "role": "browser"
+              },
+              {
+                "pid": 41964,
+                "private_bytes": 3039232,
+                "role": "unclassified"
+              },
+              {
+                "pid": 67136,
+                "private_bytes": 94879744,
+                "role": "GPU"
+              },
+              {
+                "pid": 49948,
+                "private_bytes": 17596416,
+                "role": "unclassified_renderer"
+              }
+            ]
+          },
+          {
+            "elapsed_ms": 16663,
+            "phase": "package_20212022-regular",
+            "private_bytes": 402001920,
+            "private_bytes_by_role": {
+              "GPU": 108511232,
+              "browser": 52391936,
+              "chrome_browser_ui_renderer": 44863488,
+              "network.mojom.NetworkService": 18219008,
+              "storage.mojom.StorageService": 10424320,
+              "unclassified": 3039232,
+              "unclassified_renderer": 17268736,
+              "workbench_renderer_group": 147283968
+            },
+            "processes": [
+              {
+                "pid": 59124,
+                "private_bytes": 10424320,
+                "role": "storage.mojom.StorageService"
+              },
+              {
+                "pid": 74252,
+                "private_bytes": 44863488,
+                "role": "chrome_browser_ui_renderer"
+              },
+              {
+                "pid": 60784,
+                "private_bytes": 147283968,
+                "role": "workbench_renderer_group"
+              },
+              {
+                "pid": 73448,
+                "private_bytes": 18219008,
+                "role": "network.mojom.NetworkService"
+              },
+              {
+                "pid": 33352,
+                "private_bytes": 52391936,
+                "role": "browser"
+              },
+              {
+                "pid": 41964,
+                "private_bytes": 3039232,
+                "role": "unclassified"
+              },
+              {
+                "pid": 67136,
+                "private_bytes": 108511232,
+                "role": "GPU"
+              },
+              {
+                "pid": 49948,
+                "private_bytes": 17268736,
+                "role": "unclassified_renderer"
+              }
+            ]
+          },
+          {
+            "elapsed_ms": 18189,
+            "phase": "package_20212022-playoff",
+            "private_bytes": 406437888,
+            "private_bytes_by_role": {
+              "GPU": 108507136,
+              "browser": 52404224,
+              "chrome_browser_ui_renderer": 44863488,
+              "network.mojom.NetworkService": 18219008,
+              "storage.mojom.StorageService": 10424320,
+              "unclassified": 3039232,
+              "unclassified_renderer": 17268736,
+              "workbench_renderer_group": 151711744
+            },
+            "processes": [
+              {
+                "pid": 59124,
+                "private_bytes": 10424320,
+                "role": "storage.mojom.StorageService"
+              },
+              {
+                "pid": 74252,
+                "private_bytes": 44863488,
+                "role": "chrome_browser_ui_renderer"
+              },
+              {
+                "pid": 60784,
+                "private_bytes": 151711744,
+                "role": "workbench_renderer_group"
+              },
+              {
+                "pid": 73448,
+                "private_bytes": 18219008,
+                "role": "network.mojom.NetworkService"
+              },
+              {
+                "pid": 33352,
+                "private_bytes": 52404224,
+                "role": "browser"
+              },
+              {
+                "pid": 41964,
+                "private_bytes": 3039232,
+                "role": "unclassified"
+              },
+              {
+                "pid": 67136,
+                "private_bytes": 108507136,
+                "role": "GPU"
+              },
+              {
+                "pid": 49948,
+                "private_bytes": 17268736,
+                "role": "unclassified_renderer"
+              }
+            ]
+          },
+          {
+            "elapsed_ms": 119393,
+            "phase": "archive_regular",
+            "private_bytes": 373534720,
+            "private_bytes_by_role": {
+              "GPU": 106336256,
+              "browser": 49123328,
+              "chrome_browser_ui_renderer": 36450304,
+              "network.mojom.NetworkService": 15446016,
+              "storage.mojom.StorageService": 10309632,
+              "unclassified": 2899968,
+              "unclassified_renderer": 17162240,
+              "workbench_renderer_group": 135806976
+            },
+            "processes": [
+              {
+                "pid": 59124,
+                "private_bytes": 10309632,
+                "role": "storage.mojom.StorageService"
+              },
+              {
+                "pid": 74252,
+                "private_bytes": 36450304,
+                "role": "chrome_browser_ui_renderer"
+              },
+              {
+                "pid": 60784,
+                "private_bytes": 135806976,
+                "role": "workbench_renderer_group"
+              },
+              {
+                "pid": 73448,
+                "private_bytes": 15446016,
+                "role": "network.mojom.NetworkService"
+              },
+              {
+                "pid": 33352,
+                "private_bytes": 49123328,
+                "role": "browser"
+              },
+              {
+                "pid": 41964,
+                "private_bytes": 2899968,
+                "role": "unclassified"
+              },
+              {
+                "pid": 67136,
+                "private_bytes": 106336256,
+                "role": "GPU"
+              },
+              {
+                "pid": 49948,
+                "private_bytes": 17162240,
+                "role": "unclassified_renderer"
+              }
+            ]
+          },
+          {
+            "elapsed_ms": 120477,
+            "phase": "archive_playoff",
+            "private_bytes": 376999936,
+            "private_bytes_by_role": {
+              "GPU": 106000384,
+              "browser": 49111040,
+              "chrome_browser_ui_renderer": 36450304,
+              "network.mojom.NetworkService": 15441920,
+              "storage.mojom.StorageService": 10309632,
+              "unclassified": 2899968,
+              "unclassified_renderer": 17162240,
+              "workbench_renderer_group": 139624448
+            },
+            "processes": [
+              {
+                "pid": 59124,
+                "private_bytes": 10309632,
+                "role": "storage.mojom.StorageService"
+              },
+              {
+                "pid": 74252,
+                "private_bytes": 36450304,
+                "role": "chrome_browser_ui_renderer"
+              },
+              {
+                "pid": 60784,
+                "private_bytes": 139624448,
+                "role": "workbench_renderer_group"
+              },
+              {
+                "pid": 73448,
+                "private_bytes": 15441920,
+                "role": "network.mojom.NetworkService"
+              },
+              {
+                "pid": 33352,
+                "private_bytes": 49111040,
+                "role": "browser"
+              },
+              {
+                "pid": 41964,
+                "private_bytes": 2899968,
+                "role": "unclassified"
+              },
+              {
+                "pid": 67136,
+                "private_bytes": 106000384,
+                "role": "GPU"
+              },
+              {
+                "pid": 49948,
+                "private_bytes": 17162240,
+                "role": "unclassified_renderer"
+              }
+            ]
+          },
+          {
+            "elapsed_ms": 122039,
+            "phase": "resident_settled",
+            "private_bytes": 386318336,
+            "private_bytes_by_role": {
+              "GPU": 106352640,
+              "browser": 49397760,
+              "chrome_browser_ui_renderer": 36450304,
+              "network.mojom.NetworkService": 15441920,
+              "storage.mojom.StorageService": 10309632,
+              "unclassified": 2899968,
+              "unclassified_renderer": 17162240,
+              "workbench_renderer_group": 148303872
+            },
+            "processes": [
+              {
+                "pid": 59124,
+                "private_bytes": 10309632,
+                "role": "storage.mojom.StorageService"
+              },
+              {
+                "pid": 74252,
+                "private_bytes": 36450304,
+                "role": "chrome_browser_ui_renderer"
+              },
+              {
+                "pid": 60784,
+                "private_bytes": 148303872,
+                "role": "workbench_renderer_group"
+              },
+              {
+                "pid": 73448,
+                "private_bytes": 15441920,
+                "role": "network.mojom.NetworkService"
+              },
+              {
+                "pid": 33352,
+                "private_bytes": 49397760,
+                "role": "browser"
+              },
+              {
+                "pid": 41964,
+                "private_bytes": 2899968,
+                "role": "unclassified"
+              },
+              {
+                "pid": 67136,
+                "private_bytes": 106352640,
+                "role": "GPU"
+              },
+              {
+                "pid": 49948,
+                "private_bytes": 17162240,
+                "role": "unclassified_renderer"
+              }
+            ]
+          },
+          {
+            "elapsed_ms": 123873,
+            "phase": "engine_restarted",
+            "private_bytes": 364818432,
+            "private_bytes_by_role": {
+              "GPU": 114909184,
+              "browser": 48017408,
+              "chrome_browser_ui_renderer": 36450304,
+              "network.mojom.NetworkService": 15372288,
+              "storage.mojom.StorageService": 10309632,
+              "unclassified": 2899968,
+              "unclassified_renderer": 17162240,
+              "workbench_renderer_group": 119697408
+            },
+            "processes": [
+              {
+                "pid": 59124,
+                "private_bytes": 10309632,
+                "role": "storage.mojom.StorageService"
+              },
+              {
+                "pid": 74252,
+                "private_bytes": 36450304,
+                "role": "chrome_browser_ui_renderer"
+              },
+              {
+                "pid": 60784,
+                "private_bytes": 119697408,
+                "role": "workbench_renderer_group"
+              },
+              {
+                "pid": 73448,
+                "private_bytes": 15372288,
+                "role": "network.mojom.NetworkService"
+              },
+              {
+                "pid": 33352,
+                "private_bytes": 48017408,
+                "role": "browser"
+              },
+              {
+                "pid": 41964,
+                "private_bytes": 2899968,
+                "role": "unclassified"
+              },
+              {
+                "pid": 67136,
+                "private_bytes": 114909184,
+                "role": "GPU"
+              },
+              {
+                "pid": 49948,
+                "private_bytes": 17162240,
+                "role": "unclassified_renderer"
+              }
+            ]
+          }
+        ],
+        "source_workload_sha256": "65c70f10d721bb6d5a126a1c9af725e1e52d99a71b16f0670c07ea0a7407be7c",
+        "working_set_250_mib_passed": false
+      }
+    ],
+    "boundary_audit": {
+      "source_fragments": {
+        "original_launch_equal": true,
+        "context_to_resident_settled_equal": true,
+        "restart_sampler_stop_and_counter_code_equal": true,
+        "only_inactive_diagnostic_branches_removed": true
+      },
+      "runs": [
+        {
+          "run": 1,
+          "normal_phase_count": 82,
+          "normal_sample_count": 247,
+          "no_samples_after_boundary": true,
+          "post_binding_start_gap_ms": 0.3647,
+          "endpoint_clock_drift_ms": 8.102899999998044,
+          "post_only_native_pids": [
+            72812
+          ],
+          "warm_max_ms": 89.37299999999232,
+          "warm_500ms_passed": true
+        },
+        {
+          "run": 2,
+          "normal_phase_count": 82,
+          "normal_sample_count": 245,
+          "no_samples_after_boundary": true,
+          "post_binding_start_gap_ms": 0.348,
+          "endpoint_clock_drift_ms": 0.39200000000710133,
+          "post_only_native_pids": [
+            68380
+          ],
+          "warm_max_ms": 89.95830000001297,
+          "warm_500ms_passed": true
+        }
+      ],
+      "transient_unclassified": {
+        "run": 1,
+        "pid": 57256,
+        "observations": [
+          {
+            "phase": "package_19871988-playoff",
+            "elapsed_ms": 120282,
+            "private_bytes": 77299712
+          }
+        ],
+        "absent_from_both_late_native_type_snapshots": true,
+        "scope": "Unknown contribution retained; neither browser utility nor old engine identity established"
+      }
+    },
+    "interpretation": [
+      "Late mapped workbench group includes page and final engine/SW PIDs, not a split of Rust/JS/thread costs",
+      "The first peak retains one unidentified77,299,712B process observed once; old-engine/browser-utility identity unestablished",
+      "GPU/browser services may hold app-induced resources; these are not independent overhead or an immutable floor",
+      "All original bytes/PIDs remain in the total; post-only tracing processes never enter measured samples"
+    ],
+    "next": "Identify transient process PID/type/parent/creation metadata in a separately labeled OS-side diagnostic before assigning a cause or changing measurement/accounting."
+  },
+  "raw_archives": [
+    {
+      "path": "run-1-report.json.gz",
+      "bytes": 7493,
+      "sha256": "1b7b59b5fbf792a0fee5aa12620da5d81dbbd32f355fb724d1050e3e2be17215",
+      "expanded_sha256": "c71f502cf5c951eb7e3de1a49c5261d0ed4e531dea7da3da009e23626d043b4c"
+    },
+    {
+      "path": "run-1-samples.json.gz",
+      "bytes": 8360,
+      "sha256": "4c544713545d12719c2d2f9c5280bc821cc8b6cef19150bb227a9ebfaaef43d0",
+      "expanded_sha256": "13683bfe6a56e8a1a2a9759d11d4999edebc8bdad916dbc14baf05a76b760ce6"
+    },
+    {
+      "path": "run-1-post-binding.json.gz",
+      "bytes": 1437,
+      "sha256": "82353e6ebddd48ffc4311782c2f19f3bb1edf18a76d2740d5361698ca0985f13",
+      "expanded_sha256": "bdc52cbf9c9d3dea5c74aee28d97a0c85ba9b36301f6d61dd8e30b06decda0e4"
+    },
+    {
+      "path": "run-1-post-binding-trace.json.gz",
+      "bytes": 895,
+      "sha256": "df04ee260b80bca28e2c9f41d2b084e78acb5270456796accfec8d0e7543ab1b",
+      "expanded_sha256": "76f055276e4ca70a71411b2c74f66cbcdaff2b2197e8329d50417288335212e4"
+    },
+    {
+      "path": "run-2-report.json.gz",
+      "bytes": 7390,
+      "sha256": "fc0d8bd65d81e930bb6875cb5ef4e5398a26decd013a6bbdd0c6a201ac0ec83a",
+      "expanded_sha256": "306c380cbe5682e52dc694a8d06395a5a6882f890d951b4ffce43b1c56855963"
+    },
+    {
+      "path": "run-2-samples.json.gz",
+      "bytes": 7642,
+      "sha256": "34831dea6f45fa26a80d88f370adc5a1f29f1acf65bc3fd2b307c8c7391b7340",
+      "expanded_sha256": "830dee077c6031c6546725ac1d18ad1ba45a4bf1b25332276f9fbfbdd034da35"
+    },
+    {
+      "path": "run-2-post-binding.json.gz",
+      "bytes": 1433,
+      "sha256": "6c0c3e35c12090b3a51f566d41865eef9173ca96a2e48744204bc90b69b93c58",
+      "expanded_sha256": "f2354c18411736b6368be70431858f3ebac3174a05eef070dca5ecb37f6e00e0"
+    },
+    {
+      "path": "run-2-post-binding-trace.json.gz",
+      "bytes": 878,
+      "sha256": "14852c836c78bcbee8d87208a90ff9ce0f801bd5ddf30d556cb52f8b778f2f0d",
+      "expanded_sha256": "6f369af24efb93846613b85ebab42b406e921dab65e478c50f7534c75480c1fb"
+    },
+    {
+      "path": "exp020-boundary-audit.json.gz",
+      "bytes": 570,
+      "sha256": "634a71b77447b6aa683c9d793685307c8fdc5b5043df6d638c49d6f450c0bd3e",
+      "expanded_sha256": "8de802438c255a0395cd2c0e9a185cc55f017e01e0f98e3a5c2dcc9a35b725ed"
+    }
+  ],
+  "checks": {
+    "local_all_target_tests": 33,
+    "strict_clippy": true,
+    "normal82_phase_coverage": true,
+    "no_samples_after_attribution_boundary": true,
+    "original_source_fragments_equal": true,
+    "all_phase_raw_maxima_recomputed": true,
+    "role_byte_conservation": true,
+    "final_parser_existing_outputs_equal": true
+  },
+  "normal_result": "Private428.08203125/387.609375MiB and working-set709.20703125/655.68359375MiB; original250MiB fails; warm maxima89.373/89.958ms pass500ms",
+  "unclassified_transient": "Run1 PID57256 contributes77,299,712B in one sample and is absent from late type/birth snapshots. Neither browser utility nor old engine identity established; keep it counted.",
+  "limitations": [
+    "Mapped page/final engine/SW group is not a Rust/JS/thread split or retroactive old-worker identity",
+    "GPU/services may hold app-induced resources; no independent-overhead, immutable-floor or causal leak proof",
+    "Creation qualification is conservative and endpoint clocks checked; unobserved clock changes not attested",
+    "Process metrics are sequential OS reads, not exact concurrent physical RAM; working-set sums may double-count shared pages",
+    "No application/default/publication changes; physical Android deferred and private hosted Linux unverified after billing rejection"
+  ],
+  "private_custody": "MISER evidence/exp020-custody.json retains30 exact raw/source/audit archives",
+  "next": "Separately labeled OS-side transient PID/type/parent/creation metadata before classifying cause or changing sampler/accounting"
+}
