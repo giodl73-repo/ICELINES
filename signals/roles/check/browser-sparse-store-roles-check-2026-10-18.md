@@ -132,3 +132,12 @@ RAB failures and all six normal runs. Restored9bae39fd has exact original applic
 assets,172 units/ten browser cases/four suites pass; nine semantic regressions stay.
 Six MISER lenses approve negative evidence/guidance scope, not adoption.250MiB,
 Android and private-hosted gates stay open; no causal collection claim.
+
+
+EXP019 addendum: no handoff trial selected. Two explicitly primed worker diagnostics
+show no catalog input cohort observable by75;26 lab tests/strictClippy/identity/
+source/OS audits pass. Preserve recovery/borrowed semantics. Six MISER lenses approve
+evidence scope only: priming/evaluation affect timing, termination is unavailable,
+not-collected is not liveness, and native/compressed/main storage is outside this
+census.18 private archives/four public raw files retained. Original gates stay open;
+next normal process mapping keeps instrumentation outside the measured interval.

@@ -1,0 +1,267 @@
+{
+  "schema_version": 1,
+  "experiment": "MISER-EXP-019",
+  "change_id": "CHG-124",
+  "scope": "Two worker priming/Worker.evaluate diagnostics; not normal acceptance or exact liveness",
+  "summary": {
+    "experiment": "MISER-EXP-019",
+    "runs": [
+      {
+        "artifact": {
+          "commit": "9bae39fd6f7682d0d3468fe0417daf20ad120894",
+          "packages": 75,
+          "shell_build": "243c11d765bfc3eb378f90b6d48355eb3b70c6e7fabddaafb4374957e161913d",
+          "verified_files": 182
+        },
+        "browser": "153.0.8010.12",
+        "instrumented_peak_private_bytes": 414044160,
+        "scope": "Explicit priming/Worker.evaluate diagnostic. Weak input observations are not exact liveness or normal OS savings.",
+        "source_main_sha256": "00f8f0a97c67af01b7edb9c28711cdf2a923b9d08a04a23a412e7ac2671c70ea",
+        "source_worker_sha256": "12a6c48e58a22f545477760166bc8752a24d8cd7a8977b683df1a98fd0f03e42",
+        "stages": [
+          {
+            "checkpoint": "observer_ready",
+            "cumulative_input_bytes": 0,
+            "first8_not_collected_bytes": 0,
+            "loads": 0,
+            "not_collected_buffers": 0,
+            "not_collected_bytes": 0
+          },
+          {
+            "checkpoint": "after_1",
+            "cumulative_input_bytes": 926515,
+            "first8_not_collected_bytes": 926515,
+            "loads": 1,
+            "not_collected_buffers": 1,
+            "not_collected_bytes": 926515
+          },
+          {
+            "checkpoint": "after_8",
+            "cumulative_input_bytes": 5457141,
+            "first8_not_collected_bytes": 5457141,
+            "loads": 8,
+            "not_collected_buffers": 8,
+            "not_collected_bytes": 5457141
+          },
+          {
+            "checkpoint": "after_9",
+            "cumulative_input_bytes": 5720434,
+            "first8_not_collected_bytes": 5457141,
+            "loads": 9,
+            "not_collected_buffers": 9,
+            "not_collected_bytes": 5720434
+          },
+          {
+            "checkpoint": "after_75",
+            "cumulative_input_bytes": 41006884,
+            "first8_not_collected_bytes": 0,
+            "loads": 75,
+            "not_collected_buffers": 0,
+            "not_collected_bytes": 0
+          },
+          {
+            "checkpoint": "archive_regular",
+            "cumulative_input_bytes": 41914637,
+            "first8_not_collected_bytes": 0,
+            "loads": 76,
+            "not_collected_buffers": 1,
+            "not_collected_bytes": 907753
+          },
+          {
+            "checkpoint": "archive_playoff",
+            "cumulative_input_bytes": 42174045,
+            "first8_not_collected_bytes": 0,
+            "loads": 77,
+            "not_collected_buffers": 2,
+            "not_collected_bytes": 1167161
+          },
+          {
+            "checkpoint": "queries_settled",
+            "cumulative_input_bytes": 42174045,
+            "first8_not_collected_bytes": 0,
+            "loads": 77,
+            "not_collected_buffers": 0,
+            "not_collected_bytes": 0
+          },
+          {
+            "checkpoint": "engine_restarted",
+            "metrics_unavailable": true,
+            "worker_terminated": true
+          }
+        ]
+      },
+      {
+        "artifact": {
+          "commit": "9bae39fd6f7682d0d3468fe0417daf20ad120894",
+          "packages": 75,
+          "shell_build": "243c11d765bfc3eb378f90b6d48355eb3b70c6e7fabddaafb4374957e161913d",
+          "verified_files": 182
+        },
+        "browser": "153.0.8010.12",
+        "instrumented_peak_private_bytes": 414707712,
+        "scope": "Explicit priming/Worker.evaluate diagnostic. Weak input observations are not exact liveness or normal OS savings.",
+        "source_main_sha256": "00f8f0a97c67af01b7edb9c28711cdf2a923b9d08a04a23a412e7ac2671c70ea",
+        "source_worker_sha256": "12a6c48e58a22f545477760166bc8752a24d8cd7a8977b683df1a98fd0f03e42",
+        "stages": [
+          {
+            "checkpoint": "observer_ready",
+            "cumulative_input_bytes": 0,
+            "first8_not_collected_bytes": 0,
+            "loads": 0,
+            "not_collected_buffers": 0,
+            "not_collected_bytes": 0
+          },
+          {
+            "checkpoint": "after_1",
+            "cumulative_input_bytes": 926515,
+            "first8_not_collected_bytes": 926515,
+            "loads": 1,
+            "not_collected_buffers": 1,
+            "not_collected_bytes": 926515
+          },
+          {
+            "checkpoint": "after_8",
+            "cumulative_input_bytes": 5457141,
+            "first8_not_collected_bytes": 5457141,
+            "loads": 8,
+            "not_collected_buffers": 8,
+            "not_collected_bytes": 5457141
+          },
+          {
+            "checkpoint": "after_9",
+            "cumulative_input_bytes": 5720434,
+            "first8_not_collected_bytes": 5457141,
+            "loads": 9,
+            "not_collected_buffers": 9,
+            "not_collected_bytes": 5720434
+          },
+          {
+            "checkpoint": "after_75",
+            "cumulative_input_bytes": 41006884,
+            "first8_not_collected_bytes": 0,
+            "loads": 75,
+            "not_collected_buffers": 0,
+            "not_collected_bytes": 0
+          },
+          {
+            "checkpoint": "archive_regular",
+            "cumulative_input_bytes": 41914637,
+            "first8_not_collected_bytes": 0,
+            "loads": 76,
+            "not_collected_buffers": 1,
+            "not_collected_bytes": 907753
+          },
+          {
+            "checkpoint": "archive_playoff",
+            "cumulative_input_bytes": 42174045,
+            "first8_not_collected_bytes": 0,
+            "loads": 77,
+            "not_collected_buffers": 2,
+            "not_collected_bytes": 1167161
+          },
+          {
+            "checkpoint": "queries_settled",
+            "cumulative_input_bytes": 42174045,
+            "first8_not_collected_bytes": 0,
+            "loads": 77,
+            "not_collected_buffers": 0,
+            "not_collected_bytes": 0
+          },
+          {
+            "checkpoint": "engine_restarted",
+            "metrics_unavailable": true,
+            "worker_terminated": true
+          }
+        ]
+      }
+    ],
+    "ten_mib_after75_in_both_runs": false,
+    "sampling_audit": {
+      "scope": "OS recomputation for two instrumented worker diagnostics; prior normal EXP018 peak-phase lookup, not new normal measurements",
+      "worker_runs": [
+        {
+          "run": 1,
+          "all83_phases_recomputed": true,
+          "unique_process_ids_and_root_each_sample": true,
+          "monotonic_sampler_clock": true,
+          "peak_phase": "package_20212022-playoff",
+          "peak_private_bytes": 414044160
+        },
+        {
+          "run": 2,
+          "all83_phases_recomputed": true,
+          "unique_process_ids_and_root_each_sample": true,
+          "monotonic_sampler_clock": true,
+          "peak_phase": "package_20202021-regular",
+          "peak_private_bytes": 414707712
+        }
+      ],
+      "prior_normal_peaks": [
+        {
+          "label": "final-control-1",
+          "report_sha256": "fa3e91304cb7d6a62fb4594925f27f6a19516f9c8648692bcf3a586fdf50b4d5",
+          "peak_phase": "package_20212022-playoff",
+          "peak_private_bytes": 410120192
+        },
+        {
+          "label": "final-candidate-1",
+          "report_sha256": "ebcd36c5b98e94fc6127e52af459feac8f24a585a87fb9c2bc4d0803c5eff0f0",
+          "peak_phase": "package_20192020-regular",
+          "peak_private_bytes": 412090368
+        },
+        {
+          "label": "final-candidate-2",
+          "report_sha256": "ea1298ee6cab8b7fdcc34b511d530c9d0ba632c5f7923e6997e2ec60a9aad8b3",
+          "peak_phase": "engine_restarted",
+          "peak_private_bytes": 441012224
+        },
+        {
+          "label": "final-control-2",
+          "report_sha256": "2ef88d1f4e036cbbd408eba9e5b574e472ea0c84889046d68a04e18941e9ede5",
+          "peak_phase": "package_20212022-playoff",
+          "peak_private_bytes": 401805312
+        }
+      ]
+    },
+    "decision": "Staging-handoff trial not selected: zero observed catalog buffer cohort at75 in both, below predeclared10MiB lead. Preserve backup/borrowed semantics.",
+    "limitations": [
+      "Explicit empty-engine priming and Worker.evaluate alter lifecycle/timing; not normal acceptance",
+      "Only operation:load inputs observed; compressed importArchive/tar expansion, schedule, main backup, native and WASM storage excluded",
+      "WeakRefs do not prove strong liveness; worker termination is unavailable metrics, not zero OS memory",
+      "Native process release and GC cause are not established; original250MiB/mobile/Linux gates remain open"
+    ]
+  },
+  "raw_archives": [
+    {
+      "path": "run-1-report.json.gz",
+      "sha256": "ef39eef138c3b76aab1d6230b5e5abae4c6b8b00db673715b45eb69b3829dbfe",
+      "expanded_sha256": "71bcd926e256d7c1f541f8fd1d842e06b906e993dcc7c8233c5867515e0ad7c8"
+    },
+    {
+      "path": "run-1-samples.json.gz",
+      "sha256": "785ce24350a8ee1c92780add3ad7e754616aea9e0b6d8618e6eb0cff3b943263",
+      "expanded_sha256": "bb4247b7a18a75d7f87e9cf98bd5f96b1f29b22a525f3bc232d42d53aea3b53a"
+    },
+    {
+      "path": "run-2-report.json.gz",
+      "sha256": "c513757899d7822d945c2726b109411d0322d13f7bb9f61bf52662308b3f4443",
+      "expanded_sha256": "2597ce53c0ee613daf59135b6fe3876476639766e112cb025bad98055e29159a"
+    },
+    {
+      "path": "run-2-samples.json.gz",
+      "sha256": "1fea111418cc45e85ac5582bec1e095b940fbd164e53fd6d814cf605e8099959",
+      "expanded_sha256": "3a93e7a11ab7add76375cf141d33a0f417bcf976af8ce199ae6d91befe8fd207"
+    }
+  ],
+  "checks": {
+    "local_all_target_tests": 26,
+    "strict_clippy": true,
+    "all83_instrumented_phases_recomputed": true,
+    "source_hashes_match": true,
+    "no_dropped_records": true
+  },
+  "decision": "No staging-handoff trial selected: zero catalog load-input cohort observable at75 in both, below declared10MiB threshold",
+  "private_custody": "MISER evidence/exp019-custody.json retains18 exact raw/source/audit archives",
+  "next": "Map residual normal process costs after sampling stops; keep instrumentation outside measured interval and unknown processes counted",
+  "unchanged_gates": "Original250MiB normal gate failed; physical Android user-deferred; private hosted Linux unverified after billing rejection; no application/default/publication change"
+}

@@ -733,3 +733,20 @@ restoration checks;112 raw/source/log archives stay in MISER. Two initial normal
 runs are separate from finalC ABBA. No adopted memory gain, causal GC inference,
 merge/publication, Android or private hosted Linux acceptance. Next acquisition/
 staging ownership must preserve last-good recovery and exact bytes.
+
+
+## VER-BROWSER-WORKER-STAGING-CENSUS-001: Diagnostic input cohorts
+
+CHG-124 / REQ-BROWSER-001: two EXP019 primed-worker diagnostics retain every77
+operation:load input and83 sampled phases across75/eight/905-and332/20/restart.
+Rust checks catalog per-input sizes, request/generation prefixes, no drops, weak
+state consistency, phase identity and unavailable old-worker metrics on close.
+Both show5.20434MiB at8 and no catalog input objects observable by75; the declared
+10MiB-after75 staging lead is not met. Preserve handoff/backup/borrowed semantics.
+26 lab tests, strictClippy, source hashes and raw OS/root/clock audits pass.
+Public miser-worker-staging-census-20261020.json retains summary and four raw
+archives;18 exact private raw/source/audit archives remain. Priming/Worker.evaluate
+change lifecycle and timing, WeakRefs do not certify liveness/native release/leaks,
+and compressed archive/tar/main/native storage is excluded. No application change,
+normal250MiB/mobile/private-hosted acceptance, merge or publication. Next residual
+normal-process mapping must occur outside the measured sample interval.

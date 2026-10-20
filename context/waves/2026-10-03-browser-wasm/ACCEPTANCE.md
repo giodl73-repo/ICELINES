@@ -119,6 +119,20 @@ in MISER; receipt and31 selected public archives are beside
 separate. Original250MiB still fails; all final warm maxima are below500ms. Next is
 acquisition/staging ownership, not an adopted digest optimization or a causal GC claim.
 
+EXP019 observes worker operation:load buffers after an explicit empty-engine restart
+and Worker.evaluate listener installation. This changes startup/timing and is a
+diagnostic, not a normal control. Two runs preserve75/eight/905-and332/20/restart,
+all77 input identities/sizes and83 sampled phases. Both observe5.20434MiB at8 but
+zero catalog input objects by75; both have no observed cohort at queries settled.
+Termination yields unavailable metrics, not a measured zero. The declared10MiB
+staging lead fails; keep recovery/borrowed-input handoff semantics. This is not
+proof of exact liveness, native backing-store release or no other leaks. Compressed
+archive/tar/native/main-backup storage is outside the census.26 lab tests, strict
+Clippy, source hashes and raw OS recomputation pass. See
+`evidence/miser-worker-staging-census-20261020.json` and four raw archives;18 exact
+private archives remain. No application change or250MiB acceptance. Next map normal
+process costs after sampling stops, with unknown processes retained.
+
 The original 250 MiB gate still fails in EXP011; physical Android, full repository
 adoption and rich-report density remain open. This candidate does not replace
 the current public release below.
