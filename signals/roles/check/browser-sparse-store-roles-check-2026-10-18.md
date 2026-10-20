@@ -86,3 +86,13 @@ The hosted trial success is explicitly separate from restored-source equivalence
 to earlierda22174c. MISER six-lens review approves faithful rejection/restoration
 reporting, with all250MiB/Android/private billing gates retained. No scoped approval
 of the rejected UI optimization or whole-goal completion. See EXP013 public receipt.
+
+
+EXP014 addendum: BENCH/KEEL verify two direct frame/worker/target-to-PID mappings,
+no pre-load engine worker, first-season/detail/restart behavior and unchanged app
+bytes. PACE requires tracing overhead, sequential snapshot bounds, unknown renderer
+costs and the unchanged normal250MiB failure to remain explicit. Existing Playwright
+attachment and40s running status do not prove a causal lifetime mechanism. Six
+MISER lenses approve diagnostic reporting with conditions; shared-renderer allocator
+attribution remains next. New Rust streaming guards run in all-target tests (12 local
+passes), without a hosted-private success claim. See the EXP014 bounded receipt.

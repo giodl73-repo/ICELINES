@@ -1,0 +1,554 @@
+{
+  "schema_version": 1,
+  "experiment": "MISER-EXP-014",
+  "change_id": "CHG-124",
+  "scope": "Two instrumented cold-start diagnostics; no product change or normal resource acceptance.",
+  "summary": {
+    "experiment": "MISER-EXP-014",
+    "runs": [
+      {
+        "all_app_workers_share_page_pid": true,
+        "artifact": {
+          "commit": "023138e8705d39a41472fcad8e935143506b97c9",
+          "packages": 75,
+          "shell_build": "3ed407485fff619001ecb46f6158c6f9dac0da9c4f5112677049a5f6e3e2d372",
+          "verified_files": 182
+        },
+        "browser": "153.0.8010.12",
+        "chrome_omnibox_pids": [
+          63724
+        ],
+        "engine_pids": [
+          66896
+        ],
+        "maximum_sampler_gap_ms": 1257,
+        "median_sampler_gap_ms": 222,
+        "page_pid": 66896,
+        "phases": [
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 0,
+            "main_heap": {
+              "backingStorageSize": 43,
+              "embedderHeapUsedSize": 1383968,
+              "totalSize": 1835008,
+              "usedSize": 741100
+            },
+            "phase": "diagnostic_blank",
+            "private_bytes_by_role": {
+              "GPU": 81891328,
+              "browser": 42471424,
+              "chrome_omnibox_renderer": 46993408,
+              "network.mojom.NetworkService": 16855040,
+              "renderer": 18059264,
+              "storage.mojom.StorageService": 10448896,
+              "tracing.mojom.TracingService": 15007744,
+              "unmapped": 5963776,
+              "workbench_renderer": 20791296
+            },
+            "sample_elapsed_ms": 4984,
+            "samples": 9,
+            "service_worker_targets": 0
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 0,
+            "main_heap": {
+              "backingStorageSize": 433806,
+              "embedderHeapUsedSize": 3341432,
+              "totalSize": 4255744,
+              "usedSize": 2846484
+            },
+            "phase": "diagnostic_catalog_ready",
+            "private_bytes_by_role": {
+              "GPU": 94568448,
+              "browser": 49483776,
+              "chrome_omnibox_renderer": 47005696,
+              "network.mojom.NetworkService": 18337792,
+              "renderer": 18059264,
+              "storage.mojom.StorageService": 10579968,
+              "tracing.mojom.TracingService": 15024128,
+              "unmapped": 5963776,
+              "workbench_renderer": 46682112
+            },
+            "sample_elapsed_ms": 9432,
+            "samples": 9,
+            "service_worker_targets": 1
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 0,
+            "main_heap": {
+              "backingStorageSize": 433846,
+              "embedderHeapUsedSize": 3341432,
+              "totalSize": 4255744,
+              "usedSize": 2891836
+            },
+            "phase": "diagnostic_offline_ready",
+            "private_bytes_by_role": {
+              "GPU": 94552064,
+              "browser": 49651712,
+              "chrome_omnibox_renderer": 45522944,
+              "network.mojom.NetworkService": 18345984,
+              "renderer": 17768448,
+              "storage.mojom.StorageService": 10584064,
+              "tracing.mojom.TracingService": 15028224,
+              "unmapped": 5963776,
+              "workbench_renderer": 47013888
+            },
+            "sample_elapsed_ms": 13938,
+            "samples": 9,
+            "service_worker_targets": 1
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 0,
+            "main_heap": {
+              "backingStorageSize": 433846,
+              "embedderHeapUsedSize": 3341432,
+              "totalSize": 4255744,
+              "usedSize": 2897664
+            },
+            "phase": "diagnostic_idle_15s",
+            "private_bytes_by_role": {
+              "GPU": 81301504,
+              "browser": 49713152,
+              "chrome_omnibox_renderer": 45522944,
+              "network.mojom.NetworkService": 18370560,
+              "renderer": 17768448,
+              "storage.mojom.StorageService": 10592256,
+              "tracing.mojom.TracingService": 15048704,
+              "unmapped": 6012928,
+              "workbench_renderer": 47030272
+            },
+            "sample_elapsed_ms": 29208,
+            "samples": 30,
+            "service_worker_targets": 1
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 0,
+            "main_heap": {
+              "backingStorageSize": 145674,
+              "embedderHeapUsedSize": 1319248,
+              "totalSize": 2945024,
+              "usedSize": 1873556
+            },
+            "phase": "diagnostic_idle_40s",
+            "private_bytes_by_role": {
+              "GPU": 81346560,
+              "browser": 50946048,
+              "chrome_omnibox_renderer": 38371328,
+              "network.mojom.NetworkService": 18374656,
+              "renderer": 17780736,
+              "storage.mojom.StorageService": 10596352,
+              "tracing.mojom.TracingService": 15093760,
+              "unmapped": 6012928,
+              "workbench_renderer": 46792704
+            },
+            "sample_elapsed_ms": 54659,
+            "samples": 50,
+            "service_worker_targets": 1
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 1,
+            "main_heap": {
+              "backingStorageSize": 1076676,
+              "embedderHeapUsedSize": 4310784,
+              "totalSize": 8773632,
+              "usedSize": 3671752
+            },
+            "phase": "diagnostic_loaded_one",
+            "private_bytes_by_role": {
+              "GPU": 102858752,
+              "browser": 50556928,
+              "chrome_omnibox_renderer": 38715392,
+              "network.mojom.NetworkService": 18358272,
+              "renderer": 17780736,
+              "storage.mojom.StorageService": 10596352,
+              "tracing.mojom.TracingService": 15097856,
+              "unmapped": 5734400,
+              "workbench_renderer": 78241792
+            },
+            "sample_elapsed_ms": 59433,
+            "samples": 10,
+            "service_worker_targets": 1
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 1,
+            "main_heap": {
+              "backingStorageSize": 1077165,
+              "embedderHeapUsedSize": 4923760,
+              "totalSize": 8773632,
+              "usedSize": 4036972
+            },
+            "phase": "diagnostic_engine_restarted",
+            "private_bytes_by_role": {
+              "GPU": 106926080,
+              "browser": 47947776,
+              "chrome_omnibox_renderer": 38604800,
+              "network.mojom.NetworkService": 17551360,
+              "renderer": 17674240,
+              "storage.mojom.StorageService": 10477568,
+              "tracing.mojom.TracingService": 14917632,
+              "unmapped": 5734400,
+              "workbench_renderer": 69632000
+            },
+            "sample_elapsed_ms": 63838,
+            "samples": 10,
+            "service_worker_targets": 1
+          }
+        ],
+        "process_names": {
+          "36596": "Renderer",
+          "42840": "Service: chrome.mojom.UtilWin",
+          "60876": "GPU Process",
+          "61360": "Service: chrome.mojom.UtilWin",
+          "61396": "Service: chrome.mojom.UtilWin",
+          "63724": "Renderer",
+          "65836": "Service: tracing.mojom.TracingService",
+          "66240": "Service: storage.mojom.StorageService",
+          "66896": "Renderer",
+          "73164": "Browser",
+          "8188": "Service: network.mojom.NetworkService"
+        },
+        "retained_frame_commits": [
+          {
+            "frame": "E6D760AE9574F92E08D8416089937F18",
+            "pid": 66896,
+            "url": "about:blank"
+          },
+          {
+            "frame": "5E60A56B70E313A9FF3BC91FB2386423",
+            "pid": 63724,
+            "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html"
+          },
+          {
+            "frame": "548E1A59878D1EA46C0326D81C89DC95",
+            "pid": 63724,
+            "url": "chrome://omnibox-popup.top-chrome/"
+          },
+          {
+            "frame": "E6D760AE9574F92E08D8416089937F18",
+            "pid": 66896,
+            "url": "http://127.0.0.1:52642/ICELINES/workbench/"
+          }
+        ],
+        "retained_worker_markers": [
+          {
+            "id": "AE5DC2F3FB7FF4E66DFB8A160C606631",
+            "pid": 66896,
+            "tid": 64116,
+            "url": "http://127.0.0.1:52642/ICELINES/workbench/sw.js"
+          },
+          {
+            "id": "E087092C1DDFB6B28105CAEC04CE4DD1",
+            "pid": 66896,
+            "tid": 17592,
+            "url": "http://127.0.0.1:52642/ICELINES/workbench/src/worker.js"
+          },
+          {
+            "id": "E2276D3D2E05C3B9FA13973D467B4E28",
+            "pid": 66896,
+            "tid": 48968,
+            "url": "http://127.0.0.1:52642/ICELINES/workbench/src/worker.js"
+          }
+        ],
+        "service_worker_pid": 66896,
+        "trace_events_streamed": 31169
+      },
+      {
+        "all_app_workers_share_page_pid": true,
+        "artifact": {
+          "commit": "023138e8705d39a41472fcad8e935143506b97c9",
+          "packages": 75,
+          "shell_build": "3ed407485fff619001ecb46f6158c6f9dac0da9c4f5112677049a5f6e3e2d372",
+          "verified_files": 182
+        },
+        "browser": "153.0.8010.12",
+        "chrome_omnibox_pids": [
+          72812
+        ],
+        "engine_pids": [
+          74360
+        ],
+        "maximum_sampler_gap_ms": 1200,
+        "median_sampler_gap_ms": 220,
+        "page_pid": 74360,
+        "phases": [
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 0,
+            "main_heap": {
+              "backingStorageSize": 43,
+              "embedderHeapUsedSize": 1383968,
+              "totalSize": 1835008,
+              "usedSize": 741100
+            },
+            "phase": "diagnostic_blank",
+            "private_bytes_by_role": {
+              "GPU": 82571264,
+              "browser": 45973504,
+              "chrome_omnibox_renderer": 50405376,
+              "network.mojom.NetworkService": 16932864,
+              "renderer": 17960960,
+              "storage.mojom.StorageService": 10403840,
+              "tracing.mojom.TracingService": 14954496,
+              "unmapped": 5971968,
+              "workbench_renderer": 20852736
+            },
+            "sample_elapsed_ms": 4637,
+            "samples": 8,
+            "service_worker_targets": 0
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 0,
+            "main_heap": {
+              "backingStorageSize": 433806,
+              "embedderHeapUsedSize": 3345816,
+              "totalSize": 4255744,
+              "usedSize": 2846484
+            },
+            "phase": "diagnostic_catalog_ready",
+            "private_bytes_by_role": {
+              "GPU": 95985664,
+              "browser": 50401280,
+              "chrome_omnibox_renderer": 50573312,
+              "network.mojom.NetworkService": 18227200,
+              "renderer": 17960960,
+              "storage.mojom.StorageService": 10498048,
+              "tracing.mojom.TracingService": 14970880,
+              "unmapped": 5971968,
+              "workbench_renderer": 45977600
+            },
+            "sample_elapsed_ms": 9144,
+            "samples": 9,
+            "service_worker_targets": 1
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 0,
+            "main_heap": {
+              "backingStorageSize": 433846,
+              "embedderHeapUsedSize": 3345816,
+              "totalSize": 4255744,
+              "usedSize": 2891836
+            },
+            "phase": "diagnostic_offline_ready",
+            "private_bytes_by_role": {
+              "GPU": 82698240,
+              "browser": 50581504,
+              "chrome_omnibox_renderer": 49258496,
+              "network.mojom.NetworkService": 18231296,
+              "renderer": 17649664,
+              "storage.mojom.StorageService": 10498048,
+              "tracing.mojom.TracingService": 14979072,
+              "unmapped": 5971968,
+              "workbench_renderer": 46309376
+            },
+            "sample_elapsed_ms": 13555,
+            "samples": 9,
+            "service_worker_targets": 1
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 0,
+            "main_heap": {
+              "backingStorageSize": 433846,
+              "embedderHeapUsedSize": 3345816,
+              "totalSize": 4255744,
+              "usedSize": 2897664
+            },
+            "phase": "diagnostic_idle_15s",
+            "private_bytes_by_role": {
+              "GPU": 82743296,
+              "browser": 50663424,
+              "chrome_omnibox_renderer": 49258496,
+              "network.mojom.NetworkService": 18255872,
+              "renderer": 17649664,
+              "storage.mojom.StorageService": 10510336,
+              "tracing.mojom.TracingService": 14999552,
+              "unmapped": 5971968,
+              "workbench_renderer": 46321664
+            },
+            "sample_elapsed_ms": 29126,
+            "samples": 30,
+            "service_worker_targets": 1
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 0,
+            "main_heap": {
+              "backingStorageSize": 145674,
+              "embedderHeapUsedSize": 1319048,
+              "totalSize": 3207168,
+              "usedSize": 1873556
+            },
+            "phase": "diagnostic_idle_40s",
+            "private_bytes_by_role": {
+              "GPU": 82784256,
+              "browser": 51892224,
+              "chrome_omnibox_renderer": 41693184,
+              "network.mojom.NetworkService": 18259968,
+              "renderer": 17657856,
+              "storage.mojom.StorageService": 10514432,
+              "tracing.mojom.TracingService": 15036416,
+              "unmapped": 6029312,
+              "workbench_renderer": 47529984
+            },
+            "sample_elapsed_ms": 54173,
+            "samples": 52,
+            "service_worker_targets": 1
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 1,
+            "main_heap": {
+              "backingStorageSize": 1076676,
+              "embedderHeapUsedSize": 4326320,
+              "totalSize": 9297920,
+              "usedSize": 3673404
+            },
+            "phase": "diagnostic_loaded_one",
+            "private_bytes_by_role": {
+              "GPU": 102821888,
+              "browser": 52137984,
+              "chrome_omnibox_renderer": 42033152,
+              "network.mojom.NetworkService": 18259968,
+              "renderer": 17657856,
+              "storage.mojom.StorageService": 10514432,
+              "tracing.mojom.TracingService": 15044608,
+              "unmapped": 6029312,
+              "workbench_renderer": 78114816
+            },
+            "sample_elapsed_ms": 58298,
+            "samples": 8,
+            "service_worker_targets": 1
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 1,
+            "main_heap": {
+              "backingStorageSize": 1077165,
+              "embedderHeapUsedSize": 4917128,
+              "totalSize": 9297920,
+              "usedSize": 4038616
+            },
+            "phase": "diagnostic_engine_restarted",
+            "private_bytes_by_role": {
+              "GPU": 108122112,
+              "browser": 48648192,
+              "chrome_omnibox_renderer": 41926656,
+              "network.mojom.NetworkService": 17625088,
+              "renderer": 17555456,
+              "storage.mojom.StorageService": 10395648,
+              "tracing.mojom.TracingService": 14872576,
+              "unmapped": 5750784,
+              "workbench_renderer": 72581120
+            },
+            "sample_elapsed_ms": 61724,
+            "samples": 21,
+            "service_worker_targets": 1
+          }
+        ],
+        "process_names": {
+          "22136": "Service: network.mojom.NetworkService",
+          "32168": "Service: chrome.mojom.UtilWin",
+          "33224": "Service: tracing.mojom.TracingService",
+          "40612": "Browser",
+          "50044": "Renderer",
+          "59164": "Service: chrome.mojom.UtilWin",
+          "61044": "Service: chrome.mojom.UtilWin",
+          "72812": "Renderer",
+          "73772": "GPU Process",
+          "74304": "Service: storage.mojom.StorageService",
+          "74360": "Renderer"
+        },
+        "retained_frame_commits": [
+          {
+            "frame": "AEA750BD87DE30B44811890070160D50",
+            "pid": 72812,
+            "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html"
+          },
+          {
+            "frame": "17D60A7625F82D25DEBBEA4E010263CB",
+            "pid": 72812,
+            "url": "chrome://omnibox-popup.top-chrome/"
+          },
+          {
+            "frame": "AB29E20E06EAE1E8158F2FA526771181",
+            "pid": 74360,
+            "url": "about:blank"
+          },
+          {
+            "frame": "AB29E20E06EAE1E8158F2FA526771181",
+            "pid": 74360,
+            "url": "http://127.0.0.1:56263/ICELINES/workbench/"
+          }
+        ],
+        "retained_worker_markers": [
+          {
+            "id": "8FDEEDFCDF02D454D81D03AEC02DCC5A",
+            "pid": 74360,
+            "tid": 18228,
+            "url": "http://127.0.0.1:56263/ICELINES/workbench/sw.js"
+          },
+          {
+            "id": "13F2896DD006C984CF717EF60BF23EA7",
+            "pid": 74360,
+            "tid": 52268,
+            "url": "http://127.0.0.1:56263/ICELINES/workbench/src/worker.js"
+          },
+          {
+            "id": "C1B47D53655E96D0178B8F339B954710",
+            "pid": 74360,
+            "tid": 65036,
+            "url": "http://127.0.0.1:56263/ICELINES/workbench/src/worker.js"
+          }
+        ],
+        "service_worker_pid": 74360,
+        "trace_events_streamed": 30905
+      }
+    ],
+    "scope": "Instrumented diagnostic, not normal resource acceptance. OS phase-end samples and CDP snapshots are not simultaneous; per-process bytes do not isolate thread allocations.",
+    "separate_service_worker_renderer_hypothesis_refuted": true
+  },
+  "raw_evidence": [
+    {
+      "path": "run-1-identity-extract.json.gz",
+      "bytes": 2432,
+      "sha256": "ecd7a20e43dc46de149671fe6b4191ddbc56ac495a0cae28c2d0b2c452327aa6",
+      "expanded_sha256": "db595b29839b9fa67564e2e9676cf0dd5f111e1a3cbeda05c918ebbd01b27dc3"
+    },
+    {
+      "path": "run-1-os-samples.json.gz",
+      "bytes": 5106,
+      "sha256": "621132301c605721383ad7638bcd1c4ee2ef07d0e619979908ab57d5d0203ccd",
+      "expanded_sha256": "d7f54f4bb4e48d25609481b3dbb14769e685f49db99ec5412a3bf53115f3d3c9"
+    },
+    {
+      "path": "run-2-identity-extract.json.gz",
+      "bytes": 2396,
+      "sha256": "39294a801a30c1a5f1b3415ccf7db5418438452bf544d71b007358df9e328648",
+      "expanded_sha256": "9c436e5b631e46a6ca8bb4ef8abe08b5af423ce25b870cd5a5196c097ea52a7b"
+    },
+    {
+      "path": "run-2-os-samples.json.gz",
+      "bytes": 5324,
+      "sha256": "c60def966135974ab13f9ef56f75c92a187c6214fbf38a11a4c71a647d9bbb75",
+      "expanded_sha256": "bb9babb4574ea0b8bc1e3ef3306ceff0d21794aa777cadf74e9381b5c59589b4"
+    }
+  ],
+  "rust_analysis": "MISER examples/startup_attribution.rs streams trace events and validates frame/worker/target/PID linkage; three guards now run in all-target tests.",
+  "private_custody": "MISER evidence/exp014-custody.json retains13 exact raw/source archives and framework/protocol hashes.",
+  "limits": [
+    "Tracing overhead is included; values cannot replace EXP013 normal controls or waive250MiB.",
+    "OS and CDP snapshots are sequential and not simultaneous; process totals do not isolate worker allocations.",
+    "Attached/running40s is observed under pinned Playwright; no causal attachment or ordinary-browser lifetime claim.",
+    "Chrome-owned UI and unassigned renderer costs remain counted.",
+    "Android deferred and private hosted Linux billing still blocked."
+  ]
+}

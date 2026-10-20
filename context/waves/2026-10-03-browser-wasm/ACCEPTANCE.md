@@ -52,6 +52,20 @@ reports. Startup alone277.70–281.84MiB fails250MiB before the package loop; st
 process attribution is next. The166.78ms warm observation remains below the governing
 500ms target and above the stricter100ms observation. No requirement changes.
 
+EXP014 directly maps the workbench page, service worker and both original/restarted
+engine workers to one renderer in two fresh startup traces. The distinct service-
+worker-process hypothesis is refuted; per-thread allocation remains unknown. A
+different renderer hosts Chrome omnibox UI before the app loads, and additional
+unassigned renderer bytes remain counted. No engine-worker target exists before
+first data loading. Both runs complete offline readiness,40s idle,933-player load/
+detail and restart. Attached service worker stays running in this controlled setup;
+no causal debugger/lifetime conclusion is drawn. The Rust analyzer streams31,169/
+30,905 trace events and validates identity links; all12 local lab/example tests pass.
+Tracing adds overhead, so these diagnostics do not replace the unchanged normal
+budget evidence. See `evidence/miser-startup-attribution-20261020.json` and selected
+identity/OS archives. No application changes. Allocator-level renderer attribution
+is next; all original resource/mobile and private-hosted gates remain open.
+
 The original 250 MiB gate still fails in EXP011; physical Android, full repository
 adoption and rich-report density remain open. This candidate does not replace
 the current public release below.

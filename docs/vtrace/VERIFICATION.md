@@ -643,3 +643,24 @@ Receipt: context/waves/2026-10-03-browser-wasm/evidence/miser-resident-trial-202
 All66 raw/source archives and traces remain in MISER; public raw reports/PDF/logs
 are adjacent. Startup private277.70–281.84MiB already fails the budget. Governing
 500ms warm target passes (166.78ms retained); Android/private Linux billing remain.
+
+
+## VER-BROWSER-STARTUP-ATTRIBUTION-001: Diagnostic identity mapping
+
+CHG-124 / REQ-BROWSER-001: EXP014 uses two fresh unchanged023138e8 startup artifacts,
+original browser launch and Windows sampler with tracing. Exact root-frame commits
+and worker markers match captured target IDs/URLs and sampled renderer PIDs. Page,
+service worker and original/restarted engine workers share one renderer in both;
+a separate-worker-process hypothesis is refuted. Chrome omnibox UI is mapped to a
+separate renderer already at blank; unknown renderer costs remain counted. There
+is no engine target before data loading. Offline readiness,40s idle,933-player
+query/detail and restart pass. Trace data loss is false; seven stages have at least
+eight OS samples. Attached/running worker lifetime is not a causal claim.
+
+The Rust streaming example keeps selected markers instead of the full31,169/30,905-
+event arrays and rejects ambiguous/missing identities, duplicate PIDs and backwards
+clocks. Three guards plus original nine tests pass locally; standard/CI guidance
+now uses all-targets. Private hosted Linux is still blocked by billing. Raw traces/
+source/hardware metadata stay in MISER; public identity extracts and OS samples are
+beside miser-startup-attribution-20261020.json. Instrumented values do not establish
+normal250MiB acceptance. No product change, publication or Android claim.
