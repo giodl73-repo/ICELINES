@@ -36,13 +36,30 @@ try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 }, serviceWorkers: 'block' });
   await page.goto(`http://127.0.0.1:${server.address().port}/ICELINES/workbench/`);
   await expect(page.locator('#catalog option').first()).toBeAttached();
+  await page.evaluate(() => {
+    window.__residentQueryCommits = 0;
+    new MutationObserver(records => {
+      for (const record of records) if (record.oldValue !== null && !record.target.inert) window.__residentQueryCommits++;
+    }).observe(document.getElementById('rows'), { attributes: true, attributeFilter: ['inert'], attributeOldValue: true });
+  });
   const openLibrary = async () => { if (!await page.locator('#load').isVisible()) await page.locator('#data-library > summary').click(); };
+  const openSession = async () => {
+    await openLibrary();
+    if (!await page.locator('#resident-library').isVisible()) await page.locator('details:has(> #resident-library) > summary').click();
+  };
   const committed = async entry => {
     await expect(page.locator('#context')).toContainText(String(entry.season));
     await expect(page.locator('#rows')).toHaveAttribute('data-result-count', String(entry.skaters));
     await expect(page.locator('#rows')).toHaveJSProperty('inert', false);
   };
-  const load = async entry => { await openLibrary(); await page.locator('#catalog').selectOption(entry.id); await page.locator('#load').click(); await committed(entry); await expect(page.locator('#load')).toBeEnabled(); };
+  const load = async entry => {
+    await openLibrary(); await page.locator('#catalog').selectOption(entry.id);
+    const before = await page.evaluate(() => window.__residentQueryCommits);
+    await page.locator('#load').click();
+    // A same-revision refresh already has matching rows/context before it starts.
+    await expect.poll(() => page.evaluate(() => window.__residentQueryCommits), { timeout: 60000 }).toBeGreaterThan(before);
+    await committed(entry); await expect(page.locator('#load')).toBeEnabled();
+  };
   await load(entries[0]); await load(entries[1]);
   const firstButton = await page.locator('#resident-library li button').first().elementHandle();
   await page.evaluate(() => {
@@ -67,7 +84,7 @@ try {
   const oldButton = await firstButton.evaluate(button => ({ connected: button.isConnected, callback: typeof button.onclick }));
   assert.equal(oldButton.connected, false);
   if (process.argv.includes('--require-reuse')) assert.equal(oldButton.callback, 'object'); // null, no per-dataset callback
-  await openLibrary(); await page.locator('#resident-library li').first().locator('button').click(); await committed(entries[1]);
+  await openSession(); await page.locator('#resident-library li').first().locator('button').click(); await committed(entries[1]);
   await openLibrary();
   const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#export-package').click()]);
   const exported = await readFile(await download.path());
@@ -78,7 +95,7 @@ try {
     if (await page.locator('#unload').isDisabled()) {
       const season = Number((await page.locator('#resident-library li span').first().textContent()).slice(0, 8));
       const entry = entries.find(item => item.season === season);
-      await page.locator('#resident-library li').first().locator('button').click(); await committed(entry); await openLibrary();
+      await openSession(); await page.locator('#resident-library li').first().locator('button').click(); await committed(entry); await openLibrary();
     }
     await page.locator('#unload').click(); await expect(page.locator('#resident-library > li')).toHaveCount(--remaining);
   }
