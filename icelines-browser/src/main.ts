@@ -30,7 +30,6 @@ const keepUpdated = element<HTMLInputElement>('keep-updated');
 let catalog: CatalogEntry[] = [];
 let active: Dataset | undefined;
 const resident = new Map<string, Dataset>();
-const residentRows = new Map<string, { row: HTMLLIElement; label: HTMLSpanElement; button: HTMLButtonElement }>();
 let saved: SavedDatasetEntry[] = [];
 let librarySequence = 0;
 let result: QueryResult | undefined;
@@ -183,41 +182,19 @@ async function activate(bytes: Uint8Array, id: string, policy = false): Promise<
   showAnalysis();
 }
 function renderResidentLibrary(): void {
-  const count = `(${resident.size}/8)`;
-  if (element('resident-count').textContent !== count) element('resident-count').textContent = count;
-  const node = element('resident-library');
-  for (const [revision, nodes] of residentRows) {
-    if (!resident.has(revision)) { nodes.row.remove(); residentRows.delete(revision); }
-  }
-  if (!resident.size) {
-    if (node.textContent !== 'No seasons in this tab yet.') node.textContent = 'No seasons in this tab yet.';
-    return;
-  }
-  if (!residentRows.size) node.replaceChildren();
-  let previous: HTMLLIElement | undefined;
+  element('resident-count').textContent = `(${resident.size}/8)`;
+  const node = element('resident-library'); node.replaceChildren();
   for (const dataset of resident.values()) {
-    let nodes = residentRows.get(dataset.revision);
-    if (!nodes) {
-      const row = document.createElement('li'), label = document.createElement('span'), button = document.createElement('button');
-      button.textContent = 'Use in-memory season'; button.dataset.residentRevision = dataset.revision;
-      row.append(label, button); nodes = { row, label, button }; residentRows.set(dataset.revision, nodes);
-    }
-    const label = `${dataset.metadata.season} · ${dataset.metadata.season_type} · ${dataset.metadata.source}${active?.revision === dataset.revision ? ' · selected' : ''}`;
-    if (nodes.label.textContent !== label) nodes.label.textContent = label;
-    const disabled = active?.revision === dataset.revision || routing || recovering || engineUnavailable;
-    if (nodes.button.disabled !== disabled) nodes.button.disabled = disabled;
-    const next = previous ? previous.nextSibling : node.firstChild;
-    if (nodes.row !== next) node.insertBefore(nodes.row, next);
-    previous = nodes.row;
+    const row = document.createElement('li');
+    const label = document.createElement('span');
+    label.textContent = `${dataset.metadata.season} · ${dataset.metadata.season_type} · ${dataset.metadata.source}${active?.revision === dataset.revision ? ' · selected' : ''}`;
+    const button = document.createElement('button'); button.textContent = 'Use in-memory season';
+    button.disabled = active?.revision === dataset.revision || routing || recovering || engineUnavailable;
+    button.onclick = () => { void perform(async () => { await activateResident(dataset); status('Selected in-memory season. Saved copies are unchanged.'); }); };
+    row.append(label,button); node.append(row);
   }
+  if (!resident.size) node.textContent = 'No seasons in this tab yet.';
 }
-// A single handler retains the current resident map, never an evicted dataset.
-element('resident-library').addEventListener('click', event => {
-  const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('button[data-resident-revision]') : null;
-  if (!button || button.disabled || !element('resident-library').contains(button)) return;
-  const dataset = resident.get(button.dataset.residentRevision!);
-  if (dataset) void perform(async () => { await activateResident(dataset); status('Selected in-memory season. Saved copies are unchanged.'); });
-});
 async function activateResident(dataset: Dataset): Promise<void> {
   cancelAcquisition(); const generation = engine.changeContext();
   await engine.request('selectResident', dataset.revision);
