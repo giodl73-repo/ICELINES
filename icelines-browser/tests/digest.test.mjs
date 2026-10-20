@@ -49,3 +49,10 @@ test('resizable out-of-bounds views stay rejected and valid empty views hash emp
   const buffer=new ArrayBuffer(4,{maxByteLength:8});const view=new Uint8Array(buffer,2,2);buffer.resize(1);
   await assert.rejects(digest(view),TypeError);assert.equal(await digest(new Uint8Array(buffer,0,0)),expected(new Uint8Array()));
 });
+
+test('resizable input uses a fixed copy and later resizing preserves its hash',async()=>{
+ const native=crypto.subtle.digest;let observed;const buffer=new ArrayBuffer(5,{maxByteLength:8});const bytes=new Uint8Array(buffer,1,3);bytes.set([1,2,3]);
+ crypto.subtle.digest=function(a,d){observed=d;return native.call(this,a,d);};
+ try{const pending=digest(bytes);buffer.resize(0);assert.equal(await pending,expected(new Uint8Array([1,2,3])));assert.notEqual(observed.buffer,buffer);assert.equal(observed.buffer.resizable,false);}
+ finally{crypto.subtle.digest=native;}
+});

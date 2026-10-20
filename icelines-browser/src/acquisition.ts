@@ -8,12 +8,13 @@ const viewBuffer = Object.getOwnPropertyDescriptor(typedArrayPrototype, 'buffer'
 const viewOffset = Object.getOwnPropertyDescriptor(typedArrayPrototype, 'byteOffset')!.get!;
 const viewLength = Object.getOwnPropertyDescriptor(typedArrayPrototype, 'byteLength')!.get!;
 const validateView = typedArrayPrototype.at;
+const resizableBuffer = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, 'resizable')?.get;
 export async function digest(bytes: Uint8Array): Promise<string> {
   // Web Crypto snapshots input synchronously. Preserve the exact view without
-  // making a second JS copy; shared storage still needs an ordinary buffer.
+  // making a second JS copy; shared/resizable storage still needs a fixed copy.
   validateView.call(bytes, 0); // Reject detached/out-of-bounds resizable views too.
   const buffer = viewBuffer.call(bytes) as ArrayBufferLike;
-  const input = buffer instanceof ArrayBuffer
+  const input = buffer instanceof ArrayBuffer && !resizableBuffer?.call(buffer)
     ? new Uint8Array(buffer, viewOffset.call(bytes), viewLength.call(bytes)) : new Uint8Array(bytes);
   const hash = await crypto.subtle.digest('SHA-256', input);
   return Array.from(new Uint8Array(hash), value => value.toString(16).padStart(2, '0')).join('');
