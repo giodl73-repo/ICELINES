@@ -51,3 +51,13 @@ from process RSS, WASM linear memory and whole-browser peaks. Sparse tables can 
 at dense report occupancy (MISER EXP004). No resource criterion changes: the fixed
 250MiB whole-browser target and separate Android gate remain. No merge/deployment or
 production acceptance is implied by compiling or measuring this candidate.
+
+
+Hosted validation: manually dispatch `browser-pages.yml` on the reviewed branch
+with `sparse_storage=true` and `publish=false`. The same pinned build/check entrypoint
+receives `--sparse-storage`, including native BrowserEngine tests; distributed-WASM
+parity still compares with the independent default native loader. The retained
+artifact name includes `-sparse-`; build-info records the actual feature. A combined
+sparse/publication request fails before checkout. Ordinary PR/master/default builds
+and publication selection remain default storage. A workflow definition is not
+execution evidence; retain the exact run/source/artifact result separately.

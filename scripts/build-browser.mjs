@@ -47,7 +47,8 @@ if (check) {
   run(process.execPath, ['scripts/verify-browser-native-parity.mjs', ...offline]);
   run('cargo', ['test', '-p', 'icelines-sources', '--lib', 'nhl::schedule', '--locked', ...offline]);
   run('cargo', ['test', '-p', 'icelines-core', '--lib', 'stats_catalog::tests', '--locked', ...offline]);
-  run('cargo', ['test', '-p', 'icelines-data', '-p', 'icelines-wasm', '--locked', ...offline]);
+  run('cargo', ['test', '-p', 'icelines-data', '-p', 'icelines-wasm', '--locked', ...offline,
+    ...(wasmFeatures.length ? ['--features', 'icelines-wasm/sparse-storage'] : [])]);
   run('cargo', ['test', '-p', 'icelines-fetch', '--test', 'stats_loader', '--test', 'browser_native_parity', '--locked', ...offline]);
   run('cargo', ['test', '-p', 'icelines-web', '--lib', 'handlers::leaders::tests', '--locked', ...offline]);
   run('python', ['-m', 'unittest', 'discover', '-s', 'scripts/tests', '-p', 'test_browser_catalog.py']);
