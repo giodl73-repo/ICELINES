@@ -232,3 +232,11 @@ CHG-124 follow-through: the product builder exposes --sparse-storage and records
 wasm_features in build-info; ordinary builds keep an empty list. Actual whole-browser
 EXP011 evidence is mixed and fails the unchanged 250 MiB criterion. The candidate
 remains opt-in, with no default adoption or publication implied by component gains.
+
+
+CHG-124 validation follow-through (2026-10-20): add validation-only sparse workflow
+input, feature-aware native BrowserEngine checks and separately named preview.
+Combined sparse/publication inputs reject before checkout. Hosted sparse checks
+and exact retained-artifact browser checks pass. Optional reversible rendering
+instrumentation changes no distributed application bytes; its negative/weak results
+and strict budget-prefix exclusion are retained. No acceptance threshold changes.

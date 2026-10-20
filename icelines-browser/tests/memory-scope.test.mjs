@@ -7,9 +7,11 @@ test('a normal engine restart remains part of an unmodified workload', () => {
   assert.deepEqual(normalWorkloadPhases(phases), phases);
 });
 
-test('post-GC restart and diagnostic peaks cannot enter the control budget', () => {
-  const phases = [{ phase: 'resident_settled', peak_private_bytes: 600 }, { phase: 'diagnostic_main_gc', peak_private_bytes: 900 }, { phase: 'engine_restarted', peak_private_bytes: 1000 }];
-  assert.deepEqual(normalWorkloadPhases(phases), [phases[0]]);
+test('diagnostic peaks and post-intervention restart cannot enter the control budget', () => {
+  for (const diagnostic of ['diagnostic_main_gc', 'diagnostic_rendering_0_visible']) {
+    const phases = [{ phase: 'resident_settled', peak_private_bytes: 600 }, { phase: diagnostic, peak_private_bytes: 900 }, { phase: 'engine_restarted', peak_private_bytes: 1000 }];
+    assert.deepEqual(normalWorkloadPhases(phases), [phases[0]]);
+  }
 });
 
 test('a run starting with an intervention supplies no normal control phases', () => {

@@ -61,3 +61,17 @@ have identical trees, but CI features are empty. The acceptance ledger and recei
 state that distinction. No executable changes or change in scoped approval; failed
 250 MiB acceptance and deferred Android remain open. See
 context/waves/2026-10-03-browser-wasm/evidence/miser-sparse-browser-validation-20261020.json.
+
+
+2026-10-20 hosted/diagnostic follow-through: BENCH verifies actual sparse dispatch
+39484530829,270 independent native-loader/WASM cases and exact retained-artifact
+functional reports. Native tests receive the feature; hosted scope remains selected
+browser/native checks, not a full workspace matrix. KEEL verifies build-info/feature
+and distinct sparse artifact identity, publication rejection before checkout, and
+skipped deploy. PACE verifies both rendering diagnostic prefixes remain failed250MiB
+observations, the five-sample qualification stays false, and no specific CSS cause
+or positive memory saving is claimed. Generic budget-scope tests now cover rendering
+as well as GC. No Rust/application-source change after the hosted revision; follow-up
+files are E2E/tests/evidence only. MISER six-lens review approves EXP012's faithful
+reporting with conditions. Original scoped approval remains; memory/Android and
+full repository/rich-density adoption stay open. See both20261020 evidence receipts.

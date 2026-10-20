@@ -604,3 +604,25 @@ default-feature artifact53a4df14 has the identical Git tree and independently pa
 execution is not implied. Receipt and raw reports:
 context/waves/2026-10-03-browser-wasm/evidence/miser-sparse-browser-validation-20261020.json.
 Whole-browser250 MiB still fails; physical Android is deferred; no publication.
+
+
+## VER-BROWSER-SPARSE-HOSTED-001: Explicit hosted sparse validation (2026-10-20)
+
+CHG-124 / IF-BROWSER-SPARSE-001: dispatch39484530829 succeeds atda22174c with
+sparse_storage:true/publish:false, including270 native-oracle/WASM cases (33,613
+rows),163 browser units and selected Rust tests. Actual build-info declares the
+feature; exact182-file/75-package artifact12294210294 verifies. Its owned-browser
+offline reopening, viewport/keyboard/AX/export, six fresh/cached and three persisted
+context refusals, no-network saved retry and24-page/two-parser print checks pass.
+Raw run/jobs/artifact/log and local reports plus PDF/screenshots are retained in
+miser-sparse-hosted-validation-20261020.json beside earlier bounded evidence.
+No deployment; combined sparse/publication inputs fail before checkout.
+
+EXP012 separately records two full-acquisition rendering diagnostics on the earlier
+Windows sparse artifact. All UI restoration/restart checks pass, but a consistent
+release is unsupported and the five-sample qualification is false. All post-
+intervention measurements are excluded from normal targets; the scope regression
+covers GC and rendering diagnostics. All13 exact raw/source files and initial
+analysis failure remain in private MISER. Public bounded rendering evidence is
+miser-rendering-diagnostic-20261020.json. Original250MiB failure and deferred Android
+remain; private MISER hosted Linux is independently blocked by account billing.

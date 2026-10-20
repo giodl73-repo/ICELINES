@@ -16,12 +16,27 @@ exports; a correct saved retry uses no payload network requests. The 24-page PDF
 passes both text extractors for every name/rank, accents, pace and page bounds.
 The narrow screenshot is readable desktop emulation, not Android evidence.
 
-Hosted run 39156515143 passes for head cdac8098. Its default-feature artifact is
-merge commit 53a4df14 with an identical Git tree; all 182 files/75 packages verify,
-and a separate offline reopening check passes. This does not establish hosted
-sparse-feature execution. Raw reports, PDF, screenshots, artifact identities and
-commands are in `evidence/miser-sparse-browser-validation-20261020.json` and its
-adjacent directory. No executable code changed during this validation.
+Earlier hosted run 39156515143 passes for head cdac8098, with default merge
+artifact53a4df14 and an identical Git tree. Subsequent explicit sparse dispatch
+39484530829 succeeds atda22174c: pinned Linux build,270 native-oracle/distributed-WASM
+cases (33,613 rows),163 browser units, selected native tests and artifact checks.
+Native BrowserEngine tests now receive the selected feature too. The retained
+artifact declares sparse-storage, verifies182 files/75 packages and independently
+passes offline reopening, viewport/keyboard/AX/exports, both context-refusal runners
+and24-page/two-parser PDF checks. Its WASM is2150abfc8824dab0f6edc670c9b958ac80a93b0df257f5dbced8ba749d8fe9d1;
+shellb7d6b8ab2982eea374d6e594eb1bb22d9642dd8ed2088194166bca1a388c5166.
+Deployment is skipped. Combined sparse/publication inputs fail before checkout;
+ordinary/default artifact selection stays unchanged. Raw logs/API receipts, PDF,
+screenshots and hashes are in `evidence/miser-sparse-hosted-validation-20261020.json`
+and its adjacent directory. The earlier Windows functional receipt remains intact.
+
+Two separate Windows rendering diagnostics (MISER EXP012) preserve full acquisition/
+query workload and restore exact UI state after two hide cycles per browser.
+A consistent10MiB GPU/renderer release is unsupported; short stages also fail the
+conservative five-sample qualification. Normal prefix peaks384.03/388.82MiB still
+fail250MiB and exclude diagnostics/subsequent restart; they do not replace EXP011's
+normal controls. See `evidence/miser-rendering-diagnostic-20261020.json`. Private
+MISER current-source Linux run39484014027 remains blocked before steps by billing.
 
 The original 250 MiB gate still fails in EXP011; physical Android, full repository
 adoption and rich-report density remain open. This candidate does not replace

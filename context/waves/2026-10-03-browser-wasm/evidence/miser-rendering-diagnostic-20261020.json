@@ -1,0 +1,389 @@
+{
+  "experiment": "MISER-EXP-012",
+  "scope": "Diagnostic phase-end OS private bytes mapped by CDP process IDs; snapshots are not simultaneous, process roles include native/cache costs; hidden UI is not a product optimization.",
+  "runs": [
+    {
+      "report_sha256": "c2ce187ca750e7ace0df2649ed2fec7aa417932424bf7f479a76a94de2e6b20c",
+      "trace_sha256": "82da9e9ed854a2ab873164092e71e117cba2bd4f9694df3cf6ca88e7704a5d48",
+      "artifact": {
+        "commit": "c92d4e006027bf7cb6f1480527399250582d2754",
+        "shell_build": "f98c2c05a5f13868cc2a329d817e80762297116b489e8674db77b12eb25e73f6",
+        "verified_files": 182,
+        "packages": 75
+      },
+      "archive": {
+        "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca",
+        "bytes": 149672
+      },
+      "sampling": {
+        "requested_interval_ms": 100,
+        "tree_discovery_interval_ms": 500,
+        "actual_median_interval_ms": 222,
+        "actual_max_interval_ms": 2841
+      },
+      "normal_peak_private_bytes": 402681856,
+      "normal_target": {
+        "sampled_private_bytes_below_target": false,
+        "sampled_sum_working_set_below_target": false,
+        "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+      },
+      "phases": [
+        {
+          "phase": "diagnostic_rendering_0_visible",
+          "hidden": false,
+          "sample_elapsed_ms": 133037,
+          "samples": 5,
+          "five_sample_floor_met": true,
+          "private_bytes_by_cdp_type": {
+            "unmapped": 5693440,
+            "GPU": 104804352,
+            "renderer": 187277312,
+            "browser": 47054848,
+            "storage.mojom.StorageService": 10264576,
+            "network.mojom.NetworkService": 15314944
+          },
+          "total_private_bytes": 370409472,
+          "main_heap": {
+            "usedSize": 4269320,
+            "totalSize": 13492224,
+            "embedderHeapUsedSize": 3265728,
+            "backingStorageSize": 4599856
+          },
+          "main_dom": {
+            "documents": 3,
+            "nodes": 1895,
+            "jsEventListeners": 133
+          }
+        },
+        {
+          "phase": "diagnostic_rendering_1_hidden",
+          "hidden": true,
+          "sample_elapsed_ms": 134886,
+          "samples": 3,
+          "five_sample_floor_met": false,
+          "private_bytes_by_cdp_type": {
+            "unmapped": 5693440,
+            "GPU": 104910848,
+            "renderer": 182853632,
+            "browser": 47276032,
+            "storage.mojom.StorageService": 10264576,
+            "network.mojom.NetworkService": 15282176
+          },
+          "total_private_bytes": 366280704,
+          "main_heap": {
+            "usedSize": 4277524,
+            "totalSize": 13492224,
+            "embedderHeapUsedSize": 3453272,
+            "backingStorageSize": 4599900
+          },
+          "main_dom": {
+            "documents": 3,
+            "nodes": 1895,
+            "jsEventListeners": 133
+          }
+        },
+        {
+          "phase": "diagnostic_rendering_2_visible",
+          "hidden": false,
+          "sample_elapsed_ms": 137924,
+          "samples": 3,
+          "five_sample_floor_met": false,
+          "private_bytes_by_cdp_type": {
+            "unmapped": 5693440,
+            "GPU": 110714880,
+            "renderer": 183017472,
+            "browser": 47276032,
+            "storage.mojom.StorageService": 10264576,
+            "network.mojom.NetworkService": 15282176
+          },
+          "total_private_bytes": 372248576,
+          "main_heap": {
+            "usedSize": 4285560,
+            "totalSize": 13492224,
+            "embedderHeapUsedSize": 6346776,
+            "backingStorageSize": 4599900
+          },
+          "main_dom": {
+            "documents": 3,
+            "nodes": 1907,
+            "jsEventListeners": 133
+          }
+        },
+        {
+          "phase": "diagnostic_rendering_3_hidden",
+          "hidden": true,
+          "sample_elapsed_ms": 141016,
+          "samples": 3,
+          "five_sample_floor_met": false,
+          "private_bytes_by_cdp_type": {
+            "unmapped": 5693440,
+            "GPU": 108703744,
+            "renderer": 155099136,
+            "browser": 47099904,
+            "storage.mojom.StorageService": 10264576,
+            "network.mojom.NetworkService": 15282176
+          },
+          "total_private_bytes": 342142976,
+          "main_heap": {
+            "usedSize": 4135776,
+            "totalSize": 5103616,
+            "embedderHeapUsedSize": 2355776,
+            "backingStorageSize": 4064984
+          },
+          "main_dom": {
+            "documents": 3,
+            "nodes": 1884,
+            "jsEventListeners": 133
+          }
+        },
+        {
+          "phase": "diagnostic_rendering_4_visible",
+          "hidden": false,
+          "sample_elapsed_ms": 143340,
+          "samples": 3,
+          "five_sample_floor_met": false,
+          "private_bytes_by_cdp_type": {
+            "unmapped": 5693440,
+            "GPU": 106565632,
+            "renderer": 155865088,
+            "browser": 47276032,
+            "storage.mojom.StorageService": 10264576,
+            "network.mojom.NetworkService": 15282176
+          },
+          "total_private_bytes": 340946944,
+          "main_heap": {
+            "usedSize": 4144364,
+            "totalSize": 5103616,
+            "embedderHeapUsedSize": 5083280,
+            "backingStorageSize": 4064995
+          },
+          "main_dom": {
+            "documents": 3,
+            "nodes": 1896,
+            "jsEventListeners": 133
+          }
+        }
+      ],
+      "cycles": [
+        {
+          "GPU": {
+            "visible_before_minus_hidden_bytes": -106496,
+            "visible_after_minus_hidden_bytes": 5804032,
+            "threshold_and_reversal": false
+          },
+          "renderer": {
+            "visible_before_minus_hidden_bytes": 4423680,
+            "visible_after_minus_hidden_bytes": 163840,
+            "threshold_and_reversal": false
+          }
+        },
+        {
+          "GPU": {
+            "visible_before_minus_hidden_bytes": 2011136,
+            "visible_after_minus_hidden_bytes": -2138112,
+            "threshold_and_reversal": false
+          },
+          "renderer": {
+            "visible_before_minus_hidden_bytes": 27918336,
+            "visible_after_minus_hidden_bytes": 765952,
+            "threshold_and_reversal": true
+          }
+        }
+      ]
+    },
+    {
+      "report_sha256": "c9bdb0001fdead9dac13b41d7d6385ebd358d785b1b71560708b2f8e2b7d17ac",
+      "trace_sha256": "8f3b804af2eb9046bdf3bc6b665e096066acded89d1d8a1a592256836399b580",
+      "artifact": {
+        "commit": "c92d4e006027bf7cb6f1480527399250582d2754",
+        "shell_build": "f98c2c05a5f13868cc2a329d817e80762297116b489e8674db77b12eb25e73f6",
+        "verified_files": 182,
+        "packages": 75
+      },
+      "archive": {
+        "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca",
+        "bytes": 149672
+      },
+      "sampling": {
+        "requested_interval_ms": 100,
+        "tree_discovery_interval_ms": 500,
+        "actual_median_interval_ms": 224,
+        "actual_max_interval_ms": 1259
+      },
+      "normal_peak_private_bytes": 407711744,
+      "normal_target": {
+        "sampled_private_bytes_below_target": false,
+        "sampled_sum_working_set_below_target": false,
+        "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+      },
+      "phases": [
+        {
+          "phase": "diagnostic_rendering_0_visible",
+          "hidden": false,
+          "sample_elapsed_ms": 132047,
+          "samples": 5,
+          "five_sample_floor_met": true,
+          "private_bytes_by_cdp_type": {
+            "unmapped": 5718016,
+            "GPU": 102932480,
+            "browser": 49455104,
+            "network.mojom.NetworkService": 15282176,
+            "renderer": 186290176,
+            "storage.mojom.StorageService": 11272192
+          },
+          "total_private_bytes": 370950144,
+          "main_heap": {
+            "usedSize": 4269400,
+            "totalSize": 11657216,
+            "embedderHeapUsedSize": 3246104,
+            "backingStorageSize": 6144910
+          },
+          "main_dom": {
+            "documents": 3,
+            "nodes": 1895,
+            "jsEventListeners": 133
+          }
+        },
+        {
+          "phase": "diagnostic_rendering_1_hidden",
+          "hidden": true,
+          "sample_elapsed_ms": 134988,
+          "samples": 5,
+          "five_sample_floor_met": true,
+          "private_bytes_by_cdp_type": {
+            "unmapped": 5672960,
+            "GPU": 102244352,
+            "browser": 49610752,
+            "network.mojom.NetworkService": 15249408,
+            "renderer": 180936704,
+            "storage.mojom.StorageService": 11272192
+          },
+          "total_private_bytes": 364986368,
+          "main_heap": {
+            "usedSize": 4277604,
+            "totalSize": 11657216,
+            "embedderHeapUsedSize": 3427960,
+            "backingStorageSize": 6144954
+          },
+          "main_dom": {
+            "documents": 3,
+            "nodes": 1895,
+            "jsEventListeners": 133
+          }
+        },
+        {
+          "phase": "diagnostic_rendering_2_visible",
+          "hidden": false,
+          "sample_elapsed_ms": 136758,
+          "samples": 4,
+          "five_sample_floor_met": false,
+          "private_bytes_by_cdp_type": {
+            "unmapped": 5672960,
+            "GPU": 101404672,
+            "browser": 49426432,
+            "network.mojom.NetworkService": 15249408,
+            "renderer": 181112832,
+            "storage.mojom.StorageService": 11272192
+          },
+          "total_private_bytes": 364138496,
+          "main_heap": {
+            "usedSize": 4135936,
+            "totalSize": 4841472,
+            "embedderHeapUsedSize": 2997048,
+            "backingStorageSize": 4064960
+          },
+          "main_dom": {
+            "documents": 3,
+            "nodes": 1892,
+            "jsEventListeners": 133
+          }
+        },
+        {
+          "phase": "diagnostic_rendering_3_hidden",
+          "hidden": true,
+          "sample_elapsed_ms": 139827,
+          "samples": 6,
+          "five_sample_floor_met": true,
+          "private_bytes_by_cdp_type": {
+            "unmapped": 5672960,
+            "GPU": 101437440,
+            "browser": 47202304,
+            "network.mojom.NetworkService": 15249408,
+            "renderer": 156946432,
+            "storage.mojom.StorageService": 11272192
+          },
+          "total_private_bytes": 337780736,
+          "main_heap": {
+            "usedSize": 4143188,
+            "totalSize": 4841472,
+            "embedderHeapUsedSize": 3381104,
+            "backingStorageSize": 4064995
+          },
+          "main_dom": {
+            "documents": 3,
+            "nodes": 1892,
+            "jsEventListeners": 133
+          }
+        },
+        {
+          "phase": "diagnostic_rendering_4_visible",
+          "hidden": false,
+          "sample_elapsed_ms": 142579,
+          "samples": 4,
+          "five_sample_floor_met": false,
+          "private_bytes_by_cdp_type": {
+            "unmapped": 5672960,
+            "GPU": 98299904,
+            "browser": 47448064,
+            "network.mojom.NetworkService": 15249408,
+            "renderer": 157372416,
+            "storage.mojom.StorageService": 11272192
+          },
+          "total_private_bytes": 335314944,
+          "main_heap": {
+            "usedSize": 4151736,
+            "totalSize": 4841472,
+            "embedderHeapUsedSize": 6104504,
+            "backingStorageSize": 4064995
+          },
+          "main_dom": {
+            "documents": 3,
+            "nodes": 1904,
+            "jsEventListeners": 133
+          }
+        }
+      ],
+      "cycles": [
+        {
+          "GPU": {
+            "visible_before_minus_hidden_bytes": 688128,
+            "visible_after_minus_hidden_bytes": -839680,
+            "threshold_and_reversal": false
+          },
+          "renderer": {
+            "visible_before_minus_hidden_bytes": 5353472,
+            "visible_after_minus_hidden_bytes": 176128,
+            "threshold_and_reversal": false
+          }
+        },
+        {
+          "GPU": {
+            "visible_before_minus_hidden_bytes": -32768,
+            "visible_after_minus_hidden_bytes": -3137536,
+            "threshold_and_reversal": false
+          },
+          "renderer": {
+            "visible_before_minus_hidden_bytes": 24166400,
+            "visible_after_minus_hidden_bytes": 425984,
+            "threshold_and_reversal": true
+          }
+        }
+      ]
+    }
+  ],
+  "five_sample_floor_met": false,
+  "claim_supported": false,
+  "producer": "bac77d67",
+  "artifact_scope": "Retained Windows sparse c92d4e00, not the new Linux CI artifact.",
+  "limitations": "Short diagnostic stages fail the conservative five-sample floor; no supported causal improvement or normal workload budget pass. Raw source/reports/failure are retained privately in MISER EXP012."
+}
