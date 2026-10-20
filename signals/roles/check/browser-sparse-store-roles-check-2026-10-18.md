@@ -150,3 +150,12 @@ PID unknown/counted and renderer without target unbound; final engine cannot lab
 terminated old workers. Six MISER lenses approve qualified evidence only, with no
 independent-floor/thread-cost/causal leak inference. Nine raw public/30 private
 archives retained. Next transient OS metadata; application and original gates remain.
+
+
+EXP021 addendum: separately instrumented OS metadata identifies short UtilWin and
+crashpad roles in two full workloads; all observed creation/name/ancestry chains
+qualify. Previous73.72MiB remains unknown/counted. No sampler filtering or normal
+acceptance substitution.40 tests, seven actual-capture corruption cases, source
+selection/accounting parity and full-input/post-marker validation pass. Nine public/
+25 private archives survive. Six single-agent MISER lenses approve evidence scope
+only;250MiB/Android/private-hosted requirements and application remain unchanged.

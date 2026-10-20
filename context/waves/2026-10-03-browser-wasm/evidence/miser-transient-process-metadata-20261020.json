@@ -1,0 +1,788 @@
+{
+  "schema_version": 1,
+  "experiment": "MISER-EXP-021",
+  "change_id": "CHG-124",
+  "diagnostic": true,
+  "summary": {
+    "experiment": "MISER-EXP-021",
+    "diagnostic": true,
+    "probe_source": "d2ce92f5763bcaca688d8aad1d1db27c1a3956d0",
+    "artifact_source": "9bae39fd6f7682d0d3468fe0417daf20ad120894",
+    "runs": [
+      {
+        "diagnostic": true,
+        "experiment": "MISER-EXP-021",
+        "identity_issue_counter_rows": {},
+        "limitations": "Observed sampled spans are not exact process lifetimes. All selected bytes remain counted; diagnostics cannot retroactively identify EXP020's transient or replace normal acceptance.",
+        "one_sample_processes": [],
+        "peak": {
+          "elapsed_ms": 29514,
+          "phase": "package_20162017-regular",
+          "private_bytes": 413028352,
+          "private_bytes_by_role": {
+            "browser": 51568640,
+            "crashpad-handler": 6017024,
+            "gpu-process": 112459776,
+            "renderer": 204570624,
+            "utility:chrome.mojom.UtilWin": 10178560,
+            "utility:network.mojom.NetworkService": 17833984,
+            "utility:storage.mojom.StorageService": 10399744
+          },
+          "processes": [
+            {
+              "birth_utc_ms": 1792538617463,
+              "chrome_type": "renderer",
+              "identity": "qualified",
+              "name": "chrome",
+              "parent_id": 4388,
+              "pid": 58716,
+              "private_bytes": 17268736,
+              "role": "renderer",
+              "utility_type": null
+            },
+            {
+              "birth_utc_ms": 1792538617182,
+              "chrome_type": "utility",
+              "identity": "qualified",
+              "name": "chrome",
+              "parent_id": 4388,
+              "pid": 30544,
+              "private_bytes": 17833984,
+              "role": "utility:network.mojom.NetworkService",
+              "utility_type": "network.mojom.NetworkService"
+            },
+            {
+              "birth_utc_ms": 1792538616558,
+              "chrome_type": "crashpad-handler",
+              "identity": "qualified",
+              "name": "chrome",
+              "parent_id": 72328,
+              "pid": 16604,
+              "private_bytes": 2830336,
+              "role": "crashpad-handler",
+              "utility_type": null
+            },
+            {
+              "birth_utc_ms": 1792538616324,
+              "chrome_type": "crashpad-handler",
+              "identity": "qualified",
+              "name": "chrome",
+              "parent_id": 4388,
+              "pid": 72328,
+              "private_bytes": 3186688,
+              "role": "crashpad-handler",
+              "utility_type": null
+            },
+            {
+              "birth_utc_ms": 1792538647218,
+              "chrome_type": "utility",
+              "identity": "qualified",
+              "name": "chrome",
+              "parent_id": 4388,
+              "pid": 57844,
+              "private_bytes": 10178560,
+              "role": "utility:chrome.mojom.UtilWin",
+              "utility_type": "chrome.mojom.UtilWin"
+            },
+            {
+              "birth_utc_ms": 1792538617213,
+              "chrome_type": "utility",
+              "identity": "qualified",
+              "name": "chrome",
+              "parent_id": 4388,
+              "pid": 73820,
+              "private_bytes": 10399744,
+              "role": "utility:storage.mojom.StorageService",
+              "utility_type": "storage.mojom.StorageService"
+            },
+            {
+              "birth_utc_ms": 1792538617479,
+              "chrome_type": "renderer",
+              "identity": "qualified",
+              "name": "chrome",
+              "parent_id": 4388,
+              "pid": 71792,
+              "private_bytes": 140787712,
+              "role": "renderer",
+              "utility_type": null
+            },
+            {
+              "birth_utc_ms": 1792538615677,
+              "chrome_type": null,
+              "identity": "qualified",
+              "name": "chrome",
+              "parent_id": 63192,
+              "pid": 4388,
+              "private_bytes": 51568640,
+              "role": "browser",
+              "utility_type": null
+            },
+            {
+              "birth_utc_ms": 1792538617169,
+              "chrome_type": "gpu-process",
+              "identity": "qualified",
+              "name": "chrome",
+              "parent_id": 4388,
+              "pid": 73764,
+              "private_bytes": 112459776,
+              "role": "gpu-process",
+              "utility_type": null
+            },
+            {
+              "birth_utc_ms": 1792538617417,
+              "chrome_type": "renderer",
+              "identity": "qualified",
+              "name": "chrome",
+              "parent_id": 4388,
+              "pid": 19176,
+              "private_bytes": 46514176,
+              "role": "renderer",
+              "utility_type": null
+            }
+          ]
+        },
+        "peak_working_set_bytes": 720429056,
+        "profiles": [
+          {
+            "birth_utc_ms": 1792538615677,
+            "first_phase": "blank_browser",
+            "first_sample_elapsed_ms": 1617,
+            "identities": [
+              "qualified"
+            ],
+            "last_phase": "engine_restarted",
+            "last_sample_elapsed_ms": 113386,
+            "maximum_private_bytes": 52002816,
+            "name": "chrome",
+            "pid": 4388,
+            "roles": [
+              "browser"
+            ],
+            "sample_count": 234
+          },
+          {
+            "birth_utc_ms": 1792538616558,
+            "first_phase": "blank_browser",
+            "first_sample_elapsed_ms": 1617,
+            "identities": [
+              "qualified"
+            ],
+            "last_phase": "engine_restarted",
+            "last_sample_elapsed_ms": 113386,
+            "maximum_private_bytes": 2830336,
+            "name": "chrome",
+            "pid": 16604,
+            "roles": [
+              "crashpad-handler"
+            ],
+            "sample_count": 234
+          },
+          {
+            "birth_utc_ms": 1792538617417,
+            "first_phase": "blank_browser",
+            "first_sample_elapsed_ms": 1617,
+            "identities": [
+              "qualified"
+            ],
+            "last_phase": "engine_restarted",
+            "last_sample_elapsed_ms": 113386,
+            "maximum_private_bytes": 47874048,
+            "name": "chrome",
+            "pid": 19176,
+            "roles": [
+              "renderer"
+            ],
+            "sample_count": 234
+          },
+          {
+            "birth_utc_ms": 1792538617182,
+            "first_phase": "blank_browser",
+            "first_sample_elapsed_ms": 1617,
+            "identities": [
+              "qualified"
+            ],
+            "last_phase": "engine_restarted",
+            "last_sample_elapsed_ms": 113386,
+            "maximum_private_bytes": 17989632,
+            "name": "chrome",
+            "pid": 30544,
+            "roles": [
+              "utility:network.mojom.NetworkService"
+            ],
+            "sample_count": 234
+          },
+          {
+            "birth_utc_ms": 1792538647218,
+            "first_phase": "package_20162017-regular",
+            "first_sample_elapsed_ms": 29514,
+            "identities": [
+              "qualified"
+            ],
+            "last_phase": "package_20162017-regular",
+            "last_sample_elapsed_ms": 29735,
+            "maximum_private_bytes": 10178560,
+            "name": "chrome",
+            "pid": 57844,
+            "roles": [
+              "utility:chrome.mojom.UtilWin"
+            ],
+            "sample_count": 2
+          },
+          {
+            "birth_utc_ms": 1792538617463,
+            "first_phase": "blank_browser",
+            "first_sample_elapsed_ms": 1617,
+            "identities": [
+              "qualified"
+            ],
+            "last_phase": "engine_restarted",
+            "last_sample_elapsed_ms": 113386,
+            "maximum_private_bytes": 17580032,
+            "name": "chrome",
+            "pid": 58716,
+            "roles": [
+              "renderer"
+            ],
+            "sample_count": 234
+          },
+          {
+            "birth_utc_ms": 1792538617479,
+            "first_phase": "blank_browser",
+            "first_sample_elapsed_ms": 1617,
+            "identities": [
+              "qualified"
+            ],
+            "last_phase": "engine_restarted",
+            "last_sample_elapsed_ms": 113386,
+            "maximum_private_bytes": 148422656,
+            "name": "chrome",
+            "pid": 71792,
+            "roles": [
+              "renderer"
+            ],
+            "sample_count": 234
+          },
+          {
+            "birth_utc_ms": 1792538616324,
+            "first_phase": "blank_browser",
+            "first_sample_elapsed_ms": 1617,
+            "identities": [
+              "qualified"
+            ],
+            "last_phase": "engine_restarted",
+            "last_sample_elapsed_ms": 113386,
+            "maximum_private_bytes": 3186688,
+            "name": "chrome",
+            "pid": 72328,
+            "roles": [
+              "crashpad-handler"
+            ],
+            "sample_count": 234
+          },
+          {
+            "birth_utc_ms": 1792538617169,
+            "first_phase": "blank_browser",
+            "first_sample_elapsed_ms": 1617,
+            "identities": [
+              "qualified"
+            ],
+            "last_phase": "engine_restarted",
+            "last_sample_elapsed_ms": 113386,
+            "maximum_private_bytes": 116854784,
+            "name": "chrome",
+            "pid": 73764,
+            "roles": [
+              "gpu-process"
+            ],
+            "sample_count": 234
+          },
+          {
+            "birth_utc_ms": 1792538617213,
+            "first_phase": "blank_browser",
+            "first_sample_elapsed_ms": 1617,
+            "identities": [
+              "qualified"
+            ],
+            "last_phase": "engine_restarted",
+            "last_sample_elapsed_ms": 113386,
+            "maximum_private_bytes": 10399744,
+            "name": "chrome",
+            "pid": 73820,
+            "roles": [
+              "utility:storage.mojom.StorageService"
+            ],
+            "sample_count": 234
+          }
+        ],
+        "root_birth_utc_ms": 1792538615677,
+        "root_pid": 4388,
+        "sample_count": 234,
+        "warm_maximum_ms": 96.96909999998752,
+        "sampling": {
+          "requested_interval_ms": 100,
+          "tree_discovery_interval_ms": 500,
+          "actual_median_interval_ms": 224,
+          "actual_max_interval_ms": 1134
+        },
+        "post_markers": [
+          {
+            "name": "MISER_PROCESS_workbench_page_f2066d66-e8bf-45fa-97c9-c7fe55de5e7f",
+            "pid": 71792,
+            "role": "workbench_page",
+            "url": "http://127.0.0.1:57343/ICELINES/workbench/#/leaders?season=20242025&type=playoff&kind=skaters&sort=points&gp=&data=local"
+          },
+          {
+            "name": "MISER_PROCESS_current_engine_3a22ab24-39d5-4219-b035-d2779b6f4118",
+            "pid": 71792,
+            "role": "current_engine",
+            "url": "http://127.0.0.1:57343/ICELINES/workbench/src/worker.js"
+          },
+          {
+            "name": "MISER_PROCESS_service_worker_c2e90d3b-0a79-4d56-bdd9-035dde66ff56",
+            "pid": 71792,
+            "role": "service_worker",
+            "url": "http://127.0.0.1:57343/ICELINES/workbench/sw.js"
+          },
+          {
+            "name": "MISER_PROCESS_browser_ui_2180c0e6-8a48-4c47-beb9-461c375818f7",
+            "pid": 19176,
+            "role": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/"
+          },
+          {
+            "name": "MISER_PROCESS_browser_ui_4389e0b2-13b9-4c8d-ba06-28a5fd1e1c1d",
+            "pid": 19176,
+            "role": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html"
+          }
+        ],
+        "normal_phase_count": 82
+      },
+      {
+        "diagnostic": true,
+        "experiment": "MISER-EXP-021",
+        "identity_issue_counter_rows": {},
+        "limitations": "Observed sampled spans are not exact process lifetimes. All selected bytes remain counted; diagnostics cannot retroactively identify EXP020's transient or replace normal acceptance.",
+        "one_sample_processes": [
+          {
+            "birth_utc_ms": 1792538778525,
+            "first_phase": "package_20142015-regular",
+            "first_sample_elapsed_ms": 30360,
+            "identities": [
+              "qualified"
+            ],
+            "last_phase": "package_20142015-regular",
+            "last_sample_elapsed_ms": 30360,
+            "maximum_private_bytes": 10207232,
+            "name": "chrome",
+            "pid": 36808,
+            "roles": [
+              "utility:chrome.mojom.UtilWin"
+            ],
+            "sample_count": 1
+          }
+        ],
+        "peak": {
+          "elapsed_ms": 30360,
+          "phase": "package_20142015-regular",
+          "private_bytes": 408584192,
+          "private_bytes_by_role": {
+            "browser": 51748864,
+            "crashpad-handler": 3051520,
+            "gpu-process": 109756416,
+            "renderer": 205242368,
+            "utility:chrome.mojom.UtilWin": 10207232,
+            "utility:network.mojom.NetworkService": 18223104,
+            "utility:storage.mojom.StorageService": 10354688
+          },
+          "processes": [
+            {
+              "birth_utc_ms": 1792538747914,
+              "chrome_type": null,
+              "identity": "qualified",
+              "name": "chrome",
+              "parent_id": 59288,
+              "pid": 73948,
+              "private_bytes": 51748864,
+              "role": "browser",
+              "utility_type": null
+            },
+            {
+              "birth_utc_ms": 1792538748728,
+              "chrome_type": "renderer",
+              "identity": "qualified",
+              "name": "chrome",
+              "parent_id": 73948,
+              "pid": 14004,
+              "private_bytes": 145317888,
+              "role": "renderer",
+              "utility_type": null
+            },
+            {
+              "birth_utc_ms": 1792538748669,
+              "chrome_type": "renderer",
+              "identity": "qualified",
+              "name": "chrome",
+              "parent_id": 73948,
+              "pid": 58988,
+              "private_bytes": 39800832,
+              "role": "renderer",
+              "utility_type": null
+            },
+            {
+              "birth_utc_ms": 1792538748712,
+              "chrome_type": "renderer",
+              "identity": "qualified",
+              "name": "chrome",
+              "parent_id": 73948,
+              "pid": 73416,
+              "private_bytes": 20123648,
+              "role": "renderer",
+              "utility_type": null
+            },
+            {
+              "birth_utc_ms": 1792538748481,
+              "chrome_type": "gpu-process",
+              "identity": "qualified",
+              "name": "chrome",
+              "parent_id": 73948,
+              "pid": 70780,
+              "private_bytes": 109756416,
+              "role": "gpu-process",
+              "utility_type": null
+            },
+            {
+              "birth_utc_ms": 1792538748119,
+              "chrome_type": "crashpad-handler",
+              "identity": "qualified",
+              "name": "chrome",
+              "parent_id": 73948,
+              "pid": 73064,
+              "private_bytes": 3051520,
+              "role": "crashpad-handler",
+              "utility_type": null
+            },
+            {
+              "birth_utc_ms": 1792538748515,
+              "chrome_type": "utility",
+              "identity": "qualified",
+              "name": "chrome",
+              "parent_id": 73948,
+              "pid": 70844,
+              "private_bytes": 10354688,
+              "role": "utility:storage.mojom.StorageService",
+              "utility_type": "storage.mojom.StorageService"
+            },
+            {
+              "birth_utc_ms": 1792538778525,
+              "chrome_type": "utility",
+              "identity": "qualified",
+              "name": "chrome",
+              "parent_id": 73948,
+              "pid": 36808,
+              "private_bytes": 10207232,
+              "role": "utility:chrome.mojom.UtilWin",
+              "utility_type": "chrome.mojom.UtilWin"
+            },
+            {
+              "birth_utc_ms": 1792538748494,
+              "chrome_type": "utility",
+              "identity": "qualified",
+              "name": "chrome",
+              "parent_id": 73948,
+              "pid": 72796,
+              "private_bytes": 18223104,
+              "role": "utility:network.mojom.NetworkService",
+              "utility_type": "network.mojom.NetworkService"
+            }
+          ]
+        },
+        "peak_working_set_bytes": 710955008,
+        "profiles": [
+          {
+            "birth_utc_ms": 1792538748728,
+            "first_phase": "blank_browser",
+            "first_sample_elapsed_ms": 1183,
+            "identities": [
+              "qualified"
+            ],
+            "last_phase": "engine_restarted",
+            "last_sample_elapsed_ms": 108705,
+            "maximum_private_bytes": 150114304,
+            "name": "chrome",
+            "pid": 14004,
+            "roles": [
+              "renderer"
+            ],
+            "sample_count": 225
+          },
+          {
+            "birth_utc_ms": 1792538778525,
+            "first_phase": "package_20142015-regular",
+            "first_sample_elapsed_ms": 30360,
+            "identities": [
+              "qualified"
+            ],
+            "last_phase": "package_20142015-regular",
+            "last_sample_elapsed_ms": 30360,
+            "maximum_private_bytes": 10207232,
+            "name": "chrome",
+            "pid": 36808,
+            "roles": [
+              "utility:chrome.mojom.UtilWin"
+            ],
+            "sample_count": 1
+          },
+          {
+            "birth_utc_ms": 1792538748669,
+            "first_phase": "blank_browser",
+            "first_sample_elapsed_ms": 1183,
+            "identities": [
+              "qualified"
+            ],
+            "last_phase": "engine_restarted",
+            "last_sample_elapsed_ms": 108705,
+            "maximum_private_bytes": 46522368,
+            "name": "chrome",
+            "pid": 58988,
+            "roles": [
+              "renderer"
+            ],
+            "sample_count": 225
+          },
+          {
+            "birth_utc_ms": 1792538748481,
+            "first_phase": "blank_browser",
+            "first_sample_elapsed_ms": 1183,
+            "identities": [
+              "qualified"
+            ],
+            "last_phase": "engine_restarted",
+            "last_sample_elapsed_ms": 108705,
+            "maximum_private_bytes": 118202368,
+            "name": "chrome",
+            "pid": 70780,
+            "roles": [
+              "gpu-process"
+            ],
+            "sample_count": 225
+          },
+          {
+            "birth_utc_ms": 1792538748515,
+            "first_phase": "blank_browser",
+            "first_sample_elapsed_ms": 1183,
+            "identities": [
+              "qualified"
+            ],
+            "last_phase": "engine_restarted",
+            "last_sample_elapsed_ms": 108705,
+            "maximum_private_bytes": 10354688,
+            "name": "chrome",
+            "pid": 70844,
+            "roles": [
+              "utility:storage.mojom.StorageService"
+            ],
+            "sample_count": 225
+          },
+          {
+            "birth_utc_ms": 1792538748494,
+            "first_phase": "blank_browser",
+            "first_sample_elapsed_ms": 1183,
+            "identities": [
+              "qualified"
+            ],
+            "last_phase": "engine_restarted",
+            "last_sample_elapsed_ms": 108705,
+            "maximum_private_bytes": 18411520,
+            "name": "chrome",
+            "pid": 72796,
+            "roles": [
+              "utility:network.mojom.NetworkService"
+            ],
+            "sample_count": 225
+          },
+          {
+            "birth_utc_ms": 1792538748119,
+            "first_phase": "blank_browser",
+            "first_sample_elapsed_ms": 1183,
+            "identities": [
+              "qualified"
+            ],
+            "last_phase": "engine_restarted",
+            "last_sample_elapsed_ms": 108705,
+            "maximum_private_bytes": 3051520,
+            "name": "chrome",
+            "pid": 73064,
+            "roles": [
+              "crashpad-handler"
+            ],
+            "sample_count": 225
+          },
+          {
+            "birth_utc_ms": 1792538748712,
+            "first_phase": "blank_browser",
+            "first_sample_elapsed_ms": 1183,
+            "identities": [
+              "qualified"
+            ],
+            "last_phase": "engine_restarted",
+            "last_sample_elapsed_ms": 108705,
+            "maximum_private_bytes": 20471808,
+            "name": "chrome",
+            "pid": 73416,
+            "roles": [
+              "renderer"
+            ],
+            "sample_count": 225
+          },
+          {
+            "birth_utc_ms": 1792538747914,
+            "first_phase": "blank_browser",
+            "first_sample_elapsed_ms": 1183,
+            "identities": [
+              "qualified"
+            ],
+            "last_phase": "engine_restarted",
+            "last_sample_elapsed_ms": 108705,
+            "maximum_private_bytes": 52080640,
+            "name": "chrome",
+            "pid": 73948,
+            "roles": [
+              "browser"
+            ],
+            "sample_count": 225
+          }
+        ],
+        "root_birth_utc_ms": 1792538747914,
+        "root_pid": 73948,
+        "sample_count": 225,
+        "warm_maximum_ms": 94.19439999999304,
+        "sampling": {
+          "requested_interval_ms": 100,
+          "tree_discovery_interval_ms": 500,
+          "actual_median_interval_ms": 224,
+          "actual_max_interval_ms": 1134
+        },
+        "post_markers": [
+          {
+            "name": "MISER_PROCESS_workbench_page_523cee47-449e-4f18-a7d4-a4da14da6bd0",
+            "pid": 14004,
+            "role": "workbench_page",
+            "url": "http://127.0.0.1:58256/ICELINES/workbench/#/leaders?season=20242025&type=playoff&kind=skaters&sort=points&gp=&data=local"
+          },
+          {
+            "name": "MISER_PROCESS_current_engine_a143f995-5624-4b45-a1c1-28bb2388afcb",
+            "pid": 14004,
+            "role": "current_engine",
+            "url": "http://127.0.0.1:58256/ICELINES/workbench/src/worker.js"
+          },
+          {
+            "name": "MISER_PROCESS_service_worker_45a00aee-fe16-4d32-82ce-37f85b0f6474",
+            "pid": 14004,
+            "role": "service_worker",
+            "url": "http://127.0.0.1:58256/ICELINES/workbench/sw.js"
+          },
+          {
+            "name": "MISER_PROCESS_browser_ui_15fcd169-0820-4196-96e2-5ec04594731f",
+            "pid": 58988,
+            "role": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html"
+          },
+          {
+            "name": "MISER_PROCESS_browser_ui_b33a2e13-e02f-47a4-aa26-2432dbf302d9",
+            "pid": 58988,
+            "role": "browser_ui",
+            "url": "chrome://omnibox-popup.top-chrome/"
+          }
+        ],
+        "normal_phase_count": 82
+      }
+    ],
+    "checks": {
+      "local_rust_tests": 40,
+      "real_capture_mutation_checks": 7,
+      "strict_clippy": true,
+      "full82_phase_inputs_post_markers_validated_by_legacy_EXP020_reader": true,
+      "all_selected_bytes_kept": true
+    },
+    "normal_acceptance": "These enriched OS runs change timing and do not replace original normal controls or waive250MiB. Existing normal428.082/387.609MiB remain.",
+    "original_transient": "EXP020 PID57256 /77,299,712B remains unidentified; new UtilWin observations do not identify it retroactively.",
+    "next": "Do not change sampler/tree accounting. Inspect dominant workbench renderer ownership and the remaining target-unbound renderer; first inventory JS/backing-store ownership without changing functionality.",
+    "limitations": [
+      "OS type is not JS-thread identity or causal resource ownership",
+      "Observed sample spans are not exact lifetimes; sampling can miss short processes",
+      "Discovery/counter metadata work and output alter diagnostic timing; process counters are sequential, not atomic RAM",
+      "Legacy EXP020 reader is reused unchanged for input/phase/marker checks; its normal_* field names and experiment tag do not reclassify these diagnostics",
+      "Physical Android deferred; private hosted Linux unverified after billing rejection; opt-in/default/publication unchanged"
+    ]
+  },
+  "raw_archives": [
+    {
+      "path": "run-1-report.json.gz",
+      "bytes": 7745,
+      "sha256": "a8675a621b705f9f5986a7951d80eaffc897437caab0f8fa0474f7904da4bdbd",
+      "expanded_bytes": 52473,
+      "expanded_sha256": "276bd650a98e478fdb4a9f1fe30ba82b7633448e2b9bb0b1af7a1338057850a4"
+    },
+    {
+      "path": "run-1-samples.json.gz",
+      "bytes": 22624,
+      "sha256": "271c7fafe7c63f32ad86b04c1a8f6ae6f905593bb62583537aa4412257817a7f",
+      "expanded_bytes": 771911,
+      "expanded_sha256": "9e8548679fd8330ecbe3c00177ac38b3de5ca6ca679cac7c9e3f0cac84912d67"
+    },
+    {
+      "path": "run-1-post-binding.json.gz",
+      "bytes": 1442,
+      "sha256": "880dccc6d8f247da9f122902f0b34eae9fe7a15817a6fee3843ad3c80157d21c",
+      "expanded_bytes": 7521,
+      "expanded_sha256": "c5ce36ffe310321362817d02aa3f31936633522ca4d6190e70f46bb9dfc10d10"
+    },
+    {
+      "path": "run-1-post-binding-trace.json.gz",
+      "bytes": 899,
+      "sha256": "18afb897325fc8f75face484385c97cda65694eabbd088fd84cdc9a6725d54ca",
+      "expanded_bytes": 3308,
+      "expanded_sha256": "60a2183b6627d20f7d4838b2124562f07614c61a7443c0eb6a05d3fdf594ca85"
+    },
+    {
+      "path": "run-2-report.json.gz",
+      "bytes": 7742,
+      "sha256": "f3621761ee0691fe0a833147322c27766871983c13260628b05ffb8dcb918013",
+      "expanded_bytes": 52479,
+      "expanded_sha256": "e78144dc78ffe81a8df2a10700d8aa9cd86ca96ab839406f013dc7b3886b7034"
+    },
+    {
+      "path": "run-2-samples.json.gz",
+      "bytes": 20213,
+      "sha256": "94aee2d0441f9b196b6707f53b0eec081b3029429a122c27cb78fdd351632763",
+      "expanded_bytes": 665211,
+      "expanded_sha256": "af2b51f0feae7d39d58a7d03e5ba78978687fd703f0dcfb96736f9a896f42f30"
+    },
+    {
+      "path": "run-2-post-binding.json.gz",
+      "bytes": 1427,
+      "sha256": "fce276af328b315e53b03c1b970958aae4bd0a71e70e321134544160d5e8356d",
+      "expanded_bytes": 7524,
+      "expanded_sha256": "bcb3eafd0f41972870b8f21edb88b8ff1fcff8f2d187df124f11d78f3e1446a8"
+    },
+    {
+      "path": "run-2-post-binding-trace.json.gz",
+      "bytes": 898,
+      "sha256": "c6aa668fb9948b4abc13441b84fbae3d9f5412af27330eace79f64a26aab8638",
+      "expanded_bytes": 3319,
+      "expanded_sha256": "924f4a93788e971fa014a572d293e77e6354e1a09f0b1258b80760ea911ae6b8"
+    },
+    {
+      "path": "exp021-mutation-audit.json.gz",
+      "bytes": 362,
+      "sha256": "8b9e00768c2fe3be2e409890c6d887ecdb23ba53b942bc61654625780352bf97",
+      "expanded_bytes": 1381,
+      "expanded_sha256": "361106a322c95ca03352c9e5491a66bc791cc3c544407ca1f53f927c1dbff39f"
+    }
+  ],
+  "private_lab_commit": "3b38a18e4feeb3be3336dc8a438660d7fabc50c2",
+  "private_custody": "25 raw/source/audit archives retain both compressed and expanded hashes; source committed before capture",
+  "application_source": "Restored9bae artifact; application/Rust/build source still matches hostedda22174c",
+  "normal_acceptance": "No original accounting change;250MiB unmet, Android deferred and private Linux unverified"
+}

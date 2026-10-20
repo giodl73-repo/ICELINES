@@ -523,3 +523,18 @@ superseded. Exact published 2e265236 PDF passes all933 ranks/names, including ac
 with two parsers,24 pages and no text outside bounds. The opt-in permanent
 `scripts/verify-browser-print.py` reads/writes strictUTF-8. This is machine text
 inspection, not physical-printer or screen-reader acceptance.
+
+
+## EXP021 transient process metadata (diagnostic, not normal control)
+
+Two enriched OS full82-phase workloads retain original launch/actions/selection and
+all selected bytes, with extra owned PID/name/birth/parent/type metadata. They peak
+at393.89/389.66MiB private; warm96.97/94.19ms pass500ms. All sampled identities
+qualify; short UtilWin transients9.71/9.73MiB do not identify EXP020's73.72MiB PID,
+which remains unknown/counted. No ancestry issue is observed or sampler correction
+selected. Metadata work/output alters timing; these runs cannot replace normal
+controls or waive250MiB.40 lab tests/seven real-capture mutations/full-input/marker
+checks pass. Public miser-transient-process-metadata-20261020.json and nine archives;
+25 private source/raw/audit archives retained. No app/default/merge/publication
+change. Next dominant workbench JS/backing-store ownership inventory and remaining
+target-unbound renderer. Android/private-hosted gates remain open.

@@ -768,3 +768,19 @@ floor or causal leak claim.33 lab tests/strictClippy and final-parser replay pas
 Public miser-normal-process-attribution-20261020.json plus nine raw archives;30
 private raw/source/audit archives remain. Next transient OS identity diagnostic;
 no application/default/publication/mobile/private-hosted acceptance change.
+
+
+## VER-BROWSER-TRANSIENT-PROCESS-METADATA-001: Enriched OS diagnostic identities
+
+CHG-124 / REQ-BROWSER-001: EXP021 captures234/225 samples across two full82-phase
+75/eight/905-and332/20/restart workloads. Original counter/tree logic survives
+metadata-only source normalization; added OS work/output changes timing, so these
+are diagnostics. Creation/name/ancestry checks qualify all counter rows. Two short
+UtilWin observations peak9.71/9.73MiB; previous73.72MiB identity remains unknown.
+No selected bytes are discarded, no sampler correction or retrospective labeling.
+Whole private393.89/389.66MiB, working687.05/678.02MiB remain above250MiB; warm
+96.97/94.19ms pass500ms.40 lab tests/strictClippy, seven raw-capture mutation cases,
+full-input/post-marker and25 private archive hashes pass. Public receipt plus nine
+raw archives retained. Legacy EXP020 parser validates structure/markers only;
+its normal_* fields do not reclassify diagnostics. No application/default/hosted/
+publication/mobile acceptance change. Next renderer ownership inventory.
