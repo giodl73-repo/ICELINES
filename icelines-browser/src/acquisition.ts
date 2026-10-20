@@ -3,7 +3,11 @@ import { readPublicJSON, type ReadOptions } from './network.js';
 import { liveReads } from './live-coordination.js';
 export const MAX_BYTES = 100 * 1024 * 1024;
 export async function digest(bytes: Uint8Array): Promise<string> {
-  const hash = await crypto.subtle.digest('SHA-256', new Uint8Array(bytes).buffer);
+  // Web Crypto snapshots input synchronously. Preserve the exact view without
+  // making a second JS copy; shared storage still needs an ordinary buffer.
+  const input = bytes.buffer instanceof ArrayBuffer
+    ? new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength) : Uint8Array.from(bytes);
+  const hash = await crypto.subtle.digest('SHA-256', input);
   return Array.from(new Uint8Array(hash), value => value.toString(16).padStart(2, '0')).join('');
 }
 export async function boundedBytes(response: Response): Promise<Uint8Array> {
