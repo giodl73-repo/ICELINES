@@ -2,21 +2,8 @@ import type { PackageData } from './types.js';
 import { readPublicJSON, type ReadOptions } from './network.js';
 import { liveReads } from './live-coordination.js';
 export const MAX_BYTES = 100 * 1024 * 1024;
-// Read internal view bounds so subclass accessors/iterators cannot change the hash.
-const typedArrayPrototype = Object.getPrototypeOf(Uint8Array.prototype);
-const viewBuffer = Object.getOwnPropertyDescriptor(typedArrayPrototype, 'buffer')!.get!;
-const viewOffset = Object.getOwnPropertyDescriptor(typedArrayPrototype, 'byteOffset')!.get!;
-const viewLength = Object.getOwnPropertyDescriptor(typedArrayPrototype, 'byteLength')!.get!;
-const validateView = typedArrayPrototype.at;
-const resizableBuffer = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, 'resizable')?.get;
 export async function digest(bytes: Uint8Array): Promise<string> {
-  // Web Crypto snapshots input synchronously. Preserve the exact view without
-  // making a second JS copy; shared/resizable storage still needs a fixed copy.
-  validateView.call(bytes, 0); // Reject detached/out-of-bounds resizable views too.
-  const buffer = viewBuffer.call(bytes) as ArrayBufferLike;
-  const input = buffer instanceof ArrayBuffer && !resizableBuffer?.call(buffer)
-    ? new Uint8Array(buffer, viewOffset.call(bytes), viewLength.call(bytes)) : new Uint8Array(bytes);
-  const hash = await crypto.subtle.digest('SHA-256', input);
+  const hash = await crypto.subtle.digest('SHA-256', new Uint8Array(bytes).buffer);
   return Array.from(new Uint8Array(hash), value => value.toString(16).padStart(2, '0')).join('');
 }
 export async function boundedBytes(response: Response): Promise<Uint8Array> {
