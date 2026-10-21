@@ -635,3 +635,24 @@ metadata runs and both private regressions retained separately; all8 raw sets su
 raw counters/traces/UI/PDF/source inventories. Do not adopt as a demonstrated whole-
 browser optimization. MISER012/011 remain in progress;250MiB/500ms/Android/private
 Linux and normalizer/adoption conditions remain. No application/default/merge/publication.
+
+
+## Current validation precondition audit
+
+Existing EXP026 raw compressed/expanded samples independently confirm all blank
+working-set peaks460.484-474.074MiB occur before IceLines navigation and remain in
+full-run maxima. The plan names250MiB desktop peak memory without selecting an OS
+counter; the runner currently checks private bytes and summed working set. Owner
+counter clarification is pending; both original checks remain unchanged. Private
+386-399MiB failures and the529ms warm-control failure remain failures either way.
+No immutable future floor, exact physical RAM or baseline subtraction is claimed.
+
+Private MISER latest executed run39484014027 still records a before-steps billing/
+spending rejection, not current payment-state proof. Clearance status was requested
+before any fresh dispatch; prior authorization persists. Current private main has
+no hosted qualification. Android remains user-deferred; official Platform-Tools
+37.0.1 local adb version now passes after checksum verification, with no device
+commands/PATH changes. This readiness is not physical acceptance.68 lab tests, strict
+Clippy/fmt/checker pass. Receipt validation-preconditions-20261020.json retains four
+public raw/audit/tooling/check files; seven-source full custody stays in MISER. Goal
+and original resource/device/hosted/adoption conditions remain open.

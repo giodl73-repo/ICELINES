@@ -215,3 +215,13 @@ archives/public raw receipts retain source/counter/negative provenance. No proce
 subtraction, immutable-floor claim or resource waiver. Cold candidate remains outside
 PR113; no adoption/default/merge/publication. MISER012/011 and Android/private Linux
 conditions remain open.
+
+
+Validation precondition audit: six single-agent MISER lenses approve an honest
+requirement/evidence map only (18 findings,6 P2 resolved in document scope/12 P3).
+Reopened raw prefixes and source show blank summed-working-set gate failure before
+app navigation; no universal future floor inferred. Counter definition and current
+billing clearance questions pending; original250MiB/500ms failures unchanged.
+68 tests/Clippy/fmt/checker and official local Android-tools checksum/version pass;
+physical Android is still deferred. Public4-file receipt/private7-source custody
+retain proof. No current-goal completion or rollout claim.

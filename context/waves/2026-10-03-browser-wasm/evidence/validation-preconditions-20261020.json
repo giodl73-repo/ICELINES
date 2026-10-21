@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "audit": "Validation preconditions and remaining acceptance",
+  "private_source": "28569b0a8ccd623f37054d722a9ecb89c9847a5f",
+  "consumer_before_audit": "3844d42e0ba873131978cf3b7efa062f31eae584",
+  "original_private_budget_bytes": 262144000,
+  "original_summed_working_set_budget_bytes": 262144000,
+  "original_warm_filter_ms": 500,
+  "gate_changes": false,
+  "raw_files": [
+    {
+      "path": "validation-preconditions-audit.json.gz",
+      "bytes": 2071,
+      "sha256": "017b64d56bdc431c23cd88b4b14757267ef594843a0eae407091760f563db39f",
+      "expanded_bytes": 6483,
+      "expanded_sha256": "ceed400d04453b917d6fd78314ccad379eef69172e87194f367c0b0462b2a031"
+    },
+    {
+      "path": "validation-ci-annotations-current.json.gz",
+      "bytes": 422,
+      "sha256": "eab37751e93d6957399cddb4a07cc968039292e926a348b3c0311ced0e5b30ac",
+      "expanded_bytes": 856,
+      "expanded_sha256": "971c0eb9396d5faceeaa4e6db897558d65f76ca22889bc05b70223acaf161c4f"
+    },
+    {
+      "path": "validation-audit-checks-20261020.log.gz",
+      "bytes": 2070,
+      "sha256": "a13bbe75afcec8ed3dcf355ecd617a594fc8f6fe384ef3e3ee3273158bfb4eed",
+      "expanded_bytes": 7670,
+      "expanded_sha256": "3d4795f91fd80e4306e976a0800019ebd076656fc8e49b896b97813b1dd52283"
+    },
+    {
+      "path": "validation-android-tools-20261020.json.gz",
+      "bytes": 600,
+      "sha256": "9b1cc5487b1436849cf55fb332f70098abef05b97224405f9b34cf70aff038a2",
+      "expanded_bytes": 1114,
+      "expanded_sha256": "4265cf9a44359b9a8406af0ab5caa122649df517993ba3ed72c192d5c5d48dae"
+    }
+  ],
+  "decisions_pending": [
+    "Which OS counter the unchanged250MiB target governs; current runner checks both, neither changed",
+    "Whether GitHub billing/spending issue is cleared; existing authorization to run Actions persists"
+  ],
+  "latest_private_ci": "39484014027 failed before steps; historical annotation does not prove current account balance/payment status",
+  "android_tools": "Official Platform-Tools37.0.1-15733141 checksum-verified locally, adb version succeeds; no device command or PATH change",
+  "physical_android": "Explicitly user-deferred and incomplete",
+  "completion": "Goal remains incomplete. No adoption/merge/publication or budget waiver."
+}

@@ -860,3 +860,16 @@ public hashed raw/audit artifacts accompany receipt. Composite lab source proven
 is separate from structural byte integrity; consumer application stays unchanged.
 Reject demonstrated whole-browser optimization/adoption claim. Android user-deferred,
 private Linux/normalizer and fixed original resource gates remain open.
+
+
+### Validation completion/precondition reconciliation
+
+Current raw EXP026 blank/full process sums and pre-navigation source order verified,
+including all original PIDs. All4 observed blank summed-working-set250MiB comparisons
+already fail. Plan counter wording requires owner clarification; original private/
+working-set/500ms comparisons remain unchanged and failed. Latest private CI failure
+is historical before-step billing rejection; current account clearance remains
+unknown, with earlier Actions authorization intact. Task-local checksum-verified
+Android tools/adb version are ready, not physical-device proof.68 tests/Clippy/fmt/
+checker pass. Receipt: context/waves/2026-10-03-browser-wasm/evidence/validation-preconditions-20261020.json.
+No full goal completion, metric waiver, adoption, merge or publication.
