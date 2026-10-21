@@ -845,3 +845,18 @@ with38 exact raw/audit files;281 private archives retain source/binaries/preflig
 This verifies isolated WASM semantics/capacity and Node elapsed selection only.
 Full original Chromium workload/250MiB, physical Android/private Linux and consumer
 adoption remain open. No application source change, merge or publication.
+
+
+### CHG-124 / EXP026 cold browser and semantic verification
+
+Four corrected full original normal workloads complete, with mixed private-memory
+pairs (-1.746/+12.738MiB), both working-set regressions, all250MiB gates failing and
+one warm-control529.244ms query above500ms. Five exact-cold browser functional suites
+and24-page/two-parser933-row PDF pass. Initial4 noncanonical gzip-metadata runs are
+preserved, not overwritten.68 tests/Clippy and13 corruption/1 valid simulated budget
+failure pass. Receipt: context/waves/2026-10-03-browser-wasm/evidence/miser-cold-browser-20261020.json.
+159 exact private archives retain counters/traces/source/staging/binaries/UI/tests;
+public hashed raw/audit artifacts accompany receipt. Composite lab source provenance
+is separate from structural byte integrity; consumer application stays unchanged.
+Reject demonstrated whole-browser optimization/adoption claim. Android user-deferred,
+private Linux/normalizer and fixed original resource gates remain open.

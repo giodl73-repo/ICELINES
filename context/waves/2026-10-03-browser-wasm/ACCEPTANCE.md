@@ -610,3 +610,28 @@ than default cold; no universal sparse recommendation. Shared normalization guar
 remains an adoption condition. Full unchanged Chromium workload is next; fixed250MiB,
 physical Android (user deferred), private Linux and adoption remain open.
 Application/default/publication unchanged; MISER-012 in progress.
+
+
+## EXP026 cold resident full browser comparison (not adopted)
+
+Corrected final ABBA private peaks387.793/386.047/399.109/386.371MiB; paired
+changes-1.746/+12.738MiB. Working-set peaks666.648/667.398/688.645/672.359MiB,
+both paired regressions. All82 phases/75 packages/eight residents/905+332 imports/
+20 queries/restart complete under original launch/sampler/viewport. Original250MiB
+private and summed-working-set gates fail in every run. Warm-control run4 has one
+529.244ms query exceeding500ms; cold max97.324/91.084ms. No repeat-until-green.
+Blank-browser summed working sets460.484-474.074MiB already exceed250 in these runs;
+not an immutable future floor or exact RAM (shared pages can double count).
+
+All5 exact-cold Chromium suites pass: viewport933 names/ranks/export/AX and44 maximum
+mounted/77 goalie export, resident eviction/selection/source export/unload, fresh and
+persisted catalog refusal/retry, offline close/reopen.24-page PDF passes two parsers
+for933 ordered Unicode names/ranks/pace/bounds.68 Rust tests/strictClippy/fmt/checker,
+13 report corruptions and1 valid simulated budget failure pass. Current app/data/JS/
+worker template unchanged; exact EXP025 warm/cold WASM installed in explicitly labeled
+composite lab artifacts with canonical Node gzipSync metadata. Initial4 Python-gzip
+metadata runs and both private regressions retained separately; all8 raw sets survive.
+159 private exact archives; public receipt miser-cold-browser-20261020.json includes
+raw counters/traces/UI/PDF/source inventories. Do not adopt as a demonstrated whole-
+browser optimization. MISER012/011 remain in progress;250MiB/500ms/Android/private
+Linux and normalizer/adoption conditions remain. No application/default/merge/publication.

@@ -204,3 +204,14 @@ raw/audit files and private281 exact archives retain provenance and negative out
 Capacity is not live/RSS/browser memory; sparse cold is not universally smallest.
 No full Chromium/250MiB/Android/private Linux/adoption acceptance. Shared normalizer
 condition persists; full original browser workload next. Consumer application unchanged.
+
+
+EXP026: six single-agent MISER lenses approve honest evidence only. Four corrected
+full82-phase runs show mixed private pairs/both working-set regressions, all250MiB
+fail and one warm control529ms above500ms. Retain all8 runs including initial gzip
+metadata correction. Five exact-cold Chromium suites and24-page/two-parser933-row
+PDF pass, as do68 lab tests/strictClippy and13+1 corruption/budget checks.159 private
+archives/public raw receipts retain source/counter/negative provenance. No process
+subtraction, immutable-floor claim or resource waiver. Cold candidate remains outside
+PR113; no adoption/default/merge/publication. MISER012/011 and Android/private Linux
+conditions remain open.
