@@ -1,0 +1,1248 @@
+{
+  "schema_version": 1,
+  "experiment": "MISER-EXP-022",
+  "change_id": "CHG-124",
+  "diagnostic": true,
+  "summary": {
+    "experiment": "MISER-EXP-022",
+    "runs": [
+      {
+        "archive": {
+          "bytes": 149672,
+          "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca"
+        },
+        "artifact": {
+          "commit": "9bae39fd6f7682d0d3468fe0417daf20ad120894",
+          "packages": 75,
+          "shell_build": "243c11d765bfc3eb378f90b6d48355eb3b70c6e7fabddaafb4374957e161913d",
+          "verified_files": 182
+        },
+        "browser": "153.0.8010.12",
+        "checkpoints": [
+          {
+            "checkpoint": "startup",
+            "distinct_observed_isolates": 2,
+            "engine_heap_before": null,
+            "owners": {
+              "active": null,
+              "presentation_pool": 0,
+              "recovery": null,
+              "resident_count": 0,
+              "resident_view_bytes": 0,
+              "unique_dataset_backing_bytes": 0,
+              "unique_dataset_buffers": 0,
+              "viewport_aliases_result": false,
+              "viewport_rows": 0
+            },
+            "page_heap_after": {
+              "backingStorageSize": 433743,
+              "embedderHeapUsedSize": 3341216,
+              "totalSize": 4780032,
+              "usedSize": 2973828
+            },
+            "page_heap_before": {
+              "backingStorageSize": 433546,
+              "embedderHeapUsedSize": 3243776,
+              "totalSize": 4517888,
+              "usedSize": 2865564
+            },
+            "raw_isolates": [
+              {
+                "heap_after": {
+                  "backingStorageSize": 1960953,
+                  "embedderHeapUsedSize": 1115312,
+                  "totalSize": 2097152,
+                  "usedSize": 706076
+                },
+                "heap_before": {
+                  "backingStorageSize": 1960953,
+                  "embedderHeapUsedSize": 1115312,
+                  "totalSize": 2097152,
+                  "usedSize": 706076
+                },
+                "isolate": "bf43d58097ca1166",
+                "target_id": "AA8BFEAB191B1788B1E469BA16795AF5",
+                "type": "service_worker",
+                "url": "http://127.0.0.1:64683/ICELINES/workbench/sw.js"
+              }
+            ],
+            "wasm_capacity_bytes": null
+          },
+          {
+            "checkpoint": "package8",
+            "distinct_observed_isolates": 3,
+            "engine_heap_before": {
+              "backingStorageSize": 6723618,
+              "embedderHeapUsedSize": 773712,
+              "totalSize": 2359296,
+              "usedSize": 1117668
+            },
+            "owners": {
+              "active": {
+                "buffer_bytes": 988849,
+                "buffer_index": 7,
+                "byte_offset": 0,
+                "bytes": 988849,
+                "id": "20212022-regular",
+                "revision": "32bbcdf0dbfb6567ff6d9d29216aa34823a0bfcb4796dd88d8256772d37f14bd"
+              },
+              "presentation_pool": 44,
+              "recovery": null,
+              "resident_count": 8,
+              "resident_view_bytes": 5457141,
+              "unique_dataset_backing_bytes": 5457141,
+              "unique_dataset_buffers": 8,
+              "viewport_aliases_result": true,
+              "viewport_rows": 1004
+            },
+            "page_heap_after": {
+              "backingStorageSize": 24267683,
+              "embedderHeapUsedSize": 26765272,
+              "totalSize": 10870784,
+              "usedSize": 7495416
+            },
+            "page_heap_before": {
+              "backingStorageSize": 24267651,
+              "embedderHeapUsedSize": 26801808,
+              "totalSize": 10870784,
+              "usedSize": 7451788
+            },
+            "raw_isolates": [
+              {
+                "heap_after": {
+                  "backingStorageSize": 1961908,
+                  "embedderHeapUsedSize": 1243520,
+                  "totalSize": 2097152,
+                  "usedSize": 726040
+                },
+                "heap_before": {
+                  "backingStorageSize": 1961908,
+                  "embedderHeapUsedSize": 1243520,
+                  "totalSize": 2097152,
+                  "usedSize": 726040
+                },
+                "isolate": "bf43d58097ca1166",
+                "target_id": "AA8BFEAB191B1788B1E469BA16795AF5",
+                "type": "service_worker",
+                "url": "http://127.0.0.1:64683/ICELINES/workbench/sw.js"
+              },
+              {
+                "heap_after": {
+                  "backingStorageSize": 6723618,
+                  "embedderHeapUsedSize": 773712,
+                  "totalSize": 2359296,
+                  "usedSize": 1123280
+                },
+                "heap_before": {
+                  "backingStorageSize": 6723618,
+                  "embedderHeapUsedSize": 773712,
+                  "totalSize": 2359296,
+                  "usedSize": 1117668
+                },
+                "isolate": "f9294028cab0aa37",
+                "target_id": "393AF4AE352BC4B4ADD1ABC11C333C8B",
+                "type": "worker",
+                "url": "http://127.0.0.1:64683/ICELINES/workbench/src/worker.js",
+                "wasm": {
+                  "wasm_capacity_bytes": 12779520
+                }
+              }
+            ],
+            "wasm_capacity_bytes": 12779520
+          },
+          {
+            "checkpoint": "package75",
+            "distinct_observed_isolates": 3,
+            "engine_heap_before": {
+              "backingStorageSize": 3429831,
+              "embedderHeapUsedSize": 613160,
+              "totalSize": 2097152,
+              "usedSize": 749244
+            },
+            "owners": {
+              "active": {
+                "buffer_bytes": 284302,
+                "buffer_index": 7,
+                "byte_offset": 0,
+                "bytes": 284302,
+                "id": "19871988-playoff",
+                "revision": "7681f9fe03c06a09c634ab24909c48da6d96a38432898630a4dd2e1112c01b73"
+              },
+              "presentation_pool": 44,
+              "recovery": null,
+              "resident_count": 8,
+              "resident_view_bytes": 3658023,
+              "unique_dataset_backing_bytes": 3658023,
+              "unique_dataset_buffers": 8,
+              "viewport_aliases_result": true,
+              "viewport_rows": 367
+            },
+            "page_heap_after": {
+              "backingStorageSize": 5027485,
+              "embedderHeapUsedSize": 5923296,
+              "totalSize": 7462912,
+              "usedSize": 4432684
+            },
+            "page_heap_before": {
+              "backingStorageSize": 5027288,
+              "embedderHeapUsedSize": 5886848,
+              "totalSize": 7462912,
+              "usedSize": 4385528
+            },
+            "raw_isolates": [
+              {
+                "heap_after": {
+                  "backingStorageSize": 1969881,
+                  "embedderHeapUsedSize": 1488208,
+                  "totalSize": 2097152,
+                  "usedSize": 731936
+                },
+                "heap_before": {
+                  "backingStorageSize": 1969881,
+                  "embedderHeapUsedSize": 1488208,
+                  "totalSize": 2097152,
+                  "usedSize": 731936
+                },
+                "isolate": "bf43d58097ca1166",
+                "target_id": "AA8BFEAB191B1788B1E469BA16795AF5",
+                "type": "service_worker",
+                "url": "http://127.0.0.1:64683/ICELINES/workbench/sw.js"
+              },
+              {
+                "heap_after": {
+                  "backingStorageSize": 3429831,
+                  "embedderHeapUsedSize": 740000,
+                  "totalSize": 2097152,
+                  "usedSize": 751192
+                },
+                "heap_before": {
+                  "backingStorageSize": 3429831,
+                  "embedderHeapUsedSize": 613160,
+                  "totalSize": 2097152,
+                  "usedSize": 749244
+                },
+                "isolate": "f9294028cab0aa37",
+                "target_id": "393AF4AE352BC4B4ADD1ABC11C333C8B",
+                "type": "worker",
+                "url": "http://127.0.0.1:64683/ICELINES/workbench/src/worker.js",
+                "wasm": {
+                  "wasm_capacity_bytes": 14942208
+                }
+              }
+            ],
+            "wasm_capacity_bytes": 14942208
+          },
+          {
+            "checkpoint": "archive_regular",
+            "distinct_observed_isolates": 3,
+            "engine_heap_before": {
+              "backingStorageSize": 7071321,
+              "embedderHeapUsedSize": 740000,
+              "totalSize": 2097152,
+              "usedSize": 655124
+            },
+            "owners": {
+              "active": {
+                "buffer_bytes": 907753,
+                "buffer_index": 7,
+                "byte_offset": 0,
+                "bytes": 907753,
+                "id": "import-24960a89a39d6180",
+                "revision": "24960a89a39d6180b097093e9fc64420cdc5e670dd843a7383ff84f2288b0f47"
+              },
+              "presentation_pool": 44,
+              "recovery": null,
+              "resident_count": 8,
+              "resident_view_bytes": 3928507,
+              "unique_dataset_backing_bytes": 3928507,
+              "unique_dataset_buffers": 8,
+              "viewport_aliases_result": true,
+              "viewport_rows": 905
+            },
+            "page_heap_after": {
+              "backingStorageSize": 4080875,
+              "embedderHeapUsedSize": 3380488,
+              "totalSize": 7725056,
+              "usedSize": 3870736
+            },
+            "page_heap_before": {
+              "backingStorageSize": 6837741,
+              "embedderHeapUsedSize": 3136312,
+              "totalSize": 7725056,
+              "usedSize": 3831640
+            },
+            "raw_isolates": [
+              {
+                "heap_after": {
+                  "backingStorageSize": 1969881,
+                  "embedderHeapUsedSize": 1488208,
+                  "totalSize": 2097152,
+                  "usedSize": 731936
+                },
+                "heap_before": {
+                  "backingStorageSize": 1969881,
+                  "embedderHeapUsedSize": 1488208,
+                  "totalSize": 2097152,
+                  "usedSize": 731936
+                },
+                "isolate": "bf43d58097ca1166",
+                "target_id": "AA8BFEAB191B1788B1E469BA16795AF5",
+                "type": "service_worker",
+                "url": "http://127.0.0.1:64683/ICELINES/workbench/sw.js"
+              },
+              {
+                "heap_after": {
+                  "backingStorageSize": 7071321,
+                  "embedderHeapUsedSize": 740000,
+                  "totalSize": 2097152,
+                  "usedSize": 656924
+                },
+                "heap_before": {
+                  "backingStorageSize": 7071321,
+                  "embedderHeapUsedSize": 740000,
+                  "totalSize": 2097152,
+                  "usedSize": 655124
+                },
+                "isolate": "f9294028cab0aa37",
+                "target_id": "393AF4AE352BC4B4ADD1ABC11C333C8B",
+                "type": "worker",
+                "url": "http://127.0.0.1:64683/ICELINES/workbench/src/worker.js",
+                "wasm": {
+                  "wasm_capacity_bytes": 14942208
+                }
+              }
+            ],
+            "wasm_capacity_bytes": 14942208
+          },
+          {
+            "checkpoint": "archive_playoff",
+            "distinct_observed_isolates": 3,
+            "engine_heap_before": {
+              "backingStorageSize": 3270941,
+              "embedderHeapUsedSize": 695800,
+              "totalSize": 4440064,
+              "usedSize": 1189916
+            },
+            "owners": {
+              "active": {
+                "buffer_bytes": 259408,
+                "buffer_index": 7,
+                "byte_offset": 0,
+                "bytes": 259408,
+                "id": "import-5299ebee4cd234ff",
+                "revision": "5299ebee4cd234ff350b65dfd62051577bb513ad84a816a56aae09e36977799c"
+              },
+              "presentation_pool": 44,
+              "recovery": null,
+              "resident_count": 8,
+              "resident_view_bytes": 3912464,
+              "unique_dataset_backing_bytes": 3912464,
+              "unique_dataset_buffers": 8,
+              "viewport_aliases_result": true,
+              "viewport_rows": 332
+            },
+            "page_heap_after": {
+              "backingStorageSize": 4601286,
+              "embedderHeapUsedSize": 5808952,
+              "totalSize": 7725056,
+              "usedSize": 4250404
+            },
+            "page_heap_before": {
+              "backingStorageSize": 4601286,
+              "embedderHeapUsedSize": 5681336,
+              "totalSize": 7725056,
+              "usedSize": 4214580
+            },
+            "raw_isolates": [
+              {
+                "heap_after": {
+                  "backingStorageSize": 1969881,
+                  "embedderHeapUsedSize": 1488208,
+                  "totalSize": 2097152,
+                  "usedSize": 731936
+                },
+                "heap_before": {
+                  "backingStorageSize": 1969881,
+                  "embedderHeapUsedSize": 1488208,
+                  "totalSize": 2097152,
+                  "usedSize": 731936
+                },
+                "isolate": "bf43d58097ca1166",
+                "target_id": "AA8BFEAB191B1788B1E469BA16795AF5",
+                "type": "service_worker",
+                "url": "http://127.0.0.1:64683/ICELINES/workbench/sw.js"
+              },
+              {
+                "heap_after": {
+                  "backingStorageSize": 3270941,
+                  "embedderHeapUsedSize": 695800,
+                  "totalSize": 4440064,
+                  "usedSize": 1191848
+                },
+                "heap_before": {
+                  "backingStorageSize": 3270941,
+                  "embedderHeapUsedSize": 695800,
+                  "totalSize": 4440064,
+                  "usedSize": 1189916
+                },
+                "isolate": "f9294028cab0aa37",
+                "target_id": "393AF4AE352BC4B4ADD1ABC11C333C8B",
+                "type": "worker",
+                "url": "http://127.0.0.1:64683/ICELINES/workbench/src/worker.js",
+                "wasm": {
+                  "wasm_capacity_bytes": 14942208
+                }
+              }
+            ],
+            "wasm_capacity_bytes": 14942208
+          },
+          {
+            "checkpoint": "queries_settled",
+            "distinct_observed_isolates": 3,
+            "engine_heap_before": {
+              "backingStorageSize": 3330806,
+              "embedderHeapUsedSize": 695800,
+              "totalSize": 5226496,
+              "usedSize": 1803448
+            },
+            "owners": {
+              "active": {
+                "buffer_bytes": 259408,
+                "buffer_index": 7,
+                "byte_offset": 0,
+                "bytes": 259408,
+                "id": "import-5299ebee4cd234ff",
+                "revision": "5299ebee4cd234ff350b65dfd62051577bb513ad84a816a56aae09e36977799c"
+              },
+              "presentation_pool": 44,
+              "recovery": null,
+              "resident_count": 8,
+              "resident_view_bytes": 3912464,
+              "unique_dataset_backing_bytes": 3912464,
+              "unique_dataset_buffers": 8,
+              "viewport_aliases_result": true,
+              "viewport_rows": 280
+            },
+            "page_heap_after": {
+              "backingStorageSize": 4065842,
+              "embedderHeapUsedSize": 7232792,
+              "totalSize": 10084352,
+              "usedSize": 5642820
+            },
+            "page_heap_before": {
+              "backingStorageSize": 4065645,
+              "embedderHeapUsedSize": 7217280,
+              "totalSize": 10084352,
+              "usedSize": 5603192
+            },
+            "raw_isolates": [
+              {
+                "heap_after": {
+                  "backingStorageSize": 1969881,
+                  "embedderHeapUsedSize": 1609904,
+                  "totalSize": 2097152,
+                  "usedSize": 731936
+                },
+                "heap_before": {
+                  "backingStorageSize": 1969881,
+                  "embedderHeapUsedSize": 1609904,
+                  "totalSize": 2097152,
+                  "usedSize": 731936
+                },
+                "isolate": "bf43d58097ca1166",
+                "target_id": "AA8BFEAB191B1788B1E469BA16795AF5",
+                "type": "service_worker",
+                "url": "http://127.0.0.1:64683/ICELINES/workbench/sw.js"
+              },
+              {
+                "heap_after": {
+                  "backingStorageSize": 3330806,
+                  "embedderHeapUsedSize": 695800,
+                  "totalSize": 5226496,
+                  "usedSize": 1805232
+                },
+                "heap_before": {
+                  "backingStorageSize": 3330806,
+                  "embedderHeapUsedSize": 695800,
+                  "totalSize": 5226496,
+                  "usedSize": 1803448
+                },
+                "isolate": "f9294028cab0aa37",
+                "target_id": "393AF4AE352BC4B4ADD1ABC11C333C8B",
+                "type": "worker",
+                "url": "http://127.0.0.1:64683/ICELINES/workbench/src/worker.js",
+                "wasm": {
+                  "wasm_capacity_bytes": 14942208
+                }
+              }
+            ],
+            "wasm_capacity_bytes": 14942208
+          },
+          {
+            "checkpoint": "engine_restarted",
+            "distinct_observed_isolates": 3,
+            "engine_heap_before": {
+              "backingStorageSize": 24921,
+              "embedderHeapUsedSize": 773712,
+              "totalSize": 1048576,
+              "usedSize": 436216
+            },
+            "owners": {
+              "active": null,
+              "presentation_pool": 0,
+              "recovery": {
+                "buffer_bytes": 259408,
+                "buffer_index": 0,
+                "byte_offset": 0,
+                "bytes": 259408,
+                "id": "import-5299ebee4cd234ff",
+                "revision": "5299ebee4cd234ff350b65dfd62051577bb513ad84a816a56aae09e36977799c"
+              },
+              "resident_count": 0,
+              "resident_view_bytes": 0,
+              "unique_dataset_backing_bytes": 259408,
+              "unique_dataset_buffers": 1,
+              "viewport_aliases_result": false,
+              "viewport_rows": 0
+            },
+            "page_heap_after": {
+              "backingStorageSize": 4066389,
+              "embedderHeapUsedSize": 7944128,
+              "totalSize": 10084352,
+              "usedSize": 6103660
+            },
+            "page_heap_before": {
+              "backingStorageSize": 4066389,
+              "embedderHeapUsedSize": 7931008,
+              "totalSize": 10084352,
+              "usedSize": 6072744
+            },
+            "raw_isolates": [
+              {
+                "heap_after": {
+                  "backingStorageSize": 1969881,
+                  "embedderHeapUsedSize": 1609904,
+                  "totalSize": 2097152,
+                  "usedSize": 739104
+                },
+                "heap_before": {
+                  "backingStorageSize": 1969881,
+                  "embedderHeapUsedSize": 1609904,
+                  "totalSize": 2097152,
+                  "usedSize": 739104
+                },
+                "isolate": "bf43d58097ca1166",
+                "target_id": "AA8BFEAB191B1788B1E469BA16795AF5",
+                "type": "service_worker",
+                "url": "http://127.0.0.1:64683/ICELINES/workbench/sw.js"
+              },
+              {
+                "heap_after": {
+                  "backingStorageSize": 24921,
+                  "embedderHeapUsedSize": 773712,
+                  "totalSize": 1048576,
+                  "usedSize": 441968
+                },
+                "heap_before": {
+                  "backingStorageSize": 24921,
+                  "embedderHeapUsedSize": 773712,
+                  "totalSize": 1048576,
+                  "usedSize": 436216
+                },
+                "isolate": "5646915b376632dd",
+                "target_id": "ABEA737AD274246D06D6E389A42FF48E",
+                "type": "worker",
+                "url": "http://127.0.0.1:64683/ICELINES/workbench/src/worker.js",
+                "wasm": {
+                  "wasm_capacity_bytes": 1245184
+                }
+              }
+            ],
+            "wasm_capacity_bytes": 1245184
+          }
+        ],
+        "diagnostic_private_peak": 406831104,
+        "diagnostic_working_set_peak": 704540672,
+        "experiment": "MISER-EXP-022",
+        "interpretation": "Explicit owner buffers, V8 heap/allocated/embedder/backing and WASM capacity are distinct and may overlap; no sum or normal acceptance claim.",
+        "warm_maximum_ms": 170.23639999999432,
+        "sample_count": 221,
+        "sampling": {
+          "requested_interval_ms": 100,
+          "tree_discovery_interval_ms": 500,
+          "actual_median_interval_ms": 244,
+          "actual_max_interval_ms": 1358
+        }
+      },
+      {
+        "archive": {
+          "bytes": 149672,
+          "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca"
+        },
+        "artifact": {
+          "commit": "9bae39fd6f7682d0d3468fe0417daf20ad120894",
+          "packages": 75,
+          "shell_build": "243c11d765bfc3eb378f90b6d48355eb3b70c6e7fabddaafb4374957e161913d",
+          "verified_files": 182
+        },
+        "browser": "153.0.8010.12",
+        "checkpoints": [
+          {
+            "checkpoint": "startup",
+            "distinct_observed_isolates": 2,
+            "engine_heap_before": null,
+            "owners": {
+              "active": null,
+              "presentation_pool": 0,
+              "recovery": null,
+              "resident_count": 0,
+              "resident_view_bytes": 0,
+              "unique_dataset_backing_bytes": 0,
+              "unique_dataset_buffers": 0,
+              "viewport_aliases_result": false,
+              "viewport_rows": 0
+            },
+            "page_heap_after": {
+              "backingStorageSize": 433743,
+              "embedderHeapUsedSize": 3337624,
+              "totalSize": 4780032,
+              "usedSize": 2973828
+            },
+            "page_heap_before": {
+              "backingStorageSize": 433546,
+              "embedderHeapUsedSize": 3201856,
+              "totalSize": 4517888,
+              "usedSize": 2865564
+            },
+            "raw_isolates": [
+              {
+                "heap_after": {
+                  "backingStorageSize": 1960953,
+                  "embedderHeapUsedSize": 1115312,
+                  "totalSize": 2097152,
+                  "usedSize": 706076
+                },
+                "heap_before": {
+                  "backingStorageSize": 1960953,
+                  "embedderHeapUsedSize": 1115312,
+                  "totalSize": 2097152,
+                  "usedSize": 706076
+                },
+                "isolate": "b9060f4f4314d846",
+                "target_id": "4DD43BBC06760C4DCEB46E60D41B5491",
+                "type": "service_worker",
+                "url": "http://127.0.0.1:51512/ICELINES/workbench/sw.js"
+              }
+            ],
+            "wasm_capacity_bytes": null
+          },
+          {
+            "checkpoint": "package8",
+            "distinct_observed_isolates": 3,
+            "engine_heap_before": {
+              "backingStorageSize": 6723618,
+              "embedderHeapUsedSize": 773712,
+              "totalSize": 2359296,
+              "usedSize": 1117668
+            },
+            "owners": {
+              "active": {
+                "buffer_bytes": 988849,
+                "buffer_index": 7,
+                "byte_offset": 0,
+                "bytes": 988849,
+                "id": "20212022-regular",
+                "revision": "32bbcdf0dbfb6567ff6d9d29216aa34823a0bfcb4796dd88d8256772d37f14bd"
+              },
+              "presentation_pool": 44,
+              "recovery": null,
+              "resident_count": 8,
+              "resident_view_bytes": 5457141,
+              "unique_dataset_backing_bytes": 5457141,
+              "unique_dataset_buffers": 8,
+              "viewport_aliases_result": true,
+              "viewport_rows": 1004
+            },
+            "page_heap_after": {
+              "backingStorageSize": 24267683,
+              "embedderHeapUsedSize": 26815920,
+              "totalSize": 9035776,
+              "usedSize": 6999056
+            },
+            "page_heap_before": {
+              "backingStorageSize": 24267651,
+              "embedderHeapUsedSize": 26752864,
+              "totalSize": 9035776,
+              "usedSize": 6955428
+            },
+            "raw_isolates": [
+              {
+                "heap_after": {
+                  "backingStorageSize": 1961908,
+                  "embedderHeapUsedSize": 1243520,
+                  "totalSize": 2097152,
+                  "usedSize": 726040
+                },
+                "heap_before": {
+                  "backingStorageSize": 1961908,
+                  "embedderHeapUsedSize": 1243520,
+                  "totalSize": 2097152,
+                  "usedSize": 726040
+                },
+                "isolate": "b9060f4f4314d846",
+                "target_id": "4DD43BBC06760C4DCEB46E60D41B5491",
+                "type": "service_worker",
+                "url": "http://127.0.0.1:51512/ICELINES/workbench/sw.js"
+              },
+              {
+                "heap_after": {
+                  "backingStorageSize": 6723618,
+                  "embedderHeapUsedSize": 773712,
+                  "totalSize": 2359296,
+                  "usedSize": 1123280
+                },
+                "heap_before": {
+                  "backingStorageSize": 6723618,
+                  "embedderHeapUsedSize": 773712,
+                  "totalSize": 2359296,
+                  "usedSize": 1117668
+                },
+                "isolate": "e6b148ba3dc220ff",
+                "target_id": "5F0D5D8A881B6C4C33DB3AB4AF4815E4",
+                "type": "worker",
+                "url": "http://127.0.0.1:51512/ICELINES/workbench/src/worker.js",
+                "wasm": {
+                  "wasm_capacity_bytes": 12779520
+                }
+              }
+            ],
+            "wasm_capacity_bytes": 12779520
+          },
+          {
+            "checkpoint": "package75",
+            "distinct_observed_isolates": 3,
+            "engine_heap_before": {
+              "backingStorageSize": 1178104,
+              "embedderHeapUsedSize": 613160,
+              "totalSize": 1572864,
+              "usedSize": 526928
+            },
+            "owners": {
+              "active": {
+                "buffer_bytes": 284302,
+                "buffer_index": 7,
+                "byte_offset": 0,
+                "bytes": 284302,
+                "id": "19871988-playoff",
+                "revision": "7681f9fe03c06a09c634ab24909c48da6d96a38432898630a4dd2e1112c01b73"
+              },
+              "presentation_pool": 44,
+              "recovery": null,
+              "resident_count": 8,
+              "resident_view_bytes": 3658023,
+              "unique_dataset_backing_bytes": 3658023,
+              "unique_dataset_buffers": 8,
+              "viewport_aliases_result": true,
+              "viewport_rows": 367
+            },
+            "page_heap_after": {
+              "backingStorageSize": 7868352,
+              "embedderHeapUsedSize": 8722632,
+              "totalSize": 7987200,
+              "usedSize": 5411732
+            },
+            "page_heap_before": {
+              "backingStorageSize": 7868155,
+              "embedderHeapUsedSize": 8654888,
+              "totalSize": 7987200,
+              "usedSize": 5364576
+            },
+            "raw_isolates": [
+              {
+                "heap_after": {
+                  "backingStorageSize": 1969881,
+                  "embedderHeapUsedSize": 1488096,
+                  "totalSize": 2097152,
+                  "usedSize": 731936
+                },
+                "heap_before": {
+                  "backingStorageSize": 1969881,
+                  "embedderHeapUsedSize": 1488096,
+                  "totalSize": 2097152,
+                  "usedSize": 731936
+                },
+                "isolate": "b9060f4f4314d846",
+                "target_id": "4DD43BBC06760C4DCEB46E60D41B5491",
+                "type": "service_worker",
+                "url": "http://127.0.0.1:51512/ICELINES/workbench/sw.js"
+              },
+              {
+                "heap_after": {
+                  "backingStorageSize": 1178104,
+                  "embedderHeapUsedSize": 740000,
+                  "totalSize": 1572864,
+                  "usedSize": 528876
+                },
+                "heap_before": {
+                  "backingStorageSize": 1178104,
+                  "embedderHeapUsedSize": 613160,
+                  "totalSize": 1572864,
+                  "usedSize": 526928
+                },
+                "isolate": "e6b148ba3dc220ff",
+                "target_id": "5F0D5D8A881B6C4C33DB3AB4AF4815E4",
+                "type": "worker",
+                "url": "http://127.0.0.1:51512/ICELINES/workbench/src/worker.js",
+                "wasm": {
+                  "wasm_capacity_bytes": 14942208
+                }
+              }
+            ],
+            "wasm_capacity_bytes": 14942208
+          },
+          {
+            "checkpoint": "archive_regular",
+            "distinct_observed_isolates": 3,
+            "engine_heap_before": {
+              "backingStorageSize": 5997666,
+              "embedderHeapUsedSize": 740000,
+              "totalSize": 4177920,
+              "usedSize": 3066876
+            },
+            "owners": {
+              "active": {
+                "buffer_bytes": 907753,
+                "buffer_index": 7,
+                "byte_offset": 0,
+                "bytes": 907753,
+                "id": "import-24960a89a39d6180",
+                "revision": "24960a89a39d6180b097093e9fc64420cdc5e670dd843a7383ff84f2288b0f47"
+              },
+              "presentation_pool": 44,
+              "recovery": null,
+              "resident_count": 8,
+              "resident_view_bytes": 3928507,
+              "unique_dataset_backing_bytes": 3928507,
+              "unique_dataset_buffers": 8,
+              "viewport_aliases_result": true,
+              "viewport_rows": 905
+            },
+            "page_heap_after": {
+              "backingStorageSize": 5627176,
+              "embedderHeapUsedSize": 5634264,
+              "totalSize": 6152192,
+              "usedSize": 4390208
+            },
+            "page_heap_before": {
+              "backingStorageSize": 5626979,
+              "embedderHeapUsedSize": 5570632,
+              "totalSize": 6152192,
+              "usedSize": 4351276
+            },
+            "raw_isolates": [
+              {
+                "heap_after": {
+                  "backingStorageSize": 1969881,
+                  "embedderHeapUsedSize": 1488096,
+                  "totalSize": 2097152,
+                  "usedSize": 731936
+                },
+                "heap_before": {
+                  "backingStorageSize": 1969881,
+                  "embedderHeapUsedSize": 1488096,
+                  "totalSize": 2097152,
+                  "usedSize": 731936
+                },
+                "isolate": "b9060f4f4314d846",
+                "target_id": "4DD43BBC06760C4DCEB46E60D41B5491",
+                "type": "service_worker",
+                "url": "http://127.0.0.1:51512/ICELINES/workbench/sw.js"
+              },
+              {
+                "heap_after": {
+                  "backingStorageSize": 5997666,
+                  "embedderHeapUsedSize": 740000,
+                  "totalSize": 4177920,
+                  "usedSize": 3068660
+                },
+                "heap_before": {
+                  "backingStorageSize": 5997666,
+                  "embedderHeapUsedSize": 740000,
+                  "totalSize": 4177920,
+                  "usedSize": 3066876
+                },
+                "isolate": "e6b148ba3dc220ff",
+                "target_id": "5F0D5D8A881B6C4C33DB3AB4AF4815E4",
+                "type": "worker",
+                "url": "http://127.0.0.1:51512/ICELINES/workbench/src/worker.js",
+                "wasm": {
+                  "wasm_capacity_bytes": 14942208
+                }
+              }
+            ],
+            "wasm_capacity_bytes": 14942208
+          },
+          {
+            "checkpoint": "archive_playoff",
+            "distinct_observed_isolates": 3,
+            "engine_heap_before": {
+              "backingStorageSize": 1673686,
+              "embedderHeapUsedSize": 569104,
+              "totalSize": 1572864,
+              "usedSize": 493888
+            },
+            "owners": {
+              "active": {
+                "buffer_bytes": 259408,
+                "buffer_index": 7,
+                "byte_offset": 0,
+                "bytes": 259408,
+                "id": "import-5299ebee4cd234ff",
+                "revision": "5299ebee4cd234ff350b65dfd62051577bb513ad84a816a56aae09e36977799c"
+              },
+              "presentation_pool": 44,
+              "recovery": null,
+              "resident_count": 8,
+              "resident_view_bytes": 3912464,
+              "unique_dataset_backing_bytes": 3912464,
+              "unique_dataset_buffers": 8,
+              "viewport_aliases_result": true,
+              "viewport_rows": 332
+            },
+            "page_heap_after": {
+              "backingStorageSize": 4064647,
+              "embedderHeapUsedSize": 3259920,
+              "totalSize": 7200768,
+              "usedSize": 3443408
+            },
+            "page_heap_before": {
+              "backingStorageSize": 6144395,
+              "embedderHeapUsedSize": 2998072,
+              "totalSize": 7200768,
+              "usedSize": 3404004
+            },
+            "raw_isolates": [
+              {
+                "heap_after": {
+                  "backingStorageSize": 1969881,
+                  "embedderHeapUsedSize": 1488096,
+                  "totalSize": 2097152,
+                  "usedSize": 731936
+                },
+                "heap_before": {
+                  "backingStorageSize": 1969881,
+                  "embedderHeapUsedSize": 1488096,
+                  "totalSize": 2097152,
+                  "usedSize": 731936
+                },
+                "isolate": "b9060f4f4314d846",
+                "target_id": "4DD43BBC06760C4DCEB46E60D41B5491",
+                "type": "service_worker",
+                "url": "http://127.0.0.1:51512/ICELINES/workbench/sw.js"
+              },
+              {
+                "heap_after": {
+                  "backingStorageSize": 1673686,
+                  "embedderHeapUsedSize": 695904,
+                  "totalSize": 1572864,
+                  "usedSize": 495836
+                },
+                "heap_before": {
+                  "backingStorageSize": 1673686,
+                  "embedderHeapUsedSize": 569104,
+                  "totalSize": 1572864,
+                  "usedSize": 493888
+                },
+                "isolate": "e6b148ba3dc220ff",
+                "target_id": "5F0D5D8A881B6C4C33DB3AB4AF4815E4",
+                "type": "worker",
+                "url": "http://127.0.0.1:51512/ICELINES/workbench/src/worker.js",
+                "wasm": {
+                  "wasm_capacity_bytes": 14942208
+                }
+              }
+            ],
+            "wasm_capacity_bytes": 14942208
+          },
+          {
+            "checkpoint": "queries_settled",
+            "distinct_observed_isolates": 3,
+            "engine_heap_before": {
+              "backingStorageSize": 1733551,
+              "embedderHeapUsedSize": 695904,
+              "totalSize": 2097152,
+              "usedSize": 1107272
+            },
+            "owners": {
+              "active": {
+                "buffer_bytes": 259408,
+                "buffer_index": 7,
+                "byte_offset": 0,
+                "bytes": 259408,
+                "id": "import-5299ebee4cd234ff",
+                "revision": "5299ebee4cd234ff350b65dfd62051577bb513ad84a816a56aae09e36977799c"
+              },
+              "presentation_pool": 44,
+              "recovery": null,
+              "resident_count": 8,
+              "resident_view_bytes": 3912464,
+              "unique_dataset_backing_bytes": 3912464,
+              "unique_dataset_buffers": 8,
+              "viewport_aliases_result": true,
+              "viewport_rows": 280
+            },
+            "page_heap_after": {
+              "backingStorageSize": 4066164,
+              "embedderHeapUsedSize": 4341040,
+              "totalSize": 14802944,
+              "usedSize": 4191404
+            },
+            "page_heap_before": {
+              "backingStorageSize": 4065967,
+              "embedderHeapUsedSize": 4315856,
+              "totalSize": 14802944,
+              "usedSize": 4152168
+            },
+            "raw_isolates": [
+              {
+                "heap_after": {
+                  "backingStorageSize": 1969881,
+                  "embedderHeapUsedSize": 1609904,
+                  "totalSize": 2097152,
+                  "usedSize": 731936
+                },
+                "heap_before": {
+                  "backingStorageSize": 1969881,
+                  "embedderHeapUsedSize": 1609904,
+                  "totalSize": 2097152,
+                  "usedSize": 731936
+                },
+                "isolate": "b9060f4f4314d846",
+                "target_id": "4DD43BBC06760C4DCEB46E60D41B5491",
+                "type": "service_worker",
+                "url": "http://127.0.0.1:51512/ICELINES/workbench/sw.js"
+              },
+              {
+                "heap_after": {
+                  "backingStorageSize": 1733551,
+                  "embedderHeapUsedSize": 695904,
+                  "totalSize": 2097152,
+                  "usedSize": 1109056
+                },
+                "heap_before": {
+                  "backingStorageSize": 1733551,
+                  "embedderHeapUsedSize": 695904,
+                  "totalSize": 2097152,
+                  "usedSize": 1107272
+                },
+                "isolate": "e6b148ba3dc220ff",
+                "target_id": "5F0D5D8A881B6C4C33DB3AB4AF4815E4",
+                "type": "worker",
+                "url": "http://127.0.0.1:51512/ICELINES/workbench/src/worker.js",
+                "wasm": {
+                  "wasm_capacity_bytes": 14942208
+                }
+              }
+            ],
+            "wasm_capacity_bytes": 14942208
+          },
+          {
+            "checkpoint": "engine_restarted",
+            "distinct_observed_isolates": 3,
+            "engine_heap_before": {
+              "backingStorageSize": 24921,
+              "embedderHeapUsedSize": 773712,
+              "totalSize": 1048576,
+              "usedSize": 436216
+            },
+            "owners": {
+              "active": null,
+              "presentation_pool": 0,
+              "recovery": {
+                "buffer_bytes": 259408,
+                "buffer_index": 0,
+                "byte_offset": 0,
+                "bytes": 259408,
+                "id": "import-5299ebee4cd234ff",
+                "revision": "5299ebee4cd234ff350b65dfd62051577bb513ad84a816a56aae09e36977799c"
+              },
+              "resident_count": 0,
+              "resident_view_bytes": 0,
+              "unique_dataset_backing_bytes": 259408,
+              "unique_dataset_buffers": 1,
+              "viewport_aliases_result": false,
+              "viewport_rows": 0
+            },
+            "page_heap_after": {
+              "backingStorageSize": 4066692,
+              "embedderHeapUsedSize": 4816984,
+              "totalSize": 14802944,
+              "usedSize": 4617712
+            },
+            "page_heap_before": {
+              "backingStorageSize": 4066692,
+              "embedderHeapUsedSize": 4792208,
+              "totalSize": 14802944,
+              "usedSize": 4586796
+            },
+            "raw_isolates": [
+              {
+                "heap_after": {
+                  "backingStorageSize": 1969881,
+                  "embedderHeapUsedSize": 1609904,
+                  "totalSize": 2097152,
+                  "usedSize": 739104
+                },
+                "heap_before": {
+                  "backingStorageSize": 1969881,
+                  "embedderHeapUsedSize": 1609904,
+                  "totalSize": 2097152,
+                  "usedSize": 739104
+                },
+                "isolate": "b9060f4f4314d846",
+                "target_id": "4DD43BBC06760C4DCEB46E60D41B5491",
+                "type": "service_worker",
+                "url": "http://127.0.0.1:51512/ICELINES/workbench/sw.js"
+              },
+              {
+                "heap_after": {
+                  "backingStorageSize": 24921,
+                  "embedderHeapUsedSize": 773712,
+                  "totalSize": 1048576,
+                  "usedSize": 441968
+                },
+                "heap_before": {
+                  "backingStorageSize": 24921,
+                  "embedderHeapUsedSize": 773712,
+                  "totalSize": 1048576,
+                  "usedSize": 436216
+                },
+                "isolate": "ce1838aa28b195e6",
+                "target_id": "7121A09C56CF740B103BC8B4346C4ED2",
+                "type": "worker",
+                "url": "http://127.0.0.1:51512/ICELINES/workbench/src/worker.js",
+                "wasm": {
+                  "wasm_capacity_bytes": 1245184
+                }
+              }
+            ],
+            "wasm_capacity_bytes": 1245184
+          }
+        ],
+        "diagnostic_private_peak": 409530368,
+        "diagnostic_working_set_peak": 692490240,
+        "experiment": "MISER-EXP-022",
+        "interpretation": "Explicit owner buffers, V8 heap/allocated/embedder/backing and WASM capacity are distinct and may overlap; no sum or normal acceptance claim.",
+        "warm_maximum_ms": 100.35589999999502,
+        "sample_count": 244,
+        "sampling": {
+          "requested_interval_ms": 100,
+          "tree_discovery_interval_ms": 500,
+          "actual_median_interval_ms": 218,
+          "actual_max_interval_ms": 1262
+        }
+      }
+    ],
+    "diagnostic": true,
+    "probe_source": "d2ff50d69e4da6ff60dfb31f8774b78aa1406f0b",
+    "checks": {
+      "local_rust_tests": 46,
+      "strict_clippy": true,
+      "real_capture_mutations": 8,
+      "repeated_owner_and_capacity_exact_equality": true,
+      "source_action_accounting_audit": true,
+      "full_inputs_post_marker_validation": [
+        {
+          "run": 1,
+          "all_optional_and_required_metrics_present": true,
+          "original_full_input_and82_phase_validation": true,
+          "post_sampler_sample_count_frozen": true
+        },
+        {
+          "run": 2,
+          "all_optional_and_required_metrics_present": true,
+          "original_full_input_and82_phase_validation": true,
+          "post_sampler_sample_count_frozen": true
+        }
+      ]
+    },
+    "decision": "Named main package buffers/aliases do not meet repeated removable10MiB lead. Preserve export/recovery/handoff semantics; no JS owner rewrite selected.",
+    "limitations": [
+      "Debugger/retry/CDP operations change timing/liveness and can retain/materialize observer state; no normal-control claim",
+      "Only explicit package/active/recovery and result aliases are inventoried; other JS/native owners and uncollected temporaries are not excluded",
+      "Used/allocated JS, embedder/backing storage, explicit buffers, WASM capacity and OS bytes remain separate; no additive residual allocator inference",
+      "Legacy EXP020 reader validates input/phase/post-marker structure; its tags/normal_* field names do not make EXP022 normal",
+      "Original250MiB remains unmet; Android user-deferred; private hosted Linux independently unverified"
+    ],
+    "next": "Measure retained source-package versus normalized repository ownership in the native BrowserEngine, then assess dormant repository rebuild/cache tradeoffs. Target-unbound renderer identity remains open; no app change or native saving claimed."
+  },
+  "raw_archives": [
+    {
+      "path": "run-1-report.json.gz",
+      "bytes": 11039,
+      "sha256": "eaa6e71cb26ca7f4da1650788fecaa56b5739c575bf0754f9db6f685e83dea57",
+      "expanded_bytes": 90691,
+      "expanded_sha256": "be6582b800bedad9873d93a91e50dd6dcbd7181857a0e88fbc541f277247d413"
+    },
+    {
+      "path": "run-1-samples.json.gz",
+      "bytes": 8177,
+      "sha256": "b2fa0a187082db72f76a83d8e4a417782a4fe03a397b77eaa2814584ce29cd28",
+      "expanded_bytes": 235325,
+      "expanded_sha256": "7244ab6e779f569ac4c5bdeedd651423264c583de62514bea0f4ad683a8b9941"
+    },
+    {
+      "path": "run-1-post-binding.json.gz",
+      "bytes": 1437,
+      "sha256": "a06e23bfafe7bbdbaf36ab01c975d6d471d7bc1132987343143b975a3c31690b",
+      "expanded_bytes": 7527,
+      "expanded_sha256": "8e2e1b6e03f3cd89ff3c255df42035118c0830e3ed55d580068bb3c53d9a6cdc"
+    },
+    {
+      "path": "run-1-post-binding-trace.json.gz",
+      "bytes": 911,
+      "sha256": "8440c71196fc1cced3868389e7382f00d6832658375f8c7ad031d9c76929d3d8",
+      "expanded_bytes": 3691,
+      "expanded_sha256": "4d617b9ded69034a8cc04c726f1e9f5de674b59d1041c7c9724cd7ae373edffc"
+    },
+    {
+      "path": "run-2-report.json.gz",
+      "bytes": 10983,
+      "sha256": "a72fcaea4940d4f2bfaa54a3431e15fd533ab015dc7349faef61a9213d91c46b",
+      "expanded_bytes": 90639,
+      "expanded_sha256": "f6bd76a23294ab10c28c031cf17105d4c678bc2d9b75d36d7b64b1a04ddc4a55"
+    },
+    {
+      "path": "run-2-samples.json.gz",
+      "bytes": 7661,
+      "sha256": "02382fec8d6f12a3dad62d0549e4cbeb3ab0f08ab8347ff5324843027b1983f0",
+      "expanded_bytes": 233253,
+      "expanded_sha256": "91ccebeeb08a403f77de22e3d6c64a93e05f32bc31d2e73a7dc1369af2d7d439"
+    },
+    {
+      "path": "run-2-post-binding.json.gz",
+      "bytes": 1430,
+      "sha256": "7b3a98e14c128372187a3ae026a7df52da052d7025de1665df49a57ae77c5eaf",
+      "expanded_bytes": 7525,
+      "expanded_sha256": "a5f9a8e544e7fe798550dd3f0a19e068880ec45dee213fe413af1fb8a815e4cc"
+    },
+    {
+      "path": "run-2-post-binding-trace.json.gz",
+      "bytes": 894,
+      "sha256": "e9964099fcfb5f08b654acc9e1d88bae1d517112ac843cb1766ba6cf6760e3ee",
+      "expanded_bytes": 3302,
+      "expanded_sha256": "27e0ce21d7a7d57c39b35455640dc46772988115a7e38d68479100fec7c77738"
+    },
+    {
+      "path": "exp022-mutation-audit.json.gz",
+      "bytes": 349,
+      "sha256": "aa0aeb6f0f5624abe53d6e17c50baf5e851abc667e73ba6cdd0359af6c307ee2",
+      "expanded_bytes": 1219,
+      "expanded_sha256": "a10f4c888ec198090a9199ab8a381cd06ab39da4a5939200f7660a95764060ff"
+    }
+  ],
+  "private_lab_commit": "56958271460775bb02a2b6c36f3fcbc810ea9734",
+  "private_custody": "28 exact raw/source/audit archives, compressed/expanded hashes verified",
+  "normal_acceptance": "Instrumentation changes timing/liveness; original normal428.082/387.609MiB and250MiB gate unchanged; Android deferred/private Linux unverified",
+  "application_source": "Restored9bae artifact; application/Rust/build source remains equivalent to earlier hostedda22174c"
+}

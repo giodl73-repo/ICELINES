@@ -1,8 +1,155 @@
 # Browser WASM acceptance ledger
 
-Updated: 2026-10-14. Requirement: REQ-BROWSER-001; work packages WP-BW-01..06.
+Updated: 2026-10-20. Requirement: REQ-BROWSER-001; work packages WP-BW-01..06.
 This reconciles implemented features with the plan's remaining acceptance gates.
 It does not declare the full plan complete.
+
+## Unpublished sparse-storage candidate validation — 2026-10-20
+
+PR #113 remains opt-in and unpublished. Retained sparse source c92d4e00 passes
+owned Chromium process-close/offline reopening, fresh 835-player query/detail,
+saved versus unsaved behavior, failed-query clearing and retry. Viewport checks
+preserve all 933 ranks/names, 120 keyboard steps in each direction, 77 goalies,
+exports, AX names and print restoration. Six fresh/cached catalog-context refusals
+and three process-reopened IndexedDB refusals preserve previous results and exact
+exports; a correct saved retry uses no payload network requests. The 24-page PDF
+passes both text extractors for every name/rank, accents, pace and page bounds.
+The narrow screenshot is readable desktop emulation, not Android evidence.
+
+Earlier hosted run 39156515143 passes for head cdac8098, with default merge
+artifact53a4df14 and an identical Git tree. Subsequent explicit sparse dispatch
+39484530829 succeeds atda22174c: pinned Linux build,270 native-oracle/distributed-WASM
+cases (33,613 rows),163 browser units, selected native tests and artifact checks.
+Native BrowserEngine tests now receive the selected feature too. The retained
+artifact declares sparse-storage, verifies182 files/75 packages and independently
+passes offline reopening, viewport/keyboard/AX/exports, both context-refusal runners
+and24-page/two-parser PDF checks. Its WASM is2150abfc8824dab0f6edc670c9b958ac80a93b0df257f5dbced8ba749d8fe9d1;
+shellb7d6b8ab2982eea374d6e594eb1bb22d9642dd8ed2088194166bca1a388c5166.
+Deployment is skipped. Combined sparse/publication inputs fail before checkout;
+ordinary/default artifact selection stays unchanged. Raw logs/API receipts, PDF,
+screenshots and hashes are in `evidence/miser-sparse-hosted-validation-20261020.json`
+and its adjacent directory. The earlier Windows functional receipt remains intact.
+
+Two separate Windows rendering diagnostics (MISER EXP012) preserve full acquisition/
+query workload and restore exact UI state after two hide cycles per browser.
+A consistent10MiB GPU/renderer release is unsupported; short stages also fail the
+conservative five-sample qualification. Normal prefix peaks384.03/388.82MiB still
+fail250MiB and exclude diagnostics/subsequent restart; they do not replace EXP011's
+normal controls. See `evidence/miser-rendering-diagnostic-20261020.json`. Private
+MISER current-source Linux run39484014027 remains blocked before steps by billing.
+
+Subsequent EXP013 trials keyed resident rows and delegated selection. Both storage
+backends reduce resident-row mutations60/60 to0/0 over ten queries and preserve
+selection/export/eviction/unload behavior. Four complete normal ABBA runs peak at
+387.14/402.25/386.92/399.96MiB private. One pair regresses15.11MiB; the reverse improves
+13.04MiB. The repeated10MiB criterion fails, so the UI trial is rejected/reverted
+at023138e8. The optional probe and all raw negative evidence remain. Fresh standard
+build,163 units, restored browser suites and two-parser PDF pass; original main.js
+and sparse WASM bytes match. Hosted39488159830 passes for the rejected trial477e7675,
+not the restored head. Restored application/Rust/build source matches the earlier
+hostedda22174c. See `evidence/miser-resident-trial-20261020.json` and adjacent raw
+reports. Startup alone277.70–281.84MiB fails250MiB before the package loop; startup
+process attribution is next. The166.78ms warm observation remains below the governing
+500ms target and above the stricter100ms observation. No requirement changes.
+
+EXP014 directly maps the workbench page, service worker and both original/restarted
+engine workers to one renderer in two fresh startup traces. The distinct service-
+worker-process hypothesis is refuted; per-thread allocation remains unknown. A
+different renderer hosts Chrome omnibox UI before the app loads, and additional
+unassigned renderer bytes remain counted. No engine-worker target exists before
+first data loading. Both runs complete offline readiness,40s idle,933-player load/
+detail and restart. Attached service worker stays running in this controlled setup;
+no causal debugger/lifetime conclusion is drawn. The Rust analyzer streams31,169/
+30,905 trace events and validates identity links; all12 local lab/example tests pass.
+Tracing adds overhead, so these diagnostics do not replace the unchanged normal
+budget evidence. See `evidence/miser-startup-attribution-20261020.json` and selected
+identity/OS archives. No application changes. Allocator-level renderer attribution
+is next; all original resource/mobile and private-hosted gates remain open.
+
+EXP015 collects ten successful detailed deterministic:false dumps across two fresh
+seven-stage diagnostics. Rust analysis links each original CDP GUID through its
+native async span to the unique exported group and app PID; the two ID namespaces
+are deliberately distinct. Offline-ready provider effective_size is21.19/24.61MiB
+for malloc and6.57/6.32MiB for V8. Compositor cc reports5.625MiB at startup,15.5625MiB
+after one season/detail and20.5625MiB after restart. These ownership-adjusted provider
+metrics are kept separate, not summed or equated with OS private bytes; no leak or
+specific CSS cause is established. All16 local tests and exact EXP014 replay pass.
+See `evidence/miser-allocator-attribution-20261020.json` and request/native-span
+extracts. Full traces/ownership graphs stay in MISER. No application change; the
+full75-package compositor/native lifecycle investigation remains next. None of
+these instrumented observations replaces the normal250MiB gate.
+
+EXP016 completes two full75-package allocator diagnostics after two preserved
+initial dump failures at package8. Completed runs preserve eight residents,905/332
+imports,20 queries and restart, with18 successful phase/GUID/PID-linked dumps and
+no trace loss. cc accounting fluctuates rather than steadily accumulating across
+seasons. PartitionAlloc is41.892/41.866MiB after8 and20.943/21.764 after75; transient
+loading/eviction lifetimes are the next lead, not proven Rust ownership. Separate
+global-only export blocks remain distinct from process-local roots.20 local tests,
+strictClippy, synthetic failure guards and byte-identical EXP014/015 replay pass.
+See `evidence/miser-full-allocator-lifetimes-20261020.json` and four request-marker
+extracts. All32 raw/source/guard archives stay in MISER. Diagnostic private peaks
+712.56/771.19MiB have tracing/dump overhead and never replace normal controls.
+No product/default/publication change; normal250MiB and Android remain open.
+
+EXP017 observes main-context digest buffers in two complete unchanged75-package
+workloads. Independent Rust catalog totals match24 copies/11,611,747B by8 and
+227 calls/88,141,160B cumulatively through imports. All first8 input buffers remain
+WeakRef-observable at that checkpoint; none of the cohort is observed by queries/
+restart. This supports temporary copy churn, not exact live ownership or a leak.
+22 local tests/strictClippy/source hashes pass with zero dropped observations.
+See `evidence/miser-digest-buffer-census-20261020.json` and four raw archives.
+A view-based digest is the next candidate, requiring offset/shared/snapshot and
+normal ABBA validation. No product change or implemented saving. Observer peaks
+389.78/410.93MiB are diagnostic; workers/native snapshots are outside this census.
+
+EXP018 tests the view-based digest candidate. Initial subclass hash mismatches and
+a later Chromium resizable-input rejection are preserved. Final corrected candidate
+passes173 units, ten real-browser semantic cases and four focused suites, but full
+normal ABBA private peaks391.12/393.00/420.58/383.19MiB fail the predeclared repeated
+10MiB improvement criterion. Both private pairs are worse; working-set directions
+are mixed. All82 phases/75 packages/eight residents/905-and332 imports/20 queries/
+restart complete, with original launch/sampler and no observer/GC/trace intervention.
+Reverted9bae39fd restores exact control application/data/WASM bytes. Restored172
+units/typecheck, ten semantic cases and offline/catalog/persisted/resident suites
+pass. Nine generic digest regression tests remain; the candidate-only allocation
+assertion is retained in archived source/probe. All112 raw/source/log archives stay
+in MISER; receipt and31 selected public archives are beside
+`evidence/miser-digest-view-trial-20261020.json`. The two initial normal runs remain
+separate. Original250MiB still fails; all final warm maxima are below500ms. Next is
+acquisition/staging ownership, not an adopted digest optimization or a causal GC claim.
+
+EXP019 observes worker operation:load buffers after an explicit empty-engine restart
+and Worker.evaluate listener installation. This changes startup/timing and is a
+diagnostic, not a normal control. Two runs preserve75/eight/905-and332/20/restart,
+all77 input identities/sizes and83 sampled phases. Both observe5.20434MiB at8 but
+zero catalog input objects by75; both have no observed cohort at queries settled.
+Termination yields unavailable metrics, not a measured zero. The declared10MiB
+staging lead fails; keep recovery/borrowed-input handoff semantics. This is not
+proof of exact liveness, native backing-store release or no other leaks. Compressed
+archive/tar/native/main-backup storage is outside the census.26 lab tests, strict
+Clippy, source hashes and raw OS recomputation pass. See
+`evidence/miser-worker-staging-census-20261020.json` and four raw archives;18 exact
+private archives remain. No application change or250MiB acceptance. Next map normal
+process costs after sampling stops, with unknown processes retained.
+
+EXP020 completes two original normal82-phase workloads, then stops the sampler
+before any added CDP/trace/performance markers. Counts freeze at247/245; boundaries,
+source fragments, inputs/order, type/target/nonce/birth guards and all raw maxima
+validate. Normal private peaks428.08/387.61MiB still fail250MiB; all warm samples
+pass500ms. At respective full peaks, mapped workbench PID groups are121.37/144.68MiB
+and GPU105.13/103.48MiB. These are same-sample process labels, not thread/Rust costs
+or independent overhead. A73.72MiB PID seen once in run1 lacks late identity and
+remains unclassified AND counted; the unbound renderer stays unbound. No budget
+subtraction or causal attribution.33 lab tests/strictClippy/replay checks pass;
+30 private archives and nine selected raw public archives remain beside
+`evidence/miser-normal-process-attribution-20261020.json`. Next capture transient
+OS process identity in a separate diagnostic before changing labels/accounting.
+No application change; all original mobile/private-hosted/resource gates remain.
+
+The original 250 MiB gate still fails in EXP011; physical Android, full repository
+adoption and rich-report density remain open. This candidate does not replace
+the current public release below.
 
 ## Current release
 
@@ -376,3 +523,136 @@ superseded. Exact published 2e265236 PDF passes all933 ranks/names, including ac
 with two parsers,24 pages and no text outside bounds. The opt-in permanent
 `scripts/verify-browser-print.py` reads/writes strictUTF-8. This is machine text
 inspection, not physical-printer or screen-reader acceptance.
+
+
+## EXP021 transient process metadata (diagnostic, not normal control)
+
+Two enriched OS full82-phase workloads retain original launch/actions/selection and
+all selected bytes, with extra owned PID/name/birth/parent/type metadata. They peak
+at393.89/389.66MiB private; warm96.97/94.19ms pass500ms. All sampled identities
+qualify; short UtilWin transients9.71/9.73MiB do not identify EXP020's73.72MiB PID,
+which remains unknown/counted. No ancestry issue is observed or sampler correction
+selected. Metadata work/output alters timing; these runs cannot replace normal
+controls or waive250MiB.40 lab tests/seven real-capture mutations/full-input/marker
+checks pass. Public miser-transient-process-metadata-20261020.json and nine archives;
+25 private source/raw/audit archives retained. No app/default/merge/publication
+change. Next dominant workbench JS/backing-store ownership inventory and remaining
+target-unbound renderer. Android/private-hosted gates remain open.
+
+
+## EXP022 renderer owner inventory (diagnostic)
+
+Two7-checkpoint/full82-phase workloads agree exactly on main unique backing and
+WASM capacity:5,457,141B at8,3,912,464B after imports,259,408B recovery after restart;
+WASM peaks14,942,208B and bare restart1,245,184B. Active/resident and result/viewport
+aliases remain intact. Named owners do not meet the repeated removable10MiB lead;
+keep export/recovery/handoff semantics. V8 used/allocated/embedder/backing storage,
+explicit owners, WASM and OS counters remain separate; no additive residual claim.
+Debugger/storage-retry/CDP alters timing/liveness: private387.98/390.56MiB are
+diagnostic, not replacement normal controls. Warm170.24/100.36ms remain below500ms.
+46 lab tests/eight actual-report mutations/source and full-input/post-marker checks
+pass. Public miser-renderer-owner-inventory-20261020.json plus nine raw archives;
+28 private source/raw/audit archives retained. Next native source/repository ownership
+split before cold-cache prototype; not implemented, saving unproven.250MiB/Android/
+private-hosted gates stay open; application/default/publication unchanged.
+
+
+## EXP023 native owner component split (destructive diagnostic)
+
+12 fresh default/sparse native processes,2 release orders/3 repeats, agree exactly
+on retained components and pre-release resident semantics. Sparse inactive
+repositories own7,508,267/5,178,215B of12,678,257/8,784,976B first8/final8 retention
+(59.22/58.94%); default68.49/68.97%. All decoded source payloads remain separately
+measured. Allocation-free releases plus remaining envelope conserve totals and
+post-drop delta is zero. Original functional/layout code stays byte-identical in
+isolated snapshot; destructive hooks never enter consumer.52 lab tests, both native
+Clippy,9 report corruptions/4 producer guards and1277 selected-file source audit
+pass. Full pre-release query/detail/export parity does not prove a cold-cache
+implementation. Native20% lead met; MISER-012 prototypes next with8 keys/LRU/source/
+rollback/latency/full native-WASM-browser gates. No realized saving or250MiB waiver.
+Public miser-native-owner-components-20261020.json plus15 raw files,52 private
+source/raw/build/audit archives retained. App/default/publication unchanged.
+
+
+## EXP024 cold resident native prototype (not adopted)
+
+Isolated cold-residents feature retains source/revision/input count for inactive
+windows and rebuilds before promotion; active always query-ready.12 fresh processes
+default/sparse x warm/cold x3 preserve95 lifecycle states/all resident query digests.
+Feature-off retention matches EXP023 exactly. Sparse requested retention12,678,257
+to5,167,110B first8 and8,784,976 to3,603,881B final8; default reductions68.50/68.99%.
+Native retained and construction/switch peaks pass, max observed rebuild15.574ms
+(p95<=100/max<=250ms screen). These are elapsed wall times, not CPU ticks.59 lab/
+78 engine tests, all4 native Clippy,11 corruption/3 simulated-budget/4 producer guards
+and1277-file source/normalizer audit pass.74 private archives/17 public raw files
+retain initial lint failure and p50 definition correction; all other outputs/gates
+unchanged on replay. Public miser-cold-resident-native-20261020.json records exact
+results. Native qualification does not prove WASM/private-browser gains; consumer
+application unchanged. MISER-012 next validates actual WASM/capacity and full original
+browser workload;250MiB/Android/private Linux and adoption gates remain open.
+
+
+## EXP025 cold resident actual WASM prototype (not adopted)
+
+36 fresh Node processes use exact generated browser JS/WASM bytes from original
+profile/lock;3 repeats per default/sparse x warm/cold x lifecycle/first8/all75.
+All12 full lifecycle runs match95 native states including exact-byte Rust imports.
+Both independent windows preserve20 native query digests at16 selections each.
+Sparse linear capacity15.375 to10.0625MiB lifecycle (-34.55%),12.1875 to7.5625MiB
+first8 (-37.95%),13.9375 to7.875MiB final8 (-43.50%). All pairs exceed20% screen.
+Sparse elapsed selection p95/max2.617/3.0102ms first8 and1.7867/1.8938ms final8
+(48 each); Node timing screen passes, separate from browser500ms query acceptance.
+Capacity is monotonic after free, not live heap/RSS or OS release.64 lab tests,
+strictClippy,16 corrupted-report rejections/3 simulated budget failures/4 replay
+guards pass.281 private exact archives and38 public hashed raw/audit files retained
+with miser-cold-resident-wasm-20261020.json. Sparse cold lifecycle uses0.6875MiB more
+than default cold; no universal sparse recommendation. Shared normalization guard
+remains an adoption condition. Full unchanged Chromium workload is next; fixed250MiB,
+physical Android (user deferred), private Linux and adoption remain open.
+Application/default/publication unchanged; MISER-012 in progress.
+
+
+## EXP026 cold resident full browser comparison (not adopted)
+
+Corrected final ABBA private peaks387.793/386.047/399.109/386.371MiB; paired
+changes-1.746/+12.738MiB. Working-set peaks666.648/667.398/688.645/672.359MiB,
+both paired regressions. All82 phases/75 packages/eight residents/905+332 imports/
+20 queries/restart complete under original launch/sampler/viewport. Original250MiB
+private and summed-working-set gates fail in every run. Warm-control run4 has one
+529.244ms query exceeding500ms; cold max97.324/91.084ms. No repeat-until-green.
+Blank-browser summed working sets460.484-474.074MiB already exceed250 in these runs;
+not an immutable future floor or exact RAM (shared pages can double count).
+
+All5 exact-cold Chromium suites pass: viewport933 names/ranks/export/AX and44 maximum
+mounted/77 goalie export, resident eviction/selection/source export/unload, fresh and
+persisted catalog refusal/retry, offline close/reopen.24-page PDF passes two parsers
+for933 ordered Unicode names/ranks/pace/bounds.68 Rust tests/strictClippy/fmt/checker,
+13 report corruptions and1 valid simulated budget failure pass. Current app/data/JS/
+worker template unchanged; exact EXP025 warm/cold WASM installed in explicitly labeled
+composite lab artifacts with canonical Node gzipSync metadata. Initial4 Python-gzip
+metadata runs and both private regressions retained separately; all8 raw sets survive.
+159 private exact archives; public receipt miser-cold-browser-20261020.json includes
+raw counters/traces/UI/PDF/source inventories. Do not adopt as a demonstrated whole-
+browser optimization. MISER012/011 remain in progress;250MiB/500ms/Android/private
+Linux and normalizer/adoption conditions remain. No application/default/merge/publication.
+
+
+## Current validation precondition audit
+
+Existing EXP026 raw compressed/expanded samples independently confirm all blank
+working-set peaks460.484-474.074MiB occur before IceLines navigation and remain in
+full-run maxima. The plan names250MiB desktop peak memory without selecting an OS
+counter; the runner currently checks private bytes and summed working set. Owner
+counter clarification is pending; both original checks remain unchanged. Private
+386-399MiB failures and the529ms warm-control failure remain failures either way.
+No immutable future floor, exact physical RAM or baseline subtraction is claimed.
+
+Private MISER latest executed run39484014027 still records a before-steps billing/
+spending rejection, not current payment-state proof. Clearance status was requested
+before any fresh dispatch; prior authorization persists. Current private main has
+no hosted qualification. Android remains user-deferred; official Platform-Tools
+37.0.1 local adb version now passes after checksum verification, with no device
+commands/PATH changes. This readiness is not physical acceptance.68 lab tests, strict
+Clippy/fmt/checker pass. Receipt validation-preconditions-20261020.json retains four
+public raw/audit/tooling/check files; seven-source full custody stays in MISER. Goal
+and original resource/device/hosted/adoption conditions remain open.

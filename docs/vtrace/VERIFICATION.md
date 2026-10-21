@@ -475,13 +475,13 @@ acceptance remains open.
 ## CHG-120 browser transport verification
 
 Verify both transport and canonical digests/sizes and bounded gzip expansion for
-all75 retained files, then load every original package through actual WASM.
+all 75 retained files, then load every original package through actual WASM.
 Unit/refusal cases cover invalid transport path/hash/size, malformed gzip,
 expansion bombs, cancellation/deadline, old catalogs and unavailable gzip support.
 The offline runner verifies full result count and bounded mounted rows after
 process reopening, then compares all names for a fresh filtered query using the
 full-table accessibility option. It also supports the previous classic renderer.
-Prototype evidence:154 browser units,9 artifact tests, all75 distributed loads,
+Prototype evidence:154 browser units,9 artifact tests, all 75 distributed loads,
 full933-player viewport/AX/print/keyboard,77 goalies, offline933/fresh835 and real
 corrupt-transfer previous-good/exact export/905-player retry. Two clean opposite
 order full workloads use unchanged flags/sampler/WASM and no forced GC.
@@ -531,3 +531,345 @@ No new backend, engine/export/revision or browser/device resource acceptance.
 ## Borrowed Constraint evaluator (CHG-123 / IF-QUERY-READ-001)
 
 `icelines-query/tests/player_read.rs` compares the pre-edit 813 x 288 oracle with legacy, inline, separate-payload and dynamic readers; checks provider identity, historical bio references, goalie fallback, contract borrows and short-circuiting. PlayerRead's compile-fail doctest rejects mutation of its borrowed owner. Local 657 query tests/docs, 20 downstream tests, Clippy, native workspace and WASM-target checks pass; evidence is retained in `context/waves/2026-10-03-browser-wasm/evidence/miser-query-read-local.json`. Full hosted CI, repository ownership and complete browser resource acceptance remain separate.
+
+## VER-BROWSER-SPARSE-001: Opt-in prepared-season ownership
+
+CHG-124 / IF-BROWSER-SPARSE-001 preserves concrete PlayerView references/coercions,
+Copy, catalog/query/goalie/pace behavior and original player-detail JSON while
+BrowserEngine can opt into a separate sparse prepared owner. Independent catalog
+bits/order over 288 synthetic boundary rows, typed/JSON equality, 1,200 mixed mutations,
+slot-width/swap invariants and borrow rejection pass. Native nine-crate workspace,
+1,885 core/query/data tests/docs, 18 browser tests in each mode (1,921 production
+executions total), core/browser all-target Clippy and default WASM check pass.
+Actual original and sparse browser-release WASM binaries both build.
+
+Nine native processes compare immutable original/default/sparse engines over 75
+packages,20 query profiles at 78 states, exports/details/metadata, two imports,
+failed refresh and resident selection. Original/migrated inline allocations match;
+sparse retains 38.09%/30.61% fewer requested bytes in initial/final eight-window states.
+Query peaks are unchanged; initial-window cumulative query allocation rises 0.76%.
+Four fresh actual-WASM Node runs reduce linear-memory high-water 17,891,328 to
+16,121,856 bytes (-9.89%). Direct complete-output comparison passes 1,560 queries,
+51,435 player details and 78 exports; original 75 states also match native/WASM.
+
+Evidence: context/waves/2026-10-03-browser-wasm/evidence/miser-browser-sparse-local.json
+and compressed compiler/test logs. Private MISER EXP010 retains raw samples, exact
+source/build/input/report hashes, four rejecting guard checks and all 73 lab/probe
+test executions. The shared-cache WASM failure and explicit workspace rebuild are
+retained. Native adapter and product WASM locks differ but each platform comparison
+uses identical non-consumer versions. Prepared owner omits unused roster/Tier2/LRU
+structures and retains source packages; those facts bound the savings claim.
+
+This verifies an opt-in candidate. Full roster/report repository adoption, acquired
+rich-density measurements, hosted full CI, fixed 250 MiB whole-browser and Android
+acceptance remain separate. Default builds retain StatsRepository; no publication.
+
+## VER-BROWSER-SPARSE-PROCESS-001: Whole-browser follow-through
+
+CHG-124 / IF-BROWSER-SPARSE-001 / REQ-BROWSER-001: four fresh Windows Chromium
+153.0.8010.12 runs use one clean source c92d4e00, identical frontend/data, explicit
+build features, 1280x800 viewport and the unchanged 75-package/archive/warm-query/
+restart workload. Every run completes all 82 required phases and eight-window/full
+result-count checks. Peak private MiB in default/sparse/sparse/default order are
+389.7422 /387.6563 /404.8125 /390.4570. The first pair improves 2.0859 MiB; the second
+regresses 14.3555 MiB. A repeatable whole-browser reduction is not established.
+Every normal private and summed-working-set comparison fails the fixed 250 MiB gate.
+
+Separate diagnostic GC observes 14.25 MiB WASM capacity and about 333 MiB private after
+collection. GPU private bytes are about 99 MiB and all renderers together 192 MiB before
+collection. These are different, non-additive CDP/OS scopes, not normal budget
+acceptance or proof of a particular allocator/CSS cause. Android stays deferred.
+
+The actual standard --sparse-storage build passes all 75-package distribution checks
+and reproduces the measured WASM hash. TypeScript and 163 browser tests pass. Raw
+evidence/failures/traces/source hashes remain in private MISER EXP011. Public bounded
+evidence and compressed local verification logs are in
+context/waves/2026-10-03-browser-wasm/evidence/miser-browser-sparse-process-memory.json.
+Default selection is unchanged; this result does not approve full resource adoption.
+
+
+## VER-BROWSER-SPARSE-FUNCTIONAL-001: Retained artifact checks (2026-10-20)
+
+CHG-124 / IF-BROWSER-SPARSE-001: exact retained sparse c92d4e00 artifact passes
+process-close offline reopening, saved/unsaved distinction, fresh query/detail,
+viewport/keyboard/export/AX checks, six fresh/cached catalog-context refusals and
+three process-reopened IndexedDB refusals. Correct saved retry makes no payload
+network requests. The actual 24-page PDF passes two independent extractors for all
+933 names/ranks, accents, pace and bounds. Ten raw artifacts have retained digests,
+including compressed PDF and desktop/narrow captures. No executable code changed.
+
+Hosted browser run39156515143 succeeds for reviewed head cdac8098; the downloaded
+default-feature artifact53a4df14 has the identical Git tree and independently passes
+182-file/75-package verification plus offline reopening. Hosted sparse-feature
+execution is not implied. Receipt and raw reports:
+context/waves/2026-10-03-browser-wasm/evidence/miser-sparse-browser-validation-20261020.json.
+Whole-browser250 MiB still fails; physical Android is deferred; no publication.
+
+
+## VER-BROWSER-SPARSE-HOSTED-001: Explicit hosted sparse validation (2026-10-20)
+
+CHG-124 / IF-BROWSER-SPARSE-001: dispatch39484530829 succeeds atda22174c with
+sparse_storage:true/publish:false, including270 native-oracle/WASM cases (33,613
+rows),163 browser units and selected Rust tests. Actual build-info declares the
+feature; exact182-file/75-package artifact12294210294 verifies. Its owned-browser
+offline reopening, viewport/keyboard/AX/export, six fresh/cached and three persisted
+context refusals, no-network saved retry and24-page/two-parser print checks pass.
+Raw run/jobs/artifact/log and local reports plus PDF/screenshots are retained in
+miser-sparse-hosted-validation-20261020.json beside earlier bounded evidence.
+No deployment; combined sparse/publication inputs fail before checkout.
+
+EXP012 separately records two full-acquisition rendering diagnostics on the earlier
+Windows sparse artifact. All UI restoration/restart checks pass, but a consistent
+release is unsupported and the five-sample qualification is false. All post-
+intervention measurements are excluded from normal targets; the scope regression
+covers GC and rendering diagnostics. All13 exact raw/source files and initial
+analysis failure remain in private MISER. Public bounded rendering evidence is
+miser-rendering-diagnostic-20261020.json. Original250MiB failure and deferred Android
+remain; private MISER hosted Linux is independently blocked by account billing.
+
+
+## VER-BROWSER-RESIDENT-ALLOCATION-001: Rejected trial and restoration
+
+CHG-124 / REQ-BROWSER-001: EXP013 uses unchanged engine/input/styles/launch/sampler
+with four full82-phase normal controls. Private peaks387.14/402.25/386.92/399.96MiB
+are mixed; repeated10MiB criterion fails and every250MiB gate fails. DOM mutations
+60/60→0/0 do not establish whole-browser savings. UI trialff77c214 is reverted at
+023138e8. Actual standard build restores exact original main.js/WASM;163 units,
+resident selection/eviction/export/unload, offline/viewport/keyboard/AX/catalog/
+persisted and24-page/two-parser PDF checks pass. Fresh-load completion and nested
+Session-library probe failures are retained and corrected. Hosted39488159830 is a
+success for rejected trial477e7675; restored product paths match earlierda22174c.
+Receipt: context/waves/2026-10-03-browser-wasm/evidence/miser-resident-trial-20261020.json.
+All66 raw/source archives and traces remain in MISER; public raw reports/PDF/logs
+are adjacent. Startup private277.70–281.84MiB already fails the budget. Governing
+500ms warm target passes (166.78ms retained); Android/private Linux billing remain.
+
+
+## VER-BROWSER-STARTUP-ATTRIBUTION-001: Diagnostic identity mapping
+
+CHG-124 / REQ-BROWSER-001: EXP014 uses two fresh unchanged023138e8 startup artifacts,
+original browser launch and Windows sampler with tracing. Exact root-frame commits
+and worker markers match captured target IDs/URLs and sampled renderer PIDs. Page,
+service worker and original/restarted engine workers share one renderer in both;
+a separate-worker-process hypothesis is refuted. Chrome omnibox UI is mapped to a
+separate renderer already at blank; unknown renderer costs remain counted. There
+is no engine target before data loading. Offline readiness,40s idle,933-player
+query/detail and restart pass. Trace data loss is false; seven stages have at least
+eight OS samples. Attached/running worker lifetime is not a causal claim.
+
+The Rust streaming example keeps selected markers instead of the full31,169/30,905-
+event arrays and rejects ambiguous/missing identities, duplicate PIDs and backwards
+clocks. Three guards plus original nine tests pass locally; standard/CI guidance
+now uses all-targets. Private hosted Linux is still blocked by billing. Raw traces/
+source/hardware metadata stay in MISER; public identity extracts and OS samples are
+beside miser-startup-attribution-20261020.json. Instrumented values do not establish
+normal250MiB acceptance. No product change, publication or Android claim.
+
+
+## VER-BROWSER-ALLOCATOR-ATTRIBUTION-001: Provider/identity diagnostics
+
+CHG-124 / REQ-BROWSER-001: two unchanged-artifact seven-stage startup diagnostics
+return ten successful detailed deterministic:false requests. Native async spans
+bridge original GUIDs to exported IDs and app PID; phase bounds/unique group/provider
+metrics validate. Rust types keep ID namespaces distinct. Hex byte decoding preserves
+other units; roots/children/ownership are not summed or equated with OS private.
+Local16 tests and EXP014 exact replay pass. Source/trace/ownership custody is retained
+in MISER (14 raw/source archives), with public request/native-span extracts beside
+miser-allocator-attribution-20261020.json. Reported startup malloc/V8 and growing cc
+metrics are descriptive, not a proven leak, CSS saving or full-workload result.
+No product edit, GC request, worker attachment, service-worker block, launch change
+or normal budget waiver. All original250MiB/mobile/private-hosted gates remain open.
+
+
+## VER-BROWSER-FULL-ALLOCATOR-LIFETIMES-001: Full workload diagnostics
+
+CHG-124 / REQ-BROWSER-001: EXP016 retains two failed-after8 captures and two complete
+full75 diagnostics. The latter preserve eight residents,905/332 imports,20 committed
+queries and restart, with18 successful linked requests and trace-loss:false. Rust
+validates ten ordered checkpoints, package/count/residency/import identities, clocks
+and separate global-only export blocks. cc is nonmonotonic; native allocator roots
+are higher near the first8-window than after75. Loading/eviction attribution remains
+next, with no leak/Rust ownership/CSS saving claim.20 tests, strictClippy, byte-exact
+legacy replays and a synthetic strict/partial failure guard pass. Public receipt:
+miser-full-allocator-lifetimes-20261020.json with four original request-marker
+extracts. Complete32 raw/source/guard archives remain in MISER. Instrumentation
+causes substantial overhead; normal250MiB controls, Android and private-hosted
+Linux requirements remain open. Application/Rust/build paths remain unchanged.
+
+
+## VER-BROWSER-DIGEST-BUFFER-CENSUS-001: Temporary input-copy observations
+
+CHG-124 / REQ-BROWSER-001: EXP017 completes two full75/eight/905/332/20/restart
+workloads with a main-context WebCrypto observer and WeakRefs. Independent Rust
+catalog-derived byte/call totals agree:11,611,747B by8,88,141,160B cumulatively
+through imports; zero dropped entries. First8 copy cohort remains observable there
+and is no longer observed by queries/restart in both.22 local tests, strictClippy
+and matching source hashes pass.12 exact raw/source archives retained privately;
+public summary/reports/samples: miser-digest-buffer-census-20261020.json. Cumulative
+and uncollected bytes do not establish live native/RAM usage or a saving. Exact
+source contains one explicit JS input copy per digest; workers/native snapshots
+are outside this probe. View-based digest candidate is next with snapshot/offset/
+shared/transfer tests and normal ABBA checks. No application/default/publication
+change or250MiB/mobile/private-hosted acceptance.
+
+
+## VER-BROWSER-DIGEST-VIEW-TRIAL-001: Rejected trial and exact restoration
+
+CHG-124 / REQ-BROWSER-001: finalC09ce9a5c passes173 units/typecheck, ten Chromium
+semantic cases and offline/catalog/persisted/resident suites. Initial shared
+iterator/getter hash mismatches and revisionB browser-RAB rejection are retained.
+Fresh final normal ABBA passes all82-phase/75-package/eight/905-and332/20/restart
+coverage but private peaks391.12/393.00/420.58/383.19MiB fail the predeclared repeated
+10MiB adoption criterion. Raw samples independently reproduce each phase maximum;
+archive/package order/browser identities agree. All final warm maxima pass500ms;
+every original250MiB private/working-set gate fails. No observer/trace/GC/launch change.
+
+Reverted9bae39fd restores exact original application assets; only three build/offline
+metadata files differ from control. Restored172 units, ten original-copy browser
+cases and four focused suites pass. Nine generic semantic tests stay in consumer;
+allocation-specific assertions remain with the rejected source/probe. Public
+miser-digest-view-trial-20261020.json and31 raw archives retain reports/samples/failures/
+restoration checks;112 raw/source/log archives stay in MISER. Two initial normal
+runs are separate from finalC ABBA. No adopted memory gain, causal GC inference,
+merge/publication, Android or private hosted Linux acceptance. Next acquisition/
+staging ownership must preserve last-good recovery and exact bytes.
+
+
+## VER-BROWSER-WORKER-STAGING-CENSUS-001: Diagnostic input cohorts
+
+CHG-124 / REQ-BROWSER-001: two EXP019 primed-worker diagnostics retain every77
+operation:load input and83 sampled phases across75/eight/905-and332/20/restart.
+Rust checks catalog per-input sizes, request/generation prefixes, no drops, weak
+state consistency, phase identity and unavailable old-worker metrics on close.
+Both show5.20434MiB at8 and no catalog input objects observable by75; the declared
+10MiB-after75 staging lead is not met. Preserve handoff/backup/borrowed semantics.
+26 lab tests, strictClippy, source hashes and raw OS/root/clock audits pass.
+Public miser-worker-staging-census-20261020.json retains summary and four raw
+archives;18 exact private raw/source/audit archives remain. Priming/Worker.evaluate
+change lifecycle and timing, WeakRefs do not certify liveness/native release/leaks,
+and compressed archive/tar/main/native storage is excluded. No application change,
+normal250MiB/mobile/private-hosted acceptance, merge or publication. Next residual
+normal-process mapping must occur outside the measured sample interval.
+
+
+## VER-BROWSER-NORMAL-PROCESS-ATTRIBUTION-001: Post-sampler process annotation
+
+CHG-124 / REQ-BROWSER-001: two EXP020 original82-phase/75/eight/905-and332/20/restart
+normal prefixes stop sampling before new CDP/trace/evaluation. Counts247/245 freeze;
+monotonic boundaries, <=100ms endpoint clock drift, source/action fragments, input
+identity and raw maxima validate. Performance nonces bind page/current engine/SW/
+Chrome UI to native renderer PIDs; birth-qualified historical labels preserve every
+original byte and unknown PID. Post-only tracing processes are absent from prefix.
+Private peaks428.08/387.61MiB and working-set709.21/655.68MiB still fail250MiB; warm
+maxima89.373/89.958ms pass500ms. Workbench groups121.37/144.68MiB and GPU105.13/103.48MiB
+at each full peak are not independent/thread/Rust costs. Run1 includes73.72MiB PID
+observed once with unavailable late identity, left counted/unclassified. No immutable
+floor or causal leak claim.33 lab tests/strictClippy and final-parser replay pass.
+Public miser-normal-process-attribution-20261020.json plus nine raw archives;30
+private raw/source/audit archives remain. Next transient OS identity diagnostic;
+no application/default/publication/mobile/private-hosted acceptance change.
+
+
+## VER-BROWSER-TRANSIENT-PROCESS-METADATA-001: Enriched OS diagnostic identities
+
+CHG-124 / REQ-BROWSER-001: EXP021 captures234/225 samples across two full82-phase
+75/eight/905-and332/20/restart workloads. Original counter/tree logic survives
+metadata-only source normalization; added OS work/output changes timing, so these
+are diagnostics. Creation/name/ancestry checks qualify all counter rows. Two short
+UtilWin observations peak9.71/9.73MiB; previous73.72MiB identity remains unknown.
+No selected bytes are discarded, no sampler correction or retrospective labeling.
+Whole private393.89/389.66MiB, working687.05/678.02MiB remain above250MiB; warm
+96.97/94.19ms pass500ms.40 lab tests/strictClippy, seven raw-capture mutation cases,
+full-input/post-marker and25 private archive hashes pass. Public receipt plus nine
+raw archives retained. Legacy EXP020 parser validates structure/markers only;
+its normal_* fields do not reclassify diagnostics. No application/default/hosted/
+publication/mobile acceptance change. Next renderer ownership inventory.
+
+
+## VER-BROWSER-RENDERER-OWNER-INVENTORY-001: Alias-aware module/isolate diagnostics
+
+CHG-124 / REQ-BROWSER-001: EXP022 reads existing updateState module frame via
+storage retry, plus distinct page/worker/SW isolate heaps and cached initialized
+WASM exports. All7 checkpoints/full82 phases pass twice. Named buffer totals and
+WASM capacities agree exactly across runs; active/resident and result/viewport
+aliases prevent double counting. Restart preserves259,408B recovery; cold engine
+unavailable is not zero. No10MiB named-owner lead or rewrite selected.46 lab tests/
+strictClippy and eight raw-report mutations validate alias/backing conservation,
+required metrics, full rows and isolate identity. Original raw counter maxima and
+post-sampler source/input/marker boundaries pass unchanged legacy structural reader;
+its normal_* labels do not confer normality. Added debugger/retry/CDP affects
+timing/liveness, so387.98/390.56MiB private and170.24/100.36ms warm values are
+diagnostic; original250MiB remains unmet. Nine public/28 private archives retained.
+No app/default/merge/publication or Android/private-hosted acceptance change.
+
+
+## VER-BROWSER-NATIVE-OWNER-COMPONENTS-001: Destructive requested-heap attribution
+
+CHG-124 / REQ-BROWSER-001: EXP02312 fresh processes/24 native scopes attribute
+inactive/active repository and source heap plus exact ring/revision envelope.
+Both release orders and3 reps/default+sparse agree, without release allocations
+or post-drop delta. Pre-release checks hash3,840 complete query results/938,460
+rows/128,964 full details/192 exports with exact backend parity.52 lab tests, both
+backend Clippy,9 raw-report/4 producer negatives and1277 selected-file source/
+original-lock audit pass. Isolated append-only hooks are diagnostic, never a
+functioning app or storage optimization. About59% sparse/69% default retention
+is inactive repository data; native20% prototype lead met.15 public/52 private
+archives retained. MISER-012 measures cold-rebuild parity/latency/peak next; no
+implementation, WASM/private-browser saving, adoption or original250MiB pass.
+Android/private hosted Linux and target-unbound renderer identity remain open.
+
+
+## VER-BROWSER-COLD-RESIDENT-NATIVE-001: Isolated native cold cache qualification
+
+CHG-124 / REQ-BROWSER-001: EXP024 source-only inactive type builds target repository
+before removal/active mutation. Original source data/raw SHA/LRU/input policy remain;
+normalizer copy equality guard prevents formula drift in this prototype.12 actual
+processes agree on95 lifecycle states/digests; retention repeats59% sparse/69% default
+reduction with lower measured construction/selection peaks. Max elapsed rebuild
+15.574ms passes native screen, not original full-browser500ms acceptance.59 lab and
+78 engine tests/all4 Clippy,11 corruptions/3 budget failures/4 producer guards validate
+signed peak accounting, exact-revision, rollback and feature-off baseline parity.
+17 public/74 private archives retain source/failed-preflight/correction evidence.
+No cold feature in consumer or deployment. Actual WASM/browser/250MiB/mobile/private
+Linux remain open. Before adoption factor normalization or keep equivalent guard.
+
+
+### CHG-124 / EXP025 actual WASM cold-resident qualification
+
+Exact web bindings/WASM,36 fresh Node scopes, all95 lifecycle states and16 resident
+selections per independent window match native baseline. Sparse lifecycle capacity
+-34.55%, first8 -37.95%, final8 -43.50%; repeated pair/timing screens pass.64 lab
+tests/strictClippy,16 report corruptions/3 valid simulated budget failures/4 producer
+guards pass. Receipt: context/waves/2026-10-03-browser-wasm/evidence/miser-cold-resident-wasm-20261020.json
+with38 exact raw/audit files;281 private archives retain source/binaries/preflights.
+This verifies isolated WASM semantics/capacity and Node elapsed selection only.
+Full original Chromium workload/250MiB, physical Android/private Linux and consumer
+adoption remain open. No application source change, merge or publication.
+
+
+### CHG-124 / EXP026 cold browser and semantic verification
+
+Four corrected full original normal workloads complete, with mixed private-memory
+pairs (-1.746/+12.738MiB), both working-set regressions, all250MiB gates failing and
+one warm-control529.244ms query above500ms. Five exact-cold browser functional suites
+and24-page/two-parser933-row PDF pass. Initial4 noncanonical gzip-metadata runs are
+preserved, not overwritten.68 tests/Clippy and13 corruption/1 valid simulated budget
+failure pass. Receipt: context/waves/2026-10-03-browser-wasm/evidence/miser-cold-browser-20261020.json.
+159 exact private archives retain counters/traces/source/staging/binaries/UI/tests;
+public hashed raw/audit artifacts accompany receipt. Composite lab source provenance
+is separate from structural byte integrity; consumer application stays unchanged.
+Reject demonstrated whole-browser optimization/adoption claim. Android user-deferred,
+private Linux/normalizer and fixed original resource gates remain open.
+
+
+### Validation completion/precondition reconciliation
+
+Current raw EXP026 blank/full process sums and pre-navigation source order verified,
+including all original PIDs. All4 observed blank summed-working-set250MiB comparisons
+already fail. Plan counter wording requires owner clarification; original private/
+working-set/500ms comparisons remain unchanged and failed. Latest private CI failure
+is historical before-step billing rejection; current account clearance remains
+unknown, with earlier Actions authorization intact. Task-local checksum-verified
+Android tools/adb version are ready, not physical-device proof.68 tests/Clippy/fmt/
+checker pass. Receipt: context/waves/2026-10-03-browser-wasm/evidence/validation-preconditions-20261020.json.
+No full goal completion, metric waiver, adoption, merge or publication.

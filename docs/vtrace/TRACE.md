@@ -384,3 +384,11 @@ REQ-PARITY-001 / REQ-QUERY-001 -> IF-QUERY-READ-001 -> query PlayerRead and shar
 Constraint evaluator -> player_read integration tests and independent pre-edit
 813 x 288 outcome oracle, identity/provider/contract checks and borrow doctest.
 Full sparse repository/surface and resource adoption remain separate gates.
+
+## Prepared browser sparse ownership (CHG-124)
+
+REQ-PARITY-001 / REQ-BROWSER-001 -> IF-BROWSER-SPARSE-001 -> sparse_season.rs,
+concrete PlayerView alias/shared ReadPlayerView, common BrowserEngine reads and opt-in sparse-storage
+-> sparse_season integration/golden/mutation tests, both-mode browser tests and
+native/WASM compilation -> actual native owner/query samples and full browser-engine
+replay. WASM/browser resource and physical-device acceptance remain separate.

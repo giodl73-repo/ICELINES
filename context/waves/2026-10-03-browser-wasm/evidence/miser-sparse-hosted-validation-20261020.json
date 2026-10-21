@@ -1,0 +1,174 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-20",
+  "change_id": "CHG-124",
+  "scope": "Hosted Linux sparse product build/check, then exact retained artifact exercised by owned desktop Chromium. No publication, whole-browser-memory, Android or private MISER Linux acceptance.",
+  "run": {
+    "id": 39484530829,
+    "url": "https://github.com/giodl73-repo/ICELINES/actions/runs/39484530829",
+    "head_sha": "da22174cb607cacf583c7e6691c27de325882ba5",
+    "event": "workflow_dispatch",
+    "conclusion": "success",
+    "deploy": "skipped",
+    "artifact_id": 12294210294
+  },
+  "artifact": {
+    "build_info": {
+      "schema_version": 1,
+      "commit": "da22174cb607cacf583c7e6691c27de325882ba5",
+      "wasm_features": [
+        "sparse-storage"
+      ],
+      "working_tree_dirty": false,
+      "tools": {
+        "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+        "node": "v22.22.3",
+        "python": "Python 3.14.2",
+        "wasm_bindgen": "wasm-bindgen 0.2.118"
+      },
+      "wasm_sha256": "2150abfc8824dab0f6edc670c9b958ac80a93b0df257f5dbced8ba749d8fe9d1"
+    },
+    "shell_build": "b7d6b8ab2982eea374d6e594eb1bb22d9642dd8ed2088194166bca1a388c5166",
+    "verified_files": 182,
+    "packages": 75
+  },
+  "checks": {
+    "distributed_wasm_native_oracle": {
+      "cases": 270,
+      "full_rows": 33613,
+      "empty_results": 90
+    },
+    "browser_unit_tests": 163,
+    "local_pinned_native_tests": 20,
+    "offline_reopen": true,
+    "viewport_full_rows": 933,
+    "goalie_rows": 77,
+    "fresh_filtered_rows": 835,
+    "keyboard_steps_each_direction": 120,
+    "ax_names": 933,
+    "catalog_refusals": 6,
+    "persisted_refusals": 3,
+    "saved_retry_payload_requests": 0,
+    "pdf_pages": 24,
+    "pdf_names_ranks_two_extractors": 933,
+    "diagnostic_budget_scope_tests": 3
+  },
+  "commands": [
+    "gh workflow run browser-pages.yml --repo giodl73-repo/ICELINES --ref codex/browser-sparse-store -f sparse_storage=true -f publish=false",
+    "node scripts/build-browser.mjs --check --sparse-storage (hosted)",
+    "node icelines-browser/e2e/offline-reopen.mjs --artifact <retained-ci-artifact> --verify-attached-rows",
+    "node icelines-browser/e2e/viewport.mjs --artifact <retained-ci-artifact>",
+    "node icelines-browser/e2e/catalog-context.mjs --artifact <retained-ci-artifact>",
+    "node icelines-browser/e2e/persisted-catalog-context.mjs --artifact <retained-ci-artifact>",
+    "python scripts/verify-browser-print.py <pdf> <reference> --output <new-report>"
+  ],
+  "files": [
+    {
+      "path": "offline.json.gz",
+      "bytes": 1035,
+      "sha256": "d35dd3f58dc6f37c1b44ef11d6a3d31da2065011a6c25e2c9f82e5711f90317f",
+      "expanded_sha256": "5bd00fc4e5f8e3905990735c0deb3dec54abcf7585d97dc94e4f5b6683a2b35c"
+    },
+    {
+      "path": "viewport.json.gz",
+      "bytes": 507,
+      "sha256": "7d828e96288eb69712ffa67973bcdc95dafef1650a4c1a8b052c1a73157331e1",
+      "expanded_sha256": "ca41a0d08fe9b8f9219ccbaa9da1bd6f2253242ca59e549a7ff555c04764605d"
+    },
+    {
+      "path": "catalog-context.json.gz",
+      "bytes": 542,
+      "sha256": "99fd85a7a2eca118a52320ef0e8a0523b5d198e1c7fe63fd385ff4e54a9c31ec",
+      "expanded_sha256": "a4192d7e8e27745851fb1e2814781ed02cb3aeb07d504eed8fe406e17d7a7a9c"
+    },
+    {
+      "path": "persisted-catalog-context.json.gz",
+      "bytes": 597,
+      "sha256": "58280b310b05e8364328425aa2a8de0f0b1559db367f478b81ea26b41cca9132",
+      "expanded_sha256": "a0b2a6a793d62e674f224f85fd0f38306e1b28d951f3073d57acba89592b5435"
+    },
+    {
+      "path": "print-verification.json.gz",
+      "bytes": 386,
+      "sha256": "e8c0484e6e445f06984cbcc3e9f9da6b217378ec04b3a61576ed57b69cd8081c",
+      "expanded_sha256": "05fced61954653ed24374fb4efa24615cc77d2e85199ff3193f118a79f74d756"
+    },
+    {
+      "path": "print-reference.json.gz",
+      "bytes": 12258,
+      "sha256": "331ae8f082e449a30ca05dba56e8b8d5cfee6db49bc64c50d556624358e4181b",
+      "expanded_sha256": "11040639dcccbf5a7aaa565b03a4346c419b64c4f7728feefac605c040a1140e"
+    },
+    {
+      "path": "all-players.pdf.gz",
+      "bytes": 186934,
+      "sha256": "bdfbf22643502b2e1ec4cb7c648805ad9a0e530292a6ee166f4fccbde0d1eba1",
+      "expanded_sha256": "2e6f2c54f40e03f95e257823e632f793412b6b4b6daa541c1c178d211418b170"
+    },
+    {
+      "path": "ci-run.json.gz",
+      "bytes": 1666,
+      "sha256": "c0e68da2e255fad7c9a1b5189e664badd99696f4aec72c61ea56832b1311eecb",
+      "expanded_sha256": "c1036d513df9809de978311f3f40473481ca113fdce0b385f4af826e0724f886"
+    },
+    {
+      "path": "ci-jobs.json.gz",
+      "bytes": 1149,
+      "sha256": "40f587d0286840fd8e8419c65f54a945be28cd181bcfa074cf6ffd0403bb8b15",
+      "expanded_sha256": "1c01c8669c125d05b8cf1c38b2b5bf4f84b1f6c7d38188e829f33548d6f9ee8c"
+    },
+    {
+      "path": "ci-artifacts.json.gz",
+      "bytes": 453,
+      "sha256": "2969aacb7e7713bf5a18e026b3ea276a5666eec32aa69e529ab21d229049ccf8",
+      "expanded_sha256": "0820e0e305c49530435d8f428f0ed50c8b9c51e95dd1eb1622406960d6a08179"
+    },
+    {
+      "path": "ci-build.log.gz",
+      "bytes": 46812,
+      "sha256": "71684207aabd8b792d0e55d65d5a9df25098a21bdbdedf17c24ba51a62fb145e",
+      "expanded_sha256": "1ba7f7c4a57b6cceea2439a2e66f3cf0a27c3bcbd0826aa2432cb6d22661fdfd"
+    },
+    {
+      "path": "build-info.json.gz",
+      "bytes": 295,
+      "sha256": "56a8a0c47c06ad88463851e11b02edf1b090184e38ce8896026e37c3c93b1276",
+      "expanded_sha256": "e754c58790660c9e487ebe5ba578738654ad04bfd636d55e782a667a32586b31"
+    },
+    {
+      "path": "shell-manifest.json.gz",
+      "bytes": 1784,
+      "sha256": "c8af614d97ac07f8742eee7a56dadecd95c938883049c44682e527c7157d3ce5",
+      "expanded_sha256": "6ca56f1df25da59646af35b2473b0d427d2d7d1553bdd9e64a31bb0a595781e1"
+    },
+    {
+      "path": "local-native-tests.log.gz",
+      "bytes": 897,
+      "sha256": "9f1325439266893a3fce96fcaebe38f8125f742c9339b4b7937ab0b3f138a6c3",
+      "expanded_sha256": "915bb838cc72640c762c8c1b8429f6e62ceb51cf781f0e178c01957f346e1d7b"
+    },
+    {
+      "path": "memory-scope-tests.log.gz",
+      "bytes": 316,
+      "sha256": "bfe4df1ef105465689b47eb39d68bce9a2ff1607dd963494a941522864496c0c",
+      "expanded_sha256": "201576b819d5ba90c46cc65c73befc6fc057349983999f7a8d9bfb7d8d7e9582"
+    },
+    {
+      "path": "desktop.png",
+      "bytes": 39498,
+      "sha256": "513e422ba8f18018ecbe234721aefde8f7ab73d1b0d8ace441e8c9ee22a74fc2"
+    },
+    {
+      "path": "narrow.png",
+      "bytes": 18862,
+      "sha256": "69d73dbea109bff5cc6f139a5b54db3701c4c3f511e1e737a7ad2e7ef3c85443"
+    }
+  ],
+  "archive_note": "Gzip preserves exact raw output bytes across Windows/Git newline normalization.",
+  "remaining": [
+    "Original250MiB gate remains failed in EXP011; EXP012 supplies diagnostic prefixes, not replacement normal controls.",
+    "Physical Android deferred by user.",
+    "Private MISER Linux run39484014027 was rejected before steps for billing.",
+    "Full repository/roster/Tier2 and rich-density adoption remain separate."
+  ]
+}

@@ -1,0 +1,430 @@
+{
+  "schema_version": 1,
+  "experiment": "MISER-EXP-013",
+  "change_id": "CHG-124",
+  "scope": "Four fresh complete normal Windows process-counter workloads; isolated main.js trial plus provenance/shell changes. Candidate rejected, application restored. No whole-goal acceptance.",
+  "summary": {
+    "experiment": "MISER-EXP-013",
+    "producer": "477e76754a9b3da729823389ecf87c31f39aa15b",
+    "scope": "Fresh ABBA complete unchanged normal workload; observed OS private and summed working-set counters are separate from physical RAM, JS heap and WASM capacity.",
+    "runs": [
+      {
+        "label": "control-1",
+        "artifact": {
+          "commit": "c92d4e006027bf7cb6f1480527399250582d2754",
+          "shell_build": "f98c2c05a5f13868cc2a329d817e80762297116b489e8674db77b12eb25e73f6",
+          "verified_files": 182,
+          "packages": 75
+        },
+        "browser": "153.0.8010.12",
+        "archive": {
+          "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca",
+          "bytes": 149672
+        },
+        "phases": 82,
+        "sampling": {
+          "requested_interval_ms": 100,
+          "tree_discovery_interval_ms": 500,
+          "actual_median_interval_ms": 237,
+          "actual_max_interval_ms": 1130
+        },
+        "peak_private_bytes": 405942272,
+        "peak_summed_working_set_bytes": 713637888,
+        "blank_private_peak": 245858304,
+        "startup_private_peak": 295530496,
+        "settled_private_last": 369504256,
+        "restart_private_last": 359075840,
+        "warm_query_ms": [
+          98.29039999999804,
+          64.1308999999892,
+          67.51410000000033,
+          74.84200000000419,
+          72.44800000000396,
+          67.34780000000319,
+          69.6533999999956,
+          63.00779999999213,
+          77.38959999999497,
+          68.91999999999825,
+          95.09329999999318,
+          57.85420000000158,
+          59.79420000000391,
+          72.85469999999623,
+          67.454899999997,
+          74.5283999999956,
+          70.47369999998773,
+          77.0558999999921,
+          65.60029999999097,
+          74.5630999999994
+        ],
+        "warm_max_below_governing_500ms": true,
+        "target": {
+          "sampled_private_bytes_below_target": false,
+          "sampled_sum_working_set_below_target": false,
+          "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+        }
+      },
+      {
+        "label": "reuse-1",
+        "artifact": {
+          "commit": "ff77c2141f4818a57c63bd3b90a9e09bc814d88c",
+          "shell_build": "e6296bbad07ab003a87848acda99a032d7cab11edd462cc0628e555c35ae8779",
+          "verified_files": 182,
+          "packages": 75
+        },
+        "browser": "153.0.8010.12",
+        "archive": {
+          "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca",
+          "bytes": 149672
+        },
+        "phases": 82,
+        "sampling": {
+          "requested_interval_ms": 100,
+          "tree_discovery_interval_ms": 500,
+          "actual_median_interval_ms": 234,
+          "actual_max_interval_ms": 1155
+        },
+        "peak_private_bytes": 421789696,
+        "peak_summed_working_set_bytes": 712544256,
+        "blank_private_peak": 240238592,
+        "startup_private_peak": 293236736,
+        "settled_private_last": 379273216,
+        "restart_private_last": 362762240,
+        "warm_query_ms": [
+          65.29330000000482,
+          93.38919999999052,
+          47.43430000000808,
+          67.13150000000314,
+          87.6467999999877,
+          66.9542000000074,
+          76.55040000000736,
+          65.31029999999737,
+          47.78729999999632,
+          73.1938999999984,
+          76.01810000000114,
+          72.34829999999783,
+          72.42029999999795,
+          71.44469999999274,
+          61.748099999997066,
+          72.43900000001304,
+          90.05489999998827,
+          51.63989999999467,
+          73.39440000000468,
+          64.98669999999402
+        ],
+        "warm_max_below_governing_500ms": true,
+        "target": {
+          "sampled_private_bytes_below_target": false,
+          "sampled_sum_working_set_below_target": false,
+          "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+        }
+      },
+      {
+        "label": "reuse-2",
+        "artifact": {
+          "commit": "ff77c2141f4818a57c63bd3b90a9e09bc814d88c",
+          "shell_build": "e6296bbad07ab003a87848acda99a032d7cab11edd462cc0628e555c35ae8779",
+          "verified_files": 182,
+          "packages": 75
+        },
+        "browser": "153.0.8010.12",
+        "archive": {
+          "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca",
+          "bytes": 149672
+        },
+        "phases": 82,
+        "sampling": {
+          "requested_interval_ms": 100,
+          "tree_discovery_interval_ms": 500,
+          "actual_median_interval_ms": 217,
+          "actual_max_interval_ms": 1057
+        },
+        "peak_private_bytes": 405716992,
+        "peak_summed_working_set_bytes": 694697984,
+        "blank_private_peak": 239607808,
+        "startup_private_peak": 291188736,
+        "settled_private_last": 372785152,
+        "restart_private_last": 358494208,
+        "warm_query_ms": [
+          166.7829000000056,
+          53.32719999999972,
+          76.17140000000654,
+          76.59649999999965,
+          61.082399999999325,
+          78.01260000000184,
+          64.21890000000712,
+          78.59100000000035,
+          63.865399999995134,
+          76.57740000000922,
+          66.24709999999322,
+          75.68159999999625,
+          61.409599999999045,
+          60.64220000000205,
+          98.79230000000098,
+          60.17239999999583,
+          76.91640000000189,
+          63.44410000000789,
+          77.24619999999413,
+          65.23599999998987
+        ],
+        "warm_max_below_governing_500ms": true,
+        "target": {
+          "sampled_private_bytes_below_target": false,
+          "sampled_sum_working_set_below_target": false,
+          "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+        }
+      },
+      {
+        "label": "control-2",
+        "artifact": {
+          "commit": "c92d4e006027bf7cb6f1480527399250582d2754",
+          "shell_build": "f98c2c05a5f13868cc2a329d817e80762297116b489e8674db77b12eb25e73f6",
+          "verified_files": 182,
+          "packages": 75
+        },
+        "browser": "153.0.8010.12",
+        "archive": {
+          "sha256": "23ab90d4306c18299ac68d35389bc75edea5ce454765c40b6c66c6248b34d8ca",
+          "bytes": 149672
+        },
+        "phases": 82,
+        "sampling": {
+          "requested_interval_ms": 100,
+          "tree_discovery_interval_ms": 500,
+          "actual_median_interval_ms": 206,
+          "actual_max_interval_ms": 1001
+        },
+        "peak_private_bytes": 419385344,
+        "peak_summed_working_set_bytes": 727527424,
+        "blank_private_peak": 247193600,
+        "startup_private_peak": 294252544,
+        "settled_private_last": 388005888,
+        "restart_private_last": 370585600,
+        "warm_query_ms": [
+          75.42169999999169,
+          77.43020000000251,
+          77.51119999999355,
+          63.536899999991874,
+          60.42519999999786,
+          71.52670000000217,
+          63.70840000000317,
+          76.60269999998854,
+          61.849600000001374,
+          89.13180000000284,
+          78.96830000000773,
+          64.39199999999255,
+          78.15260000000126,
+          49.411999999996624,
+          68.15260000000126,
+          86.73030000001017,
+          76.72939999999653,
+          64.8411999999953,
+          79.3753999999899,
+          66.68979999999283
+        ],
+        "warm_max_below_governing_500ms": true,
+        "target": {
+          "sampled_private_bytes_below_target": false,
+          "sampled_sum_working_set_below_target": false,
+          "note": "Observed process-counter comparison only; not an exact concurrent physical-memory peak or a mobile claim. A failed target requires investigation or an evidence-backed budget revision."
+        }
+      }
+    ],
+    "pairs": [
+      {
+        "control": "control-1",
+        "candidate": "reuse-1",
+        "private_peak_reduction_bytes": -15847424,
+        "blank_peak_control_minus_candidate_bytes": 5619712,
+        "settled_last_control_minus_candidate_bytes": -9768960,
+        "primary_10mib_met": false
+      },
+      {
+        "control": "control-2",
+        "candidate": "reuse-2",
+        "private_peak_reduction_bytes": 13668352,
+        "blank_peak_control_minus_candidate_bytes": 7585792,
+        "settled_last_control_minus_candidate_bytes": 15220736,
+        "primary_10mib_met": true
+      }
+    ],
+    "primary_criterion_met": false
+  },
+  "decision": "Reject/revert UI trial: repeated10MiB private-peak criterion fails despite DOM churn60/60 to0/0.",
+  "candidate_source": "ff77c2141f4818a57c63bd3b90a9e09bc814d88c",
+  "restoration": {
+    "source": "023138e8705d39a41472fcad8e935143506b97c9",
+    "build_info": {
+      "schema_version": 1,
+      "commit": "023138e8705d39a41472fcad8e935143506b97c9",
+      "wasm_features": [
+        "sparse-storage"
+      ],
+      "working_tree_dirty": false,
+      "tools": {
+        "rust": "rustc 1.95.0 (59807616e 2026-04-14)",
+        "node": "v22.22.3",
+        "python": "Python 3.14.7",
+        "wasm_bindgen": "wasm-bindgen 0.2.118"
+      },
+      "wasm_sha256": "f0f6c2f1c84cd3a4f0aa9ccabfc460ab3f01cc9592c5e694a390fc49d738cb99"
+    },
+    "shell_build": "3ed407485fff619001ecb46f6158c6f9dac0da9c4f5112677049a5f6e3e2d372",
+    "verified_files": 182,
+    "packages": 75,
+    "original_main_and_wasm_identical": true,
+    "differing_files_vs_old_artifact": [
+      "build-info.json",
+      "catalog.json",
+      "shell-manifest.json",
+      "sw.js"
+    ],
+    "catalog_note": "Only20252026-regular.file_sha256 for three empty playoff source files: SHA256 of []LF versus []CRLF. All canonical served package bytes and all application modules are identical.",
+    "browser_checks": [
+      "resident selection/eviction/order/exact export/unload/reload",
+      "offline process reopening and new query/detail",
+      "933 viewport names/ranks, keyboard,77 goalies, AX and exports",
+      "six fresh/cached and three persisted context refusals; saved retry no payload network",
+      "24-page PDF,933 names/ranks with two extractors"
+    ]
+  },
+  "hosted_trial": {
+    "id": 39488159830,
+    "source": "477e76754a9b3da729823389ecf87c31f39aa15b",
+    "conclusion": "success",
+    "scope": "Rejected UI trial; not the final restored source."
+  },
+  "raw_archives": [
+    {
+      "path": "control-1-report.json.gz",
+      "bytes": 5889,
+      "sha256": "5504d34117d314e126915df25a695afd968e9cb3fa8a25a3875723942650e7a5",
+      "expanded_sha256": "d2fb32b3ec8902d363b436247837bc1a4eb229bb661a64cd964c06a58ac86b4b"
+    },
+    {
+      "path": "reuse-1-report.json.gz",
+      "bytes": 5880,
+      "sha256": "a11f8272fe61dcdc94f47eee5678d891a18ad2fe671cda1dde1d6c9d0954724f",
+      "expanded_sha256": "5d763c7e5bb22718a8348649a4616cd803af8b5455340bd25d4db0c65148929e"
+    },
+    {
+      "path": "reuse-2-report.json.gz",
+      "bytes": 5813,
+      "sha256": "6feebf73e51e00a5f0eb9c56f1c143feae96268b6710a6baae2755995e3f419e",
+      "expanded_sha256": "87cdb6a254a751bc6f8d553f1c8425261f2eb1bd27a7a21bbb84c62c8c13886a"
+    },
+    {
+      "path": "control-2-report.json.gz",
+      "bytes": 5829,
+      "sha256": "97678d612ce73cd5d16afa333e8ae7db8016afe35038a9e67251da7b86431f1b",
+      "expanded_sha256": "a1b055d5ba6a1717f3ba51e13a86ff4768301d14cb82986db7881a931d6f0ca1"
+    },
+    {
+      "path": "restored-resident.json.gz",
+      "bytes": 457,
+      "sha256": "bea2a89335c6c32b7cfebbfd37707f551da8befdef3f209d1338572b35705f24",
+      "expanded_sha256": "69ecafb4cbee1050be9c606ade354bcf5d6d7e5f2db119dd9629c3a08681657d"
+    },
+    {
+      "path": "restored-offline.json.gz",
+      "bytes": 1035,
+      "sha256": "7f0719ab2628c304602ea6b48cb00c4be32606ed833b2b029336387747538e83",
+      "expanded_sha256": "a973714519c198f51ab73c4afb979fe182ae2d83a496e4be2b2720fe56774eb2"
+    },
+    {
+      "path": "restored-viewport.json.gz",
+      "bytes": 510,
+      "sha256": "cdc46a3918e365099caf4a5652c3b659a38acc0529c9ccd0f9545eacdad725e7",
+      "expanded_sha256": "26ee050aa7604a0eccb5c4e45010acf100920f85cf6ebcf4c5a1f0548a5d4e3a"
+    },
+    {
+      "path": "restored-catalog.json.gz",
+      "bytes": 542,
+      "sha256": "94800371167424d013e8a6429ea8cf97a7c5bc902adae2feb4acd60729ce05a2",
+      "expanded_sha256": "0afb99e1dc96a5644c32f13bc2b04244ba52b5a55ae501644693b9d400515c45"
+    },
+    {
+      "path": "restored-persisted.json.gz",
+      "bytes": 599,
+      "sha256": "033889421f933f7d4a3c7fc0c2ab6d9d1e84b2b0f139e3f3b451cff21dc5ec65",
+      "expanded_sha256": "4bbdf0513f62d55e9c6c2382c2a65fbec6c03dfefcb90d20e11a5e97083eae60"
+    },
+    {
+      "path": "restored-all-players.pdf.gz",
+      "bytes": 186934,
+      "sha256": "a1425ee06940bc75fbf22aa4a61371f825bd854ae2ceed7e79ee4e93ac1eb900",
+      "expanded_sha256": "b3a19698f88232e0db67c31630669049202d3f9df03e19ebaeb07e73a6d56843"
+    },
+    {
+      "path": "restored-print-reference.json.gz",
+      "bytes": 12258,
+      "sha256": "331ae8f082e449a30ca05dba56e8b8d5cfee6db49bc64c50d556624358e4181b",
+      "expanded_sha256": "11040639dcccbf5a7aaa565b03a4346c419b64c4f7728feefac605c040a1140e"
+    },
+    {
+      "path": "restored-print-verification.json.gz",
+      "bytes": 385,
+      "sha256": "114a7bd1b0e7e5949df06e2d7026a695278f50397814434d8ae999744ece0b46",
+      "expanded_sha256": "6a81726e272ed6a5735badddd817a88ea9ee82104f7231d928a14629f3400aa9"
+    },
+    {
+      "path": "control-functional.json.gz",
+      "bytes": 460,
+      "sha256": "b92d366413e4bfa650bd915c50593d0da288612f6f835b839cd54ccc840918ad",
+      "expanded_sha256": "6539baf08cc77b3392191985e2a21949423f79b7a16731c9b058b9b164a3e6b7"
+    },
+    {
+      "path": "sparse-functional.json.gz",
+      "bytes": 456,
+      "sha256": "d6c636e49a2fdd78fc9bca3531b4151707e51fdf5f8b5d083ec5fe4946ff7d58",
+      "expanded_sha256": "017dbefef4d78eed928c705ea7be5b64a40f2ddc2816c356a9744030147dd15b"
+    },
+    {
+      "path": "default-functional.json.gz",
+      "bytes": 456,
+      "sha256": "8cf09b8ae4dcc4f1e8f665d3a00a226566f489b98270fa98415960a7cf265fe9",
+      "expanded_sha256": "ed0f6dc8aee08e5ea8719a6b4d46e3b827d118c52f01de5c12c3245326e6a657"
+    },
+    {
+      "path": "control-first-failure.json.gz",
+      "bytes": 520,
+      "sha256": "ab61af9c50bc4aa715c5ba620366ae8c7db4df3df4fd4d3403c14a70e1c3ff87",
+      "expanded_sha256": "777834196f9267b6197cb0e83e075b3d73e98e868c495a0d872eeacd86078e5b"
+    },
+    {
+      "path": "control-second-failure.json.gz",
+      "bytes": 538,
+      "sha256": "1263e65253086e5a6482fc01943dd493932df7d5cda76d934c279836ee23494f",
+      "expanded_sha256": "c29285052f046d15695163aaf00a7078a0c8b0a7eba2c718292d2836562f8786"
+    },
+    {
+      "path": "exp013-restored-standard-build-20261020.log.gz",
+      "bytes": 396,
+      "sha256": "32e4b4ca30fa6916366074feb514d6a7f8724d118f765d355e1160c283ccb0c4",
+      "expanded_sha256": "63e1a918c5a3626687d8813e135da2ca53d232772c3025ebf746c7d62faf4d7b"
+    },
+    {
+      "path": "exp013-restored-units-20261020.log.gz",
+      "bytes": 7618,
+      "sha256": "97e860f3edb66f2094233bb21ee509aefdc445ca4897a6f11ac095336aa6b29e",
+      "expanded_sha256": "6ed33edb8966bf4bcd0bc41bc89e120862c44094b245f6c105c7887f56052cca"
+    },
+    {
+      "path": "trial-ci-run.json.gz",
+      "bytes": 1703,
+      "sha256": "10218e761b087025cec00612b9683dd25be054007500b84fc55ab87d3d35d5e0",
+      "expanded_sha256": "64d7c1f9d6ca15940e0b1ecc7a8a1753e7606062fea303d5c64973bbadb4a868"
+    },
+    {
+      "path": "trial-ci-jobs.json.gz",
+      "bytes": 1152,
+      "sha256": "bb336dc8404c44154063e7ddabcab6066596fde3fe443d4fef2ac89099db0a96",
+      "expanded_sha256": "3851826f51fd3ada4ced298cf31c1e234afb9c828f93f126c0fdab84ded0a1fc"
+    }
+  ],
+  "private_custody": "MISER evidence/exp013-custody.json retains all66 exact raw/source archives, full traces and complete artifact inventories.",
+  "remaining": [
+    "250MiB normal workload gate fails in every run; startup alone277.70\u2013281.84MiB.",
+    "Physical Android deferred by user.",
+    "Private MISER hosted Linux remains blocked by billing."
+  ]
+}

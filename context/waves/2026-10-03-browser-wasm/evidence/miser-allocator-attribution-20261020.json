@@ -1,0 +1,4065 @@
+{
+  "schema_version": 1,
+  "experiment": "MISER-EXP-015",
+  "change_id": "CHG-124",
+  "scope": "Two instrumented startup/one-season allocator diagnostics. No product change or normal memory acceptance.",
+  "summary": {
+    "experiment": "MISER-EXP-015",
+    "runs": [
+      {
+        "all_app_workers_share_page_pid": true,
+        "allocator_provider_dumps": {
+          "data_sufficient": true,
+          "scope": "Raw provider attributes and byte-decoded scalars. Roots/children/ownership-adjusted values are not summed or equated with OS private bytes.",
+          "snapshots": [
+            {
+              "allocator_event_timestamp": 400394982508,
+              "allocator_nodes": 2348,
+              "exported_id": "0x0",
+              "native_span_end": 400394985240,
+              "native_span_start": 400394892812,
+              "ownership_edges": 637,
+              "phase": "diagnostic_blank",
+              "pid": 41544,
+              "process_totals": {
+                "is_peak_rss_resettable": false,
+                "peak_resident_set_size": "0",
+                "private_footprint_bytes": "1661000"
+              },
+              "request_guid": "0x3",
+              "top_level_roots": {
+                "blink_gc": {
+                  "byte_values": {
+                    "effective_size": 1071862,
+                    "size": 1441792
+                  },
+                  "guid": "491",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "105af6"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "160000"
+                    }
+                  }
+                },
+                "blink_objects": {
+                  "byte_values": {
+                    "effective_size": 369928,
+                    "size": 369928
+                  },
+                  "guid": "a76",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "5a508"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "5a508"
+                    }
+                  }
+                },
+                "cc": {
+                  "byte_values": {},
+                  "guid": "cf1",
+                  "raw_attributes": null
+                },
+                "discardable": {
+                  "byte_values": {},
+                  "guid": "cf3",
+                  "raw_attributes": null
+                },
+                "gpu": {
+                  "byte_values": {
+                    "effective_size": 131008,
+                    "size": 131008
+                  },
+                  "guid": "cf5",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1ffc0"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1ffc0"
+                    }
+                  }
+                },
+                "malloc": {
+                  "byte_values": {
+                    "effective_size": 9487737,
+                    "size": 9570768,
+                    "virtual_size": 8535008
+                  },
+                  "guid": "cfa",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "90c579"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "9209d0"
+                    },
+                    "syscalls_per_minute": {
+                      "type": "scalar",
+                      "units": "objects",
+                      "value": "38c0"
+                    },
+                    "virtual_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "823be0"
+                    }
+                  }
+                },
+                "mojo": {
+                  "byte_values": {},
+                  "guid": "d63",
+                  "raw_attributes": null
+                },
+                "parkable_images": {
+                  "byte_values": {
+                    "on_disk_size": 0,
+                    "total_size": 0,
+                    "unparked_size": 0
+                  },
+                  "guid": "d67",
+                  "raw_attributes": {
+                    "on_disk_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "total_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "unparked_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    }
+                  }
+                },
+                "parkable_strings": {
+                  "byte_values": {
+                    "compressed_size": 0,
+                    "metadata_size": 0,
+                    "on_disk_footprint": 0,
+                    "on_disk_free_chunks": 0,
+                    "on_disk_size": 0,
+                    "original_size": 0,
+                    "overhead_size": 0,
+                    "savings_size": 0,
+                    "uncompressed_size": 0
+                  },
+                  "guid": "d68",
+                  "raw_attributes": {
+                    "compressed_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "metadata_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_footprint": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_free_chunks": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "original_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "overhead_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "savings_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "uncompressed_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    }
+                  }
+                },
+                "partition_alloc": {
+                  "byte_values": {
+                    "effective_size": 581614,
+                    "size": 581632
+                  },
+                  "guid": "d69",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "8dfee"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "8e000"
+                    }
+                  }
+                },
+                "shared_memory": {
+                  "byte_values": {
+                    "effective_size": 95744,
+                    "size": 294848
+                  },
+                  "guid": "d92",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "17600"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "47fc0"
+                    }
+                  }
+                },
+                "skia": {
+                  "byte_values": {},
+                  "guid": "da3",
+                  "raw_attributes": null
+                },
+                "v8": {
+                  "byte_values": {
+                    "effective_size": 1918000,
+                    "size": 1918000
+                  },
+                  "guid": "da5",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1d4430"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1d4430"
+                    }
+                  }
+                }
+              },
+              "v8_domains": {
+                "v8/main": {
+                  "byte_values": {
+                    "effective_size": 1918000,
+                    "size": 1918000
+                  },
+                  "guid": "da6",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1d4430"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1d4430"
+                    }
+                  }
+                },
+                "v8/shared": {
+                  "byte_values": {},
+                  "guid": "dbb",
+                  "raw_attributes": null
+                }
+              }
+            },
+            {
+              "allocator_event_timestamp": 400403001396,
+              "allocator_nodes": 5923,
+              "exported_id": "0x1",
+              "native_span_end": 400403005126,
+              "native_span_start": 400402898780,
+              "ownership_edges": 1425,
+              "phase": "diagnostic_offline_ready",
+              "pid": 41544,
+              "process_totals": {
+                "is_peak_rss_resettable": false,
+                "peak_resident_set_size": "0",
+                "private_footprint_bytes": "3093000"
+              },
+              "request_guid": "0x6",
+              "top_level_roots": {
+                "blink_gc": {
+                  "byte_values": {
+                    "effective_size": 1381662,
+                    "size": 4718592
+                  },
+                  "guid": "284d",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "15151e"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "480000"
+                    }
+                  }
+                },
+                "blink_objects": {
+                  "byte_values": {
+                    "effective_size": 3336920,
+                    "size": 3336920
+                  },
+                  "guid": "388e",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "32ead8"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "32ead8"
+                    }
+                  }
+                },
+                "cc": {
+                  "byte_values": {
+                    "effective_size": 5898240,
+                    "size": 5898240
+                  },
+                  "guid": "3dfd",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "5a0000"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "5a0000"
+                    }
+                  }
+                },
+                "discardable": {
+                  "byte_values": {},
+                  "guid": "3e0b",
+                  "raw_attributes": null
+                },
+                "gpu": {
+                  "byte_values": {
+                    "effective_size": 131008,
+                    "size": 131008
+                  },
+                  "guid": "3e0d",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1ffc0"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1ffc0"
+                    }
+                  }
+                },
+                "malloc": {
+                  "byte_values": {
+                    "effective_size": 22219647,
+                    "size": 22526512,
+                    "virtual_size": 19008944
+                  },
+                  "guid": "3e12",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1530b7f"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "157ba30"
+                    },
+                    "syscalls_per_minute": {
+                      "type": "scalar",
+                      "units": "objects",
+                      "value": "477e"
+                    },
+                    "virtual_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1220db0"
+                    }
+                  }
+                },
+                "mojo": {
+                  "byte_values": {},
+                  "guid": "3e96",
+                  "raw_attributes": null
+                },
+                "parkable_images": {
+                  "byte_values": {
+                    "on_disk_size": 0,
+                    "total_size": 0,
+                    "unparked_size": 0
+                  },
+                  "guid": "3e9a",
+                  "raw_attributes": {
+                    "on_disk_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "total_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "unparked_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    }
+                  }
+                },
+                "parkable_strings": {
+                  "byte_values": {
+                    "compressed_size": 0,
+                    "metadata_size": 0,
+                    "on_disk_footprint": 0,
+                    "on_disk_free_chunks": 0,
+                    "on_disk_size": 0,
+                    "original_size": 0,
+                    "overhead_size": 0,
+                    "savings_size": 0,
+                    "uncompressed_size": 0
+                  },
+                  "guid": "3e9b",
+                  "raw_attributes": {
+                    "compressed_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "metadata_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_footprint": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_free_chunks": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "original_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "overhead_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "savings_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "uncompressed_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    }
+                  }
+                },
+                "partition_alloc": {
+                  "byte_values": {
+                    "effective_size": 6874695,
+                    "size": 6885376
+                  },
+                  "guid": "3e9c",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "68e647"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "691000"
+                    }
+                  }
+                },
+                "shared_memory": {
+                  "byte_values": {
+                    "effective_size": 251392,
+                    "size": 589760
+                  },
+                  "guid": "3eef",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "3d600"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "8ffc0"
+                    }
+                  }
+                },
+                "site_storage": {
+                  "byte_values": {},
+                  "guid": "3f03",
+                  "raw_attributes": null
+                },
+                "skia": {
+                  "byte_values": {
+                    "effective_size": 29264,
+                    "size": 29264
+                  },
+                  "guid": "3f0a",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "7250"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "7250"
+                    }
+                  }
+                },
+                "v8": {
+                  "byte_values": {
+                    "effective_size": 6892588,
+                    "size": 6892588
+                  },
+                  "guid": "3f29",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "692c2c"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "692c2c"
+                    }
+                  }
+                },
+                "web_cache": {
+                  "byte_values": {
+                    "effective_size": 11185,
+                    "size": 11185
+                  },
+                  "guid": "3f68",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "2bb1"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "2bb1"
+                    }
+                  }
+                }
+              },
+              "v8_domains": {
+                "v8/main": {
+                  "byte_values": {
+                    "effective_size": 4689964,
+                    "size": 4689964
+                  },
+                  "guid": "3f2a",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "47902c"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "47902c"
+                    }
+                  }
+                },
+                "v8/shared": {
+                  "byte_values": {},
+                  "guid": "3f3f",
+                  "raw_attributes": null
+                },
+                "v8/workers": {
+                  "byte_values": {
+                    "effective_size": 2202624,
+                    "size": 2202624
+                  },
+                  "guid": "3f41",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "219c00"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "219c00"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "allocator_event_timestamp": 400443141179,
+              "allocator_nodes": 4953,
+              "exported_id": "0x2",
+              "native_span_end": 400443144041,
+              "native_span_start": 400443057547,
+              "ownership_edges": 1206,
+              "phase": "diagnostic_idle_40s",
+              "pid": 41544,
+              "process_totals": {
+                "is_peak_rss_resettable": false,
+                "peak_resident_set_size": "0",
+                "private_footprint_bytes": "2ff8000"
+              },
+              "request_guid": "0x7",
+              "top_level_roots": {
+                "blink_gc": {
+                  "byte_values": {
+                    "effective_size": 2759148,
+                    "size": 4718592
+                  },
+                  "guid": "5a5b",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "2a19ec"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "480000"
+                    }
+                  }
+                },
+                "blink_objects": {
+                  "byte_values": {
+                    "effective_size": 1959432,
+                    "size": 1959432
+                  },
+                  "guid": "67ab",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1de608"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1de608"
+                    }
+                  }
+                },
+                "cc": {
+                  "byte_values": {
+                    "effective_size": 5898240,
+                    "size": 5898240
+                  },
+                  "guid": "6c3f",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "5a0000"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "5a0000"
+                    }
+                  }
+                },
+                "discardable": {
+                  "byte_values": {},
+                  "guid": "6c4d",
+                  "raw_attributes": null
+                },
+                "gpu": {
+                  "byte_values": {
+                    "effective_size": 131008,
+                    "size": 131008
+                  },
+                  "guid": "6c4f",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1ffc0"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1ffc0"
+                    }
+                  }
+                },
+                "malloc": {
+                  "byte_values": {
+                    "effective_size": 21461129,
+                    "size": 21726976,
+                    "virtual_size": 17696976
+                  },
+                  "guid": "6c54",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1477889"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "14b8700"
+                    },
+                    "syscalls_per_minute": {
+                      "type": "scalar",
+                      "units": "objects",
+                      "value": "1c6"
+                    },
+                    "virtual_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "10e08d0"
+                    }
+                  }
+                },
+                "mojo": {
+                  "byte_values": {},
+                  "guid": "6cda",
+                  "raw_attributes": null
+                },
+                "parkable_images": {
+                  "byte_values": {
+                    "on_disk_size": 0,
+                    "total_size": 0,
+                    "unparked_size": 0
+                  },
+                  "guid": "6cde",
+                  "raw_attributes": {
+                    "on_disk_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "total_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "unparked_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    }
+                  }
+                },
+                "parkable_strings": {
+                  "byte_values": {
+                    "compressed_size": 0,
+                    "metadata_size": 0,
+                    "on_disk_footprint": 0,
+                    "on_disk_free_chunks": 0,
+                    "on_disk_size": 0,
+                    "original_size": 0,
+                    "overhead_size": 0,
+                    "savings_size": 0,
+                    "uncompressed_size": 0
+                  },
+                  "guid": "6cdf",
+                  "raw_attributes": {
+                    "compressed_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "metadata_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_footprint": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_free_chunks": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "original_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "overhead_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "savings_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "uncompressed_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    }
+                  }
+                },
+                "partition_alloc": {
+                  "byte_values": {
+                    "effective_size": 6547009,
+                    "size": 6557696
+                  },
+                  "guid": "6ce0",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "63e641"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "641000"
+                    }
+                  }
+                },
+                "shared_memory": {
+                  "byte_values": {
+                    "effective_size": 312832,
+                    "size": 683968
+                  },
+                  "guid": "6d33",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "4c600"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "a6fc0"
+                    }
+                  }
+                },
+                "site_storage": {
+                  "byte_values": {},
+                  "guid": "6d47",
+                  "raw_attributes": null
+                },
+                "skia": {
+                  "byte_values": {
+                    "effective_size": 29264,
+                    "size": 29264
+                  },
+                  "guid": "6d4e",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "7250"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "7250"
+                    }
+                  }
+                },
+                "v8": {
+                  "byte_values": {
+                    "effective_size": 5540868,
+                    "size": 5540868
+                  },
+                  "guid": "6d6d",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "548c04"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "548c04"
+                    }
+                  }
+                },
+                "web_cache": {
+                  "byte_values": {
+                    "effective_size": 11185,
+                    "size": 11185
+                  },
+                  "guid": "6dac",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "2bb1"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "2bb1"
+                    }
+                  }
+                }
+              },
+              "v8_domains": {
+                "v8/main": {
+                  "byte_values": {
+                    "effective_size": 3338244,
+                    "size": 3338244
+                  },
+                  "guid": "6d6e",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "32f004"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "32f004"
+                    }
+                  }
+                },
+                "v8/shared": {
+                  "byte_values": {},
+                  "guid": "6d83",
+                  "raw_attributes": null
+                },
+                "v8/workers": {
+                  "byte_values": {
+                    "effective_size": 2202624,
+                    "size": 2202624
+                  },
+                  "guid": "6d85",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "219c00"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "219c00"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "allocator_event_timestamp": 400446477916,
+              "allocator_nodes": 7107,
+              "exported_id": "0x3",
+              "native_span_end": 400446482010,
+              "native_span_start": 400446389944,
+              "ownership_edges": 1626,
+              "phase": "diagnostic_loaded_one",
+              "pid": 41544,
+              "process_totals": {
+                "is_peak_rss_resettable": false,
+                "peak_resident_set_size": "0",
+                "private_footprint_bytes": "4f26000"
+              },
+              "request_guid": "0x8",
+              "top_level_roots": {
+                "blink_gc": {
+                  "byte_values": {
+                    "effective_size": 4362516,
+                    "size": 9109584
+                  },
+                  "guid": "8422",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "429114"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "8b0050"
+                    }
+                  }
+                },
+                "blink_objects": {
+                  "byte_values": {
+                    "effective_size": 4747048,
+                    "size": 4747048
+                  },
+                  "guid": "9818",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "486f28"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "486f28"
+                    }
+                  }
+                },
+                "cc": {
+                  "byte_values": {
+                    "effective_size": 16318464,
+                    "size": 16318464
+                  },
+                  "guid": "9e44",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "f90000"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "f90000"
+                    }
+                  }
+                },
+                "discardable": {
+                  "byte_values": {},
+                  "guid": "9e5c",
+                  "raw_attributes": null
+                },
+                "gpu": {
+                  "byte_values": {
+                    "effective_size": 131008,
+                    "size": 131008
+                  },
+                  "guid": "9e5e",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1ffc0"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1ffc0"
+                    }
+                  }
+                },
+                "malloc": {
+                  "byte_values": {
+                    "effective_size": 36478212,
+                    "size": 36891136,
+                    "virtual_size": 29768272
+                  },
+                  "guid": "9e63",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "22c9d04"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "232ea00"
+                    },
+                    "syscalls_per_minute": {
+                      "type": "scalar",
+                      "units": "objects",
+                      "value": "814d"
+                    },
+                    "virtual_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1c63a50"
+                    }
+                  }
+                },
+                "mojo": {
+                  "byte_values": {},
+                  "guid": "9ef0",
+                  "raw_attributes": null
+                },
+                "parkable_images": {
+                  "byte_values": {
+                    "on_disk_size": 0,
+                    "total_size": 0,
+                    "unparked_size": 0
+                  },
+                  "guid": "9ef4",
+                  "raw_attributes": {
+                    "on_disk_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "total_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "unparked_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    }
+                  }
+                },
+                "parkable_strings": {
+                  "byte_values": {
+                    "compressed_size": 0,
+                    "metadata_size": 0,
+                    "on_disk_footprint": 0,
+                    "on_disk_free_chunks": 0,
+                    "on_disk_size": 0,
+                    "original_size": 0,
+                    "overhead_size": 0,
+                    "savings_size": 0,
+                    "uncompressed_size": 0
+                  },
+                  "guid": "9ef5",
+                  "raw_attributes": {
+                    "compressed_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "metadata_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_footprint": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_free_chunks": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "original_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "overhead_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "savings_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "uncompressed_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    }
+                  }
+                },
+                "partition_alloc": {
+                  "byte_values": {
+                    "effective_size": 10356294,
+                    "size": 10366976
+                  },
+                  "guid": "9ef6",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "9e0646"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "9e3000"
+                    }
+                  }
+                },
+                "shared_memory": {
+                  "byte_values": {
+                    "effective_size": 433664,
+                    "size": 896960
+                  },
+                  "guid": "9f4f",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "69e00"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "dafc0"
+                    }
+                  }
+                },
+                "site_storage": {
+                  "byte_values": {},
+                  "guid": "9f63",
+                  "raw_attributes": null
+                },
+                "skia": {
+                  "byte_values": {
+                    "effective_size": 37093,
+                    "size": 37093
+                  },
+                  "guid": "9f6a",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "90e5"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "90e5"
+                    }
+                  }
+                },
+                "v8": {
+                  "byte_values": {
+                    "effective_size": 12295132,
+                    "size": 12295132
+                  },
+                  "guid": "9f8c",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "bb9bdc"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "bb9bdc"
+                    }
+                  }
+                },
+                "web_cache": {
+                  "byte_values": {
+                    "effective_size": 11185,
+                    "size": 11185
+                  },
+                  "guid": "9fdd",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "2bb1"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "2bb1"
+                    }
+                  }
+                }
+              },
+              "v8_domains": {
+                "v8/main": {
+                  "byte_values": {
+                    "effective_size": 8969132,
+                    "size": 8969132
+                  },
+                  "guid": "9f8d",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "88dbac"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "88dbac"
+                    }
+                  }
+                },
+                "v8/shared": {
+                  "byte_values": {},
+                  "guid": "9fa2",
+                  "raw_attributes": null
+                },
+                "v8/workers": {
+                  "byte_values": {
+                    "effective_size": 3326000,
+                    "size": 3326000
+                  },
+                  "guid": "9fa4",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "32c030"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "32c030"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "allocator_event_timestamp": 400450650497,
+              "allocator_nodes": 7479,
+              "exported_id": "0x4",
+              "native_span_end": 400450653945,
+              "native_span_start": 400450552030,
+              "ownership_edges": 1664,
+              "phase": "diagnostic_engine_restarted",
+              "pid": 41544,
+              "process_totals": {
+                "is_peak_rss_resettable": false,
+                "peak_resident_set_size": "0",
+                "private_footprint_bytes": "4a60000"
+              },
+              "request_guid": "0xa",
+              "top_level_roots": {
+                "blink_gc": {
+                  "byte_values": {
+                    "effective_size": 4053598,
+                    "size": 9240656
+                  },
+                  "guid": "b68f",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "3dda5e"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "8d0050"
+                    }
+                  }
+                },
+                "blink_objects": {
+                  "byte_values": {
+                    "effective_size": 5187032,
+                    "size": 5187032
+                  },
+                  "guid": "cbd0",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "4f25d8"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "4f25d8"
+                    }
+                  }
+                },
+                "cc": {
+                  "byte_values": {
+                    "effective_size": 21561344,
+                    "size": 21561344
+                  },
+                  "guid": "d21e",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1490000"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1490000"
+                    }
+                  }
+                },
+                "discardable": {
+                  "byte_values": {},
+                  "guid": "d23c",
+                  "raw_attributes": null
+                },
+                "gpu": {
+                  "byte_values": {
+                    "effective_size": 131008,
+                    "size": 131008
+                  },
+                  "guid": "d23e",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1ffc0"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1ffc0"
+                    }
+                  }
+                },
+                "malloc": {
+                  "byte_values": {
+                    "effective_size": 33580171,
+                    "size": 33993168,
+                    "virtual_size": 28802272
+                  },
+                  "guid": "d243",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "200648b"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "206b1d0"
+                    },
+                    "syscalls_per_minute": {
+                      "type": "scalar",
+                      "units": "objects",
+                      "value": "2360"
+                    },
+                    "virtual_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1b77ce0"
+                    }
+                  }
+                },
+                "mojo": {
+                  "byte_values": {},
+                  "guid": "d2d0",
+                  "raw_attributes": null
+                },
+                "parkable_images": {
+                  "byte_values": {
+                    "on_disk_size": 0,
+                    "total_size": 0,
+                    "unparked_size": 0
+                  },
+                  "guid": "d2d4",
+                  "raw_attributes": {
+                    "on_disk_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "total_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "unparked_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    }
+                  }
+                },
+                "parkable_strings": {
+                  "byte_values": {
+                    "compressed_size": 0,
+                    "metadata_size": 0,
+                    "on_disk_footprint": 0,
+                    "on_disk_free_chunks": 0,
+                    "on_disk_size": 0,
+                    "original_size": 0,
+                    "overhead_size": 0,
+                    "savings_size": 0,
+                    "uncompressed_size": 0
+                  },
+                  "guid": "d2d5",
+                  "raw_attributes": {
+                    "compressed_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "metadata_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_footprint": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_free_chunks": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "original_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "overhead_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "savings_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "uncompressed_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    }
+                  }
+                },
+                "partition_alloc": {
+                  "byte_values": {
+                    "effective_size": 9168439,
+                    "size": 9179136
+                  },
+                  "guid": "d2d6",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "8be637"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "8c1000"
+                    }
+                  }
+                },
+                "shared_memory": {
+                  "byte_values": {
+                    "effective_size": 472576,
+                    "size": 987072
+                  },
+                  "guid": "d330",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "73600"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "f0fc0"
+                    }
+                  }
+                },
+                "site_storage": {
+                  "byte_values": {},
+                  "guid": "d344",
+                  "raw_attributes": null
+                },
+                "skia": {
+                  "byte_values": {
+                    "effective_size": 37189,
+                    "size": 37189
+                  },
+                  "guid": "d34b",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "9145"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "9145"
+                    }
+                  }
+                },
+                "v8": {
+                  "byte_values": {
+                    "effective_size": 12295132,
+                    "size": 12295132
+                  },
+                  "guid": "d36d",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "bb9bdc"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "bb9bdc"
+                    }
+                  }
+                },
+                "web_cache": {
+                  "byte_values": {
+                    "effective_size": 11185,
+                    "size": 11185
+                  },
+                  "guid": "d3be",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "2bb1"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "2bb1"
+                    }
+                  }
+                }
+              },
+              "v8_domains": {
+                "v8/main": {
+                  "byte_values": {
+                    "effective_size": 8969132,
+                    "size": 8969132
+                  },
+                  "guid": "d36e",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "88dbac"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "88dbac"
+                    }
+                  }
+                },
+                "v8/shared": {
+                  "byte_values": {},
+                  "guid": "d383",
+                  "raw_attributes": null
+                },
+                "v8/workers": {
+                  "byte_values": {
+                    "effective_size": 3326000,
+                    "size": 3326000
+                  },
+                  "guid": "d385",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "32c030"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "32c030"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "artifact": {
+          "commit": "023138e8705d39a41472fcad8e935143506b97c9",
+          "packages": 75,
+          "shell_build": "3ed407485fff619001ecb46f6158c6f9dac0da9c4f5112677049a5f6e3e2d372",
+          "verified_files": 182
+        },
+        "browser": "153.0.8010.12",
+        "chrome_omnibox_pids": [
+          72488
+        ],
+        "engine_pids": [
+          41544
+        ],
+        "maximum_sampler_gap_ms": 1179,
+        "median_sampler_gap_ms": 211,
+        "page_pid": 41544,
+        "phases": [
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 0,
+            "main_heap": {
+              "backingStorageSize": 43,
+              "embedderHeapUsedSize": 1383968,
+              "totalSize": 1835008,
+              "usedSize": 741100
+            },
+            "phase": "diagnostic_blank",
+            "private_bytes_by_role": {
+              "GPU": 81862656,
+              "browser": 46252032,
+              "chrome_omnibox_renderer": 50036736,
+              "network.mojom.NetworkService": 16920576,
+              "renderer": 20852736,
+              "storage.mojom.StorageService": 10522624,
+              "tracing.mojom.TracingService": 14991360,
+              "unmapped": 3043328,
+              "workbench_renderer": 20738048
+            },
+            "sample_elapsed_ms": 4466,
+            "samples": 8,
+            "service_worker_targets": 0
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 0,
+            "main_heap": {
+              "backingStorageSize": 433806,
+              "embedderHeapUsedSize": 3336944,
+              "totalSize": 4517888,
+              "usedSize": 2846484
+            },
+            "phase": "diagnostic_catalog_ready",
+            "private_bytes_by_role": {
+              "GPU": 94969856,
+              "browser": 52076544,
+              "chrome_omnibox_renderer": 51998720,
+              "network.mojom.NetworkService": 18395136,
+              "renderer": 21671936,
+              "storage.mojom.StorageService": 10977280,
+              "tracing.mojom.TracingService": 15253504,
+              "unmapped": 3043328,
+              "workbench_renderer": 46800896
+            },
+            "sample_elapsed_ms": 8844,
+            "samples": 9,
+            "service_worker_targets": 1
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 0,
+            "main_heap": {
+              "backingStorageSize": 433846,
+              "embedderHeapUsedSize": 3336944,
+              "totalSize": 4517888,
+              "usedSize": 2891836
+            },
+            "phase": "diagnostic_offline_ready",
+            "private_bytes_by_role": {
+              "GPU": 94515200,
+              "browser": 51994624,
+              "chrome_omnibox_renderer": 49467392,
+              "network.mojom.NetworkService": 18432000,
+              "renderer": 21057536,
+              "storage.mojom.StorageService": 11001856,
+              "tracing.mojom.TracingService": 15343616,
+              "unmapped": 3043328,
+              "workbench_renderer": 47394816
+            },
+            "sample_elapsed_ms": 13231,
+            "samples": 9,
+            "service_worker_targets": 1
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 0,
+            "main_heap": {
+              "backingStorageSize": 433846,
+              "embedderHeapUsedSize": 3336944,
+              "totalSize": 4517888,
+              "usedSize": 2897664
+            },
+            "phase": "diagnostic_idle_15s",
+            "private_bytes_by_role": {
+              "GPU": 81707008,
+              "browser": 53460992,
+              "chrome_omnibox_renderer": 52043776,
+              "network.mojom.NetworkService": 18632704,
+              "renderer": 21557248,
+              "storage.mojom.StorageService": 11104256,
+              "tracing.mojom.TracingService": 19611648,
+              "unmapped": 3043328,
+              "workbench_renderer": 50257920
+            },
+            "sample_elapsed_ms": 27658,
+            "samples": 30,
+            "service_worker_targets": 1
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 0,
+            "main_heap": {
+              "backingStorageSize": 145674,
+              "embedderHeapUsedSize": 1319048,
+              "totalSize": 3207168,
+              "usedSize": 1873556
+            },
+            "phase": "diagnostic_idle_40s",
+            "private_bytes_by_role": {
+              "GPU": 81752064,
+              "browser": 54505472,
+              "chrome_omnibox_renderer": 43868160,
+              "network.mojom.NetworkService": 18780160,
+              "renderer": 21557248,
+              "storage.mojom.StorageService": 11104256,
+              "tracing.mojom.TracingService": 19652608,
+              "unmapped": 3051520,
+              "workbench_renderer": 49696768
+            },
+            "sample_elapsed_ms": 52479,
+            "samples": 52,
+            "service_worker_targets": 1
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 1,
+            "main_heap": {
+              "backingStorageSize": 1076676,
+              "embedderHeapUsedSize": 4344288,
+              "totalSize": 8773632,
+              "usedSize": 3669152
+            },
+            "phase": "diagnostic_loaded_one",
+            "private_bytes_by_role": {
+              "GPU": 102887424,
+              "browser": 53919744,
+              "chrome_omnibox_renderer": 44634112,
+              "network.mojom.NetworkService": 18923520,
+              "renderer": 21549056,
+              "storage.mojom.StorageService": 11124736,
+              "tracing.mojom.TracingService": 19697664,
+              "unmapped": 3051520,
+              "workbench_renderer": 80703488
+            },
+            "sample_elapsed_ms": 56790,
+            "samples": 8,
+            "service_worker_targets": 1
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 1,
+            "main_heap": {
+              "backingStorageSize": 1077165,
+              "embedderHeapUsedSize": 4930568,
+              "totalSize": 8773632,
+              "usedSize": 4034388
+            },
+            "phase": "diagnostic_engine_restarted",
+            "private_bytes_by_role": {
+              "GPU": 107356160,
+              "browser": 53137408,
+              "chrome_omnibox_renderer": 43728896,
+              "network.mojom.NetworkService": 18046976,
+              "renderer": 21467136,
+              "storage.mojom.StorageService": 10784768,
+              "tracing.mojom.TracingService": 23670784,
+              "unmapped": 2912256,
+              "workbench_renderer": 77115392
+            },
+            "sample_elapsed_ms": 60794,
+            "samples": 9,
+            "service_worker_targets": 1
+          }
+        ],
+        "process_names": {
+          "18228": "Renderer",
+          "38204": "Service: tracing.mojom.TracingService",
+          "40372": "Browser",
+          "41544": "Renderer",
+          "54724": "Service: storage.mojom.StorageService",
+          "58680": "Service: chrome.mojom.UtilWin",
+          "62764": "Service: network.mojom.NetworkService",
+          "62820": "Service: chrome.mojom.UtilWin",
+          "67724": "GPU Process",
+          "72388": "Service: chrome.mojom.UtilWin",
+          "72488": "Renderer"
+        },
+        "retained_frame_commits": [
+          {
+            "frame": "70B122F14C03FBA40D7366F9E9A51302",
+            "pid": 72488,
+            "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html"
+          },
+          {
+            "frame": "639BEE7036D14EE61C05534898E0C8E5",
+            "pid": 72488,
+            "url": "chrome://omnibox-popup.top-chrome/"
+          },
+          {
+            "frame": "4B168FA087E668D2EC5E42189258A5A0",
+            "pid": 41544,
+            "url": "about:blank"
+          },
+          {
+            "frame": "4B168FA087E668D2EC5E42189258A5A0",
+            "pid": 41544,
+            "url": "http://127.0.0.1:52014/ICELINES/workbench/"
+          }
+        ],
+        "retained_worker_markers": [
+          {
+            "id": "4307568CCC368EEB1DF415626F5B4611",
+            "pid": 41544,
+            "tid": 8724,
+            "url": "http://127.0.0.1:52014/ICELINES/workbench/sw.js"
+          },
+          {
+            "id": "79EC4FFF850BE6A549624C3B189AAC95",
+            "pid": 41544,
+            "tid": 71356,
+            "url": "http://127.0.0.1:52014/ICELINES/workbench/src/worker.js"
+          },
+          {
+            "id": "BDB307A41DC8278B0AECC7DC742CD4CC",
+            "pid": 41544,
+            "tid": 46632,
+            "url": "http://127.0.0.1:52014/ICELINES/workbench/src/worker.js"
+          }
+        ],
+        "service_worker_pid": 41544,
+        "trace_events_streamed": 32871
+      },
+      {
+        "all_app_workers_share_page_pid": true,
+        "allocator_provider_dumps": {
+          "data_sufficient": true,
+          "scope": "Raw provider attributes and byte-decoded scalars. Roots/children/ownership-adjusted values are not summed or equated with OS private bytes.",
+          "snapshots": [
+            {
+              "allocator_event_timestamp": 400487754536,
+              "allocator_nodes": 2350,
+              "exported_id": "0x0",
+              "native_span_end": 400487758111,
+              "native_span_start": 400487664627,
+              "ownership_edges": 637,
+              "phase": "diagnostic_blank",
+              "pid": 61456,
+              "process_totals": {
+                "is_peak_rss_resettable": false,
+                "peak_resident_set_size": "0",
+                "private_footprint_bytes": "191d000"
+              },
+              "request_guid": "0x3",
+              "top_level_roots": {
+                "blink_gc": {
+                  "byte_values": {
+                    "effective_size": 1071862,
+                    "size": 1441792
+                  },
+                  "guid": "414",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "105af6"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "160000"
+                    }
+                  }
+                },
+                "blink_objects": {
+                  "byte_values": {
+                    "effective_size": 369928,
+                    "size": 369928
+                  },
+                  "guid": "9f9",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "5a508"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "5a508"
+                    }
+                  }
+                },
+                "cc": {
+                  "byte_values": {},
+                  "guid": "c74",
+                  "raw_attributes": null
+                },
+                "discardable": {
+                  "byte_values": {},
+                  "guid": "c76",
+                  "raw_attributes": null
+                },
+                "gpu": {
+                  "byte_values": {
+                    "effective_size": 131008,
+                    "size": 131008
+                  },
+                  "guid": "c78",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1ffc0"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1ffc0"
+                    }
+                  }
+                },
+                "malloc": {
+                  "byte_values": {
+                    "effective_size": 12569695,
+                    "size": 12652720,
+                    "virtual_size": 11319872
+                  },
+                  "guid": "c7d",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "bfcc5f"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "c110b0"
+                    },
+                    "syscalls_per_minute": {
+                      "type": "scalar",
+                      "units": "objects",
+                      "value": "3cd7"
+                    },
+                    "virtual_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "acba40"
+                    }
+                  }
+                },
+                "mojo": {
+                  "byte_values": {},
+                  "guid": "ce8",
+                  "raw_attributes": null
+                },
+                "parkable_images": {
+                  "byte_values": {
+                    "on_disk_size": 0,
+                    "total_size": 0,
+                    "unparked_size": 0
+                  },
+                  "guid": "cec",
+                  "raw_attributes": {
+                    "on_disk_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "total_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "unparked_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    }
+                  }
+                },
+                "parkable_strings": {
+                  "byte_values": {
+                    "compressed_size": 0,
+                    "metadata_size": 0,
+                    "on_disk_footprint": 0,
+                    "on_disk_free_chunks": 0,
+                    "on_disk_size": 0,
+                    "original_size": 0,
+                    "overhead_size": 0,
+                    "savings_size": 0,
+                    "uncompressed_size": 0
+                  },
+                  "guid": "ced",
+                  "raw_attributes": {
+                    "compressed_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "metadata_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_footprint": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_free_chunks": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "original_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "overhead_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "savings_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "uncompressed_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    }
+                  }
+                },
+                "partition_alloc": {
+                  "byte_values": {
+                    "effective_size": 581614,
+                    "size": 581632
+                  },
+                  "guid": "cee",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "8dfee"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "8e000"
+                    }
+                  }
+                },
+                "shared_memory": {
+                  "byte_values": {
+                    "effective_size": 108032,
+                    "size": 311232
+                  },
+                  "guid": "d17",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1a600"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "4bfc0"
+                    }
+                  }
+                },
+                "skia": {
+                  "byte_values": {},
+                  "guid": "d28",
+                  "raw_attributes": null
+                },
+                "v8": {
+                  "byte_values": {
+                    "effective_size": 1918000,
+                    "size": 1918000
+                  },
+                  "guid": "d2a",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1d4430"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1d4430"
+                    }
+                  }
+                }
+              },
+              "v8_domains": {
+                "v8/main": {
+                  "byte_values": {
+                    "effective_size": 1918000,
+                    "size": 1918000
+                  },
+                  "guid": "d2b",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1d4430"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1d4430"
+                    }
+                  }
+                },
+                "v8/shared": {
+                  "byte_values": {},
+                  "guid": "d40",
+                  "raw_attributes": null
+                }
+              }
+            },
+            {
+              "allocator_event_timestamp": 400496832976,
+              "allocator_nodes": 5913,
+              "exported_id": "0x1",
+              "native_span_end": 400496837586,
+              "native_span_start": 400496725846,
+              "ownership_edges": 1425,
+              "phase": "diagnostic_offline_ready",
+              "pid": 61456,
+              "process_totals": {
+                "is_peak_rss_resettable": false,
+                "peak_resident_set_size": "0",
+                "private_footprint_bytes": "3467000"
+              },
+              "request_guid": "0x5",
+              "top_level_roots": {
+                "blink_gc": {
+                  "byte_values": {
+                    "effective_size": 1394226,
+                    "size": 4718592
+                  },
+                  "guid": "281b",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "154632"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "480000"
+                    }
+                  }
+                },
+                "blink_objects": {
+                  "byte_values": {
+                    "effective_size": 3324352,
+                    "size": 3324352
+                  },
+                  "guid": "3850",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "32b9c0"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "32b9c0"
+                    }
+                  }
+                },
+                "cc": {
+                  "byte_values": {
+                    "effective_size": 5898240,
+                    "size": 5898240
+                  },
+                  "guid": "3dbf",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "5a0000"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "5a0000"
+                    }
+                  }
+                },
+                "discardable": {
+                  "byte_values": {},
+                  "guid": "3dcd",
+                  "raw_attributes": null
+                },
+                "gpu": {
+                  "byte_values": {
+                    "effective_size": 131008,
+                    "size": 131008
+                  },
+                  "guid": "3dcf",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1ffc0"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1ffc0"
+                    }
+                  }
+                },
+                "malloc": {
+                  "byte_values": {
+                    "effective_size": 25809295,
+                    "size": 26116144,
+                    "virtual_size": 21961280
+                  },
+                  "guid": "3dd4",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "189d18f"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "18e8030"
+                    },
+                    "syscalls_per_minute": {
+                      "type": "scalar",
+                      "units": "objects",
+                      "value": "301b"
+                    },
+                    "virtual_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "14f1a40"
+                    }
+                  }
+                },
+                "mojo": {
+                  "byte_values": {},
+                  "guid": "3e5a",
+                  "raw_attributes": null
+                },
+                "parkable_images": {
+                  "byte_values": {
+                    "on_disk_size": 0,
+                    "total_size": 0,
+                    "unparked_size": 0
+                  },
+                  "guid": "3e5e",
+                  "raw_attributes": {
+                    "on_disk_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "total_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "unparked_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    }
+                  }
+                },
+                "parkable_strings": {
+                  "byte_values": {
+                    "compressed_size": 0,
+                    "metadata_size": 0,
+                    "on_disk_footprint": 0,
+                    "on_disk_free_chunks": 0,
+                    "on_disk_size": 0,
+                    "original_size": 0,
+                    "overhead_size": 0,
+                    "savings_size": 0,
+                    "uncompressed_size": 0
+                  },
+                  "guid": "3e5f",
+                  "raw_attributes": {
+                    "compressed_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "metadata_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_footprint": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_free_chunks": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "original_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "overhead_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "savings_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "uncompressed_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    }
+                  }
+                },
+                "partition_alloc": {
+                  "byte_values": {
+                    "effective_size": 6891079,
+                    "size": 6901760
+                  },
+                  "guid": "3e60",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "692647"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "695000"
+                    }
+                  }
+                },
+                "shared_memory": {
+                  "byte_values": {
+                    "effective_size": 282112,
+                    "size": 634816
+                  },
+                  "guid": "3eb3",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "44e00"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "9afc0"
+                    }
+                  }
+                },
+                "site_storage": {
+                  "byte_values": {},
+                  "guid": "3ec7",
+                  "raw_attributes": null
+                },
+                "skia": {
+                  "byte_values": {
+                    "effective_size": 29264,
+                    "size": 29264
+                  },
+                  "guid": "3ece",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "7250"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "7250"
+                    }
+                  }
+                },
+                "v8": {
+                  "byte_values": {
+                    "effective_size": 6630444,
+                    "size": 6630444
+                  },
+                  "guid": "3eed",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "652c2c"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "652c2c"
+                    }
+                  }
+                },
+                "web_cache": {
+                  "byte_values": {
+                    "effective_size": 11185,
+                    "size": 11185
+                  },
+                  "guid": "3f2c",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "2bb1"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "2bb1"
+                    }
+                  }
+                }
+              },
+              "v8_domains": {
+                "v8/main": {
+                  "byte_values": {
+                    "effective_size": 4427820,
+                    "size": 4427820
+                  },
+                  "guid": "3eee",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "43902c"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "43902c"
+                    }
+                  }
+                },
+                "v8/shared": {
+                  "byte_values": {},
+                  "guid": "3f03",
+                  "raw_attributes": null
+                },
+                "v8/workers": {
+                  "byte_values": {
+                    "effective_size": 2202624,
+                    "size": 2202624
+                  },
+                  "guid": "3f05",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "219c00"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "219c00"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "allocator_event_timestamp": 400536995220,
+              "allocator_nodes": 4948,
+              "exported_id": "0x2",
+              "native_span_end": 400536997997,
+              "native_span_start": 400536909380,
+              "ownership_edges": 1206,
+              "phase": "diagnostic_idle_40s",
+              "pid": 61456,
+              "process_totals": {
+                "is_peak_rss_resettable": false,
+                "peak_resident_set_size": "0",
+                "private_footprint_bytes": "331c000"
+              },
+              "request_guid": "0x6",
+              "top_level_roots": {
+                "blink_gc": {
+                  "byte_values": {
+                    "effective_size": 2758860,
+                    "size": 4718592
+                  },
+                  "guid": "5a5a",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "2a18cc"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "480000"
+                    }
+                  }
+                },
+                "blink_objects": {
+                  "byte_values": {
+                    "effective_size": 1959720,
+                    "size": 1959720
+                  },
+                  "guid": "67a3",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1de728"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1de728"
+                    }
+                  }
+                },
+                "cc": {
+                  "byte_values": {
+                    "effective_size": 5898240,
+                    "size": 5898240
+                  },
+                  "guid": "6c37",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "5a0000"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "5a0000"
+                    }
+                  }
+                },
+                "discardable": {
+                  "byte_values": {},
+                  "guid": "6c45",
+                  "raw_attributes": null
+                },
+                "gpu": {
+                  "byte_values": {
+                    "effective_size": 131008,
+                    "size": 131008
+                  },
+                  "guid": "6c47",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1ffc0"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1ffc0"
+                    }
+                  }
+                },
+                "malloc": {
+                  "byte_values": {
+                    "effective_size": 25185709,
+                    "size": 25451568,
+                    "virtual_size": 20710656
+                  },
+                  "guid": "6c4c",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1804dad"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1845c30"
+                    },
+                    "syscalls_per_minute": {
+                      "type": "scalar",
+                      "units": "objects",
+                      "value": "1c8"
+                    },
+                    "virtual_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "13c0500"
+                    }
+                  }
+                },
+                "mojo": {
+                  "byte_values": {},
+                  "guid": "6cd4",
+                  "raw_attributes": null
+                },
+                "parkable_images": {
+                  "byte_values": {
+                    "on_disk_size": 0,
+                    "total_size": 0,
+                    "unparked_size": 0
+                  },
+                  "guid": "6cd8",
+                  "raw_attributes": {
+                    "on_disk_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "total_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "unparked_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    }
+                  }
+                },
+                "parkable_strings": {
+                  "byte_values": {
+                    "compressed_size": 0,
+                    "metadata_size": 0,
+                    "on_disk_footprint": 0,
+                    "on_disk_free_chunks": 0,
+                    "on_disk_size": 0,
+                    "original_size": 0,
+                    "overhead_size": 0,
+                    "savings_size": 0,
+                    "uncompressed_size": 0
+                  },
+                  "guid": "6cd9",
+                  "raw_attributes": {
+                    "compressed_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "metadata_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_footprint": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_free_chunks": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "original_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "overhead_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "savings_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "uncompressed_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    }
+                  }
+                },
+                "partition_alloc": {
+                  "byte_values": {
+                    "effective_size": 6563395,
+                    "size": 6574080
+                  },
+                  "guid": "6cda",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "642643"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "645000"
+                    }
+                  }
+                },
+                "shared_memory": {
+                  "byte_values": {
+                    "effective_size": 345599,
+                    "size": 757696
+                  },
+                  "guid": "6d2d",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "545ff"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "b8fc0"
+                    }
+                  }
+                },
+                "site_storage": {
+                  "byte_values": {},
+                  "guid": "6d41",
+                  "raw_attributes": null
+                },
+                "skia": {
+                  "byte_values": {
+                    "effective_size": 29264,
+                    "size": 29264
+                  },
+                  "guid": "6d48",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "7250"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "7250"
+                    }
+                  }
+                },
+                "v8": {
+                  "byte_values": {
+                    "effective_size": 5540868,
+                    "size": 5540868
+                  },
+                  "guid": "6d67",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "548c04"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "548c04"
+                    }
+                  }
+                },
+                "web_cache": {
+                  "byte_values": {
+                    "effective_size": 11185,
+                    "size": 11185
+                  },
+                  "guid": "6da6",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "2bb1"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "2bb1"
+                    }
+                  }
+                }
+              },
+              "v8_domains": {
+                "v8/main": {
+                  "byte_values": {
+                    "effective_size": 3338244,
+                    "size": 3338244
+                  },
+                  "guid": "6d68",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "32f004"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "32f004"
+                    }
+                  }
+                },
+                "v8/shared": {
+                  "byte_values": {},
+                  "guid": "6d7d",
+                  "raw_attributes": null
+                },
+                "v8/workers": {
+                  "byte_values": {
+                    "effective_size": 2202624,
+                    "size": 2202624
+                  },
+                  "guid": "6d7f",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "219c00"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "219c00"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "allocator_event_timestamp": 400541342674,
+              "allocator_nodes": 7102,
+              "exported_id": "0x3",
+              "native_span_end": 400541345981,
+              "native_span_start": 400541250540,
+              "ownership_edges": 1626,
+              "phase": "diagnostic_loaded_one",
+              "pid": 61456,
+              "process_totals": {
+                "is_peak_rss_resettable": false,
+                "peak_resident_set_size": "0",
+                "private_footprint_bytes": "50a8000"
+              },
+              "request_guid": "0x7",
+              "top_level_roots": {
+                "blink_gc": {
+                  "byte_values": {
+                    "effective_size": 4356178,
+                    "size": 9109584
+                  },
+                  "guid": "844b",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "427852"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "8b0050"
+                    }
+                  }
+                },
+                "blink_objects": {
+                  "byte_values": {
+                    "effective_size": 4753384,
+                    "size": 4753384
+                  },
+                  "guid": "983a",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "4887e8"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "4887e8"
+                    }
+                  }
+                },
+                "cc": {
+                  "byte_values": {
+                    "effective_size": 16318464,
+                    "size": 16318464
+                  },
+                  "guid": "9e66",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "f90000"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "f90000"
+                    }
+                  }
+                },
+                "discardable": {
+                  "byte_values": {},
+                  "guid": "9e7e",
+                  "raw_attributes": null
+                },
+                "gpu": {
+                  "byte_values": {
+                    "effective_size": 131008,
+                    "size": 131008
+                  },
+                  "guid": "9e80",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1ffc0"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1ffc0"
+                    }
+                  }
+                },
+                "malloc": {
+                  "byte_values": {
+                    "effective_size": 37956021,
+                    "size": 38368944,
+                    "virtual_size": 31177072
+                  },
+                  "guid": "9e85",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "24329b5"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "24976b0"
+                    },
+                    "syscalls_per_minute": {
+                      "type": "scalar",
+                      "units": "objects",
+                      "value": "61fa"
+                    },
+                    "virtual_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1dbb970"
+                    }
+                  }
+                },
+                "mojo": {
+                  "byte_values": {},
+                  "guid": "9f14",
+                  "raw_attributes": null
+                },
+                "parkable_images": {
+                  "byte_values": {
+                    "on_disk_size": 0,
+                    "total_size": 0,
+                    "unparked_size": 0
+                  },
+                  "guid": "9f18",
+                  "raw_attributes": {
+                    "on_disk_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "total_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "unparked_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    }
+                  }
+                },
+                "parkable_strings": {
+                  "byte_values": {
+                    "compressed_size": 0,
+                    "metadata_size": 0,
+                    "on_disk_footprint": 0,
+                    "on_disk_free_chunks": 0,
+                    "on_disk_size": 0,
+                    "original_size": 0,
+                    "overhead_size": 0,
+                    "savings_size": 0,
+                    "uncompressed_size": 0
+                  },
+                  "guid": "9f19",
+                  "raw_attributes": {
+                    "compressed_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "metadata_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_footprint": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_free_chunks": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "original_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "overhead_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "savings_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "uncompressed_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    }
+                  }
+                },
+                "partition_alloc": {
+                  "byte_values": {
+                    "effective_size": 10303047,
+                    "size": 10313728
+                  },
+                  "guid": "9f1a",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "9d3647"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "9d6000"
+                    }
+                  }
+                },
+                "shared_memory": {
+                  "byte_values": {
+                    "effective_size": 462336,
+                    "size": 970688
+                  },
+                  "guid": "9f73",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "70e00"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "ecfc0"
+                    }
+                  }
+                },
+                "site_storage": {
+                  "byte_values": {},
+                  "guid": "9f87",
+                  "raw_attributes": null
+                },
+                "skia": {
+                  "byte_values": {
+                    "effective_size": 37093,
+                    "size": 37093
+                  },
+                  "guid": "9f8e",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "90e5"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "90e5"
+                    }
+                  }
+                },
+                "v8": {
+                  "byte_values": {
+                    "effective_size": 12819420,
+                    "size": 12819420
+                  },
+                  "guid": "9fb0",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "c39bdc"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "c39bdc"
+                    }
+                  }
+                },
+                "web_cache": {
+                  "byte_values": {
+                    "effective_size": 11185,
+                    "size": 11185
+                  },
+                  "guid": "a001",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "2bb1"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "2bb1"
+                    }
+                  }
+                }
+              },
+              "v8_domains": {
+                "v8/main": {
+                  "byte_values": {
+                    "effective_size": 9493420,
+                    "size": 9493420
+                  },
+                  "guid": "9fb1",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "90dbac"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "90dbac"
+                    }
+                  }
+                },
+                "v8/shared": {
+                  "byte_values": {},
+                  "guid": "9fc6",
+                  "raw_attributes": null
+                },
+                "v8/workers": {
+                  "byte_values": {
+                    "effective_size": 3326000,
+                    "size": 3326000
+                  },
+                  "guid": "9fc8",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "32c030"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "32c030"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "allocator_event_timestamp": 400545512398,
+              "allocator_nodes": 7500,
+              "exported_id": "0x4",
+              "native_span_end": 400545516180,
+              "native_span_start": 400545413659,
+              "ownership_edges": 1664,
+              "phase": "diagnostic_engine_restarted",
+              "pid": 61456,
+              "process_totals": {
+                "is_peak_rss_resettable": false,
+                "peak_resident_set_size": "0",
+                "private_footprint_bytes": "4c91000"
+              },
+              "request_guid": "0x9",
+              "top_level_roots": {
+                "blink_gc": {
+                  "byte_values": {
+                    "effective_size": 4047270,
+                    "size": 9240656
+                  },
+                  "guid": "b6e6",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "3dc1a6"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "8d0050"
+                    }
+                  }
+                },
+                "blink_objects": {
+                  "byte_values": {
+                    "effective_size": 5193368,
+                    "size": 5193368
+                  },
+                  "guid": "cc3a",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "4f3e98"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "4f3e98"
+                    }
+                  }
+                },
+                "cc": {
+                  "byte_values": {
+                    "effective_size": 21561344,
+                    "size": 21561344
+                  },
+                  "guid": "d288",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1490000"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1490000"
+                    }
+                  }
+                },
+                "discardable": {
+                  "byte_values": {},
+                  "guid": "d2a6",
+                  "raw_attributes": null
+                },
+                "gpu": {
+                  "byte_values": {
+                    "effective_size": 131008,
+                    "size": 131008
+                  },
+                  "guid": "d2a8",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1ffc0"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1ffc0"
+                    }
+                  }
+                },
+                "malloc": {
+                  "byte_values": {
+                    "effective_size": 35175071,
+                    "size": 35588064,
+                    "virtual_size": 30919904
+                  },
+                  "guid": "d2ad",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "218ba9f"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "21f07e0"
+                    },
+                    "syscalls_per_minute": {
+                      "type": "scalar",
+                      "units": "objects",
+                      "value": "239d"
+                    },
+                    "virtual_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "1d7cce0"
+                    }
+                  }
+                },
+                "mojo": {
+                  "byte_values": {},
+                  "guid": "d33c",
+                  "raw_attributes": null
+                },
+                "parkable_images": {
+                  "byte_values": {
+                    "on_disk_size": 0,
+                    "total_size": 0,
+                    "unparked_size": 0
+                  },
+                  "guid": "d340",
+                  "raw_attributes": {
+                    "on_disk_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "total_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "unparked_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    }
+                  }
+                },
+                "parkable_strings": {
+                  "byte_values": {
+                    "compressed_size": 0,
+                    "metadata_size": 0,
+                    "on_disk_footprint": 0,
+                    "on_disk_free_chunks": 0,
+                    "on_disk_size": 0,
+                    "original_size": 0,
+                    "overhead_size": 0,
+                    "savings_size": 0,
+                    "uncompressed_size": 0
+                  },
+                  "guid": "d341",
+                  "raw_attributes": {
+                    "compressed_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "metadata_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_footprint": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_free_chunks": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "on_disk_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "original_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "overhead_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "savings_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    },
+                    "uncompressed_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "0"
+                    }
+                  }
+                },
+                "partition_alloc": {
+                  "byte_values": {
+                    "effective_size": 9180743,
+                    "size": 9191424
+                  },
+                  "guid": "d342",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "8c1647"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "8c4000"
+                    }
+                  }
+                },
+                "shared_memory": {
+                  "byte_values": {
+                    "effective_size": 497152,
+                    "size": 1052608
+                  },
+                  "guid": "d39c",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "79600"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "100fc0"
+                    }
+                  }
+                },
+                "site_storage": {
+                  "byte_values": {},
+                  "guid": "d3b0",
+                  "raw_attributes": null
+                },
+                "skia": {
+                  "byte_values": {
+                    "effective_size": 37189,
+                    "size": 37189
+                  },
+                  "guid": "d3b7",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "9145"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "9145"
+                    }
+                  }
+                },
+                "v8": {
+                  "byte_values": {
+                    "effective_size": 12819420,
+                    "size": 12819420
+                  },
+                  "guid": "d3d9",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "c39bdc"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "c39bdc"
+                    }
+                  }
+                },
+                "web_cache": {
+                  "byte_values": {
+                    "effective_size": 11185,
+                    "size": 11185
+                  },
+                  "guid": "d42a",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "2bb1"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "2bb1"
+                    }
+                  }
+                }
+              },
+              "v8_domains": {
+                "v8/main": {
+                  "byte_values": {
+                    "effective_size": 9493420,
+                    "size": 9493420
+                  },
+                  "guid": "d3da",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "90dbac"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "90dbac"
+                    }
+                  }
+                },
+                "v8/shared": {
+                  "byte_values": {},
+                  "guid": "d3ef",
+                  "raw_attributes": null
+                },
+                "v8/workers": {
+                  "byte_values": {
+                    "effective_size": 3326000,
+                    "size": 3326000
+                  },
+                  "guid": "d3f1",
+                  "raw_attributes": {
+                    "effective_size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "32c030"
+                    },
+                    "size": {
+                      "type": "scalar",
+                      "units": "bytes",
+                      "value": "32c030"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "artifact": {
+          "commit": "023138e8705d39a41472fcad8e935143506b97c9",
+          "packages": 75,
+          "shell_build": "3ed407485fff619001ecb46f6158c6f9dac0da9c4f5112677049a5f6e3e2d372",
+          "verified_files": 182
+        },
+        "browser": "153.0.8010.12",
+        "chrome_omnibox_pids": [
+          65980
+        ],
+        "engine_pids": [
+          61456
+        ],
+        "maximum_sampler_gap_ms": 1200,
+        "median_sampler_gap_ms": 221,
+        "page_pid": 61456,
+        "phases": [
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 0,
+            "main_heap": {
+              "backingStorageSize": 43,
+              "embedderHeapUsedSize": 1383968,
+              "totalSize": 1835008,
+              "usedSize": 741100
+            },
+            "phase": "diagnostic_blank",
+            "private_bytes_by_role": {
+              "GPU": 82268160,
+              "browser": 46510080,
+              "chrome_omnibox_renderer": 46833664,
+              "network.mojom.NetworkService": 17248256,
+              "renderer": 17956864,
+              "storage.mojom.StorageService": 10477568,
+              "tracing.mojom.TracingService": 14979072,
+              "unmapped": 5963776,
+              "workbench_renderer": 23744512
+            },
+            "sample_elapsed_ms": 4639,
+            "samples": 9,
+            "service_worker_targets": 0
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 0,
+            "main_heap": {
+              "backingStorageSize": 433806,
+              "embedderHeapUsedSize": 3346336,
+              "totalSize": 4255744,
+              "usedSize": 2846484
+            },
+            "phase": "diagnostic_catalog_ready",
+            "private_bytes_by_role": {
+              "GPU": 95547392,
+              "browser": 52277248,
+              "chrome_omnibox_renderer": 48660480,
+              "network.mojom.NetworkService": 18964480,
+              "renderer": 18755584,
+              "storage.mojom.StorageService": 10977280,
+              "tracing.mojom.TracingService": 15278080,
+              "unmapped": 5963776,
+              "workbench_renderer": 51101696
+            },
+            "sample_elapsed_ms": 9216,
+            "samples": 9,
+            "service_worker_targets": 1
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 0,
+            "main_heap": {
+              "backingStorageSize": 433846,
+              "embedderHeapUsedSize": 3346336,
+              "totalSize": 4255744,
+              "usedSize": 2891836
+            },
+            "phase": "diagnostic_offline_ready",
+            "private_bytes_by_role": {
+              "GPU": 82124800,
+              "browser": 52420608,
+              "chrome_omnibox_renderer": 45936640,
+              "network.mojom.NetworkService": 18964480,
+              "renderer": 18051072,
+              "storage.mojom.StorageService": 10985472,
+              "tracing.mojom.TracingService": 15282176,
+              "unmapped": 5963776,
+              "workbench_renderer": 51449856
+            },
+            "sample_elapsed_ms": 13647,
+            "samples": 9,
+            "service_worker_targets": 1
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 0,
+            "main_heap": {
+              "backingStorageSize": 433846,
+              "embedderHeapUsedSize": 3346336,
+              "totalSize": 4255744,
+              "usedSize": 2897664
+            },
+            "phase": "diagnostic_idle_15s",
+            "private_bytes_by_role": {
+              "GPU": 82612224,
+              "browser": 53911552,
+              "chrome_omnibox_renderer": 48668672,
+              "network.mojom.NetworkService": 19283968,
+              "renderer": 18599936,
+              "storage.mojom.StorageService": 11055104,
+              "tracing.mojom.TracingService": 19611648,
+              "unmapped": 5963776,
+              "workbench_renderer": 54530048
+            },
+            "sample_elapsed_ms": 28746,
+            "samples": 30,
+            "service_worker_targets": 1
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 0,
+            "main_heap": {
+              "backingStorageSize": 145674,
+              "embedderHeapUsedSize": 1319048,
+              "totalSize": 3207168,
+              "usedSize": 1873556
+            },
+            "phase": "diagnostic_idle_40s",
+            "private_bytes_by_role": {
+              "GPU": 82657280,
+              "browser": 53121024,
+              "chrome_omnibox_renderer": 41062400,
+              "network.mojom.NetworkService": 19292160,
+              "renderer": 18599936,
+              "storage.mojom.StorageService": 11055104,
+              "tracing.mojom.TracingService": 19570688,
+              "unmapped": 6017024,
+              "workbench_renderer": 53026816
+            },
+            "sample_elapsed_ms": 53826,
+            "samples": 51,
+            "service_worker_targets": 1
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 1,
+            "main_heap": {
+              "backingStorageSize": 1076676,
+              "embedderHeapUsedSize": 4337744,
+              "totalSize": 9297920,
+              "usedSize": 3670200
+            },
+            "phase": "diagnostic_loaded_one",
+            "private_bytes_by_role": {
+              "GPU": 103874560,
+              "browser": 55050240,
+              "chrome_omnibox_renderer": 41938944,
+              "network.mojom.NetworkService": 19361792,
+              "renderer": 18608128,
+              "storage.mojom.StorageService": 11075584,
+              "tracing.mojom.TracingService": 19656704,
+              "unmapped": 6017024,
+              "workbench_renderer": 82345984
+            },
+            "sample_elapsed_ms": 58210,
+            "samples": 9,
+            "service_worker_targets": 1
+          },
+          {
+            "all_service_workers_attached": true,
+            "engine_workers": 1,
+            "main_heap": {
+              "backingStorageSize": 1077165,
+              "embedderHeapUsedSize": 4928304,
+              "totalSize": 9297920,
+              "usedSize": 4037448
+            },
+            "phase": "diagnostic_engine_restarted",
+            "private_bytes_by_role": {
+              "GPU": 108486656,
+              "browser": 52932608,
+              "chrome_omnibox_renderer": 41156608,
+              "network.mojom.NetworkService": 18071552,
+              "renderer": 18501632,
+              "storage.mojom.StorageService": 10772480,
+              "tracing.mojom.TracingService": 23646208,
+              "unmapped": 5738496,
+              "workbench_renderer": 79462400
+            },
+            "sample_elapsed_ms": 62608,
+            "samples": 9,
+            "service_worker_targets": 1
+          }
+        ],
+        "process_names": {
+          "15460": "Service: network.mojom.NetworkService",
+          "18532": "Service: chrome.mojom.UtilWin",
+          "29172": "Service: tracing.mojom.TracingService",
+          "5204": "Service: storage.mojom.StorageService",
+          "57160": "Service: chrome.mojom.UtilWin",
+          "58620": "Renderer",
+          "61456": "Renderer",
+          "65980": "Renderer",
+          "72224": "Browser",
+          "73140": "GPU Process"
+        },
+        "retained_frame_commits": [
+          {
+            "frame": "EE92826131DC4AFB63C7E02A512F8248",
+            "pid": 65980,
+            "url": "chrome://omnibox-popup.top-chrome/omnibox_popup_aim.html"
+          },
+          {
+            "frame": "C76445542E83777F84749016706AA5FE",
+            "pid": 65980,
+            "url": "chrome://omnibox-popup.top-chrome/"
+          },
+          {
+            "frame": "5F26977CE74D8E9E6A03E77461868CA2",
+            "pid": 61456,
+            "url": "about:blank"
+          },
+          {
+            "frame": "5F26977CE74D8E9E6A03E77461868CA2",
+            "pid": 61456,
+            "url": "http://127.0.0.1:61647/ICELINES/workbench/"
+          }
+        ],
+        "retained_worker_markers": [
+          {
+            "id": "95AA3BF33FA232C0A1BBD6924A56405F",
+            "pid": 61456,
+            "tid": 33076,
+            "url": "http://127.0.0.1:61647/ICELINES/workbench/sw.js"
+          },
+          {
+            "id": "CB154C809EC55E00CFF296DB457BFBDF",
+            "pid": 61456,
+            "tid": 53476,
+            "url": "http://127.0.0.1:61647/ICELINES/workbench/src/worker.js"
+          },
+          {
+            "id": "B6453741A312A1232ED2D32E237640A9",
+            "pid": 61456,
+            "tid": 65492,
+            "url": "http://127.0.0.1:61647/ICELINES/workbench/src/worker.js"
+          }
+        ],
+        "service_worker_pid": 61456,
+        "trace_events_streamed": 35033
+      }
+    ],
+    "scope": "Instrumented diagnostic, not normal resource acceptance. OS phase-end samples and CDP snapshots are not simultaneous; per-process bytes do not isolate thread allocations.",
+    "separate_service_worker_renderer_hypothesis_refuted": true
+  },
+  "selected_identity_archives": [
+    {
+      "path": "run-1-request-markers.json.gz",
+      "bytes": 780,
+      "sha256": "add331da76ac3a5c64217d8627c8bcbe5506650384b810ac59bfad13866575b0",
+      "expanded_sha256": "a37817c44557fa72cdd3adc0f5491abab9835f5936f569dba9644474031f9f7b"
+    },
+    {
+      "path": "run-2-request-markers.json.gz",
+      "bytes": 780,
+      "sha256": "2dd2aa1baf6ea814e073cfca417fbda7c6564d78d55afa6af4a7c86adf146ac3",
+      "expanded_sha256": "992c0cae2e177846151088244a20d6849ad5f64a9ffb21905bcd83d03a2cddde"
+    }
+  ],
+  "normal_resource_gate": "All EXP013 complete82-phase controls still fail original250MiB. These dumps do not replace them.",
+  "analysis": "Rust optional --allocators reader preserves original/exported ID namespaces, native spans, byte units and raw provider roots without adding parents/children.16 local tests and exact EXP014 replay pass.",
+  "private_custody": "MISER evidence/exp015-custody.json retains14 exact raw/source archives including complete traces and ownership graphs.",
+  "references": [
+    "https://github.com/chromium/chromium/blob/main/docs/memory-infra/README.md",
+    "https://chromium.googlesource.com/chromium/src/+/main/docs/memory-infra/adding_memory_infra_tracing.md"
+  ],
+  "limitations": [
+    "Provider effective_size values are not equated with OS private bytes or all engine/WASM memory.",
+    "Compositor growth after load/detail/restart is not causal evidence for a CSS change or a leak.",
+    "Tracing/dumps alter behavior; no forced GC is requested, but natural collection may occur.",
+    "Full75-package compositor/native lifetimes remain next; Android and private hosted Linux remain pending."
+  ]
+}

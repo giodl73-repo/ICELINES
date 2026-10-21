@@ -749,3 +749,12 @@ identity, SeasonStatsRead and optional contract; matches_read shares implementat
 with the unchanged matches(&PlayerView, &EvalCtx) entry point. Contract and tests:
 design/specs/borrowed-player-query.md and icelines-query/tests/player_read.rs.
 No provider, persistence, public PlayerView field or repository ownership change.
+
+## IF-BROWSER-SPARSE-001: Prepared browser read/ownership option
+
+`icelines-wasm/sparse-storage` selects the separate sparse prepared-season owner.
+PlayerView's default remains a concrete SeasonStats reference; read_league exposes
+borrowed handles for either owner. Core formulas, browser JSON/export/revision and
+window-limit contracts are shared. Contract and gates:
+design/specs/browser-sparse-season.md. Existing full StatsRepository roster/report
+APIs remain available; the new type intentionally has a narrower prepared-data API.
