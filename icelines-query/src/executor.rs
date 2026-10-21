@@ -10,8 +10,10 @@
 //! `false` (so `NOT (hits>=200)` accepts pre-2010 rows where hits
 //! wasn't tracked).
 
+use crate::PlayerRead;
 use icelines_core::stats_catalog::StatUnit;
 use icelines_core::stats_repository::PlayerView;
+use icelines_core::SeasonStatsRead;
 
 use crate::compute_age;
 use crate::data_provider::EvalCtx;
@@ -41,15 +43,32 @@ impl Constraint {
     /// them — so these branches are unreachable from user input.
     /// The match arms return false (silent over-match was the bug).
     pub fn matches(&self, v: &PlayerView<'_>, ctx: &EvalCtx<'_>) -> bool {
+        self.matches_read(
+            &PlayerRead {
+                identity: v.identity,
+                stats: v.stats,
+                contract: v.contract,
+            },
+            ctx,
+        )
+    }
+
+    /// Evaluate all constraint variants against independently borrowed season data.
+    /// Uses the same provider, identity, missing-data and applicability rules as matches.
+    pub fn matches_read<R: SeasonStatsRead + ?Sized>(
+        &self,
+        v: &PlayerRead<'_, R>,
+        ctx: &EvalCtx<'_>,
+    ) -> bool {
         match self {
             Constraint::Bio(b) => bio_matches(b, v, ctx.season),
             Constraint::SeasonStat(s) => season_stat_matches(s, v),
             Constraint::SlidingWindow(s) => sliding_window_matches(s, v, ctx),
             Constraint::CareerAggregate(c) => career_aggregate_matches(c, v, ctx),
             Constraint::CareerLeague(c) => career_league_matches(c, v, ctx),
-            Constraint::All(children) => children.iter().all(|c| c.matches(v, ctx)),
-            Constraint::Any(children) => children.iter().any(|c| c.matches(v, ctx)),
-            Constraint::Not(inner) => !inner.matches(v, ctx),
+            Constraint::All(children) => children.iter().all(|c| c.matches_read(v, ctx)),
+            Constraint::Any(children) => children.iter().any(|c| c.matches_read(v, ctx)),
+            Constraint::Not(inner) => !inner.matches_read(v, ctx),
         }
     }
 }
@@ -66,9 +85,9 @@ const LOCKOUT_SEASONS: &[u32] = &[20042005];
 ///   - `p.career.junior>=200`: stat + aggregator + predicate.
 ///     Sum the stat across stints matching the league axis;
 ///     apply the predicate.
-fn career_league_matches(
+fn career_league_matches<R: SeasonStatsRead + ?Sized>(
     c: &CareerLeagueConstraint,
-    v: &PlayerView<'_>,
+    v: &PlayerRead<'_, R>,
     ctx: &EvalCtx<'_>,
 ) -> bool {
     let pid = v.identity.id.0;
@@ -169,9 +188,9 @@ fn sum_stat_across_stints(
     }
 }
 
-fn career_aggregate_matches(
+fn career_aggregate_matches<R: SeasonStatsRead + ?Sized>(
     c: &CareerAggrConstraint,
-    v: &PlayerView<'_>,
+    v: &PlayerRead<'_, R>,
     ctx: &EvalCtx<'_>,
 ) -> bool {
     if !c.stat.applies_to(v.position(), v.is_goalie()) {
@@ -369,7 +388,11 @@ fn season_for_date(d: chrono::NaiveDate) -> u32 {
 
 /// True iff the player's age (HR Feb-1 convention) at the given
 /// season is within the bound.
-fn at_age_matches(v: &PlayerView<'_>, season: u32, bound: &AgeBound) -> bool {
+fn at_age_matches<R: SeasonStatsRead + ?Sized>(
+    v: &PlayerRead<'_, R>,
+    season: u32,
+    bound: &AgeBound,
+) -> bool {
     let bd = match v.identity.bio.birth_date.as_deref() {
         Some(s) => s,
         None => return false,
@@ -408,9 +431,9 @@ fn predicate_matches_number_unit_aware(
     }
 }
 
-fn sliding_window_matches(
+fn sliding_window_matches<R: SeasonStatsRead + ?Sized>(
     s: &SlidingWindowConstraint,
-    v: &PlayerView<'_>,
+    v: &PlayerRead<'_, R>,
     ctx: &EvalCtx<'_>,
 ) -> bool {
     if !s.stat.applies_to(v.position(), v.is_goalie()) {
@@ -438,13 +461,17 @@ fn sliding_window_matches(
     }
 }
 
-fn bio_matches(b: &BioConstraint, v: &PlayerView<'_>, season: u32) -> bool {
+fn bio_matches<R: SeasonStatsRead + ?Sized>(
+    b: &BioConstraint,
+    v: &PlayerRead<'_, R>,
+    season: u32,
+) -> bool {
     // Wave 14b finding: goalies carry their country / nationality /
     // shoots / draft / height in `SeasonStats.goalie_bios`, not in
     // `PlayerIdentity.bio` (which is empty for goalies because the
     // skater-bios endpoint doesn't return them). The executor must
     // fall back to goalie_bios when the identity field is None.
-    let gb = v.stats.goalie_bios.as_ref();
+    let gb = v.stats.goalie_bios();
 
     match b.field {
         BioField::Age => {
@@ -564,7 +591,7 @@ fn bio_matches(b: &BioConstraint, v: &PlayerView<'_>, season: u32) -> bool {
             // Any stint this season.
             let abbrevs: Vec<String> = v
                 .stats
-                .team_stints
+                .team_stints()
                 .iter()
                 .map(|s| ScalarValue::canonicalize_text(&s.team.0))
                 .collect();
@@ -607,11 +634,14 @@ fn bio_matches(b: &BioConstraint, v: &PlayerView<'_>, season: u32) -> bool {
     }
 }
 
-fn season_stat_matches(s: &SeasonStatConstraint, v: &PlayerView<'_>) -> bool {
+fn season_stat_matches<R: SeasonStatsRead + ?Sized>(
+    s: &SeasonStatConstraint,
+    v: &PlayerRead<'_, R>,
+) -> bool {
     if !s.stat.applies_to(v.position(), v.is_goalie()) {
         return true;
     }
-    let actual = match s.stat.read(v) {
+    let actual = match s.stat.read_from(v.stats) {
         Some(x) => x,
         None => return false,
     };

@@ -377,3 +377,10 @@ REQ-PARITY-001 -> IF-CORE-READ-001 -> `season_read.rs`, shared catalog read/sort
 entry points and legacy PlayerView wrappers -> `tests/season_read.rs` independent
 pre-refactor oracle and `season_read` borrow doctest. Storage and deployment
 acceptance remain separate from this additive interface verification.
+
+## Borrowed player constraint compatibility (CHG-123)
+
+REQ-PARITY-001 / REQ-QUERY-001 -> IF-QUERY-READ-001 -> query PlayerRead and shared
+Constraint evaluator -> player_read integration tests and independent pre-edit
+813 x 288 outcome oracle, identity/provider/contract checks and borrow doctest.
+Full sparse repository/surface and resource adoption remain separate gates.
