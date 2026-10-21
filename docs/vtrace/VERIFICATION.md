@@ -832,3 +832,16 @@ signed peak accounting, exact-revision, rollback and feature-off baseline parity
 17 public/74 private archives retain source/failed-preflight/correction evidence.
 No cold feature in consumer or deployment. Actual WASM/browser/250MiB/mobile/private
 Linux remain open. Before adoption factor normalization or keep equivalent guard.
+
+
+### CHG-124 / EXP025 actual WASM cold-resident qualification
+
+Exact web bindings/WASM,36 fresh Node scopes, all95 lifecycle states and16 resident
+selections per independent window match native baseline. Sparse lifecycle capacity
+-34.55%, first8 -37.95%, final8 -43.50%; repeated pair/timing screens pass.64 lab
+tests/strictClippy,16 report corruptions/3 valid simulated budget failures/4 producer
+guards pass. Receipt: context/waves/2026-10-03-browser-wasm/evidence/miser-cold-resident-wasm-20261020.json
+with38 exact raw/audit files;281 private archives retain source/binaries/preflights.
+This verifies isolated WASM semantics/capacity and Node elapsed selection only.
+Full original Chromium workload/250MiB, physical Android/private Linux and consumer
+adoption remain open. No application source change, merge or publication.

@@ -194,3 +194,13 @@ and exact source/counter/normalizer guards. Six single-agent MISER lenses approv
 native scope only. Consumer unchanged; actual WASM/browser and original250MiB/
 Android/private-Linux adoption gates remain. Factor shared normalization before
 production or retain equivalent guard; no public cold-cache adoption claimed.
+
+
+EXP025 evidence update: six single-agent MISER lenses approve isolated actual-WASM
+evidence only,18 findings/3 amendments retained.36 fresh exact-bytecode scopes pass
+95-state/native-query parity; sparse capacity -34.55% lifecycle with fast Node
+selection. All64 tests/strictClippy and16+3+4 evidence/producer checks pass. Public38
+raw/audit files and private281 exact archives retain provenance and negative outcomes.
+Capacity is not live/RSS/browser memory; sparse cold is not universally smallest.
+No full Chromium/250MiB/Android/private Linux/adoption acceptance. Shared normalizer
+condition persists; full original browser workload next. Consumer application unchanged.

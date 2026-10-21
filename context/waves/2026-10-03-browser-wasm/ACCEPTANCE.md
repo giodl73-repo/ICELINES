@@ -590,3 +590,23 @@ unchanged on replay. Public miser-cold-resident-native-20261020.json records exa
 results. Native qualification does not prove WASM/private-browser gains; consumer
 application unchanged. MISER-012 next validates actual WASM/capacity and full original
 browser workload;250MiB/Android/private Linux and adoption gates remain open.
+
+
+## EXP025 cold resident actual WASM prototype (not adopted)
+
+36 fresh Node processes use exact generated browser JS/WASM bytes from original
+profile/lock;3 repeats per default/sparse x warm/cold x lifecycle/first8/all75.
+All12 full lifecycle runs match95 native states including exact-byte Rust imports.
+Both independent windows preserve20 native query digests at16 selections each.
+Sparse linear capacity15.375 to10.0625MiB lifecycle (-34.55%),12.1875 to7.5625MiB
+first8 (-37.95%),13.9375 to7.875MiB final8 (-43.50%). All pairs exceed20% screen.
+Sparse elapsed selection p95/max2.617/3.0102ms first8 and1.7867/1.8938ms final8
+(48 each); Node timing screen passes, separate from browser500ms query acceptance.
+Capacity is monotonic after free, not live heap/RSS or OS release.64 lab tests,
+strictClippy,16 corrupted-report rejections/3 simulated budget failures/4 replay
+guards pass.281 private exact archives and38 public hashed raw/audit files retained
+with miser-cold-resident-wasm-20261020.json. Sparse cold lifecycle uses0.6875MiB more
+than default cold; no universal sparse recommendation. Shared normalization guard
+remains an adoption condition. Full unchanged Chromium workload is next; fixed250MiB,
+physical Android (user deferred), private Linux and adoption remain open.
+Application/default/publication unchanged; MISER-012 in progress.
