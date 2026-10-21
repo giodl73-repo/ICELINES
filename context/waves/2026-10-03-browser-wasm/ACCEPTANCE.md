@@ -555,3 +555,20 @@ pass. Public miser-renderer-owner-inventory-20261020.json plus nine raw archives
 28 private source/raw/audit archives retained. Next native source/repository ownership
 split before cold-cache prototype; not implemented, saving unproven.250MiB/Android/
 private-hosted gates stay open; application/default/publication unchanged.
+
+
+## EXP023 native owner component split (destructive diagnostic)
+
+12 fresh default/sparse native processes,2 release orders/3 repeats, agree exactly
+on retained components and pre-release resident semantics. Sparse inactive
+repositories own7,508,267/5,178,215B of12,678,257/8,784,976B first8/final8 retention
+(59.22/58.94%); default68.49/68.97%. All decoded source payloads remain separately
+measured. Allocation-free releases plus remaining envelope conserve totals and
+post-drop delta is zero. Original functional/layout code stays byte-identical in
+isolated snapshot; destructive hooks never enter consumer.52 lab tests, both native
+Clippy,9 report corruptions/4 producer guards and1277 selected-file source audit
+pass. Full pre-release query/detail/export parity does not prove a cold-cache
+implementation. Native20% lead met; MISER-012 prototypes next with8 keys/LRU/source/
+rollback/latency/full native-WASM-browser gates. No realized saving or250MiB waiver.
+Public miser-native-owner-components-20261020.json plus15 raw files,52 private
+source/raw/build/audit archives retained. App/default/publication unchanged.

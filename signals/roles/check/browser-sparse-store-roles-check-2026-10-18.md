@@ -170,3 +170,15 @@ mutations/full source-input-marker checks pass; nine public/28 private archives
 survive. Six MISER single-agent lenses approve evidence scope only. Next native
 package/repository split, with no implemented cold-cache change or saving claimed.
 Original250MiB/Android/private-hosted/default/publication boundaries remain.
+
+
+EXP023 addendum: actual native owner attribution in isolated append-only source
+copy retains original structs/load/query/select code.12 processes/2 orders/3 reps
+backend conserve components with no release allocation or post-drop delta; all
+pre-release resident query/detail/export hashes agree. About59% sparse/69% default
+native ownership sits in inactive repositories, meeting20% prototype lead.52 tests/
+both native Clippy/9 report corruptions/4 producer guards/1277-file audit pass.
+Six MISER single-agent lenses approve attribution only. Never equate destructive
+freeing with realized saving or a functioning cold cache.15 public/52 private
+archives retained; MISER-012 must preserve8 keys/source/LRU/rollback and measure
+CPU/peak/native/WASM/full original browser gates before adoption. App unchanged.

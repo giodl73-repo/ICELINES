@@ -801,3 +801,19 @@ its normal_* labels do not confer normality. Added debugger/retry/CDP affects
 timing/liveness, so387.98/390.56MiB private and170.24/100.36ms warm values are
 diagnostic; original250MiB remains unmet. Nine public/28 private archives retained.
 No app/default/merge/publication or Android/private-hosted acceptance change.
+
+
+## VER-BROWSER-NATIVE-OWNER-COMPONENTS-001: Destructive requested-heap attribution
+
+CHG-124 / REQ-BROWSER-001: EXP02312 fresh processes/24 native scopes attribute
+inactive/active repository and source heap plus exact ring/revision envelope.
+Both release orders and3 reps/default+sparse agree, without release allocations
+or post-drop delta. Pre-release checks hash3,840 complete query results/938,460
+rows/128,964 full details/192 exports with exact backend parity.52 lab tests, both
+backend Clippy,9 raw-report/4 producer negatives and1277 selected-file source/
+original-lock audit pass. Isolated append-only hooks are diagnostic, never a
+functioning app or storage optimization. About59% sparse/69% default retention
+is inactive repository data; native20% prototype lead met.15 public/52 private
+archives retained. MISER-012 measures cold-rebuild parity/latency/peak next; no
+implementation, WASM/private-browser saving, adoption or original250MiB pass.
+Android/private hosted Linux and target-unbound renderer identity remain open.
