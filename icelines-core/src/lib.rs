@@ -34,6 +34,7 @@ pub mod season_stats;
 pub mod series_momentum;
 pub mod signal_metrics;
 pub mod source_facts;
+pub mod sparse_season;
 pub mod stats_catalog;
 pub mod stats_repository;
 pub mod teams;

@@ -50,6 +50,7 @@ use crate::identity::{IdentityMergeError, PlayerId, PlayerIdentity};
 use crate::model::{PaceScore, Position, Season, TeamAbbr};
 use crate::season_stats::SeasonStats;
 use crate::season_stats::SeasonType;
+use crate::SeasonStatsRead;
 
 /// Default LRU cap. Five bundled seasons × two types = 10 windows. Cap
 /// of 8 leaves room for time-travel into older seasons after a `fetch`
@@ -308,6 +309,19 @@ impl StatsRepository {
                     None
                 }
             })
+    }
+
+    /// Storage-independent league reads; existing concrete-reference APIs remain.
+    pub fn read_league(
+        &self,
+        s: Season,
+        t: SeasonType,
+    ) -> impl Iterator<Item = ReadPlayerView<'_, crate::sparse_season::SeasonRowRead<'_>>> {
+        self.league(s, t).map(|v| ReadPlayerView {
+            identity: v.identity,
+            stats: crate::sparse_season::SeasonRowRead::inline(v.stats),
+            contract: v.contract,
+        })
     }
 
     pub fn skaters<'a>(
@@ -672,13 +686,17 @@ impl StatsRepository {
 /// exceeds one render pass. (Hart.0 surveyed for current Player-storage
 /// patterns; none port to view-storage.)
 #[derive(Debug, Clone, Copy)]
-pub struct PlayerView<'a> {
+pub struct ReadPlayerView<'a, R: SeasonStatsRead> {
     pub identity: &'a PlayerIdentity,
-    pub stats: &'a SeasonStats,
+    pub stats: R,
     pub contract: Option<&'a PlayerContract>,
 }
 
-impl PlayerView<'_> {
+/// Existing concrete-reference view. The alias fixes the field type even for
+/// unannotated struct literals, preserving mutable/Box/Arc deref coercions.
+pub type PlayerView<'a> = ReadPlayerView<'a, &'a SeasonStats>;
+
+impl<R: SeasonStatsRead> ReadPlayerView<'_, R> {
     pub fn id(&self) -> PlayerId {
         self.identity.id
     }
@@ -694,28 +712,28 @@ impl PlayerView<'_> {
     /// Per-season position. Marchand C→LW round-trips correctly because
     /// position is per-season-fact (TAPE).
     pub fn position(&self) -> Position {
-        self.stats.position
+        self.stats.position()
     }
 
     /// The (season, season_type) window this view was drawn from.
     /// Hart.6.6 — used by `cross_team` aggregation guards to assert
     /// type-homogeneity across an input slice.
     pub fn season(&self) -> Season {
-        self.stats.season
+        self.stats.season()
     }
 
     /// The season-type half of the view's window (Regular | Playoff).
     pub fn season_type(&self) -> SeasonType {
-        self.stats.season_type
+        self.stats.season_type()
     }
 
     pub fn sweater_number(&self) -> Option<u32> {
-        self.stats.sweater_number
+        self.stats.sweater_number()
     }
 
     /// Last-stint team — "current home" semantics matching today's UI.
     pub fn team(&self) -> Option<&TeamAbbr> {
-        self.stats.team_stints.last().map(|s| &s.team)
+        self.stats.team_stints().last().map(|s| &s.team)
     }
 
     /// Render-side helper — always returns a string. Empty stints
@@ -744,7 +762,7 @@ impl PlayerView<'_> {
         crate::season_read::SeasonStatsReadExt::gp(self)
     }
     pub fn plus_minus(&self) -> i32 {
-        self.stats.totals.plus_minus
+        self.stats.totals().plus_minus
     }
     pub fn shots(&self) -> u32 {
         crate::season_read::SeasonStatsReadExt::shots(self)
@@ -850,7 +868,7 @@ impl PlayerView<'_> {
         if gp == 0 {
             None
         } else {
-            Some(self.stats.totals.pp_points as f64 / gp as f64 * 82.0)
+            Some(self.stats.totals().pp_points as f64 / gp as f64 * 82.0)
         }
     }
 
@@ -859,7 +877,7 @@ impl PlayerView<'_> {
         if gp == 0 {
             None
         } else {
-            Some(self.stats.totals.pp_goals as f64 / gp as f64 * 82.0)
+            Some(self.stats.totals().pp_goals as f64 / gp as f64 * 82.0)
         }
     }
 
@@ -868,7 +886,7 @@ impl PlayerView<'_> {
         if gp == 0 {
             None
         } else {
-            Some(self.stats.totals.sh_goals as f64 / gp as f64 * 82.0)
+            Some(self.stats.totals().sh_goals as f64 / gp as f64 * 82.0)
         }
     }
 
@@ -877,7 +895,7 @@ impl PlayerView<'_> {
         if gp == 0 {
             None
         } else {
-            Some(self.stats.totals.gwg as f64 / gp as f64 * 82.0)
+            Some(self.stats.totals().gwg as f64 / gp as f64 * 82.0)
         }
     }
 
@@ -886,7 +904,7 @@ impl PlayerView<'_> {
         if gp == 0 {
             None
         } else {
-            Some(self.stats.totals.shots as f64 / gp as f64 * 82.0)
+            Some(self.stats.totals().shots as f64 / gp as f64 * 82.0)
         }
     }
 
@@ -912,7 +930,7 @@ impl PlayerView<'_> {
 
     /// TOI per game formatted as "MM:SS", or None if unavailable.
     pub fn toi_mmss(&self) -> Option<String> {
-        let sec = self.stats.totals.toi_per_game_sec?;
+        let sec = self.stats.totals().toi_per_game_sec?;
         Some(format!("{:02}:{:02}", sec / 60, sec % 60))
     }
 
@@ -945,17 +963,17 @@ impl PlayerView<'_> {
     // remain to avoid touching every call site in one phase.
 
     /// Catalog-routed `PointsPerGame`. Inherits MIN_GP guard from
-    /// `StatId::PointsPerGame.read(self)`. Returns `None` for
+    /// `StatId::PointsPerGame.read_from(self)`. Returns `None` for
     /// `gp < MIN_GP` (10).
     pub fn points_per_game_via_catalog(&self) -> Option<f64> {
-        crate::stats_catalog::StatId::PointsPerGame.read(self)
+        crate::stats_catalog::StatId::PointsPerGame.read_from(self)
     }
 
     /// Catalog-routed `TotalToiPerGame`. Reads from `time_on_ice`
     /// substruct first; falls back to `totals.toi_per_game_sec`.
     /// Returns `None` when neither is present.
     pub fn toi_per_game_sec_via_catalog(&self) -> Option<f64> {
-        crate::stats_catalog::StatId::TotalToiPerGame.read(self)
+        crate::stats_catalog::StatId::TotalToiPerGame.read_from(self)
     }
 
     /// Catalog-routed `EvenStrengthGoalDifference`. Inherits the
@@ -963,7 +981,7 @@ impl PlayerView<'_> {
     /// multi-stint history (the OnIceGoals category short-circuits
     /// at the top of `read()`). Useful for "team-stable" leaderboards.
     pub fn ev_goal_diff_via_catalog(&self) -> Option<f64> {
-        crate::stats_catalog::StatId::EvenStrengthGoalDifference.read(self)
+        crate::stats_catalog::StatId::EvenStrengthGoalDifference.read_from(self)
     }
 }
 

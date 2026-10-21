@@ -4,6 +4,12 @@ Implementation follows `design/plans/2026-10-03-browser-wasm-workbench.md`.
 The engine lives in `icelines-wasm`; its normalization is shared with native
 loaders through `icelines-data`. The browser owns network/file/storage adapters.
 
+For the opt-in sparse prepared-season backend, use
+`node scripts/build-browser.mjs --sparse-storage` from the repository root.
+The generated build-info records the selected WASM features. Ordinary builds use
+the existing StatsRepository backend. Browser memory acceptance remains a separate
+measurement; see `design/specs/browser-sparse-season.md` for the scope.
+
 The Session library retains up to eight prepared season/type windows in this
 tab. Rust applies LRU eviction and a 64 MiB package-input budget; a larger
 active package runs alone. Switch resident seasons without another download.

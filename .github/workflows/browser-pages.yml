@@ -11,6 +11,10 @@ on:
         description: 'Publish the reviewed build for validation or accepted release (master only; deployment approval required)'
         type: boolean
         default: false
+      sparse_storage:
+        description: 'Validate the opt-in sparse backend and retain a preview; cannot publish'
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -20,6 +24,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Reject publication of the experimental sparse backend
+        if: inputs.sparse_storage && inputs.publish
+        run: |
+          echo 'Sparse storage is validation-only; publish must be false.' >&2
+          exit 1
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           lfs: true
@@ -52,11 +61,18 @@ jobs:
       - name: Test NHL relay
         run: node --test icelines-relay/worker.test.mjs
       - name: Build and verify browser distribution
-        run: node scripts/build-browser.mjs --check
+        env:
+          SPARSE_STORAGE: ${{ inputs.sparse_storage || false }}
+        run: |
+          if [ "$SPARSE_STORAGE" = true ]; then
+            node scripts/build-browser.mjs --check --sparse-storage
+          else
+            node scripts/build-browser.mjs --check
+          fi
       - name: Retain reviewed preview / rollback artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: icelines-browser-${{ github.sha }}
+          name: icelines-browser${{ inputs.sparse_storage && '-sparse' || '' }}-${{ github.sha }}
           path: icelines-browser/dist
           include-hidden-files: true
           retention-days: 30

@@ -58,6 +58,13 @@ pub fn classify_fit(pace_82: f64, position: Position) -> FitClass {
 /// Hart.5b2 prep — analog of the legacy `sort_by_pace(&mut [Player])`
 /// that consumers will swap to as they migrate to PlayerView.
 pub fn sort_views_by_pace(views: &mut [crate::stats_repository::PlayerView<'_>]) {
+    sort_read_views_by_pace(views);
+}
+
+/// Same pace comparator for independently borrowed row handles.
+pub fn sort_read_views_by_pace<R: crate::SeasonStatsRead>(
+    views: &mut [crate::stats_repository::ReadPlayerView<'_, R>],
+) {
     views.sort_by(|a, b| {
         let sa = a.pace_score().map(|s| s.sort_key()).unwrap_or(-1.0);
         let sb = b.pace_score().map(|s| s.sort_key()).unwrap_or(-1.0);

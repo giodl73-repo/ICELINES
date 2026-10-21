@@ -216,3 +216,27 @@ provider/clock/context policies remain unchanged. A clean pre-edit oracle freeze
 813 constraints over 288 synthetic rows; separate-payload and dynamic readers must
 match. See IF-QUERY-READ-001 and design/specs/borrowed-player-query.md.
 Production repository/surface ownership, wire schemas and resource criteria remain.
+
+## CHG-124: Opt-in prepared browser sparse ownership (2026-10-18)
+
+Add a separate SparseSeasonRepository and generic ReadPlayerView with concrete-reference PlayerView alias;
+existing concrete-reference repository APIs retain their default types. Both browser
+paths use common borrowed queries/sorts/serialization; sparse-storage explicitly
+selects compact ownership for prepared packages. No roster/report/LRU replacement
+claim: BrowserEngine owns prepared-window eviction and does not use those indexes.
+Contract: design/specs/browser-sparse-season.md / IF-BROWSER-SPARSE-001. Native/WASM
+parity, exact exports/revisions and resource measurements remain separate gates;
+default artifact selection, schemas, budgets and Android requirements are unchanged.
+
+CHG-124 follow-through: the product builder exposes --sparse-storage and records
+wasm_features in build-info; ordinary builds keep an empty list. Actual whole-browser
+EXP011 evidence is mixed and fails the unchanged 250 MiB criterion. The candidate
+remains opt-in, with no default adoption or publication implied by component gains.
+
+
+CHG-124 validation follow-through (2026-10-20): add validation-only sparse workflow
+input, feature-aware native BrowserEngine checks and separately named preview.
+Combined sparse/publication inputs reject before checkout. Hosted sparse checks
+and exact retained-artifact browser checks pass. Optional reversible rendering
+instrumentation changes no distributed application bytes; its negative/weak results
+and strict budget-prefix exclusion are retained. No acceptance threshold changes.

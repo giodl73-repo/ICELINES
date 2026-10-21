@@ -8,7 +8,15 @@ use chrono::NaiveDate;
 use icelines_core::identity::PlayerId;
 use icelines_core::model::{Position, Season};
 use icelines_core::season_stats::SeasonType;
-use icelines_core::stats_repository::{PlayerView, StatsRepository};
+#[cfg(feature = "sparse-storage")]
+use icelines_core::sparse_season::SparseSeasonRepository;
+#[cfg(not(feature = "sparse-storage"))]
+use icelines_core::stats_repository::StatsRepository;
+use icelines_core::SeasonStatsRead;
+#[cfg(not(feature = "sparse-storage"))]
+type PackageRepository = StatsRepository;
+#[cfg(feature = "sparse-storage")]
+type PackageRepository = SparseSeasonRepository;
 use icelines_data::{
     build_goalie_identity, build_goalie_season_stats, build_identity, build_skater_stats,
 };
@@ -55,6 +63,9 @@ pub enum EngineError {
     Normalize(#[from] icelines_data::NormalizationError),
     #[error(transparent)]
     Repository(#[from] icelines_core::stats_repository::RepoError),
+    #[cfg(feature = "sparse-storage")]
+    #[error(transparent)]
+    Sparse(#[from] icelines_core::sparse_season::SparseSeasonError),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -122,7 +133,7 @@ impl DataProvider for PreparedProvider {
 
 struct ActivePackage {
     package: SeasonPackage,
-    repository: StatsRepository,
+    repository: PackageRepository,
     revision: String,
     input_bytes: usize,
 }
@@ -225,7 +236,7 @@ impl BrowserEngine {
             .ok_or_else(|| JsValue::from_str("missing data: load a package"))?;
         let view = active
             .repository
-            .league(Season(active.package.season), active.package.season_type)
+            .read_league(Season(active.package.season), active.package.season_type)
             .find(|view| view.id().0 == player_id)
             .ok_or_else(|| JsValue::from_str("missing data: player absent in this season"))?;
         serde_json::to_string(&serde_json::json!({
@@ -303,7 +314,10 @@ impl BrowserEngine {
         }
         let stats: HashMap<u32, &SkaterStats> =
             package.stats.iter().map(|s| (s.player_id, s)).collect();
+        #[cfg(not(feature = "sparse-storage"))]
         let mut repo = StatsRepository::with_lru_cap(8);
+        #[cfg(feature = "sparse-storage")]
+        let mut repo = SparseSeasonRepository::new();
         let mut seen = HashSet::new();
         for bio in package
             .bios
@@ -457,37 +471,39 @@ impl BrowserEngine {
                 0
             }
         });
-        let views: Vec<PlayerView<'_>> = if request.goalies {
-            active
-                .repository
-                .goalies(Season(package.season), package.season_type)
-                .collect()
-        } else {
-            active
-                .repository
-                .skaters(Season(package.season), package.season_type)
-                .collect()
-        };
-        let mut views: Vec<PlayerView<'_>> = views
-            .into_iter()
+        let mut views: Vec<_> = active
+            .repository
+            .read_league(Season(package.season), package.season_type)
+            .filter(|view| view.is_goalie() == request.goalies)
             .filter(|view| view.gp() >= minimum_games)
-            .filter(|view| plan.as_ref().is_none_or(|p| p.root.matches(view, &ctx)))
+            .filter(|view| {
+                plan.as_ref().is_none_or(|p| {
+                    p.root.matches_read(
+                        &icelines_query::PlayerRead {
+                            identity: view.identity,
+                            stats: &view.stats,
+                            contract: view.contract,
+                        },
+                        &ctx,
+                    )
+                })
+            })
             .collect();
         if request.goalies {
             let sort = icelines_core::GoalieLeaderboardSort::from_key(&request.sort)
                 .ok_or_else(|| EngineError::InvalidQuery("unsupported goalie sort".into()))?;
-            views.sort_by(|a, b| sort.compare_player_views(a, b));
+            views.sort_by(|a, b| sort.compare_read_views(a, b));
         } else if request.sort == "pace" {
-            icelines_core::sort_views_by_pace(&mut views);
+            icelines_core::scoring::sort_read_views_by_pace(&mut views);
         } else {
             let metric = icelines_core::stats_catalog::StatId::from_cli_key(&request.sort)
                 .ok_or_else(|| EngineError::InvalidQuery("unsupported skater sort".into()))?;
-            views.sort_by(|a, b| metric.sort_cmp(a, b));
+            views.sort_by(|a, b| metric.sort_read_cmp(a, b));
         }
         let rows: Vec<PlayerRow> = views
             .into_iter()
             .map(|view| {
-                let goalie = view.stats.goalie.as_ref();
+                let goalie = view.stats.goalie();
                 PlayerRow {
                     player_id: view.identity.id.0,
                     name: view.identity.full_name.clone(),

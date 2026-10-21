@@ -1,0 +1,310 @@
+{
+  "schema_version": 1,
+  "experiment": "MISER-EXP-023",
+  "change_id": "CHG-124",
+  "native_destructive_diagnostic": true,
+  "summary": {
+    "default_sparse_semantic_parity": true,
+    "experiment": "MISER-EXP-023",
+    "fresh_processes": 12,
+    "limits": "Destructive component attribution, not implemented saving, RSS/WASM/browser acceptance or rebuild-latency evidence.",
+    "native_requested_components": {
+      "default": {
+        "all75": {
+          "allocation": {
+            "components": {
+              "active_repository": 809045,
+              "active_source": 256741,
+              "inactive_repositories": 8731821,
+              "inactive_sources": 2857589
+            },
+            "construction_calls": 1857224,
+            "construction_cumulative_requested_bytes": 285175584,
+            "construction_peak_requested_bytes": 23255110,
+            "packages_loaded": 75,
+            "post_drop_requested_delta": 0,
+            "release_new_calls": 0,
+            "release_new_requested_bytes": 0,
+            "release_order": "repositories-first",
+            "remaining_envelope_bytes": 5120,
+            "resident_ring_buffer_bytes": 4608,
+            "retained_engine_requested_bytes": 12660316,
+            "revision_string_capacity_bytes": 512
+          },
+          "inactive_repository_fraction": 0.689700083315456,
+          "meets20_percent_prototype_lead": true,
+          "semantics": {
+            "complete_query_rows": 33924,
+            "complete_semantics_sha256": "88a649253a8911c5f1c88f5edff9179d286d8093bea33491e719156bdf659f67",
+            "full_details": 4443,
+            "queries_per_resident": 20,
+            "resident_revisions": [
+              "6498bfcd4e98ff2493937bfc000e76baf73fa88857f78e7e60eb3b98a830cdd3",
+              "b55ae582bad9aa16e69306e7daa6779396b181eaa40e75c89b495893b4d6e236",
+              "762ddb947aadc7d4bb6f38a1b9e77298c6b6620aed77f91679f34462c8db4f3c",
+              "13c4f7f785a95c4d28f39efc6f36791a2b2d03bd38f657d0c1a7974050704483",
+              "a8d9a7eb4c717d93d05b7a3dc0a667c5642f64d0328d57bc21d1f99266ae84d3",
+              "bdab941946b3469e8488987bb5abaa261361377b959aab64de39dabb0a837da1",
+              "b898df00ab7902cbc2f2e8526a87eefee5951fe59adac666e347a8a85ba0c06f",
+              "7681f9fe03c06a09c634ab24909c48da6d96a38432898630a4dd2e1112c01b73"
+            ]
+          }
+        },
+        "first_eight": {
+          "allocation": {
+            "components": {
+              "active_repository": 2960311,
+              "active_source": 546046,
+              "inactive_repositories": 14025981,
+              "inactive_sources": 2941883
+            },
+            "construction_calls": 247274,
+            "construction_cumulative_requested_bytes": 37975009,
+            "construction_peak_requested_bytes": 21278653,
+            "packages_loaded": 8,
+            "post_drop_requested_delta": 0,
+            "release_new_calls": 0,
+            "release_new_requested_bytes": 0,
+            "release_order": "repositories-first",
+            "remaining_envelope_bytes": 5120,
+            "resident_ring_buffer_bytes": 4608,
+            "retained_engine_requested_bytes": 20479341,
+            "revision_string_capacity_bytes": 512
+          },
+          "inactive_repository_fraction": 0.6848843915436537,
+          "meets20_percent_prototype_lead": true,
+          "semantics": {
+            "complete_query_rows": 44281,
+            "complete_semantics_sha256": "9951a58ba3cec51393d83e540e0178da32a2fdd4d41f74420db2ac6e45dc35c3",
+            "full_details": 6304,
+            "queries_per_resident": 20,
+            "resident_revisions": [
+              "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+              "ba4f8b9ab5e8882652099025360d8409b214a917d03ccc3c326a603a7ab86479",
+              "fa8e36ef6f77c7fa6a2c4f67ad4fb0624c764fcb5aee4fdb07d63ebf840d5024",
+              "84adc3c1c4791483adcb2ca9c8758334c56059aa95585ee2880773f9feb03adc",
+              "cc059ed1b4fd0e288a0655301884c369dbbfc20a0dd3f5a2eb9928b68658ceed",
+              "158e8ff69270ed273eaee30b68fd308f4e4eb0ca96cce06fce452c9519c4c33a",
+              "c1a9d2b5a588872d129081c88a405230aeda18e1e8b1f62e1c69b276a22eb056",
+              "32bbcdf0dbfb6567ff6d9d29216aa34823a0bfcb4796dd88d8256772d37f14bd"
+            ]
+          }
+        }
+      },
+      "sparse": {
+        "all75": {
+          "allocation": {
+            "components": {
+              "active_repository": 487503,
+              "active_source": 256741,
+              "inactive_repositories": 5178215,
+              "inactive_sources": 2857589
+            },
+            "construction_calls": 1742509,
+            "construction_cumulative_requested_bytes": 169462503,
+            "construction_peak_requested_bytes": 14043457,
+            "packages_loaded": 75,
+            "post_drop_requested_delta": 0,
+            "release_new_calls": 0,
+            "release_new_requested_bytes": 0,
+            "release_order": "repositories-first",
+            "remaining_envelope_bytes": 4928,
+            "resident_ring_buffer_bytes": 4416,
+            "retained_engine_requested_bytes": 8784976,
+            "revision_string_capacity_bytes": 512
+          },
+          "inactive_repository_fraction": 0.5894398573200428,
+          "meets20_percent_prototype_lead": true,
+          "semantics": {
+            "complete_query_rows": 33924,
+            "complete_semantics_sha256": "88a649253a8911c5f1c88f5edff9179d286d8093bea33491e719156bdf659f67",
+            "full_details": 4443,
+            "queries_per_resident": 20,
+            "resident_revisions": [
+              "6498bfcd4e98ff2493937bfc000e76baf73fa88857f78e7e60eb3b98a830cdd3",
+              "b55ae582bad9aa16e69306e7daa6779396b181eaa40e75c89b495893b4d6e236",
+              "762ddb947aadc7d4bb6f38a1b9e77298c6b6620aed77f91679f34462c8db4f3c",
+              "13c4f7f785a95c4d28f39efc6f36791a2b2d03bd38f657d0c1a7974050704483",
+              "a8d9a7eb4c717d93d05b7a3dc0a667c5642f64d0328d57bc21d1f99266ae84d3",
+              "bdab941946b3469e8488987bb5abaa261361377b959aab64de39dabb0a837da1",
+              "b898df00ab7902cbc2f2e8526a87eefee5951fe59adac666e347a8a85ba0c06f",
+              "7681f9fe03c06a09c634ab24909c48da6d96a38432898630a4dd2e1112c01b73"
+            ]
+          }
+        },
+        "first_eight": {
+          "allocation": {
+            "components": {
+              "active_repository": 1677133,
+              "active_source": 546046,
+              "inactive_repositories": 7508267,
+              "inactive_sources": 2941883
+            },
+            "construction_calls": 232045,
+            "construction_cumulative_requested_bytes": 22386438,
+            "construction_peak_requested_bytes": 12723409,
+            "packages_loaded": 8,
+            "post_drop_requested_delta": 0,
+            "release_new_calls": 0,
+            "release_new_requested_bytes": 0,
+            "release_order": "repositories-first",
+            "remaining_envelope_bytes": 4928,
+            "resident_ring_buffer_bytes": 4416,
+            "retained_engine_requested_bytes": 12678257,
+            "revision_string_capacity_bytes": 512
+          },
+          "inactive_repository_fraction": 0.5922160278025599,
+          "meets20_percent_prototype_lead": true,
+          "semantics": {
+            "complete_query_rows": 44281,
+            "complete_semantics_sha256": "9951a58ba3cec51393d83e540e0178da32a2fdd4d41f74420db2ac6e45dc35c3",
+            "full_details": 6304,
+            "queries_per_resident": 20,
+            "resident_revisions": [
+              "93b93aac7960ff911766214a88c13eb657bb2bddfa6f0521a83559a05048fd44",
+              "ba4f8b9ab5e8882652099025360d8409b214a917d03ccc3c326a603a7ab86479",
+              "fa8e36ef6f77c7fa6a2c4f67ad4fb0624c764fcb5aee4fdb07d63ebf840d5024",
+              "84adc3c1c4791483adcb2ca9c8758334c56059aa95585ee2880773f9feb03adc",
+              "cc059ed1b4fd0e288a0655301884c369dbbfc20a0dd3f5a2eb9928b68658ceed",
+              "158e8ff69270ed273eaee30b68fd308f4e4eb0ca96cce06fce452c9519c4c33a",
+              "c1a9d2b5a588872d129081c88a405230aeda18e1e8b1f62e1c69b276a22eb056",
+              "32bbcdf0dbfb6567ff6d9d29216aa34823a0bfcb4796dd88d8256772d37f14bd"
+            ]
+          }
+        }
+      }
+    },
+    "per_backend_repeated_exact": true,
+    "reversed_order_exact": true,
+    "producer_source": "4cbd60e5261cd38a2975f7d81930b7e1bac8038f",
+    "consumer_source": "d575d47f1dbed4f4d0e5c277f7791f069b5e65f6",
+    "checks": {
+      "lab_all_target_tests": 52,
+      "lab_strict_clippy": true,
+      "native_default_sparse_strict_clippy": true,
+      "producer_negative_checks": 4,
+      "actual_report_corruption_checks": 9,
+      "zero_release_allocations_and_post_drop_delta": true,
+      "original_source_archive_files_compared": 1277
+    },
+    "decision": "20 percent inactive-repository lead met in both states/backends; proceed to a cold repository prototype only, with source payloads/eight keys retained and rebuild latency/rollback/full native-WASM-browser parity measured. No optimization implemented or saving achieved.",
+    "remaining_gates": [
+      "Original250MiB whole-browser requirement unmet",
+      "Physical Android user-deferred",
+      "Private hosted Linux independently unverified after billing rejection",
+      "No default adoption/merge/publication or new hosted retry"
+    ]
+  },
+  "raw_archives": [
+    {
+      "path": "default-repositories-first-r1.json.gz",
+      "bytes": 1497,
+      "sha256": "9c3201c863e75d1b1af4f9214a9feb7ddeb2f208f4a59a21e70ff8bc520ee3a7",
+      "expanded_bytes": 3621,
+      "expanded_sha256": "77af9a98ab1c7d26551c5d99a4e61f02f74e8edbe9ec4292d234fc9a33262265"
+    },
+    {
+      "path": "default-repositories-first-r2.json.gz",
+      "bytes": 1497,
+      "sha256": "9c3201c863e75d1b1af4f9214a9feb7ddeb2f208f4a59a21e70ff8bc520ee3a7",
+      "expanded_bytes": 3621,
+      "expanded_sha256": "77af9a98ab1c7d26551c5d99a4e61f02f74e8edbe9ec4292d234fc9a33262265"
+    },
+    {
+      "path": "default-repositories-first-r3.json.gz",
+      "bytes": 1497,
+      "sha256": "9c3201c863e75d1b1af4f9214a9feb7ddeb2f208f4a59a21e70ff8bc520ee3a7",
+      "expanded_bytes": 3621,
+      "expanded_sha256": "77af9a98ab1c7d26551c5d99a4e61f02f74e8edbe9ec4292d234fc9a33262265"
+    },
+    {
+      "path": "default-sources-first-r1.json.gz",
+      "bytes": 1496,
+      "sha256": "854255f025c0ab8961e05229ef244c77eeba721b5c50a7a702a973f8507b5d49",
+      "expanded_bytes": 3611,
+      "expanded_sha256": "18913976decdbe4ff76ea923383eafeb5cb12740e2a936b52c4b46f7bbda2d24"
+    },
+    {
+      "path": "default-sources-first-r2.json.gz",
+      "bytes": 1496,
+      "sha256": "854255f025c0ab8961e05229ef244c77eeba721b5c50a7a702a973f8507b5d49",
+      "expanded_bytes": 3611,
+      "expanded_sha256": "18913976decdbe4ff76ea923383eafeb5cb12740e2a936b52c4b46f7bbda2d24"
+    },
+    {
+      "path": "default-sources-first-r3.json.gz",
+      "bytes": 1496,
+      "sha256": "854255f025c0ab8961e05229ef244c77eeba721b5c50a7a702a973f8507b5d49",
+      "expanded_bytes": 3611,
+      "expanded_sha256": "18913976decdbe4ff76ea923383eafeb5cb12740e2a936b52c4b46f7bbda2d24"
+    },
+    {
+      "path": "sparse-repositories-first-r1.json.gz",
+      "bytes": 1504,
+      "sha256": "ccfe6d206ec9289d87e65d255ff7e25628670e7ede2fb6781210b605c35083a1",
+      "expanded_bytes": 3618,
+      "expanded_sha256": "a4406e443a8b6685fbf7b2934d39eaf7cf7b86a9674074103172827e510aa880"
+    },
+    {
+      "path": "sparse-repositories-first-r2.json.gz",
+      "bytes": 1504,
+      "sha256": "ccfe6d206ec9289d87e65d255ff7e25628670e7ede2fb6781210b605c35083a1",
+      "expanded_bytes": 3618,
+      "expanded_sha256": "a4406e443a8b6685fbf7b2934d39eaf7cf7b86a9674074103172827e510aa880"
+    },
+    {
+      "path": "sparse-repositories-first-r3.json.gz",
+      "bytes": 1504,
+      "sha256": "ccfe6d206ec9289d87e65d255ff7e25628670e7ede2fb6781210b605c35083a1",
+      "expanded_bytes": 3618,
+      "expanded_sha256": "a4406e443a8b6685fbf7b2934d39eaf7cf7b86a9674074103172827e510aa880"
+    },
+    {
+      "path": "sparse-sources-first-r1.json.gz",
+      "bytes": 1502,
+      "sha256": "7f4539d8c6ccbe95edfbd8327fabc179b1b7496b5b6c708be36a26703cd67aa5",
+      "expanded_bytes": 3608,
+      "expanded_sha256": "8c094b5b68f539b983f16f4315aa2d6ff8da54f5aa61de35430f90d77c5cc43c"
+    },
+    {
+      "path": "sparse-sources-first-r2.json.gz",
+      "bytes": 1502,
+      "sha256": "7f4539d8c6ccbe95edfbd8327fabc179b1b7496b5b6c708be36a26703cd67aa5",
+      "expanded_bytes": 3608,
+      "expanded_sha256": "8c094b5b68f539b983f16f4315aa2d6ff8da54f5aa61de35430f90d77c5cc43c"
+    },
+    {
+      "path": "sparse-sources-first-r3.json.gz",
+      "bytes": 1502,
+      "sha256": "7f4539d8c6ccbe95edfbd8327fabc179b1b7496b5b6c708be36a26703cd67aa5",
+      "expanded_bytes": 3608,
+      "expanded_sha256": "8c094b5b68f539b983f16f4315aa2d6ff8da54f5aa61de35430f90d77c5cc43c"
+    },
+    {
+      "path": "exp023-source-audit.json.gz",
+      "bytes": 1134,
+      "sha256": "d2e6dd9817af369742030a563c269d52293d31430723c66930efa4da8572d5fa",
+      "expanded_bytes": 2564,
+      "expanded_sha256": "c52f2c295b326b39414b2c9de8a752fc7f076e15d455a2d9ab96ba7df9c7824b"
+    },
+    {
+      "path": "exp023-producer-negative-audit.json.gz",
+      "bytes": 234,
+      "sha256": "fafaaf4554edbff1253fa969cafa173ad35e411258dcf90dfc1756b9530b8d48",
+      "expanded_bytes": 620,
+      "expanded_sha256": "ce4711a5fe9d35a4f684206f8fad6c40fc5ae54f5bb01a4f0383fff4e971a979"
+    },
+    {
+      "path": "exp023-analyzer-negative-audit.json.gz",
+      "bytes": 388,
+      "sha256": "192db60e6dd67863feb3b8711ae26b5ca714a006d5d292a4ecfd5189f1e57287",
+      "expanded_bytes": 1470,
+      "expanded_sha256": "51dd6f06143bcd574cec4f7e55faccef6cd5098766e8f08070e44716684a862f"
+    }
+  ],
+  "private_evidence_source": "4b49740f37845625fd2d86ad5caffdcbc84ee3b3",
+  "private_custody": "52 exact raw/source/build/audit archives, compressed/expanded hashes verified",
+  "prototype_task": "https://github.com/giodl73-repo/MISER/issues/10",
+  "application_source": "No consumer Rust/application/build changes; source still matches earlier hostedda22174c",
+  "acceptance": "Native ownership lead only; cold repository prototype not implemented.250MiB/Android/private Linux gates remain open."
+}

@@ -89,8 +89,16 @@ impl GoalieLeaderboardSort {
         a: &PlayerView<'_>,
         b: &PlayerView<'_>,
     ) -> std::cmp::Ordering {
-        let ga = a.stats.goalie.as_ref();
-        let gb = b.stats.goalie.as_ref();
+        self.compare_read_views(a, b)
+    }
+
+    pub fn compare_read_views<A: crate::SeasonStatsRead, B: crate::SeasonStatsRead>(
+        self,
+        a: &crate::stats_repository::ReadPlayerView<'_, A>,
+        b: &crate::stats_repository::ReadPlayerView<'_, B>,
+    ) -> std::cmp::Ordering {
+        let ga = a.stats.goalie();
+        let gb = b.stats.goalie();
         let primary = match self {
             Self::SavePct => gb
                 .and_then(|g| g.save_pct)

@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-20",
+  "change_id": "CHG-124",
+  "scope": "Existing owned desktop Chromium functional runners against retained opt-in sparse artifact, plus separate default Linux CI artifact. No publication, Android, memory or physical-printer acceptance.",
+  "sparse_source": "c92d4e006027bf7cb6f1480527399250582d2754",
+  "sparse_wasm_sha256": "f0f6c2f1c84cd3a4f0aa9ccabfc460ab3f01cc9592c5e694a390fc49d738cb99",
+  "reviewed_head": "cdac809854b3b7654d9bbebc79ce4a8497e8100c",
+  "ci": {
+    "run": 39156515143,
+    "url": "https://github.com/giodl73-repo/ICELINES/actions/runs/39156515143",
+    "conclusion": "success",
+    "event": "pull_request",
+    "head_sha": "cdac809854b3b7654d9bbebc79ce4a8497e8100c",
+    "artifact_id": 12147436897,
+    "artifact_commit": "53a4df14f33c567dc76cf47012e24a75ff9cdfe3",
+    "artifact_features": [],
+    "artifact_tree": "7d071e4d36bdd276335153beca774c461c19f34c",
+    "head_tree": "7d071e4d36bdd276335153beca774c461c19f34c",
+    "artifact_verification": {
+      "verified_files": 182,
+      "packages": 75,
+      "shell_build": "0dd3e09f2bddb130d348c16bb4d1b299e3bd5ee26f3e83cab4f40b36600777c6"
+    },
+    "note": "CI artifact is the PR merge commit with identical Git tree to reviewed head; its default storage is not sparse-feature hosted execution."
+  },
+  "commands": [
+    "node icelines-browser/e2e/offline-reopen.mjs --artifact <sparse-artifact> --verify-attached-rows",
+    "node icelines-browser/e2e/viewport.mjs --artifact <sparse-artifact>",
+    "node icelines-browser/e2e/catalog-context.mjs --artifact <sparse-artifact>",
+    "node icelines-browser/e2e/persisted-catalog-context.mjs --artifact <sparse-artifact>",
+    "python scripts/verify-browser-print.py <all-players.pdf> <print-reference.json> --output <new-report.json>",
+    "python scripts/verify-browser-artifact.py <ci-artifact> 53a4df14f33c567dc76cf47012e24a75ff9cdfe3 0dd3e09f2bddb130d348c16bb4d1b299e3bd5ee26f3e83cab4f40b36600777c6",
+    "node icelines-browser/e2e/offline-reopen.mjs --artifact <ci-artifact> --verify-attached-rows"
+  ],
+  "files": [
+    {
+      "path": "sparse-offline.json.gz",
+      "bytes": 1135,
+      "sha256": "c7229ff9ed8b0a9b9a65da54b64fc1f2f53cd847c6cea8bff0db4716b876b9d9",
+      "expanded_sha256": "55d42582acd4b0f57a38497d8f780db5118e6671f01a8c13b44b69350771e334"
+    },
+    {
+      "path": "sparse-viewport.json.gz",
+      "bytes": 511,
+      "sha256": "aa2315f81040cbca755e300f3d734efc70640e97007710f2d6557a05adbdfbc6",
+      "expanded_sha256": "ecddba5bb8faca644692e05e24716d05fc56d9fb462f0c077a94f6e0ea8d2c4d"
+    },
+    {
+      "path": "sparse-catalog-context.json.gz",
+      "bytes": 545,
+      "sha256": "b517a0036f322f3428d6e55fbacd25093d44bd545906d37c60f0324710451836",
+      "expanded_sha256": "470d2dffaf7c3e3072555046fbba57a993f70e43ff32558fc411b21ec70449bd"
+    },
+    {
+      "path": "sparse-persisted-catalog-context.json.gz",
+      "bytes": 601,
+      "sha256": "702aba81258ee66e52ba0ae9f5aac7c18461d12756fd0d73207388d171b125d3",
+      "expanded_sha256": "9ca8b1dbd26c3551bad1e2622232fa5424051b4f5a32a3732b6e2c97d0bdc39b"
+    },
+    {
+      "path": "sparse-print-verification.json.gz",
+      "bytes": 386,
+      "sha256": "9d69437d1534bbcc7dd8802d037b02ba1d00fe360fed7eff39c5d07968db44ad",
+      "expanded_sha256": "13801372f29b6062ba5b68b603200a6badef2c0669c8cb312ad722289b6fc99f"
+    },
+    {
+      "path": "default-ci-offline.json.gz",
+      "bytes": 1028,
+      "sha256": "7962c500d73cf186e812504a2a4ca545329d76caec229ffbe05aaee0c9bad730",
+      "expanded_sha256": "185c014f0ca2f657f25ea41ff719ca5a7273a498646649c01bf9c9dae5a9c27a"
+    },
+    {
+      "path": "print-reference.json.gz",
+      "bytes": 12258,
+      "sha256": "331ae8f082e449a30ca05dba56e8b8d5cfee6db49bc64c50d556624358e4181b",
+      "expanded_sha256": "11040639dcccbf5a7aaa565b03a4346c419b64c4f7728feefac605c040a1140e"
+    },
+    {
+      "path": "desktop.png",
+      "bytes": 39498,
+      "sha256": "513e422ba8f18018ecbe234721aefde8f7ab73d1b0d8ace441e8c9ee22a74fc2"
+    },
+    {
+      "path": "narrow.png",
+      "bytes": 18862,
+      "sha256": "69d73dbea109bff5cc6f139a5b54db3701c4c3f511e1e737a7ad2e7ef3c85443"
+    },
+    {
+      "path": "all-players.pdf.gz",
+      "bytes": 186934,
+      "sha256": "fb6642fbcd9fb0550b858dd5c11a3142d3541b01cd1c778b0fa28efde1e495ea",
+      "expanded_sha256": "4f5b2816c4660f899e0c8157da9578e1ed47dc40fb7d5398ea49e284ba341ee6"
+    }
+  ],
+  "remaining": [
+    "250 MiB whole-browser target fails in retained EXP011 runs; no new memory measurement here.",
+    "Physical Android deferred until user connects phone.",
+    "Sparse hosted feature execution is not established by the default-feature CI artifact.",
+    "Full roster/Tier2 and rich-report repository adoption remain open."
+  ],
+  "archive_note": "Raw runner JSON reports and print reference are gzip archived to preserve exact Windows bytes across Git newline normalization; expanded_sha256 hashes original bytes."
+}
