@@ -219,6 +219,7 @@ Current warning-class advisory ledger:
 | Advisory | Class | Dependency path | Owner | Rationale | Removal condition |
 |---|---|---|---|---|---|
 | `RUSTSEC-2025-0052` (`async-std`) | unmaintained warning | `httpmock` -> `icelines-fetch` tests | BENCH / FORGE | Test-only mock dependency; not shipped in the release binary. Keep visible so a fixture/mock replacement can retire it. | Remove when `httpmock` drops `async-std`, or replace the mock stack if the warning becomes a vulnerability or runtime dependency. |
+| `RUSTSEC-2026-0374` (`basic-toml`) | unmaintained warning | `askama_derive` -> compile-time template configuration | FORGE / BENCH | Parser is used by the Askama procedural macro during compilation, rather than as an application runtime dependency. Keep the warning visible. | Remove when the template dependency replaces the parser; escalate if it becomes a vulnerability or runtime dependency. |
 
 The 2026-10-12 lockfile refresh pins `quinn-proto` 0.11.18,
 `event-listener` 5.4.2 and `lru` 0.18.2 to their advisory fixes. The previous

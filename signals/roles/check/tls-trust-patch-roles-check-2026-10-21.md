@@ -18,13 +18,13 @@ failure and native request/handler regression checks. No advisory exception.
 |FORGE|Only two dependency versions/checksums change|P3|rustls-webpki0.103.15→0.103.16; webpki-roots1.0.7→1.0.10|
 |FORGE|No manifest/features/profile/API changes|P3|Precise updates, dependency lists unchanged|
 |FORGE|Borrowed core/query/browser source stays unchanged|P3|No Rust/JS implementation edits|
-|FORGE|Active WASM runtime graph must be checked separately|P3|Retain target-specific cargo tree; no inference from lockfile membership|
+|FORGE|Active WASM runtime graph excludes the patched TLS packages|P3|Locked wasm32 normal-dependency graph checked separately;174 lines retained|
 |FORGE|Existing broad dependency PR is separate|P3|PR114 does not remediate these versions; avoid unrelated upgrades|
 |WIRE|CI identifies certificate-verification advisory|P3|RUSTSEC-2026-0382 against rustls-webpki0.103.15|
 |WIRE|CI identifies root-bundle advisory|P3|RUSTSEC-2026-0381 against webpki-roots1.0.7|
 |WIRE|Patched versions match authoritative RustSec ranges|P3|Official advisory DB e6f94f3760d5e6c54c1b05f204002263bc025524|
 |WIRE|Refreshed audit reports zero vulnerabilities|P3|1348 advisories; no ignore-list or TLS-verification bypass|
-|WIRE|Two existing maintenance warnings remain|P3|async-std/basic-toml unchanged under existing policy, not vulnerabilities|
+|WIRE|Two existing maintenance warnings remain|P3|async-std/basic-toml remain visible; add missing compile-time Askama parser ledger entry, no vulnerability exception|
 |BENCH|The failure is reproducible audit evidence|P3|Master run39534734373 / job119008647385; exact failed log retained|
 |BENCH|Native HTTP integration is the affected surface|P3|Require locked icelines-fetch/icelines-web tests before merge|
 |BENCH|A successful audit is not complete application validation|P3|Full hosted CI/browser checks tracked separately; do not claim pending checks pass|
