@@ -1,0 +1,72 @@
+{
+  "scope": "additive borrowed Constraint evaluator; native semantic and compile checks",
+  "base": "fdd9f9b9cbc5bafc7d88b53536ed4a7706118d2c",
+  "oracle_producer": "0a82da65028efc03f21334b4b5b3e31765431365",
+  "query_tests_and_docs_final_unique": 657,
+  "downstream_native_tests": 20,
+  "query_clippy_all_targets": "passed",
+  "native_nine_crate_workspace_check": "passed",
+  "wasm32_unknown_unknown_icelines_wasm_check": "passed",
+  "fmt": "passed",
+  "build": {
+    "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+    "incremental": false,
+    "dev_debug": 0,
+    "test_debug": 0,
+    "jobs": 1
+  },
+  "oracle_rows": 288,
+  "oracle_constraints": 813,
+  "oracle_boolean_outcomes": 234144,
+  "initial_failures": [
+    "new producer fixture referenced nonexistent CurrentStint variant; corrected before clean producer capture",
+    "new historical-country test changed birth country but left matching nationality; corrected test only to preserve original OR semantics"
+  ],
+  "boundary": "No production sparse repository switch, full native UI integration suite, deployment or resource benchmark. Private MISER mutable-reader binding remains next.",
+  "logs": [
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/evidence/query-read-clippy-final.log.gz",
+      "sha256": "74cc788b09efd5e0a91f0ed24a09b3be6fdbf9714283389995f859a4a9dcff96"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/evidence/query-read-clippy.log.gz",
+      "sha256": "7efbe3ac389f9b4d2873afc81005824043d59a641580975ccdab77223402467f"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/evidence/query-read-downstream-tests.log.gz",
+      "sha256": "5ca83e73275729204242b310b00adbb48c0848e746474220da94d2a5da7994a2"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/evidence/query-read-oracle-build-recovery.log.gz",
+      "sha256": "a79ab2bc3aefcba343a09615400e199e2d6ed996ecfee7b40bc4184aef00bdac"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/evidence/query-read-oracle-build.log.gz",
+      "sha256": "906a58a26649f9c5679d65e17f7f4e4fd086ce5fe9580726617b227fa9dc332a"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/evidence/query-read-targeted-final.log.gz",
+      "sha256": "b36736d7f96d3a12ff9c3385dc22d22d19eddac3231658a5782e1fee70c29241"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/evidence/query-read-tests-final.log.gz",
+      "sha256": "06b6bc90403b753fe36ba0d92ab3410d9c5c9ca46d7917c98f98b42e93723e57"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/evidence/query-read-tests-first.log.gz",
+      "sha256": "1a1c439969960fe9983ff7fccc1d9689b4495ca9cde6ecaae044cd4436e8aa74"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/evidence/query-read-tests-recovery.log.gz",
+      "sha256": "2ec7d6e287d954f70e83adf8086d0c2e8981af06df28eb57b7b2f20f16297f2e"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/evidence/query-read-wasm-check.log.gz",
+      "sha256": "dba1acec6f19e9f1f38da472f16cd0e8de9872730034e294573534e6ce00ee2a"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/evidence/query-read-workspace-check.log.gz",
+      "sha256": "c59e519c9d57d319b559a037f21e911ef249fc1736cb57c45a6dbab6687c9be1"
+    }
+  ]
+}

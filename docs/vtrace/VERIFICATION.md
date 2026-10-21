@@ -527,3 +527,7 @@ was cleared, then validation used local dev/test debug=0 and incremental=0, one 
 These are build settings, not runtime/browser resource waivers. The frozen oracle
 was not regenerated after production changes. Full hosted CI remains separate.
 No new backend, engine/export/revision or browser/device resource acceptance.
+
+## Borrowed Constraint evaluator (CHG-123 / IF-QUERY-READ-001)
+
+`icelines-query/tests/player_read.rs` compares the pre-edit 813 x 288 oracle with legacy, inline, separate-payload and dynamic readers; checks provider identity, historical bio references, goalie fallback, contract borrows and short-circuiting. PlayerRead's compile-fail doctest rejects mutation of its borrowed owner. Local 657 query tests/docs, 20 downstream tests, Clippy, native workspace and WASM-target checks pass; evidence is retained in `context/waves/2026-10-03-browser-wasm/evidence/miser-query-read-local.json`. Full hosted CI, repository ownership and complete browser resource acceptance remain separate.

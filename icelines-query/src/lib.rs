@@ -44,6 +44,7 @@ pub mod input;
 pub mod parser;
 pub mod plan;
 pub mod planner;
+pub mod player_read;
 pub mod slice_selectors;
 pub mod sliding_window;
 pub mod tokenizer;
@@ -62,6 +63,7 @@ pub use plan::{
     SeasonStatConstraint, SlidingWindow, SlidingWindowConstraint, StrictMode, WindowPolicy,
     WindowScope,
 };
+pub use player_read::PlayerRead;
 pub use slice_selectors::{
     compile_prepared_player_selector, plan_prepared_player_query_sqlite_selector,
     plan_prepared_player_sqlite_selector, prepared_player_selector_catalog,

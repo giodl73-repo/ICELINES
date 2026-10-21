@@ -741,3 +741,11 @@ Additive Rust interface preserving scalar/report widths, missingness and borrowe
 lifetimes. Current PlayerView/repository types and persisted schemas remain stable.
 Verification: `icelines-core/tests/season_read.rs`, retained pre-refactor oracle,
 compile-fail borrow doctest and existing core/query/native/WASM regression gates.
+
+## IF-QUERY-READ-001: Borrowed player constraint evaluation
+
+Owner: HART/FORGE; consumer: the complete Constraint evaluator. PlayerRead borrows
+identity, SeasonStatsRead and optional contract; matches_read shares implementation
+with the unchanged matches(&PlayerView, &EvalCtx) entry point. Contract and tests:
+design/specs/borrowed-player-query.md and icelines-query/tests/player_read.rs.
+No provider, persistence, public PlayerView field or repository ownership change.
