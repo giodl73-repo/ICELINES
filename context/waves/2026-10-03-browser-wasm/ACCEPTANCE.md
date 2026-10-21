@@ -572,3 +572,21 @@ implementation. Native20% lead met; MISER-012 prototypes next with8 keys/LRU/sou
 rollback/latency/full native-WASM-browser gates. No realized saving or250MiB waiver.
 Public miser-native-owner-components-20261020.json plus15 raw files,52 private
 source/raw/build/audit archives retained. App/default/publication unchanged.
+
+
+## EXP024 cold resident native prototype (not adopted)
+
+Isolated cold-residents feature retains source/revision/input count for inactive
+windows and rebuilds before promotion; active always query-ready.12 fresh processes
+default/sparse x warm/cold x3 preserve95 lifecycle states/all resident query digests.
+Feature-off retention matches EXP023 exactly. Sparse requested retention12,678,257
+to5,167,110B first8 and8,784,976 to3,603,881B final8; default reductions68.50/68.99%.
+Native retained and construction/switch peaks pass, max observed rebuild15.574ms
+(p95<=100/max<=250ms screen). These are elapsed wall times, not CPU ticks.59 lab/
+78 engine tests, all4 native Clippy,11 corruption/3 simulated-budget/4 producer guards
+and1277-file source/normalizer audit pass.74 private archives/17 public raw files
+retain initial lint failure and p50 definition correction; all other outputs/gates
+unchanged on replay. Public miser-cold-resident-native-20261020.json records exact
+results. Native qualification does not prove WASM/private-browser gains; consumer
+application unchanged. MISER-012 next validates actual WASM/capacity and full original
+browser workload;250MiB/Android/private Linux and adoption gates remain open.

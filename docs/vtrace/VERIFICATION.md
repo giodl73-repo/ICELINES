@@ -817,3 +817,18 @@ is inactive repository data; native20% prototype lead met.15 public/52 private
 archives retained. MISER-012 measures cold-rebuild parity/latency/peak next; no
 implementation, WASM/private-browser saving, adoption or original250MiB pass.
 Android/private hosted Linux and target-unbound renderer identity remain open.
+
+
+## VER-BROWSER-COLD-RESIDENT-NATIVE-001: Isolated native cold cache qualification
+
+CHG-124 / REQ-BROWSER-001: EXP024 source-only inactive type builds target repository
+before removal/active mutation. Original source data/raw SHA/LRU/input policy remain;
+normalizer copy equality guard prevents formula drift in this prototype.12 actual
+processes agree on95 lifecycle states/digests; retention repeats59% sparse/69% default
+reduction with lower measured construction/selection peaks. Max elapsed rebuild
+15.574ms passes native screen, not original full-browser500ms acceptance.59 lab and
+78 engine tests/all4 Clippy,11 corruptions/3 budget failures/4 producer guards validate
+signed peak accounting, exact-revision, rollback and feature-off baseline parity.
+17 public/74 private archives retain source/failed-preflight/correction evidence.
+No cold feature in consumer or deployment. Actual WASM/browser/250MiB/mobile/private
+Linux remain open. Before adoption factor normalization or keep equivalent guard.

@@ -1,0 +1,245 @@
+{
+  "schema_version": 1,
+  "experiment": "MISER-EXP-024",
+  "change_id": "CHG-124",
+  "isolated_native_prototype": true,
+  "summary": {
+    "complete95_state_and_resident_query_parity": true,
+    "experiment": "MISER-EXP-024",
+    "fresh_processes": 12,
+    "native": {
+      "default": {
+        "all75": {
+          "cold_construction_peak_bytes": 9227795,
+          "cold_maximum_switch_peak_bytes": 5813309,
+          "cold_reselect_ms": {
+            "max": 10.5292,
+            "p50": 4.79,
+            "p95": 8.439
+          },
+          "cold_retained_bytes": 3925423,
+          "native_latency_pass": true,
+          "retained20_percent_pass": true,
+          "retained_reduction_fraction": 0.6899427312872759,
+          "warm_construction_peak_bytes": 23255110,
+          "warm_retained_bytes": 12660316
+        },
+        "first_eight": {
+          "cold_construction_peak_bytes": 8042495,
+          "cold_maximum_switch_peak_bytes": 10210817,
+          "cold_reselect_ms": {
+            "max": 15.5736,
+            "p50": 7.7344,
+            "p95": 14.5882
+          },
+          "cold_retained_bytes": 6450288,
+          "native_latency_pass": true,
+          "retained20_percent_pass": true,
+          "retained_reduction_fraction": 0.6850343963704691,
+          "warm_construction_peak_bytes": 21278653,
+          "warm_retained_bytes": 20479341
+        }
+      },
+      "sparse": {
+        "all75": {
+          "cold_construction_peak_bytes": 6519804,
+          "cold_maximum_switch_peak_bytes": 4560222,
+          "cold_reselect_ms": {
+            "max": 9.1101,
+            "p50": 4.1589,
+            "p95": 8.1625
+          },
+          "cold_retained_bytes": 3603881,
+          "native_latency_pass": true,
+          "retained20_percent_pass": true,
+          "retained_reduction_fraction": 0.5897676897466766,
+          "warm_construction_peak_bytes": 14043457,
+          "warm_retained_bytes": 8784976
+        },
+        "first_eight": {
+          "cold_construction_peak_bytes": 5680639,
+          "cold_maximum_switch_peak_bytes": 6860002,
+          "cold_reselect_ms": {
+            "max": 13.2162,
+            "p50": 6.5108,
+            "p95": 10.4454
+          },
+          "cold_retained_bytes": 5167110,
+          "native_latency_pass": true,
+          "retained20_percent_pass": true,
+          "retained_reduction_fraction": 0.5924431883657193,
+          "warm_construction_peak_bytes": 12723409,
+          "warm_retained_bytes": 12678257
+        }
+      }
+    },
+    "scope": "Isolated opt-in native candidate only; actual WASM/browser/Android/default adoption gates remain open",
+    "producer_source": "ee76733100d0d9812d67105ee7a8097dcd7a8b49",
+    "analysis_source": "c77cafd4cc30eb2b8ecf2efa07e14e0940c43ff2",
+    "consumer_source": "33fe1ebc522da6784be1f8eb8f813b8030bec347",
+    "checks": {
+      "lab_all_target_tests": 59,
+      "native_engine_unit_executions": 78,
+      "native_four_variant_strict_clippy": true,
+      "actual_report_corruption_cases": 11,
+      "simulated_budget_excursions": 3,
+      "producer_negative_guards": 4,
+      "unchanged_core_data_query_and1277_selected_source_audit": true,
+      "signed_counter_positive_negative_zero_per_process": true,
+      "raw_revision_and_rebuild_rollback_tests": true,
+      "only_p50_definition_corrected_after_capture": true
+    },
+    "native_prototype_qualified": true,
+    "wasm_browser_qualified": false,
+    "host_observed_after_capture": {
+      "observed_after_captures_utc": "2026-10-21T00:43:17.9409831Z",
+      "os": {
+        "Caption": "Microsoft Windows 11 Enterprise Insider Preview",
+        "Version": "10.0.26310",
+        "BuildNumber": "26310"
+      },
+      "ram": {
+        "TotalPhysicalMemory": 34042929152
+      },
+      "architecture": "AMD64",
+      "cpu": {
+        "Name": "12th Gen Intel(R) Core(TM) i7-12800HX",
+        "NumberOfLogicalProcessors": 24
+      },
+      "scope": "Post-capture host observation, not instantaneous frequency/load attestation"
+    },
+    "next": "Validate actual WASM capacity/full lifecycle and original full browser workload before adoption. Factor shared normalization or retain exact-body guard; consumer application remains unchanged.",
+    "remaining": [
+      "Original whole-browser250MiB gate unmet",
+      "Physical Android user-deferred",
+      "Private hosted Linux independently unverified",
+      "No production/default adoption, merge or publication"
+    ]
+  },
+  "raw_archives": [
+    {
+      "path": "default-cold-r1.json.gz",
+      "bytes": 22983,
+      "sha256": "2a39168ce8251d1669c29374d023798d2cc6a4700bc931d5f736cd9d472a178f",
+      "expanded_bytes": 170284,
+      "expanded_sha256": "3d49688ddff116d783386ebf94ed5a14569eda4c2af6a95e4a40e90ecce24719"
+    },
+    {
+      "path": "default-cold-r2.json.gz",
+      "bytes": 22968,
+      "sha256": "926a93e46ec01fe34f5c99d1e153115cb65843a89cb0e72b43524ae5d9592dda",
+      "expanded_bytes": 170283,
+      "expanded_sha256": "a9bd6ead5766e24251935b601c3057ac23ac9e6c1d769d5ed96a0956e764337e"
+    },
+    {
+      "path": "default-cold-r3.json.gz",
+      "bytes": 22980,
+      "sha256": "86dfc2d6bccdb7457466f6fb5f5e2f0017241a91535691ed9f81aa43327f00fc",
+      "expanded_bytes": 170287,
+      "expanded_sha256": "99dc2d940fd0ae4d5288af357ed40a02c2751a6f838f4d532191503501b6476a"
+    },
+    {
+      "path": "default-warm-r1.json.gz",
+      "bytes": 22424,
+      "sha256": "b463fe1c5ca4d214f3ad113194ff2361f91c1ea04029da7278a778620372f125",
+      "expanded_bytes": 169539,
+      "expanded_sha256": "e0a1a008fe837a6d29114d981294fc3fd9fe20669390b668c9b71fa56b49a3f0"
+    },
+    {
+      "path": "default-warm-r2.json.gz",
+      "bytes": 22430,
+      "sha256": "3746a2e0f8eabcfd95f4cad5bed430861142161ddde275dbc488b6fb94c3838c",
+      "expanded_bytes": 169539,
+      "expanded_sha256": "eacdf7dd7f35648ead23c5d989f74d3f2726a0722a8ffd2292288fcbab74a4ea"
+    },
+    {
+      "path": "default-warm-r3.json.gz",
+      "bytes": 22424,
+      "sha256": "674347fbf79159b001d18ff0a3ea32f6ff257af235fb7df0d4989f9467d95244",
+      "expanded_bytes": 169539,
+      "expanded_sha256": "c040572cbee9136e3c6945f018f6045ed33d77b73a22c174af45383526003e78"
+    },
+    {
+      "path": "sparse-cold-r1.json.gz",
+      "bytes": 22965,
+      "sha256": "f793a6df82f3114a4766a3706d5860cf5033bda62e7340762fa136e22bf117b4",
+      "expanded_bytes": 170248,
+      "expanded_sha256": "0f9a4eddece7f0de09049e35f38067af9b54631c09822e116ca231f6b2cb9980"
+    },
+    {
+      "path": "sparse-cold-r2.json.gz",
+      "bytes": 22964,
+      "sha256": "29a0fbf0eba042de710da7be5fe3be091bd6881a4b2bf5e95226c375e60a4190",
+      "expanded_bytes": 170247,
+      "expanded_sha256": "7362344e70988efb0d8e31082a1911086d575eccac2ccf0dd0f295a76d39119d"
+    },
+    {
+      "path": "sparse-cold-r3.json.gz",
+      "bytes": 22971,
+      "sha256": "46d2b21c8fc84bebd2a36ec334024aa42209c94c276dcced432459c00a499e3b",
+      "expanded_bytes": 170245,
+      "expanded_sha256": "031be0056b321236675a7dd2cb391a6784c41da519147a7f97f1eaacdbaefffd"
+    },
+    {
+      "path": "sparse-warm-r1.json.gz",
+      "bytes": 22418,
+      "sha256": "dbabd61ec88f6d04a5afa88c6ccd79b59c7808066bb7ed96b8cd9bb141cecb75",
+      "expanded_bytes": 169521,
+      "expanded_sha256": "e48dd3ffaebdeb9796ebe08d8e496c05dea8b059e1518675180e9f7dab07c9a2"
+    },
+    {
+      "path": "sparse-warm-r2.json.gz",
+      "bytes": 22421,
+      "sha256": "aa3bd92790c634fd8b3a15a9eff94ed559e5b8091f40a7a71276107115d77ab7",
+      "expanded_bytes": 169521,
+      "expanded_sha256": "a5d266ce446a3e8eef2ca2d2969dc369825edac44477677de8be4fccd7a2109c"
+    },
+    {
+      "path": "sparse-warm-r3.json.gz",
+      "bytes": 22430,
+      "sha256": "b4ae0abc529fde65d52136e1363245d40397d7ab3b11f6f69f479f35491022a7",
+      "expanded_bytes": 169521,
+      "expanded_sha256": "65a637c994a0888fded07b85522df0a53d1ef5edba886ba57ebc8efdb9327cce"
+    },
+    {
+      "path": "exp024-source-audit.json.gz",
+      "bytes": 266,
+      "sha256": "86042e7c4a8636dd5c7336a090442d9dc0639681c0747fa0f010fd000349c32c",
+      "expanded_bytes": 458,
+      "expanded_sha256": "f8eee5c499e3d62de74df7a77d2a12e92bd49e640c8d618f732a25dc054acef6"
+    },
+    {
+      "path": "exp024-corruption-audit.json.gz",
+      "bytes": 362,
+      "sha256": "891e4530403619cf789750692a724153b028e7f88393af2b989e43a94bcb457d",
+      "expanded_bytes": 1649,
+      "expanded_sha256": "217f4253794f58ee172b4c906ad56b0d2e50423e699a9f2a7b790b840873eb15"
+    },
+    {
+      "path": "exp024-producer-negative-audit.json.gz",
+      "bytes": 175,
+      "sha256": "e0a19c0a7a6613d2b9b610801ba5ade1414a50fd0531ecc42e8bace75a6438ec",
+      "expanded_bytes": 424,
+      "expanded_sha256": "2f50dcf2dce236c254bd305bae9e70b4ff0f93ceaf860101e923df67911d0038"
+    },
+    {
+      "path": "exp024-budget-audit.json.gz",
+      "bytes": 405,
+      "sha256": "1ac20a8bfc335dfe9ec22028cc00af31861e9b1cec13b2561c8f02ab5b0c5d93",
+      "expanded_bytes": 1777,
+      "expanded_sha256": "cb52e2c6c9c6c39eb46dd633c44ca05ffb6ac0e80d42dd2e7fa64339ab2f9733"
+    },
+    {
+      "path": "exp024-analysis-replay.json.gz",
+      "bytes": 257,
+      "sha256": "89882eafceee0e979c15e59c2ead3c91afb419624df9ee8b5ef52700b6d63726",
+      "expanded_bytes": 686,
+      "expanded_sha256": "4b05faef92f66e70fa955989dca8a0b8aa99d811c9e280775f296ffe41899795"
+    }
+  ],
+  "private_evidence_source": "3c1605b8b082f47a990e9500d5f9c421e7cc6294",
+  "private_custody": "74 exact raw/source/build/test/audit archives, compressed+expanded hashes pass",
+  "task": "https://github.com/giodl73-repo/MISER/issues/10",
+  "application_source": "Cold prototype is not adopted. Consumer Rust/application/build still matches hostedda22174c",
+  "remaining": "Actual cold WASM/browser validation, original250MiB, Android and private Linux remain open; no default/merge/publication"
+}

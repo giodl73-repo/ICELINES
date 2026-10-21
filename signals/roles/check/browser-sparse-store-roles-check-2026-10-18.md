@@ -182,3 +182,15 @@ Six MISER single-agent lenses approve attribution only. Never equate destructive
 freeing with realized saving or a functioning cold cache.15 public/52 private
 archives retained; MISER-012 must preserve8 keys/source/LRU/rollback and measure
 CPU/peak/native/WASM/full original browser gates before adoption. App unchanged.
+
+
+EXP024 addendum: isolated opt-in cold residency passes native qualification only.
+Source/revision/input owner stays available while inactive normalized data drops;
+rebuild occurs before LRU/active mutation. Twelve processes preserve95-state/full
+resident-query outputs and repeat59% sparse/69% default requested-retention gains.
+59 lab/78 engine tests/all4 native Clippy and11 corruption/3 budget/4 producer checks
+pass; max elapsed rebuild15.574ms.74 private/17 public archives preserve failures
+and exact source/counter/normalizer guards. Six single-agent MISER lenses approve
+native scope only. Consumer unchanged; actual WASM/browser and original250MiB/
+Android/private-Linux adoption gates remain. Factor shared normalization before
+production or retain equivalent guard; no public cold-cache adoption claimed.
