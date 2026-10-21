@@ -732,3 +732,12 @@ or decompression failures preserve the previous active season and do not silentl
 retry an alternate representation. Old catalogs and browsers without gzip
 support use the retained raw JSON files. Saved/recovery/export bytes and revision
 identity remain canonical JSON. No live relay or worker query contract changes.
+
+## IF-CORE-READ-001: Borrowed season-stat access
+
+Owner: HART/FORGE; consumers: stat catalog and boolean filter evaluation, with
+future sparse adapters. Contract: `design/specs/borrowed-season-read.md`.
+Additive Rust interface preserving scalar/report widths, missingness and borrowed
+lifetimes. Current PlayerView/repository types and persisted schemas remain stable.
+Verification: `icelines-core/tests/season_read.rs`, retained pre-refactor oracle,
+compile-fail borrow doctest and existing core/query/native/WASM regression gates.

@@ -193,3 +193,17 @@ remain open. CI/master/public-origin transfer and update/rollback evidence are
 required before promoting the delivery implementation.
 Trace updates: INTERFACES, WORK_PACKAGES, TRACE, VERIFICATION and VALIDATION.
 No resource waiver, native dependency change or hockey semantics change.
+
+## CHG-122: Add borrowed season-stat reads without changing owners (2026-10-18)
+
+Decision: introduce additive SeasonStatsRead access with core-owned shared formulas.
+StatId read/sort and boolean filters accept the interface; existing PlayerView API
+and repository/serialization/storage remain stable. See IF-CORE-READ-001 and
+`design/specs/borrowed-season-read.md`. MISER EXP-004 through EXP-007 motivate this
+compatibility step; their sparse-storage savings are not claimed for this change.
+
+A pre-production-change oracle fixes all 108 catalog reads, complete stat orderings
+and eight filter vectors over 288 boundary rows. New inline, legacy and independently
+owned payload readers must match exact values and existing guard semantics. Native
+and WASM compilation plus downstream regression gates retain separate outcomes.
+No schema change, backend switch, deployment, resource waiver or Android acceptance.

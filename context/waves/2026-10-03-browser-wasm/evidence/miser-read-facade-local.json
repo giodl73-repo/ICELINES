@@ -1,0 +1,90 @@
+{
+  "scope": "additive borrowed core read interface; selected native correctness and compilation checks",
+  "production_base": "663c4f2909905c9e1d3258e26478d36355d30f4a",
+  "legacy_oracle_producer": "9af58a5dc45e456e8c3a9df2638447901504dc2b",
+  "rustc": "rustc 1.95.0 (59807616e 2026-04-14)",
+  "platform": "windows-x86_64",
+  "validation_settings": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "cargo_jobs": 1
+  },
+  "selected_unique_tests": 1430,
+  "passed": {
+    "core_unit": 1182,
+    "facade_integration": 4,
+    "core_doc": 2,
+    "data_lib": 2,
+    "query_lib": 222,
+    "wasm_native_lib": 18,
+    "core_all_target_clippy": true,
+    "native_workspace_check": true,
+    "wasm32_unknown_unknown_check": true
+  },
+  "resolved_attempts": [
+    "Initial full default-debug test build failed while emitting lib-test output because C: ran out of space. Removed only this task new verified build-cache directory; preserved baseline oracle/custody and logs. Selected validation then passed without debug symbols. No application runtime/resource acceptance settings changed.",
+    "Clippy flagged two modulo checks in synthetic fixtures; changed to is_multiple_of and reran lint/oracle checks without regenerating the legacy golden."
+  ],
+  "limits": [
+    "Only selected native tests, not every workspace integration/UI test, were executed locally.",
+    "No sparse production backend, full query-executor migration, browser release, memory result or physical Android acceptance.",
+    "Local source was uncommitted during checks; final commit contains these tested source files."
+  ],
+  "artifacts": [
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/evidence/miser-read-core-tests.log.gz",
+      "uncompressed_bytes": 1908,
+      "uncompressed_sha256": "6f51bf89b1c28d5165850f66a0757bd49cd2cfc85d6ee953e2223f8e62c34a7a",
+      "compressed_sha256": "e76c5b09c6befe56ef5dfe8481904dc05dec4c21da27f2803ca49098392574d2"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/evidence/miser-read-core-recovery-tests.log.gz",
+      "uncompressed_bytes": 112258,
+      "uncompressed_sha256": "0e5aad7969172e426c612f2209e4c9f3ffdf6f1377a79886e6621c031404dcf0",
+      "compressed_sha256": "88163adc8c9b2b6bf2d272a2c434fe92d19b5c68d590ad753fd6210fade94d69"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/evidence/miser-read-core-recovery-docs.log.gz",
+      "uncompressed_bytes": 425,
+      "uncompressed_sha256": "36900d1320a81cefe0365a8b4eaf3dd35a109d6130a484a54adba37a9d9cc288",
+      "compressed_sha256": "f35edb16ad8549fe48bedbcbaabb2390d7ea02726c05d910d27533644dc3b1a7"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/evidence/miser-read-core-recovery-clippy.log.gz",
+      "uncompressed_bytes": 2699,
+      "uncompressed_sha256": "df6fe1d3387a85aaac01f210b9766d1007bf475d79b7b300203e7bf362c6805c",
+      "compressed_sha256": "b94a5b96b4832c4a98173444220217cf3945986c34b40eb14a16ff0592fdafbf"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/evidence/miser-read-core-clippy-final.log.gz",
+      "uncompressed_bytes": 164,
+      "uncompressed_sha256": "c1e5fba709c2b75702a3a92e6bd679a77a86e69b53fde40b2e8f98de9c700fa5",
+      "compressed_sha256": "ed097d688f570dbdee2b08d0bf2aea3bd548a413e9b1cb63d8d0f4b568725cfd"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/evidence/miser-read-oracle-final.log.gz",
+      "uncompressed_bytes": 696,
+      "uncompressed_sha256": "95fce76d89a115ff23b91d382ddba4551d15a5c9f70a66e5032d29c71128418e",
+      "compressed_sha256": "a2727527fcfabd78fca9efdd25f2907b0bf55531ee327f8b87e21771baa31f8e"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/evidence/miser-read-downstream-tests.log.gz",
+      "uncompressed_bytes": 17463,
+      "uncompressed_sha256": "5981c72b7c2324204201f377f44acfcd7f13583fb625304d5a96307e7aedd6d9",
+      "compressed_sha256": "376a52a7b4c8fce4741ca24ff664ffaba55e774da9aa470e926b13e46beb3451"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/evidence/miser-read-workspace-check.log.gz",
+      "uncompressed_bytes": 8956,
+      "uncompressed_sha256": "996494246f27981a8051cf6900616410cb0aea31686a1a0e0499dff44720e841",
+      "compressed_sha256": "1da94528d46d8299cba45542354eb08e4061fd72f88b82639597be906cccaa25"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/evidence/miser-read-wasm-check.log.gz",
+      "uncompressed_bytes": 2496,
+      "uncompressed_sha256": "a448f3bc73fd173737518279cae52046271f346bbfef4795cf81a681ecdf7714",
+      "compressed_sha256": "5ec34091cdb50d0aa709f82581c952399bd13b1e3e26df03f26cc02fc2d01f47"
+    }
+  ]
+}

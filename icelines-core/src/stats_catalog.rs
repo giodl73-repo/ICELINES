@@ -25,6 +25,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::model::{Position, Season, MIN_GP};
+use crate::season_read::{SeasonStatsRead, SeasonStatsReadExt};
 use crate::season_stats::SeasonType;
 use crate::stats_repository::PlayerView;
 
@@ -1380,6 +1381,12 @@ impl StatId {
     /// **Per-60 TOI floor**: per-60 rates require `total_toi_sec >= 300`
     /// (PACE-F1 — soft floor). Below that, stats are statistical noise.
     pub fn read(self, view: &PlayerView<'_>) -> Option<f64> {
+        self.read_from(view)
+    }
+
+    /// Read the same catalog value from any coherent borrowed season row.
+    /// Existing PlayerView reads delegate here; guards and formulas have one owner.
+    pub fn read_from<R: SeasonStatsRead + ?Sized>(self, view: &R) -> Option<f64> {
         use StatId::*;
 
         // DI-11 enforcement at category boundary. OnIceGoals stats are
@@ -1388,38 +1395,38 @@ impl StatId {
             return None;
         }
 
-        let stats = view.stats;
+        let stats = view;
 
         match self {
             // ─── Scoring (15) ───────────────────────────────────────
-            Games => Some(stats.totals.gp as f64),
-            Goals => Some(stats.totals.goals as f64),
-            Assists => Some(stats.totals.assists as f64),
-            Points => Some(stats.totals.points as f64),
+            Games => Some(stats.totals().gp as f64),
+            Goals => Some(stats.totals().goals as f64),
+            Assists => Some(stats.totals().assists as f64),
+            Points => Some(stats.totals().points as f64),
             EvGoals => {
                 // Even-strength = total minus PP minus SH.
-                let g = stats.totals.goals;
+                let g = stats.totals().goals;
                 Some(
-                    g.saturating_sub(stats.totals.pp_goals)
-                        .saturating_sub(stats.totals.sh_goals) as f64,
+                    g.saturating_sub(stats.totals().pp_goals)
+                        .saturating_sub(stats.totals().sh_goals) as f64,
                 )
             }
             EvPoints => {
-                let p = stats.totals.points;
+                let p = stats.totals().points;
                 Some(
-                    p.saturating_sub(stats.totals.pp_points)
-                        .saturating_sub(stats.totals.sh_points) as f64,
+                    p.saturating_sub(stats.totals().pp_points)
+                        .saturating_sub(stats.totals().sh_points) as f64,
                 )
             }
-            PpGoals => Some(stats.totals.pp_goals as f64),
+            PpGoals => Some(stats.totals().pp_goals as f64),
             PpAssists => Some(view.pp_assists() as f64),
-            PpPoints => Some(stats.totals.pp_points as f64),
-            ShGoals => Some(stats.totals.sh_goals as f64),
-            ShPoints => Some(stats.totals.sh_points as f64),
-            Gwg => Some(stats.totals.gwg as f64),
-            OtGoals => Some(stats.totals.ot_goals as f64),
-            Shots => Some(stats.totals.shots as f64),
-            ShootingPct => stats.totals.shooting_pct.map(f64::from),
+            PpPoints => Some(stats.totals().pp_points as f64),
+            ShGoals => Some(stats.totals().sh_goals as f64),
+            ShPoints => Some(stats.totals().sh_points as f64),
+            Gwg => Some(stats.totals().gwg as f64),
+            OtGoals => Some(stats.totals().ot_goals as f64),
+            Shots => Some(stats.totals().shots as f64),
+            ShootingPct => stats.totals().shooting_pct.map(f64::from),
 
             // ─── SpecialTeams (11) — all Tier-2, deferred to L.6 ───
             // These need PP-TOI / PK-TOI denominators which only the
@@ -1442,13 +1449,13 @@ impl StatId {
             DefensiveZoneFaceoffPct => None, // L.6: faceoffpercentages
 
             // ─── TwoWay (17) ────────────────────────────────────────
-            PlusMinus => Some(stats.totals.plus_minus as f64),
-            Pim => Some(stats.totals.pim as f64),
+            PlusMinus => Some(stats.totals().plus_minus as f64),
+            Pim => Some(stats.totals().pim as f64),
             Hits => view.hits().map(f64::from),
             BlockedShots => view.blocked_shots().map(f64::from),
             Takeaways => view.takeaways().map(f64::from),
             Giveaways => view.giveaways().map(f64::from),
-            MissedShots => stats.realtime.as_ref().map(|r| r.missed_shots as f64),
+            MissedShots => stats.realtime().map(|r| r.missed_shots as f64),
             HitsPer60 => per_60(view, view.hits()),
             BlockedShotsPer60 => per_60(view, view.blocked_shots()),
             TakeawaysPer60 => per_60(view, view.takeaways()),
@@ -1458,89 +1465,51 @@ impl StatId {
             PenaltiesTakenPer60 => None, // L.6
             NetPenalties => None,        // L.6
             NetPenaltiesPer60 => None,   // L.6
-            FaceoffWinPct => stats.totals.faceoff_win_pct.map(f64::from),
+            FaceoffWinPct => stats.totals().faceoff_win_pct.map(f64::from),
 
             // ─── TimeOnIce (12) ─────────────────────────────────────
-            TotalToi => stats.time_on_ice.as_ref().map(|t| t.time_on_ice_sec as f64),
-            TotalToiPerGame => stats.totals.toi_per_game_sec.map(f64::from).or_else(|| {
+            TotalToi => stats.time_on_ice().map(|t| t.time_on_ice_sec as f64),
+            TotalToiPerGame => stats.totals().toi_per_game_sec.map(f64::from).or_else(|| {
                 stats
-                    .time_on_ice
-                    .as_ref()
+                    .time_on_ice()
                     .map(|t| t.time_on_ice_per_game_sec as f64)
             }),
-            EvToi => stats
-                .time_on_ice
-                .as_ref()
-                .map(|t| t.ev_time_on_ice_sec as f64),
+            EvToi => stats.time_on_ice().map(|t| t.ev_time_on_ice_sec as f64),
             EvToiPerGame => stats
-                .time_on_ice
-                .as_ref()
+                .time_on_ice()
                 .map(|t| t.ev_time_on_ice_per_game_sec as f64),
             // SCOUT-R2 L2-F3: sourced from goalsForAgainst, lives in
             // TimeOnIce category (NOT subject to DI-11 since this
             // category isn't OnIceGoals).
             EvenStrengthTimeOnIcePerGame => stats
-                .goals_for_against
-                .as_ref()
+                .goals_for_against()
                 .map(|g| g.ev_time_on_ice_per_game_sec as f64),
-            PpToi => stats
-                .time_on_ice
-                .as_ref()
-                .map(|t| t.pp_time_on_ice_sec as f64),
+            PpToi => stats.time_on_ice().map(|t| t.pp_time_on_ice_sec as f64),
             PpToiPerGame => stats
-                .time_on_ice
-                .as_ref()
+                .time_on_ice()
                 .map(|t| t.pp_time_on_ice_per_game_sec as f64),
-            ShToi => stats
-                .time_on_ice
-                .as_ref()
-                .map(|t| t.sh_time_on_ice_sec as f64),
+            ShToi => stats.time_on_ice().map(|t| t.sh_time_on_ice_sec as f64),
             ShToiPerGame => stats
-                .time_on_ice
-                .as_ref()
+                .time_on_ice()
                 .map(|t| t.sh_time_on_ice_per_game_sec as f64),
-            Shifts => stats.time_on_ice.as_ref().map(|t| t.shifts as f64),
-            ShiftsPerGame => stats
-                .time_on_ice
-                .as_ref()
-                .map(|t| f64::from(t.shifts_per_game)),
+            Shifts => stats.time_on_ice().map(|t| t.shifts as f64),
+            ShiftsPerGame => stats.time_on_ice().map(|t| f64::from(t.shifts_per_game)),
             ToiPerShift => stats
-                .time_on_ice
-                .as_ref()
+                .time_on_ice()
                 .map(|t| f64::from(t.time_on_ice_per_shift_sec)),
 
             // ─── OnIceGoals (8) — DI-11 already short-circuited ─────
-            EvGoalsFor => stats
-                .goals_for_against
-                .as_ref()
-                .map(|g| g.ev_goals_for as f64),
-            EvGoalsAgainst => stats
-                .goals_for_against
-                .as_ref()
-                .map(|g| g.ev_goals_against as f64),
+            EvGoalsFor => stats.goals_for_against().map(|g| g.ev_goals_for as f64),
+            EvGoalsAgainst => stats.goals_for_against().map(|g| g.ev_goals_against as f64),
             EvGoalsForPct => stats
-                .goals_for_against
-                .as_ref()
+                .goals_for_against()
                 .and_then(|g| g.ev_goals_for_pct.map(f64::from)),
-            PpGoalsFor => stats
-                .goals_for_against
-                .as_ref()
-                .map(|g| g.pp_goals_for as f64),
-            PpGoalsAgainst => stats
-                .goals_for_against
-                .as_ref()
-                .map(|g| g.pp_goals_against as f64),
-            ShGoalsFor => stats
-                .goals_for_against
-                .as_ref()
-                .map(|g| g.sh_goals_for as f64),
-            ShGoalsAgainst => stats
-                .goals_for_against
-                .as_ref()
-                .map(|g| g.sh_goals_against as f64),
+            PpGoalsFor => stats.goals_for_against().map(|g| g.pp_goals_for as f64),
+            PpGoalsAgainst => stats.goals_for_against().map(|g| g.pp_goals_against as f64),
+            ShGoalsFor => stats.goals_for_against().map(|g| g.sh_goals_for as f64),
+            ShGoalsAgainst => stats.goals_for_against().map(|g| g.sh_goals_against as f64),
             EvenStrengthGoalDifference => stats
-                .goals_for_against
-                .as_ref()
+                .goals_for_against()
                 .map(|g| g.even_strength_goal_difference as f64),
 
             // ─── Possession (15) — Tier-2 (L.6) ─────────────────────
@@ -1564,55 +1533,35 @@ impl StatId {
             XgForPct => view.xgf_pct(),
 
             // ─── Goalie (23) ────────────────────────────────────────
-            GoalieGames => stats.goalie.as_ref().map(|_| stats.totals.gp as f64),
-            GoalieStarts => stats.goalie.as_ref().map(|g| g.games_started as f64),
-            Wins => stats.goalie.as_ref().map(|g| g.wins as f64),
-            Losses => stats.goalie.as_ref().map(|g| g.losses as f64),
-            OtLosses => stats
-                .goalie
-                .as_ref()
-                .and_then(|g| g.ot_losses.map(f64::from)),
-            Ties => stats.goalie.as_ref().and_then(|g| g.ties.map(f64::from)),
-            Saves => stats.goalie.as_ref().map(|g| g.saves as f64),
-            ShotsAgainst => stats.goalie.as_ref().map(|g| g.shots_against as f64),
-            GoalsAgainst => stats.goalie.as_ref().map(|g| g.goals_against as f64),
-            SavePct => stats
-                .goalie
-                .as_ref()
-                .and_then(|g| g.save_pct.map(f64::from)),
+            GoalieGames => stats.goalie().map(|_| stats.totals().gp as f64),
+            GoalieStarts => stats.goalie().map(|g| g.games_started as f64),
+            Wins => stats.goalie().map(|g| g.wins as f64),
+            Losses => stats.goalie().map(|g| g.losses as f64),
+            OtLosses => stats.goalie().and_then(|g| g.ot_losses.map(f64::from)),
+            Ties => stats.goalie().and_then(|g| g.ties.map(f64::from)),
+            Saves => stats.goalie().map(|g| g.saves as f64),
+            ShotsAgainst => stats.goalie().map(|g| g.shots_against as f64),
+            GoalsAgainst => stats.goalie().map(|g| g.goals_against as f64),
+            SavePct => stats.goalie().and_then(|g| g.save_pct.map(f64::from)),
             Gaa => stats
-                .goalie
-                .as_ref()
+                .goalie()
                 .and_then(|g| g.goals_against_average.map(f64::from)),
-            Shutouts => stats.goalie.as_ref().map(|g| g.shutouts as f64),
+            Shutouts => stats.goalie().map(|g| g.shutouts as f64),
             EvSavePct => stats
-                .goalie_saves_by_strength
-                .as_ref()
+                .goalie_saves_by_strength()
                 .and_then(|g| g.ev_save_pct.map(f64::from)),
             PpSavePct => stats
-                .goalie_saves_by_strength
-                .as_ref()
+                .goalie_saves_by_strength()
                 .and_then(|g| g.pp_save_pct.map(f64::from)),
             ShSavePct => stats
-                .goalie_saves_by_strength
-                .as_ref()
+                .goalie_saves_by_strength()
                 .and_then(|g| g.sh_save_pct.map(f64::from)),
-            QualityStarts => stats
-                .goalie_advanced
-                .as_ref()
-                .map(|g| g.quality_starts as f64),
+            QualityStarts => stats.goalie_advanced().map(|g| g.quality_starts as f64),
             QualityStartPct => stats
-                .goalie_advanced
-                .as_ref()
+                .goalie_advanced()
                 .and_then(|g| g.quality_starts_pct.map(f64::from)),
-            RegulationWins => stats
-                .goalie_advanced
-                .as_ref()
-                .map(|g| g.regulation_wins as f64),
-            RegulationLosses => stats
-                .goalie_advanced
-                .as_ref()
-                .map(|g| g.regulation_losses as f64),
+            RegulationWins => stats.goalie_advanced().map(|g| g.regulation_wins as f64),
+            RegulationLosses => stats.goalie_advanced().map(|g| g.regulation_losses as f64),
             // GSAx family — reserved/source-blocked until a verified
             // goalie xGA source is wired. QS%/SA/60 and skater on-ice
             // xGA are not goalie xGA substitutes.
@@ -1667,6 +1616,20 @@ impl StatId {
     /// across the app inherits the same ordering.
     pub fn sort_cmp(self, a: &PlayerView<'_>, b: &PlayerView<'_>) -> std::cmp::Ordering {
         self.sort_values_cmp(self.read(a), a.id(), self.read(b), b.id())
+    }
+
+    /// Canonical catalog ordering over borrowed rows with any storage layout.
+    pub fn sort_read_cmp<A: SeasonStatsRead + ?Sized, B: SeasonStatsRead + ?Sized>(
+        self,
+        a: &A,
+        b: &B,
+    ) -> std::cmp::Ordering {
+        self.sort_values_cmp(
+            self.read_from(a),
+            a.player_id(),
+            self.read_from(b),
+            b.player_id(),
+        )
     }
 
     /// The same ordering for owned projections: full-precision metric values,
@@ -1747,18 +1710,12 @@ impl StatId {
 ///   - total TOI is unavailable,
 ///   - total TOI is below the 300s soft floor (PACE-F1 — statistical
 ///     noise from microscopic ice time).
-fn per_60(view: &PlayerView<'_>, count: Option<u32>) -> Option<f64> {
-    let toi_sec = view
-        .stats
-        .time_on_ice
-        .as_ref()
-        .map(|t| t.time_on_ice_sec)
-        .or_else(|| {
-            view.stats
-                .totals
-                .toi_per_game_sec
-                .map(|per_g| per_g.saturating_mul(view.gp()))
-        })?;
+fn per_60<R: SeasonStatsRead + ?Sized>(view: &R, count: Option<u32>) -> Option<f64> {
+    let toi_sec = view.time_on_ice().map(|t| t.time_on_ice_sec).or_else(|| {
+        view.totals()
+            .toi_per_game_sec
+            .map(|per_g| per_g.saturating_mul(view.gp()))
+    })?;
     if toi_sec < 300 {
         return None;
     }
@@ -2224,11 +2181,16 @@ impl FilterExpr {
     /// If the user actually wants "tracked AND below threshold,"
     /// they should add a guard like `gp>=1` in the AND chain.
     pub fn matches(&self, v: &crate::stats_repository::PlayerView<'_>) -> bool {
+        self.matches_read(v)
+    }
+
+    /// The same short-circuit and missing-data semantics over borrowed row access.
+    pub fn matches_read<R: SeasonStatsRead + ?Sized>(&self, v: &R) -> bool {
         match self {
             FilterExpr::Atom(f) => atom_matches(f, v),
-            FilterExpr::And(a, b) => a.matches(v) && b.matches(v),
-            FilterExpr::Or(a, b) => a.matches(v) || b.matches(v),
-            FilterExpr::Not(inner) => !inner.matches(v),
+            FilterExpr::And(a, b) => a.matches_read(v) && b.matches_read(v),
+            FilterExpr::Or(a, b) => a.matches_read(v) || b.matches_read(v),
+            FilterExpr::Not(inner) => !inner.matches_read(v),
         }
     }
 
@@ -2253,14 +2215,14 @@ impl FilterExpr {
 /// `PlayerFilter::matches_stat_filters` but on one atom. Lifted into
 /// a free function so `FilterExpr::matches` doesn't need a borrow on
 /// PlayerFilter.
-fn atom_matches(f: &StatFilter, v: &crate::stats_repository::PlayerView<'_>) -> bool {
+fn atom_matches<R: SeasonStatsRead + ?Sized>(f: &StatFilter, v: &R) -> bool {
     if !f.stat.applies_to(v.position(), v.is_goalie()) {
         // DI-08 — non-applicable filters silently pass for the atom.
         // (matches_stat_filters does `continue`; here we return true
         // so the atom is a no-op when AND-chained.)
         return true;
     }
-    let actual = match f.stat.read(v) {
+    let actual = match f.stat.read_from(v) {
         Some(x) => x,
         None => return false,
     };

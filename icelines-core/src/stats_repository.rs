@@ -728,75 +728,72 @@ impl PlayerView<'_> {
     /// (season, type). Drives the "trade banner" decision in the player
     /// card (GLASS).
     pub fn was_traded_in_window(&self) -> bool {
-        self.stats.team_stints.len() > 1
+        crate::season_read::SeasonStatsReadExt::was_traded_in_window(self)
     }
 
     pub fn goals(&self) -> u32 {
-        self.stats.totals.goals
+        crate::season_read::SeasonStatsReadExt::goals(self)
     }
     pub fn assists(&self) -> u32 {
-        self.stats.totals.assists
+        crate::season_read::SeasonStatsReadExt::assists(self)
     }
     pub fn points(&self) -> u32 {
-        self.stats.totals.points
+        crate::season_read::SeasonStatsReadExt::points(self)
     }
     pub fn gp(&self) -> u32 {
-        self.stats.totals.gp
+        crate::season_read::SeasonStatsReadExt::gp(self)
     }
     pub fn plus_minus(&self) -> i32 {
         self.stats.totals.plus_minus
     }
     pub fn shots(&self) -> u32 {
-        self.stats.totals.shots
+        crate::season_read::SeasonStatsReadExt::shots(self)
     }
 
     pub fn pace_score(&self) -> Option<&PaceScore> {
-        self.stats.totals.pace_score.as_ref()
+        crate::season_read::SeasonStatsReadExt::pace_score(self)
     }
 
     pub fn is_goalie(&self) -> bool {
-        self.stats.is_goalie()
+        crate::season_read::SeasonStatsReadExt::is_goalie(self)
     }
 
     // WIRE: realtime/advanced read through Option-at-leaf accessors,
     // never `.unwrap()`. None during cold-start / partial fetch.
 
     pub fn hits(&self) -> Option<u32> {
-        self.stats.realtime.as_ref().map(|r| r.hits)
+        crate::season_read::SeasonStatsReadExt::hits(self)
     }
     pub fn blocked_shots(&self) -> Option<u32> {
-        self.stats.realtime.as_ref().map(|r| r.blocked_shots)
+        crate::season_read::SeasonStatsReadExt::blocked_shots(self)
     }
     pub fn takeaways(&self) -> Option<u32> {
-        self.stats.realtime.as_ref().map(|r| r.takeaways)
+        crate::season_read::SeasonStatsReadExt::takeaways(self)
     }
     pub fn giveaways(&self) -> Option<u32> {
-        self.stats.realtime.as_ref().map(|r| r.giveaways)
+        crate::season_read::SeasonStatsReadExt::giveaways(self)
     }
 
     pub fn xg(&self) -> Option<f64> {
-        self.stats.advanced.as_ref().and_then(|a| a.xg)
+        crate::season_read::SeasonStatsReadExt::xg(self)
     }
     pub fn xg_per_60(&self) -> Option<f64> {
-        self.stats.advanced.as_ref().and_then(|a| a.xg_per_60)
+        crate::season_read::SeasonStatsReadExt::xg_per_60(self)
     }
     pub fn cf_pct(&self) -> Option<f64> {
-        self.stats.advanced.as_ref().and_then(|a| a.cf_pct)
+        crate::season_read::SeasonStatsReadExt::cf_pct(self)
     }
     pub fn ff_pct(&self) -> Option<f64> {
-        self.stats.advanced.as_ref().and_then(|a| a.ff_pct)
+        crate::season_read::SeasonStatsReadExt::ff_pct(self)
     }
     pub fn on_ice_xg_for(&self) -> Option<f64> {
-        self.stats.advanced.as_ref().and_then(|a| a.on_ice_xg_for)
+        crate::season_read::SeasonStatsReadExt::on_ice_xg_for(self)
     }
     pub fn on_ice_xg_against(&self) -> Option<f64> {
-        self.stats
-            .advanced
-            .as_ref()
-            .and_then(|a| a.on_ice_xg_against)
+        crate::season_read::SeasonStatsReadExt::on_ice_xg_against(self)
     }
     pub fn xgf_pct(&self) -> Option<f64> {
-        self.stats.advanced.as_ref().and_then(|a| a.xgf_pct)
+        crate::season_read::SeasonStatsReadExt::xgf_pct(self)
     }
 
     // ── Contract accessors (Hart.3) ────────────────────────────────────────
@@ -844,10 +841,7 @@ impl PlayerView<'_> {
 
     /// Power-play assists = pp_points - pp_goals.
     pub fn pp_assists(&self) -> u32 {
-        self.stats
-            .totals
-            .pp_points
-            .saturating_sub(self.stats.totals.pp_goals)
+        crate::season_read::SeasonStatsReadExt::pp_assists(self)
     }
 
     /// Per-82 power-play points. None when gp == 0.
@@ -925,18 +919,18 @@ impl PlayerView<'_> {
     /// Pace-projected points — convenience accessor for the
     /// most-common rank/sort key.
     pub fn pace_82(&self) -> Option<f64> {
-        self.pace_score().map(|s| s.pace_82)
+        crate::season_read::SeasonStatsReadExt::pace_82(self)
     }
 
     pub fn goals_per_82(&self) -> Option<f64> {
-        self.pace_score().map(|s| s.goals_per_82)
+        crate::season_read::SeasonStatsReadExt::goals_per_82(self)
     }
 
     /// Sort key for pace-based leaderboards. Mirrors
     /// `PaceScore::sort_key` for views without a pace score
     /// (returns 0.0 — sort places them last).
     pub fn pace_sort_key(&self) -> f64 {
-        self.pace_score().map(|s| s.sort_key()).unwrap_or(0.0)
+        crate::season_read::SeasonStatsReadExt::pace_sort_key(self)
     }
 
     // ── Phase Lindsay L.2.6 — catalog-routed accessors ──────────────────────

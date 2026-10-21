@@ -370,3 +370,10 @@ Verification and validation remain pending until recorded command/browser result
 Raw prototype reports and provenance are under
 `context/waves/2026-10-03-browser-wasm/evidence/gzip-delivery-*`.
 The prototype source commit is recorded independently from this clean PR branch.
+
+## Borrowed season-stat read compatibility (CHG-122)
+
+REQ-PARITY-001 -> IF-CORE-READ-001 -> `season_read.rs`, shared catalog read/sort/filter
+entry points and legacy PlayerView wrappers -> `tests/season_read.rs` independent
+pre-refactor oracle and `season_read` borrow doctest. Storage and deployment
+acceptance remain separate from this additive interface verification.

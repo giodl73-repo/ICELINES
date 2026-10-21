@@ -507,3 +507,23 @@ Re-run from the repository root with
 `node icelines-browser/e2e/persisted-catalog-context.mjs --artifact <retained-dist>`
 or use `npm run acceptance:persisted-catalog-context -- --artifact <retained-dist>`
 from `icelines-browser`. Artifact paths are relative to the repository root.
+
+## VER-CORE-READ-001: Additive borrowed season-stat compatibility
+
+CHG-122 / IF-CORE-READ-001 / REQ-PARITY-001: the frozen pre-refactor oracle checks
+108 catalog values over 288 synthetic boundary rows (31,104 exact optional f64 bit
+observations), all per-stat sorted IDs and eight complete filter vectors. Legacy
+PlayerView, inline and independently boxed-payload/dynamic readers agree; the
+existing APIs delegate to shared core computation. Explicit guard and typed-getter
+checks plus compile-fail borrow validation cover the new surface.
+
+Local Rust 1.95.0 Windows verification passes 1,182 core units, four facade
+integration tests, two core doctests, two data, 222 query and 18 native WASM-library
+tests (1,430 selected tests/docs). Core all-target Clippy, native nine-crate workspace
+check and wasm32-unknown-unknown icelines-wasm check pass. See retained local
+`evidence/miser-read-facade-local.json` under the browser-WASM wave and its raw logs.
+The initial default-debug lib-test build exhausted disk; only the task build cache
+was cleared, then validation used local dev/test debug=0 and incremental=0, one job.
+These are build settings, not runtime/browser resource waivers. The frozen oracle
+was not regenerated after production changes. Full hosted CI remains separate.
+No new backend, engine/export/revision or browser/device resource acceptance.
