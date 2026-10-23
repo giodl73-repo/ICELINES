@@ -21,6 +21,10 @@ csv.workspace              = true
 # code paths that don't wrap the repo in a synchronization primitive.
 default = []
 
+# Opt-in native storage: keep large rows out of spare hash-table buckets.
+# Adds one allocation per row; wasm32 already uses this representation.
+boxed-stats = []
+
 # Phase King Clancy King.1.2 — drop the !Send + !Sync marker so
 # `icelines-web` can store StatsRepository in `Arc<RwLock<_>>` for
 # axum's multi-threaded runtime. The marker is a lint, not a
