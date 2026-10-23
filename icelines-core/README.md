@@ -38,3 +38,19 @@ This is an opt-in adoption candidate. Extra allocations are a real cost.
 Query latency, allocator overhead, and CLI/server repository occupancy and
 lifetimes need workload-specific evaluation before enabling it by default.
 The existing browser memory target and deferred Android testing remain open.
+
+[MISER EXP038](https://github.com/giodl73-repo/MISER/blob/0bf41dff256af2ea07c3e7e42fdd70d88af936f5/evidence/EXP-038.md)
+subsequently measured this feature at commit
+`4d5764244dd7a2239a2496961397e715cf10a50c` with production native loading and
+career fan-out. One fixed twelve-process Windows release ABBA pass preserved
+complete stored-data/query/roster parity. Requested retained bytes fell 27.88%
+(active season), 24.99% (active plus three careers), and 37.27% (twenty-skater
+career cohort), with 1,031/1,120/1,516 extra construction allocation calls.
+
+Process private-byte deltas favored boxing in both pairs; one difference was
+only 8 KiB and RSS directions were mixed. No query exceeded the >10% regression
+screen in both pairs, but 18 of 42 series exceeded it in one pair. The strict
+all-pairs latency screen is inconclusive, so this remains opt-in and the native
+default stays inline. These are shared native query measurements, not HTTP,
+whole-browser or Android acceptance. All raw outcomes and limits are retained
+in the linked evidence; no repeat campaign follows this result.

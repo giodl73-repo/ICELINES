@@ -35,3 +35,26 @@ refinement was rerun with strict Clippy in both configurations. Combined
 `boxed-stats,send-sync`, default `wasm32-unknown-unknown` engine compilation,
 formatting and diff checks pass. Hosted Linux and live browser testing were
 not run for this proposal.
+
+## Completed bounded native validation — 2026-10-23
+
+Measured implementation: unchanged commit 4d5764244dd7a2239a2496961397e715cf10a50c.
+[EXP038 results and raw custody](https://github.com/giodl73-repo/MISER/blob/0bf41dff256af2ea07c3e7e42fdd70d88af936f5/evidence/EXP-038.md)
+close the planned native loader/career and shared-query evaluation. Twelve fresh
+release processes retain complete row/query/roster parity. Both variants' rich
+lifecycle tests and inline engine tests were checked again locally to preserve
+complete receipts; no additional hosted matrix ran.
+
+HART/FORGE/BENCH/EDGE findings remain valid: representation code is unchanged,
+and full parity, tests, unchanged allocator forwarding and send-sync/WASM checks
+are retained. PACE finds lower requested retention (27.88%/24.99%/37.27%) and
+favorable paired private-byte deltas, with extra allocation calls and mixed RSS.
+No repeatable >10% query regression occurs in both pairs, but 18/42 series flag
+one pair; equivalent latency is unproven and the all-pairs default screen fails.
+KEEL accepts the evidence for explicit native opt-in use only: it measures shared
+query operations, not every surface's rendering or every possible career cohort.
+
+Verdict: validation is complete for review of the default-off feature. Keep the
+native default inline; no browser/Android acceptance, default activation,
+deployment or follow-on measurement campaign is implied. The small MISER Linux
+lab workflow passed separately; it is not Linux execution of this native workload.
