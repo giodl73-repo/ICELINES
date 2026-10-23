@@ -11,3 +11,6 @@ trigger/job contracts for workflow-only edits. Do not run a full hosted matrix
 as a substitute for local checks.
 
 Publishing, release builds and rollback remain explicit manual operations.
+Keep optional CI to one Linux job. Do not restore platform matrices, coverage,
+package/FERRIS builds or automatic previews as routine checks. Data-bundle runs
+must select one season; large historical backfills belong on the local machine.

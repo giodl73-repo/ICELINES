@@ -3,80 +3,46 @@ name: Data Bundle
 on:
   workflow_dispatch:
     inputs:
-      seasons:
-        description: 'Reserved for future use; this workflow currently builds all 38 matrix seasons'
-        required: false
-        default: ''
+      season:
+        description: 'Build one season bundle (YYYYYYYY)'
+        type: string
+        required: true
+        default: '20252026'
 
 permissions:
   contents: write   # required to create GitHub Releases
 
 jobs:
   bundle:
-    name: Bundle ${{ matrix.season }}
+    name: Bundle ${{ inputs.season }}
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      max-parallel: 8
-      matrix:
-        season:
-          # ── Recent seasons (also embedded in the binary) ──────────────────
-          - '20252026'
-          - '20242025'
-          - '20232024'
-          - '20222023'
-          - '20212022'
-          # ── Historical seasons 2000-01 -> 2020-21 ────────────────────────
-          - '20202021'
-          - '20192020'
-          - '20182019'
-          - '20172018'
-          - '20162017'
-          - '20152016'
-          - '20142015'
-          - '20132014'
-          - '20122013'
-          - '20112012'
-          - '20102011'
-          - '20092010'
-          - '20082009'
-          - '20072008'
-          - '20062007'
-          - '20052006'
-          - '20032004'
-          - '20022003'
-          - '20012002'
-          - '20002001'
-          # ── Gretzky-trade era 1987-88 -> 1999-2000 ───────────────────────
-          - '19992000'
-          - '19981999'
-          - '19971998'
-          - '19961997'
-          - '19951996'
-          - '19941995'
-          - '19931994'
-          - '19921993'
-          - '19911992'
-          - '19901991'
-          - '19891990'
-          - '19881989'
-          - '19871988'
+    timeout-minutes: 15
+    env:
+      SEASON: ${{ inputs.season }}
 
     defaults:
       run:
         working-directory: .
 
     steps:
+      - name: Validate selected season
+        run: |
+          python3 - <<'PY'
+          import os, re
+          value = os.environ['SEASON']
+          if not re.fullmatch(r'[0-9]{8}', value) or int(value[4:]) != int(value[:4]) + 1:
+              raise SystemExit('Select one valid season, such as 20252026')
+          PY
       - uses: actions/checkout@v7
 
       - name: Set up Python (for current season refresh)
-        if: matrix.season == '20252026'
+        if: env.SEASON == '20252026'
         uses: actions/setup-python@v7.0.0
         with:
           python-version: '3.13'
 
       - name: Refresh current season data from NHL API
-        if: matrix.season == '20252026'
+        if: env.SEASON == '20252026'
         working-directory: .
         run: |
           python3 scripts/fetch_history.py --seasons 20252026 --force
@@ -85,7 +51,7 @@ jobs:
         id: check
         working-directory: .
         run: |
-          DATA_DIR="data/seasons/${{ matrix.season }}"
+          DATA_DIR="data/seasons/${SEASON}"
           if [ -f "${DATA_DIR}/bios.json" ] && [ -f "${DATA_DIR}/stats.json" ]; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
             # Phase G.0: goalie-stats.json shipped from 2026-04-29 onwards.
@@ -99,14 +65,13 @@ jobs:
             fi
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "No data for ${{ matrix.season }} — skipping"
+            echo "No data for ${SEASON} — skipping"
           fi
 
       - name: Pack season bundle
         if: steps.check.outputs.exists == 'true'
         working-directory: .
         run: |
-          SEASON="${{ matrix.season }}"
           BUNDLE="data-${SEASON}.tar.gz"
           DATA_DIR="data/seasons/${SEASON}"
 
@@ -155,15 +120,15 @@ jobs:
         if: steps.check.outputs.exists == 'true'
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: data-${{ matrix.season }}
-          name: NHL Data — ${{ matrix.season }}
+          tag_name: data-${{ env.SEASON }}
+          name: NHL Data — ${{ env.SEASON }}
           body: |
-            Pre-packaged NHL season data for **${{ matrix.season }}**.
+            Pre-packaged NHL season data for **${{ env.SEASON }}**.
 
             ## Install
 
             ```bash
-            icelines data install --season ${{ matrix.season }}
+            icelines data install --season ${{ env.SEASON }}
             ```
 
             ## Bulk install (last N seasons)
@@ -191,7 +156,7 @@ jobs:
             the `playoff-*.json` trio. Re-install with `icelines data
             install --season {SEASON} --force` to pick up the new files.
             Bundles before 2026-04-29 also lack `goalie-stats.json`.
-          files: data-${{ matrix.season }}.tar.gz
+          files: data-${{ env.SEASON }}.tar.gz
           make_latest: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

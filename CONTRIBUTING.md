@@ -11,9 +11,10 @@ During development, choose a focused slice with
 `powershell -File scripts/test-slice.ps1 list`. For broad Rust changes, run:
 
 ```powershell
+$env:RUST_MIN_STACK = '16777216'
 cargo fmt --all -- --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
+cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --workspace --locked
 ```
 
 Before a native release, also run
@@ -21,14 +22,22 @@ Before a native release, also run
 For browser changes, use `node scripts/build-browser.mjs --check` with the pinned
 browser toolchain and dependencies installed.
 
-The full hosted `CI` workflow remains available as an explicit diagnostic via
-`gh workflow run ci.yml`; it runs the full multi-platform matrix and is not the
+The optional hosted `CI` workflow is one Linux job, capped at 45 minutes, via
+`gh workflow run ci.yml`. It runs formatting, Clippy and workspace tests without
+packaging, coverage, cross-platform matrices or FERRIS builds. It is not the
 routine pre-commit check. Browser preview/publication and rollback remain manual
 through `browser-pages.yml` and `browser-rollback.yml`.
 
 To publish a native release, push the reviewed version tag, then explicitly run
 `gh workflow run release.yml --ref vX.Y.Z` on that tag. Selecting a branch does
-not build or publish a release. Data fetch/bundle workflows are also manual.
+not build or publish a release. This explicit release still builds the three
+supported native platforms.
+
+Data workflows are manual and capped at 15 minutes. `data-bundle.yml` builds one
+selected season, for example `gh workflow run data-bundle.yml -f season=20252026`.
+Historical fetching defaults to that one season; use `scripts/fetch_history.py`
+locally for large backfills. Existing published data releases remain available.
+Dependabot groups version updates monthly, with one open PR per ecosystem.
 
 Business logic belongs in the owning library crate, not the CLI adapter. Do not
 commit credentials, private fantasy-league data, local databases, snapshots, or
