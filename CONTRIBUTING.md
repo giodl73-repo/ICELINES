@@ -3,12 +3,32 @@
 Keep ICELINES inspectable, source-aware, backward-compatible, and honest about
 heuristics, projections, probabilities, and missing data.
 
+Run checks locally before committing. Ordinary commits, pull requests and tag
+pushes do not start repository-defined GitHub Actions. This hobby project keeps
+hosted validation, publication and releases manual-only.
+
+During development, choose a focused slice with
+`powershell -File scripts/test-slice.ps1 list`. For broad Rust changes, run:
+
 ```powershell
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
-powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1
 ```
+
+Before a native release, also run
+`powershell -ExecutionPolicy Bypass -File scripts/release-smoke.ps1` locally.
+For browser changes, use `node scripts/build-browser.mjs --check` with the pinned
+browser toolchain and dependencies installed.
+
+The full hosted `CI` workflow remains available as an explicit diagnostic via
+`gh workflow run ci.yml`; it runs the full multi-platform matrix and is not the
+routine pre-commit check. Browser preview/publication and rollback remain manual
+through `browser-pages.yml` and `browser-rollback.yml`.
+
+To publish a native release, push the reviewed version tag, then explicitly run
+`gh workflow run release.yml --ref vX.Y.Z` on that tag. Selecting a branch does
+not build or publish a release. Data fetch/bundle workflows are also manual.
 
 Business logic belongs in the owning library crate, not the CLI adapter. Do not
 commit credentials, private fantasy-league data, local databases, snapshots, or
