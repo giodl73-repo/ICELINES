@@ -6,11 +6,11 @@ on:
       from_season:
         description: 'Start season (e.g. 20002001)'
         required: false
-        default: '20002001'
+        default: '20252026'
       to_season:
         description: 'End season (e.g. 20202021)'
         required: false
-        default: '20202021'
+        default: '20252026'
       force:
         description: 'Re-fetch even if data exists (true/false)'
         required: false
@@ -23,6 +23,7 @@ jobs:
   fetch:
     name: Fetch seasons ${{ inputs.from_season }}–${{ inputs.to_season }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v7

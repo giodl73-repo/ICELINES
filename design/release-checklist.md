@@ -31,7 +31,7 @@ containment review passes.
 **Applies to**: tagged GitHub releases and local release candidate builds
 
 This checklist is the release gate for IceLines. It assumes releases are cut
-from `master` after CI is green.
+from `master` after the required local checks pass. Hosted CI is optional.
 
 ## 1. Decide release type
 
@@ -42,8 +42,8 @@ from `master` after CI is green.
 | Data-only | bundled data refresh with no code behavior change | keep code version unless a release artifact must be replaced; record data provenance |
 | Pre-release | release candidate or risky packaging check | `0.25.0-rc.1` |
 
-Do not tag a release without a changelog entry and a green CI run for the
-commit being tagged.
+Do not tag a release without a changelog entry and passing local checks for the
+commit being tagged. Routine commits do not run hosted builds.
 
 ## 2. Version and docs
 
@@ -173,9 +173,11 @@ git status --short
 git log --oneline -5
 git tag vX.Y.Z
 git push origin vX.Y.Z
+gh workflow run release.yml --ref vX.Y.Z
 ```
 
-The release workflow builds matrix artifacts and creates the GitHub Release.
+Tag pushes alone do not publish. The explicitly dispatched release workflow builds
+the three platform artifacts and creates the GitHub Release.
 After it finishes, download at least the Windows artifact and run:
 
 ```powershell
