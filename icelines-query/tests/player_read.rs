@@ -225,3 +225,50 @@ fn separate_goalie_bios_preserve_fallback_precedence_and_absence() {
     .team()
     .is_none());
 }
+
+#[test]
+fn team_any_matches_aggregate_season_codes_without_changing_totals_or_current_team() {
+    let identity = icelines_core::fixtures::identity(1).build();
+    let provider = cases::Provider;
+    let ctx = cases::ctx(&provider);
+    for code in ["STL/NYI", " STL, NYI ", "STL/NYI/NYI", "STL//NYI"] {
+        let row = icelines_core::fixtures::stats(1, 20252026, code).build();
+        let before = row.clone();
+        let read = PlayerRead {
+            identity: &identity,
+            stats: &row,
+            contract: None,
+        };
+        for (query, expected) in [
+            ("team.any=NYI", true),
+            ("team.any=STL", true),
+            ("team.any IN (NYI, SEA)", true),
+            ("team.any=NY", false),
+            ("team.any=SEA", false),
+            ("team=NYI", false),
+            ("NOT (team.any=NYI)", false),
+        ] {
+            let plan = icelines_query::parse_query(icelines_query::FilterInput::Form(query.into()))
+                .unwrap();
+            assert_eq!(
+                plan.root.matches_read(&read, &ctx),
+                expected,
+                "{code}: {query}"
+            );
+        }
+        assert_eq!(
+            serde_json::to_value(&row).unwrap(),
+            serde_json::to_value(before).unwrap()
+        );
+    }
+    let row = icelines_core::fixtures::stats(1, 20252026, "NYI").build();
+    let read = PlayerRead {
+        identity: &identity,
+        stats: &row,
+        contract: None,
+    };
+    let plan =
+        icelines_query::parse_query(icelines_query::FilterInput::Form("team.any=NYI".into()))
+            .unwrap();
+    assert!(plan.root.matches_read(&read, &ctx));
+}
