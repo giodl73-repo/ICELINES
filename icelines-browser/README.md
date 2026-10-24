@@ -17,6 +17,18 @@ After building the local distribution, `npm run acceptance:comparison --prefix
 icelines-browser` checks actual engine-value parity, offline interaction, two-player
 limits, context clearing and all three themes at 390px in isolated Chromium.
 
+Player dialogs also show **Loaded season history** across the Session library's
+resident season/type windows. Load additional seasons, then open a player from a
+season containing them. Entries use the shared Rust query projection, keep regular
+seasons and playoffs separate and show per-package sources/dates. A missing player
+record is unavailable, not zero games. This is a partial view of loaded data, not
+a full career: it never downloads more seasons, produces career totals or changes
+the active window/LRU order. Refresh, unload and eviction are reflected when the
+dialog is reopened. A dataset change closes any open stale dialog.
+
+Run the local browser history check after building with
+`npm --prefix icelines-browser run acceptance:player-history`.
+
 For the opt-in sparse prepared-season backend, use
 `node scripts/build-browser.mjs --sparse-storage` from the repository root.
 The generated build-info records the selected WASM features. Ordinary builds use

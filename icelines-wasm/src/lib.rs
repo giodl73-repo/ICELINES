@@ -122,6 +122,47 @@ struct PackageMetadata<'a> {
     fetched_at: &'a Option<String>,
 }
 
+#[derive(Debug, Serialize)]
+struct PlayerHistory {
+    schema_version: u32,
+    player_id: u32,
+    rows: Vec<PlayerHistoryRow>,
+}
+
+#[derive(Debug, Serialize)]
+struct PlayerHistoryRow {
+    season: u32,
+    season_type: SeasonType,
+    revision: String,
+    source: String,
+    observed_at: Option<String>,
+    fetched_at: Option<String>,
+    goalie: Option<bool>,
+    player: Option<PlayerRow>,
+}
+
+fn project_player<R: SeasonStatsRead>(
+    view: &icelines_core::stats_repository::ReadPlayerView<'_, R>,
+) -> PlayerRow {
+    let goalie = view.stats.goalie();
+    PlayerRow {
+        player_id: view.identity.id.0,
+        name: view.identity.full_name.clone(),
+        team: view.team_display().to_owned(),
+        position: format!("{:?}", view.position()),
+        gp: view.gp(),
+        goals: view.goals(),
+        assists: view.assists(),
+        points: view.points(),
+        pace_82: view.pace_82(),
+        save_pct: goalie.and_then(|g| g.save_pct).map(f64::from),
+        gaa: goalie.and_then(|g| g.goals_against_average).map(f64::from),
+        wins: goalie.map(|g| g.wins),
+        hits: view.hits(),
+        blocked_shots: view.blocked_shots(),
+    }
+}
+
 struct PreparedProvider;
 impl DataProvider for PreparedProvider {
     fn ensure(&self, _: &PlanRequirement, _: &mut dyn FnMut(FetchEvent)) -> Result<(), FetchError> {
@@ -243,12 +284,51 @@ impl BrowserEngine {
             "schema_version": 1, "revision": active.revision,
             "season": active.package.season, "season_type": active.package.season_type,
             "identity": view.identity, "stats": view.stats,
+            "history": self.history(player_id),
         }))
         .map_err(|e| JsValue::from_str(&e.to_string()))
     }
 }
 
 impl BrowserEngine {
+    /// Read the resident windows without selecting them, changing LRU order or fetching.
+    fn history(&self, player_id: u32) -> PlayerHistory {
+        let mut rows: Vec<_> = self
+            .resident
+            .iter()
+            .chain(self.active.iter())
+            .map(|window| {
+                let package = &window.package;
+                let view = window.repository.view(
+                    PlayerId(player_id),
+                    Season(package.season),
+                    package.season_type,
+                );
+                PlayerHistoryRow {
+                    season: package.season,
+                    season_type: package.season_type,
+                    revision: window.revision.clone(),
+                    source: package.source.clone(),
+                    observed_at: package.observed_at.clone(),
+                    fetched_at: package.fetched_at.clone(),
+                    goalie: view.as_ref().map(|view| view.is_goalie()),
+                    player: view.as_ref().map(project_player),
+                }
+            })
+            .collect();
+        rows.sort_by_key(|row| {
+            (
+                std::cmp::Reverse(row.season),
+                matches!(row.season_type, SeasonType::Playoff),
+            )
+        });
+        PlayerHistory {
+            schema_version: 1,
+            player_id,
+            rows,
+        }
+    }
+
     fn active_metadata(&self) -> Result<PackageMetadata<'_>, EngineError> {
         let package = &self
             .active
@@ -502,25 +582,7 @@ impl BrowserEngine {
         }
         let rows: Vec<PlayerRow> = views
             .into_iter()
-            .map(|view| {
-                let goalie = view.stats.goalie();
-                PlayerRow {
-                    player_id: view.identity.id.0,
-                    name: view.identity.full_name.clone(),
-                    team: view.team_display().to_owned(),
-                    position: format!("{:?}", view.position()),
-                    gp: view.gp(),
-                    goals: view.goals(),
-                    assists: view.assists(),
-                    points: view.points(),
-                    pace_82: view.pace_82(),
-                    save_pct: goalie.and_then(|g| g.save_pct).map(f64::from),
-                    gaa: goalie.and_then(|g| g.goals_against_average).map(f64::from),
-                    wins: goalie.map(|g| g.wins),
-                    hits: view.hits(),
-                    blocked_shots: view.blocked_shots(),
-                }
-            })
+            .map(|view| project_player(&view))
             .collect();
         Ok(QueryResult {
             schema_version: 1,
@@ -569,6 +631,98 @@ mod tests {
         value["season"] = season.into();
         value["stats"][0]["seasonId"] = season.into();
         value
+    }
+
+    #[test]
+    fn history_preserves_windows_missing_records_and_query_values_without_selection() {
+        let mut engine = BrowserEngine::new();
+        assert!(engine.history(1).rows.is_empty());
+        let mut absent = season_package(20232024);
+        absent["bios"][0]["playerId"] = 2.into();
+        absent["stats"][0]["playerId"] = 2.into();
+        load(&mut engine, &absent).unwrap();
+        let mut older = season_package(20242025);
+        older["source"] = "history fixture".into();
+        older["observed_at"] = "2025-06-01T00:00:00Z".into();
+        let older_revision = load(&mut engine, &older).unwrap();
+        let mut playoff = package();
+        playoff["season_type"] = "playoff".into();
+        for family in ["bios", "stats"] {
+            for field in ["gamesPlayed", "goals", "assists", "points"] {
+                playoff[family][0][field] = 0.into();
+            }
+        }
+        playoff["stats"][0]["pointsPerGame"] = 0.into();
+        load(&mut engine, &playoff).unwrap();
+        load(&mut engine, &package()).unwrap();
+        let before = serde_json::to_value(engine.execute(&request("")).unwrap()).unwrap();
+        let order = engine.resident_revisions();
+        let history = engine.history(1);
+        assert_eq!(history.rows.len(), 4);
+        assert_eq!(history.rows[0].season_type, SeasonType::Regular);
+        assert_eq!(history.rows[1].season_type, SeasonType::Playoff);
+        assert_eq!(history.rows[1].player.as_ref().unwrap().gp, 0);
+        assert!(history.rows[1].player.as_ref().unwrap().pace_82.is_none());
+        assert_eq!(history.rows[2].season, 20242025);
+        assert_eq!(history.rows[2].revision, older_revision);
+        assert_eq!(history.rows[2].source, "history fixture");
+        assert_eq!(
+            history.rows[2].observed_at.as_deref(),
+            Some("2025-06-01T00:00:00Z")
+        );
+        assert!(history.rows[3].player.is_none());
+        assert!(history.rows[3].goalie.is_none());
+        assert_eq!(
+            serde_json::to_value(&history.rows[0].player).unwrap(),
+            before["rows"][0]
+        );
+        assert!(engine
+            .history(999)
+            .rows
+            .iter()
+            .all(|row| row.player.is_none()));
+        assert_eq!(engine.resident_revisions(), order);
+        assert_eq!(
+            serde_json::to_value(engine.execute(&request("")).unwrap()).unwrap(),
+            before
+        );
+    }
+
+    #[test]
+    fn history_tracks_refresh_unload_and_lru_eviction() {
+        let mut engine = BrowserEngine::new();
+        for year in 2010..2019 {
+            load(&mut engine, &season_package(year * 10000 + year + 1)).unwrap();
+        }
+        let history = engine.history(1);
+        assert_eq!(history.rows.len(), 8);
+        assert!(!history.rows.iter().any(|row| row.season == 20102011));
+        let mut refreshed = season_package(20172018);
+        refreshed["source"] = "refreshed history fixture".into();
+        let revision = load(&mut engine, &refreshed).unwrap();
+        let history = engine.history(1);
+        let window = history
+            .rows
+            .iter()
+            .find(|row| row.season == 20172018)
+            .unwrap();
+        assert_eq!(window.revision, revision);
+        assert_eq!(window.source, "refreshed history fixture");
+        assert_eq!(
+            history
+                .rows
+                .iter()
+                .filter(|row| row.season == 20172018)
+                .count(),
+            1
+        );
+        engine.unload_active();
+        assert_eq!(engine.history(1).rows.len(), 7);
+        assert!(!engine
+            .history(1)
+            .rows
+            .iter()
+            .any(|row| row.season == 20172018));
     }
 
     #[test]
