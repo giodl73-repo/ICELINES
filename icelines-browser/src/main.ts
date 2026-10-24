@@ -1,6 +1,8 @@
 import { ViewportTable } from './viewport-table.js';
 import { PlayerComparison, renderComparison } from './comparison.js';
 import type { ComparisonContext } from './comparison.js';
+import { renderPlayerHistory } from './player-history.js';
+import type { PlayerHistory } from './player-history.js';
 import { initializeAppearance } from './appearance.js';
 import { EngineClient, EngineStoppedError } from './engine-client.js';
 import { registerOfflineShell } from './offline.js';
@@ -50,6 +52,7 @@ let refreshingStats = false;
 let statsPolling: PollingController | undefined;
 let schedulePolling: PollingController | undefined;
 const comparison = new PlayerComparison();
+let openPlayerContext: { revision: string; generation: number } | undefined;
 function comparisonContext(): ComparisonContext | undefined {
   return active ? { revision: active.revision, season: active.metadata.season,
     season_type: active.metadata.season_type, goalies: kind.value === 'goalies' } : undefined;
@@ -119,6 +122,8 @@ async function recoverEngine(): Promise<void> {
 }
 function savedVersion(): SavedDatasetEntry | undefined { return saved.find(item => item.id === active?.id); }
 function updateState(): void {
+  const dialog = element<HTMLDialogElement>('player-dialog');
+  if (dialog.open && openPlayerContext && (openPlayerContext.revision !== active?.revision || openPlayerContext.generation !== engine.generation)) dialog.close();
   updateComparison();
   renderResidentLibrary();
   statsPolling?.setContext(active ? `${active.id}:${active.metadata.season}:${active.metadata.season_type}` : undefined);
@@ -232,7 +237,7 @@ async function player(row: PlayerRow): Promise<void> {
   const snapshot = result; const generation = engine.generation;
   const context = comparisonContext();
   if (!snapshot || !context) return;
-  const detail = await engine.request<{ identity: { bio: unknown }; stats: unknown }>('detail', row.player_id);
+  const detail = await engine.request<{ identity: { bio: unknown }; stats: unknown; history?: PlayerHistory }>('detail', row.player_id);
   if (result !== snapshot || generation !== engine.generation) return;
   element('player-name').textContent = row.name;
   const summary = document.createElement('p'); summary.textContent = `${row.team} · ${row.position} · ${row.gp} games · ${row.points} points`;
@@ -253,7 +258,8 @@ async function player(row: PlayerRow): Promise<void> {
     view.onclick = () => { element<HTMLDialogElement>('player-dialog').close(); element(comparison.players.length ? 'comparison-title' : 'analysis').focus(); };
     actions.append(view);
   }
-  element('player-body').replaceChildren(summary, actions, details);
+  element('player-body').replaceChildren(summary, actions, renderPlayerHistory(detail.history), details);
+  openPlayerContext = { revision: snapshot.revision, generation };
   element<HTMLDialogElement>('player-dialog').showModal();
 }
 async function runQuery(): Promise<void> {
@@ -450,7 +456,9 @@ window.addEventListener('hashchange', () => {
   void perform(async () => { const view = parseViewHash(location.hash); if (view) await applyViewRoute(view); });
 });
 element('close-player').onclick = () => element<HTMLDialogElement>('player-dialog').close();
-element('player-dialog').addEventListener('close', () => element('player-body').replaceChildren());
+element('player-dialog').addEventListener('close', () => {
+  if (!element<HTMLDialogElement>('player-dialog').open) { element('player-body').replaceChildren(); openPlayerContext = undefined; }
+});
 async function reloadCatalog(): Promise<void> {
   const retry = element<HTMLButtonElement>('retry-catalog'); retry.disabled = true;
   element('catalog-status').textContent = 'Checking public season catalog…';
