@@ -4,6 +4,19 @@ Implementation follows `design/plans/2026-10-03-browser-wasm-workbench.md`.
 The engine lives in `icelines-wasm`; its normalization is shared with native
 loaders through `icelines-data`. The browser owns network/file/storage adapters.
 
+Open a player in the leaders table and choose **Compare this player**, then pick
+a second player for **Head to head**. It displays the existing shared Rust query
+values for two skaters or two goalies, including missing values and source context.
+Filters and sorting preserve the picks within the same dataset. A changed season,
+revision or player kind, unloading, engine recovery or a failed query clears them.
+Selections stay in this tab; they are not saved, shared in links or included in
+the leaders query export. No extra fetch or scoring formula is involved. This is
+not the full native CompareView or a cross-season/career comparison.
+
+After building the local distribution, `npm run acceptance:comparison --prefix
+icelines-browser` checks actual engine-value parity, offline interaction, two-player
+limits, context clearing and all three themes at 390px in isolated Chromium.
+
 For the opt-in sparse prepared-season backend, use
 `node scripts/build-browser.mjs --sparse-storage` from the repository root.
 The generated build-info records the selected WASM features. Ordinary builds use
