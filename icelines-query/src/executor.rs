@@ -588,12 +588,17 @@ fn bio_matches<R: SeasonStatsRead + ?Sized>(
             text_predicate_matches(&b.predicate, t.as_deref())
         }
         BioField::TeamAny => {
-            // Any stint this season.
+            // Any stint this season. Portable skater packages can represent
+            // several teams in one slash-separated aggregate stint; matching
+            // a team must not require a real per-team statistical split.
             let abbrevs: Vec<String> = v
                 .stats
                 .team_stints()
                 .iter()
-                .map(|s| ScalarValue::canonicalize_text(&s.team.0))
+                .flat_map(|s| s.team.0.split(['/', ',']))
+                .map(str::trim)
+                .filter(|team| !team.is_empty())
+                .map(ScalarValue::canonicalize_text)
                 .collect();
             let refs: Vec<Option<&str>> = abbrevs.iter().map(|s| Some(s.as_str())).collect();
             text_predicate_matches_any(&b.predicate, &refs)

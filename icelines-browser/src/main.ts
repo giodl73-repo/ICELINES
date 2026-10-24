@@ -1,3 +1,4 @@
+import { teamSeasonFilter, playerTeamCodes } from './team-focus.js';
 import { ViewportTable } from './viewport-table.js';
 import { PlayerComparison, renderComparison } from './comparison.js';
 import type { ComparisonContext } from './comparison.js';
@@ -145,6 +146,8 @@ function updateState(): void {
   element('recovery-copy').hidden = !recoveryCopy;
   for (const id of ['load', 'refresh', 'import']) (element(id) as HTMLButtonElement | HTMLInputElement).disabled = routing || recovering || engineUnavailable || (id === 'load' && !catalog.length) || (id === 'refresh' && (!active || refreshingStats));
   element<HTMLFormElement>('query').querySelector<HTMLButtonElement>('button')!.disabled = routing || recovering || engineUnavailable || !active;
+  element<HTMLFormElement>('team-query').querySelector<HTMLButtonElement>('button')!.disabled = routing || recovering || engineUnavailable || !active;
+  element<HTMLInputElement>('team-code').disabled = routing || recovering || engineUnavailable || !active;
   for (const control of [kind, sort, filter, minimumGames]) control.disabled = routing || recovering || engineUnavailable;
   element('saved-library').querySelectorAll('button').forEach(button => { button.disabled = routing || recovering || engineUnavailable; });
   if (!result) { resultState = undefined; element<HTMLInputElement>('shared-link').value = ''; }
@@ -258,7 +261,19 @@ async function player(row: PlayerRow): Promise<void> {
     view.onclick = () => { element<HTMLDialogElement>('player-dialog').close(); element(comparison.players.length ? 'comparison-title' : 'analysis').focus(); };
     actions.append(view);
   }
-  element('player-body').replaceChildren(summary, actions, renderPlayerHistory(detail.history), details);
+  const teams = document.createElement('div'); teams.className = 'actions';
+  for (const team of playerTeamCodes(row.team)) {
+    const button = document.createElement('button'); button.type = 'button'; button.textContent = `Explore ${team} season players`;
+    button.onclick = () => { void perform(async () => {
+      if (result !== snapshot || generation !== engine.generation) throw new Error('The data changed. Open the player again.');
+      element<HTMLDialogElement>('player-dialog').close(); await focusTeam(team);
+    }); };
+    teams.append(button);
+  }
+  const teamHelp = document.createElement('p');
+  teamHelp.textContent = 'Team shortcuts replace your filter and set Minimum GP to 0. Players match any team stint; values remain full-season totals.';
+  if (teams.childElementCount) teams.append(teamHelp);
+  element('player-body').replaceChildren(summary, actions, teams, renderPlayerHistory(detail.history), details);
   openPlayerContext = { revision: snapshot.revision, generation };
   element<HTMLDialogElement>('player-dialog').showModal();
 }
@@ -403,6 +418,17 @@ element('export-package').onclick = () => { if (active) download(active.bytes.sl
 element('export-json').onclick = () => { if (result && resultRequest) download(JSON.stringify(queryExport(result, resultRequest), null, 2), `icelines-${result.season}-query.json`, 'application/json'); };
 element('export-csv').onclick = () => {
   if (result && resultRequest) download(queryCsv(result, resultRequest), `icelines-${result.season}-query.csv`, 'text/csv;charset=utf-8');
+};
+async function focusTeam(code: string): Promise<void> {
+  const predicate = teamSeasonFilter(code);
+  if (!active || routing || recovering || engineUnavailable) throw new Error('Load a season before exploring a team.');
+  filter.value = predicate; minimumGames.value = '0';
+  element<HTMLInputElement>('team-code').value = code.trim().toUpperCase();
+  element<HTMLDetailsElement>('team-focus').open = true;
+  await runQuery(); element('analysis').focus();
+}
+element('team-query').onsubmit = event => {
+  event.preventDefault(); void perform(() => focusTeam(element<HTMLInputElement>('team-code').value));
 };
 element('query').onsubmit = event => { event.preventDefault(); void perform(runQuery); };
 function setSortOptions(): void {
