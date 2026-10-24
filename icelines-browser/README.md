@@ -448,3 +448,16 @@ not normal app behavior. Target comparisons exclude all diagnostic phases and
 the subsequent engine restart because it follows forced collection. Run without
 this flag for normal-workload acceptance. Inspector overhead is also present in
 diagnostic runs; compare normal runs when assessing an optimization.
+
+### Team season navigation
+
+Open **Explore a team** and enter a code (for example MTL), or use a team's
+shortcut in player details. This replaces the filter with `team.any=CODE`, sets
+Minimum GP to 0, and keeps the loaded season/type, skater/goalie selection and
+sort. Unknown codes yield an empty result. No additional package is downloaded.
+Rust matches any season team, including aggregate traded-skater codes such as
+`STL/NYI`. Rows retain full-season totals; this is not a current roster or a
+team-only statistical split. The `team=` predicate keeps its existing semantics.
+Exports record the actual filter and floor; sharing filter text remains opt-in.
+Run `npm run acceptance:team-focus` after a local browser build for the real
+Chromium offline/trade/goalie/export/narrow-theme check.
