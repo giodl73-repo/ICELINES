@@ -11,6 +11,149 @@ use icelines_core::{
 };
 use serde_json::{json, Value};
 
+// Run this storage lifecycle against both native representations. Reuse the
+// rich read-contract corpus so optional payloads and None/Some(0) survive too.
+#[test]
+fn repository_storage_preserves_rich_rows_through_replacement_and_eviction() {
+    use icelines_core::stats_repository::StatsRepository;
+
+    let rows = cases::cases();
+    assert_eq!(rows.len(), 288);
+    let mut repo = StatsRepository::with_lru_cap(4);
+    for (identity, row) in &rows {
+        repo.upsert_identity(identity.clone()).unwrap();
+        repo.upsert_stats(row.clone()).unwrap();
+    }
+    let check_rows = |repo: &StatsRepository| {
+        assert_eq!(repo.stats_len(), rows.len());
+        for (identity, expected) in &rows {
+            let actual = repo
+                .season(expected.player_id, expected.season, expected.season_type)
+                .unwrap();
+            assert_eq!(actual, expected);
+            assert_eq!(
+                serde_json::to_value(actual).unwrap(),
+                serde_json::to_value(expected).unwrap()
+            );
+            let view = repo
+                .view(expected.player_id, expected.season, expected.season_type)
+                .unwrap();
+            assert_eq!(
+                serde_json::to_value(view.identity).unwrap(),
+                serde_json::to_value(identity).unwrap()
+            );
+            assert!(std::ptr::eq(view.stats, actual));
+            for stint in &expected.team_stints {
+                let members =
+                    repo.team_roster_all_stints(&stint.team, expected.season, expected.season_type);
+                assert_eq!(
+                    members
+                        .iter()
+                        .filter(|v| v.stats.player_id == expected.player_id)
+                        .count(),
+                    1
+                );
+            }
+        }
+    };
+    check_rows(&repo);
+
+    let temporary_team = icelines_core::model::TeamAbbr("TMP".into());
+    for (_, original) in &rows {
+        let mut stripped = original.clone();
+        // Move the stints without breaking their sum-to-totals invariant.
+        for stint in &mut stripped.team_stints {
+            stint.team = temporary_team.clone();
+        }
+        stripped.realtime = None;
+        stripped.advanced = None;
+        stripped.goalie = None;
+        stripped.time_on_ice = None;
+        stripped.goals_for_against = None;
+        stripped.goalie_advanced = None;
+        stripped.goalie_saves_by_strength = None;
+        stripped.goalie_bios = None;
+        repo.upsert_stats(stripped.clone()).unwrap();
+        assert_eq!(
+            repo.season(original.player_id, original.season, original.season_type),
+            Some(&stripped)
+        );
+        for stint in &original.team_stints {
+            assert!(repo
+                .team_roster_all_stints(&stint.team, original.season, original.season_type)
+                .iter()
+                .all(|v| v.stats.player_id != original.player_id));
+            assert!(repo
+                .team_roster(&stint.team, original.season, original.season_type)
+                .iter()
+                .all(|v| v.stats.player_id != original.player_id));
+        }
+        assert_eq!(
+            repo.team_roster_all_stints(&temporary_team, original.season, original.season_type)
+                .iter()
+                .filter(|v| v.stats.player_id == original.player_id)
+                .count(),
+            1
+        );
+        repo.upsert_stats(original.clone()).unwrap();
+        assert!(repo
+            .team_roster_all_stints(&temporary_team, original.season, original.season_type)
+            .is_empty());
+        assert!(repo
+            .team_roster(&temporary_team, original.season, original.season_type)
+            .is_empty());
+    }
+    check_rows(&repo);
+
+    let mut rejected = rows[0].1.clone();
+    rejected.player_id = PlayerId(u32::MAX);
+    rejected.season = Season(20302031);
+    assert!(repo.upsert_stats(rejected).is_err());
+    assert_eq!(repo.resident_windows(), 4);
+    check_rows(&repo);
+
+    // Establish an explicit LRU order, then insert a fifth window.
+    let mut windows = Vec::new();
+    for (_, row) in &rows {
+        let window = (row.season, row.season_type);
+        if !windows.contains(&window) {
+            windows.push(window);
+            repo.upsert_stats(row.clone()).unwrap();
+        }
+    }
+    assert_eq!(windows.len(), 4);
+    let mut fresh = rows[0].1.clone();
+    fresh.season = Season(20302031);
+    repo.upsert_stats(fresh.clone()).unwrap();
+    assert_eq!(repo.resident_windows(), 4);
+    assert!(!repo.has_window(windows[0].0, windows[0].1));
+    assert_eq!(repo.identities_len(), rows.len());
+    assert_eq!(
+        repo.season(fresh.player_id, fresh.season, fresh.season_type),
+        Some(&fresh)
+    );
+    for (identity, row) in &rows {
+        assert_eq!(
+            serde_json::to_value(repo.identity(identity.id).unwrap()).unwrap(),
+            serde_json::to_value(identity).unwrap()
+        );
+        let stored = repo.season(row.player_id, row.season, row.season_type);
+        if (row.season, row.season_type) == windows[0] {
+            assert!(stored.is_none());
+            for stint in &row.team_stints {
+                assert!(repo
+                    .team_roster_all_stints(&stint.team, row.season, row.season_type)
+                    .is_empty());
+                assert!(repo
+                    .team_roster(&stint.team, row.season, row.season_type)
+                    .is_empty());
+            }
+        } else {
+            assert_eq!(stored, Some(row));
+        }
+    }
+}
+
 // Deliberately cannot yield &SeasonStats: payloads live in independent allocations.
 // The catalog must consume the borrowed read contract rather than materialize a row.
 struct SplitRow {

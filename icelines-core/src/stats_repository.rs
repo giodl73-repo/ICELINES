@@ -90,19 +90,20 @@ pub type ExtraReportKey = (
 /// The cap is independent of the typed-window LRU (`DEFAULT_LRU_CAP`).
 pub const EXTRA_REPORTS_CAP: usize = 4096;
 
-// Keep large stats rows out of spare wasm32 hash-table buckets. Native storage
-// stays inline; callers on both targets still borrow the same SeasonStats type.
-#[cfg(target_arch = "wasm32")]
+// Keep large stats rows out of spare hash-table buckets. Always enabled on
+// wasm32; opt-in on native because occupancy and allocation costs vary by workload.
+// Callers still borrow the same SeasonStats type with either representation.
+#[cfg(any(target_arch = "wasm32", feature = "boxed-stats"))]
 type StoredSeasonStats = Box<SeasonStats>;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(any(target_arch = "wasm32", feature = "boxed-stats")))]
 type StoredSeasonStats = SeasonStats;
 
 fn store_stats(stats: SeasonStats) -> StoredSeasonStats {
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(any(target_arch = "wasm32", feature = "boxed-stats"))]
     {
         Box::new(stats)
     }
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(not(any(target_arch = "wasm32", feature = "boxed-stats")))]
     {
         stats
     }
