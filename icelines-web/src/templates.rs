@@ -316,6 +316,46 @@ pub struct ComingSoonTemplate {
 /// top-N query params; King.2.3 adds the boolean filter form;
 /// King.2.4 adds the JSON twin at `/api/v1/leaders`.
 #[derive(Template)]
+#[template(path = "shot_hands.html")]
+pub struct ShotHandsTemplate {
+    pub active_label: String,
+    pub comparison_label: String,
+    pub season_note: String,
+    pub sort: String,
+    pub pos: String,
+    pub top: usize,
+    pub right_count: usize,
+    pub left_count: usize,
+    pub missing_count: usize,
+    pub links_available: bool,
+    pub right_rows: Vec<LeaderRow>,
+    pub left_rows: Vec<LeaderRow>,
+    pub teams: Vec<ShotHandTeamRow>,
+    pub selected_team: String,
+    pub team_right_rows: Vec<ShotHandRosterPlayerRow>,
+    pub team_left_rows: Vec<ShotHandRosterPlayerRow>,
+    pub roster_note: String,
+}
+
+pub struct ShotHandTeamRow {
+    pub team: String,
+    pub right_count: usize,
+    pub left_count: usize,
+    pub unknown_count: usize,
+    pub right_pct: u32,
+    pub is_selected: bool,
+}
+
+pub struct ShotHandRosterPlayerRow {
+    pub name: String,
+    pub position: String,
+    pub shots: u32,
+    pub goals: u32,
+    pub points: u32,
+    pub has_stats: bool,
+}
+
+#[derive(Template)]
 #[template(path = "leaders.html")]
 pub struct LeadersTemplate {
     pub active_label: String,

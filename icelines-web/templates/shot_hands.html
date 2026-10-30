@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Left and right shots{% endblock %}
+
+{% block content %}
+<section class="shot-hands-intro">
+    <p class="meta-line">IceStats · shooting hand</p>
+    <h1>Left and right shots</h1>
+    <p>Two lists of skaters by the hand they <strong>shoot</strong> with. This is separate from lineup position: a right wing can shoot left, and a left wing can shoot right. Goalies are excluded because their L/R field means catching hand.</p>
+    <p class="meta-line">Season used: <strong>{{ comparison_label }}</strong>. {% if !season_note.is_empty() %}{{ season_note }}{% endif %}</p>
+</section>
+
+<form method="get" action="/shot-hands" class="shot-hands-controls" aria-label="Shooting-hand rankings">
+    {% if !selected_team.is_empty() %}<input type="hidden" name="team" value="{{ selected_team }}">{% endif %}
+    <label>Rank by
+        <select name="sort">
+            <option value="shots" {% if sort == "shots" %}selected{% endif %}>Shots on goal</option>
+            <option value="goals" {% if sort == "goals" %}selected{% endif %}>Goals</option>
+            <option value="points" {% if sort == "points" %}selected{% endif %}>Points</option>
+        </select>
+    </label>
+    <label>Position
+        <select name="pos">
+            <option value="" {% if pos == "" %}selected{% endif %}>All skaters</option>
+            <option value="F" {% if pos == "F" %}selected{% endif %}>Forwards</option>
+            <option value="D" {% if pos == "D" %}selected{% endif %}>Defensemen</option>
+        </select>
+    </label>
+    <label>Show
+        <select name="top">
+            <option value="10" {% if top == 10 %}selected{% endif %}>Top 10</option>
+            <option value="15" {% if top == 15 %}selected{% endif %}>Top 15</option>
+            <option value="25" {% if top == 25 %}selected{% endif %}>Top 25</option>
+            <option value="50" {% if top == 50 %}selected{% endif %}>Top 50</option>
+        </select>
+    </label>
+    <button type="submit">Update lists</button>
+</form>
+
+<p class="shot-hands-coverage">
+    Skaters with known shooting hand in this season and position filter:
+    <strong>{{ right_count }} right</strong> · <strong>{{ left_count }} left</strong>.
+    {% if missing_count > 0 %}{{ missing_count }} have no recorded shooting hand and are omitted.{% endif %}
+</p>
+
+<section id="teams" class="shot-hands-teams" aria-labelledby="team-hands-heading">
+    <h2 id="team-hands-heading">Every team</h2>
+    <p class="meta-line">{{ roster_note }} Select a team to see its left and right shots.</p>
+    {% if teams.is_empty() %}<p class="empty-state">Current team rosters are unavailable.</p>{% else %}
+    <div class="table-scroll"><table>
+        <thead><tr><th>Team</th><th class="numeric">Right shots</th><th class="numeric">Left shots</th><th>Right-shot share</th><th class="numeric">Unknown</th></tr></thead>
+        <tbody>{% for team in teams %}
+            <tr{% if team.is_selected %} class="shot-hands-selected-team"{% endif %}>
+                <td><a href="/shot-hands?sort={{ sort }}&pos={{ pos }}&top={{ top }}&team={{ team.team }}#team-detail"{% if team.is_selected %} aria-current="true"{% endif %}>{{ team.team }}</a></td>
+                <td class="numeric">{{ team.right_count }}</td>
+                <td class="numeric">{{ team.left_count }}</td>
+                <td><div class="shot-hands-share"><span class="shot-hands-share-fill" style="width: {{ team.right_pct }}%"></span></div><span class="meta-line">{{ team.right_pct }}%</span></td>
+                <td class="numeric">{{ team.unknown_count }}</td>
+            </tr>
+        {% endfor %}</tbody>
+    </table></div>
+    {% endif %}
+</section>
+
+{% if !selected_team.is_empty() %}
+<section id="team-detail" class="shot-hands-team-detail" aria-labelledby="selected-team-heading">
+    <h2 id="selected-team-heading">{{ selected_team }} · left and right shots</h2>
+    <p class="meta-line">Top {{ top }} by {{ sort }} among players on {{ selected_team }}'s current roster. SOG, goals, and points are {{ comparison_label }} full-season totals, including any other team stints. A dash means no stats from that season. <a href="/shot-hands?sort={{ sort }}&pos={{ pos }}&top={{ top }}#teams">Clear team selection</a></p>
+    <div class="shot-hands-grid">
+        <div class="shot-hands-panel">
+            <h3>Right shots</h3>
+            {% if team_right_rows.is_empty() %}<p class="empty-state">No right-shot skaters match this team and position.</p>{% else %}
+            <div class="table-scroll"><table><thead><tr><th class="numeric">#</th><th>Player</th><th>Pos</th><th class="numeric">SOG</th><th class="numeric">G</th><th class="numeric">P</th></tr></thead><tbody>
+            {% for row in team_right_rows %}<tr><td class="numeric">{{ loop.index }}</td><td>{{ row.name }}</td><td>{{ row.position }}</td><td class="numeric">{% if row.has_stats %}{{ row.shots }}{% else %}—{% endif %}</td><td class="numeric">{% if row.has_stats %}{{ row.goals }}{% else %}—{% endif %}</td><td class="numeric">{% if row.has_stats %}{{ row.points }}{% else %}—{% endif %}</td></tr>{% endfor %}
+            </tbody></table></div>{% endif %}
+        </div>
+        <div class="shot-hands-panel">
+            <h3>Left shots</h3>
+            {% if team_left_rows.is_empty() %}<p class="empty-state">No left-shot skaters match this team and position.</p>{% else %}
+            <div class="table-scroll"><table><thead><tr><th class="numeric">#</th><th>Player</th><th>Pos</th><th class="numeric">SOG</th><th class="numeric">G</th><th class="numeric">P</th></tr></thead><tbody>
+            {% for row in team_left_rows %}<tr><td class="numeric">{{ loop.index }}</td><td>{{ row.name }}</td><td>{{ row.position }}</td><td class="numeric">{% if row.has_stats %}{{ row.shots }}{% else %}—{% endif %}</td><td class="numeric">{% if row.has_stats %}{{ row.goals }}{% else %}—{% endif %}</td><td class="numeric">{% if row.has_stats %}{{ row.points }}{% else %}—{% endif %}</td></tr>{% endfor %}
+            </tbody></table></div>{% endif %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<h2>League-wide leaders</h2>
+<div class="shot-hands-grid">
+    <section class="shot-hands-panel" aria-labelledby="right-shot-heading">
+        <h2 id="right-shot-heading">Right shots</h2>
+        <p class="meta-line">Top {{ right_rows.len() }}{% if links_available %} · <a href="/leaders?sort={{ sort }}&shoots=R&pos={{ pos }}&top=100">Open full right-shot leaderboard</a>{% endif %}</p>
+        {% if right_rows.is_empty() %}
+            <p class="empty-state">No right-shot skater stats for this season and filter.</p>
+        {% else %}
+        <div class="table-scroll"><table>
+            <thead><tr><th class="numeric">#</th><th>Player</th><th>Pos</th><th>Team</th><th class="numeric">GP</th><th class="numeric">SOG</th><th class="numeric">G</th><th class="numeric">P</th><th class="numeric">SH%</th></tr></thead>
+            <tbody>{% for row in right_rows %}
+                <tr><td class="numeric">{{ loop.index }}</td><td>{% if links_available %}<a href="/player/{{ row.nhl_id }}">{{ row.name }}</a>{% else %}{{ row.name }}{% endif %}</td><td>{{ row.position }}</td><td>{{ row.team }}</td><td class="numeric">{{ row.gp }}</td><td class="numeric">{{ row.shots }}</td><td class="numeric">{{ row.goals }}</td><td class="numeric">{{ row.points }}</td><td class="numeric">{{ row.shooting_pct_str }}</td></tr>
+            {% endfor %}</tbody>
+        </table></div>
+        {% endif %}
+    </section>
+    <section class="shot-hands-panel" aria-labelledby="left-shot-heading">
+        <h2 id="left-shot-heading">Left shots</h2>
+        <p class="meta-line">Top {{ left_rows.len() }}{% if links_available %} · <a href="/leaders?sort={{ sort }}&shoots=L&pos={{ pos }}&top=100">Open full left-shot leaderboard</a>{% endif %}</p>
+        {% if left_rows.is_empty() %}
+            <p class="empty-state">No left-shot skater stats for this season and filter.</p>
+        {% else %}
+        <div class="table-scroll"><table>
+            <thead><tr><th class="numeric">#</th><th>Player</th><th>Pos</th><th>Team</th><th class="numeric">GP</th><th class="numeric">SOG</th><th class="numeric">G</th><th class="numeric">P</th><th class="numeric">SH%</th></tr></thead>
+            <tbody>{% for row in left_rows %}
+                <tr><td class="numeric">{{ loop.index }}</td><td>{% if links_available %}<a href="/player/{{ row.nhl_id }}">{{ row.name }}</a>{% else %}{{ row.name }}{% endif %}</td><td>{{ row.position }}</td><td>{{ row.team }}</td><td class="numeric">{{ row.gp }}</td><td class="numeric">{{ row.shots }}</td><td class="numeric">{{ row.goals }}</td><td class="numeric">{{ row.points }}</td><td class="numeric">{{ row.shooting_pct_str }}</td></tr>
+            {% endfor %}</tbody>
+        </table></div>
+        {% endif %}
+    </section>
+</div>
+<p class="filter-help">SOG = shots on goal; SH% = goals divided by shots on goal. Rankings use observed season totals, not a projection of the next season.</p>
+{% endblock %}

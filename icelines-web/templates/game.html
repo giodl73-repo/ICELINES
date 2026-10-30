@@ -60,25 +60,24 @@
 </section>
 {% endif %}
 
-{% if !view.away_top_skaters.is_empty() %}
+<p class="meta-line">Live box score from the NHL. Player stats may change during the game; this page refreshes every 30 seconds while live.</p>
+{% if !view.away_skaters.is_empty() %}
 <section>
-    <h2>Away skaters - top 5 by points</h2>
-    <ul>
-        {% for skater in view.away_top_skaters %}
-        <li><a href="/player/{{ skater.player_id }}">{{ skater.player_name }}</a> ({{ skater.position }}) - {{ skater.goals }}G {{ skater.assists }}A {{ skater.points }}P - {{ skater.plus_minus }}</li>
-        {% endfor %}
-    </ul>
+    <h2>{{ view.away_abbrev }} skaters</h2>
+    <div class="table-scroll"><table>
+        <thead><tr><th>Player</th><th>Pos</th><th class="numeric">G</th><th class="numeric">A</th><th class="numeric">P</th><th class="numeric">SOG</th><th class="numeric">Hits</th><th class="numeric">Blocks</th><th class="numeric">Takeaways</th><th class="numeric">Giveaways</th><th class="numeric">TOI</th><th class="numeric">+/-</th></tr></thead>
+        <tbody>{% for skater in view.away_skaters %}<tr><td><a href="/player/{{ skater.player_id }}">{{ skater.player_name }}</a></td><td>{{ skater.position }}</td><td class="numeric">{{ skater.goals }}</td><td class="numeric">{{ skater.assists }}</td><td class="numeric">{{ skater.points }}</td><td class="numeric">{{ skater.sog }}</td><td class="numeric">{{ skater.hits }}</td><td class="numeric">{{ skater.blocked_shots }}</td><td class="numeric">{{ skater.takeaways }}</td><td class="numeric">{{ skater.giveaways }}</td><td class="numeric">{{ skater.toi }}</td><td class="numeric">{{ skater.plus_minus }}</td></tr>{% endfor %}</tbody>
+    </table></div>
 </section>
 {% endif %}
 
-{% if !view.home_top_skaters.is_empty() %}
+{% if !view.home_skaters.is_empty() %}
 <section>
-    <h2>Home skaters - top 5 by points</h2>
-    <ul>
-        {% for skater in view.home_top_skaters %}
-        <li><a href="/player/{{ skater.player_id }}">{{ skater.player_name }}</a> ({{ skater.position }}) - {{ skater.goals }}G {{ skater.assists }}A {{ skater.points }}P - {{ skater.plus_minus }}</li>
-        {% endfor %}
-    </ul>
+    <h2>{{ view.home_abbrev }} skaters</h2>
+    <div class="table-scroll"><table>
+        <thead><tr><th>Player</th><th>Pos</th><th class="numeric">G</th><th class="numeric">A</th><th class="numeric">P</th><th class="numeric">SOG</th><th class="numeric">Hits</th><th class="numeric">Blocks</th><th class="numeric">Takeaways</th><th class="numeric">Giveaways</th><th class="numeric">TOI</th><th class="numeric">+/-</th></tr></thead>
+        <tbody>{% for skater in view.home_skaters %}<tr><td><a href="/player/{{ skater.player_id }}">{{ skater.player_name }}</a></td><td>{{ skater.position }}</td><td class="numeric">{{ skater.goals }}</td><td class="numeric">{{ skater.assists }}</td><td class="numeric">{{ skater.points }}</td><td class="numeric">{{ skater.sog }}</td><td class="numeric">{{ skater.hits }}</td><td class="numeric">{{ skater.blocked_shots }}</td><td class="numeric">{{ skater.takeaways }}</td><td class="numeric">{{ skater.giveaways }}</td><td class="numeric">{{ skater.toi }}</td><td class="numeric">{{ skater.plus_minus }}</td></tr>{% endfor %}</tbody>
+    </table></div>
 </section>
 {% endif %}
 

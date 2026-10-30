@@ -22,6 +22,7 @@ pub mod identity;
 pub mod live_game;
 pub mod model;
 pub mod name;
+pub mod player_fit;
 pub mod playoff_run;
 pub mod position;
 pub mod position_profile;
@@ -147,6 +148,11 @@ pub use view_model::fantasy_decision_review::{
     FantasyDecisionReviewSummary, FantasyDecisionReviewView, FantasyDecisionStoredInput,
     FantasyDecisionStoredOutcomeInput, DESCRIPTIVE_READY_MINIMUM, DISPLAY_ALIGNMENT_TOLERANCE,
     FANTASY_DECISION_OUTCOME_SCHEMA, FANTASY_DECISION_REVIEW_SCHEMA,
+};
+pub use view_model::fantasy_market_pulse::{
+    build_fantasy_market_pulse, FantasyMarketDirection, FantasyMarketPlayerSnapshot,
+    FantasyMarketPulseRow, FantasyMarketPulseSummary, FantasyMarketPulseView,
+    FantasyMarketSnapshot, FANTASY_MARKET_PULSE_SCHEMA, FANTASY_MARKET_SNAPSHOT_SCHEMA,
 };
 pub use view_model::fantasy_pickup_sequence::{
     build_fantasy_pickup_sequence, FantasyPickupCoverageRow, FantasyPickupSequenceContext,

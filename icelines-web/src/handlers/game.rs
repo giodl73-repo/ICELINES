@@ -39,6 +39,8 @@ pub(super) struct GameDetailView {
     pub(super) goals: Vec<GameGoalView>,
     pub(super) away_top_skaters: Vec<GameSkaterView>,
     pub(super) home_top_skaters: Vec<GameSkaterView>,
+    pub(super) away_skaters: Vec<GameSkaterView>,
+    pub(super) home_skaters: Vec<GameSkaterView>,
 }
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -73,6 +75,12 @@ pub(super) struct GameSkaterView {
     pub(super) assists: u32,
     pub(super) points: u32,
     pub(super) plus_minus: i32,
+    pub(super) toi: String,
+    pub(super) sog: u32,
+    pub(super) hits: u32,
+    pub(super) blocked_shots: u32,
+    pub(super) takeaways: u32,
+    pub(super) giveaways: u32,
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -228,6 +236,8 @@ pub(super) fn game_detail_from_view(view: &GameView) -> GameDetailView {
         goals: view.goals.iter().map(goal_from_view).collect(),
         away_top_skaters: view.away_top_skaters.iter().map(skater_from_view).collect(),
         home_top_skaters: view.home_top_skaters.iter().map(skater_from_view).collect(),
+        away_skaters: view.away_skaters.iter().map(skater_from_view).collect(),
+        home_skaters: view.home_skaters.iter().map(skater_from_view).collect(),
     }
 }
 
@@ -265,5 +275,11 @@ fn skater_from_view(skater: &GameSkaterRow) -> GameSkaterView {
         assists: skater.assists,
         points: skater.points,
         plus_minus: skater.plus_minus,
+        toi: format!("{}:{:02}", skater.toi_seconds / 60, skater.toi_seconds % 60),
+        sog: skater.sog,
+        hits: skater.hits,
+        blocked_shots: skater.blocked_shots,
+        takeaways: skater.takeaways,
+        giveaways: skater.giveaways,
     }
 }

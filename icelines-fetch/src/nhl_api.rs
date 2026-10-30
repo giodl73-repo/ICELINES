@@ -503,20 +503,8 @@ impl NhlApiClient {
     /// Internal helper: parse the gameWeek-shaped response at `url`.
     async fn fetch_schedule_url(&self, url: &str) -> Result<Vec<ScheduledGame>, FetchError> {
         let raw: serde_json::Value = self.get_json(url).await?;
-        let mut games = Vec::new();
-        if let Some(week) = raw["gameWeek"].as_array() {
-            for day in week {
-                let date = day["date"].as_str().map(str::to_owned);
-                if let Some(day_games) = day["games"].as_array() {
-                    for g in day_games {
-                        if let Some(parsed) = parse_game(g, date.as_deref()) {
-                            games.push(parsed);
-                        }
-                    }
-                }
-            }
-        }
-        Ok(games)
+        icelines_sources::nhl::schedule::parse_game_week(&raw)
+            .map_err(|detail| FetchError::SchemaChanged { detail })
     }
 }
 

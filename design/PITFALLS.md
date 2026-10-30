@@ -425,3 +425,21 @@ Week 1 command must complete and produce the same typed `fantasy_today.v2` contr
 
 **Verification**: On the 2026-09-07 saved league state, the debug CLI completed in 44.91 seconds
 after the fix; before the fix it remained CPU-bound beyond 20 minutes and had to be stopped.
+
+---
+
+### FP-02 — Fantasy Provider Names Are Not Player Identity
+
+**Description**: Daily fantasy exports display names prominently, making a
+name-to-name snapshot join tempting. Accents, provider spelling changes, and
+same-name players can silently attach demand movement to the wrong player.
+
+**Status**: CLOSED 2026-09-08
+
+**Structural solution required**: Market snapshots require a provider-scoped
+stable player ID. Names remain display fields. Comparisons reject duplicate IDs
+and never fall back to normalized-name joins.
+
+**Test required**: Two current/prior players with the same display name but
+different provider IDs must retain independent deltas; duplicate IDs in one
+snapshot must fail validation.

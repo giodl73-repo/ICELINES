@@ -1,0 +1,955 @@
+{
+  "base_commit": "935136020140bd5b408d26cbb0777dd6f0fb5ef9",
+  "branch": "codex/browser-wasm-workbench",
+  "staged_files": [
+    {
+      "path": ".github/workflows/browser-pages.yml",
+      "mode": "100644",
+      "git_blob": "5d91f00999513be049fdaea074a55332f5379616"
+    },
+    {
+      "path": ".github/workflows/browser-rollback.yml",
+      "mode": "100644",
+      "git_blob": "4c4717f65479b5f8d979610467de255228f30f56"
+    },
+    {
+      "path": "Cargo.lock",
+      "mode": "100644",
+      "git_blob": "007138789f2f302fc22de02b405c4ecdc1031dbb"
+    },
+    {
+      "path": "Cargo.toml",
+      "mode": "100644",
+      "git_blob": "19ef14799411e3a95db3c457ee14001bfda2e088"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-03.png",
+      "mode": "100644",
+      "git_blob": "a8916b3dd2dea3448f823f9ce315ba4ec28441c5"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-04.png",
+      "mode": "100644",
+      "git_blob": "27120a4c6a6e55eaff8b7b8573a9db78cbb96e31"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-06.png",
+      "mode": "100644",
+      "git_blob": "6e5413f253ee8c0bc0f777be4de98e7223d0fee9"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-07.png",
+      "mode": "100644",
+      "git_blob": "06ce4b217e0304ce9bfcb49d47e3ec454cebe5a6"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-08.png",
+      "mode": "100644",
+      "git_blob": "3a0f5888b8df7a337a431c9de6ccb81cce98bc25"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-09.png",
+      "mode": "100644",
+      "git_blob": "06de33a9556c1519f100feb2a85aa0b746f1d087"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-10.png",
+      "mode": "100644",
+      "git_blob": "3b963de12bf81a2841380d18cab181d08687c622"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-12-benchmark-repeat.json",
+      "mode": "100644",
+      "git_blob": "90ed360b0b63cff109cbed6717dc3bb7b487c570"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-12-benchmark.json",
+      "mode": "100644",
+      "git_blob": "6962d2f61492eb790a44a19d6d98c52021d6b29e"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-12.png",
+      "mode": "100644",
+      "git_blob": "a7d5ba2b33af11a4d147dec5e6077b4d969f73bd"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-13.png",
+      "mode": "100644",
+      "git_blob": "b5f17b19d6b5b643a899f0f6e3c274c8028ad645"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-14.png",
+      "mode": "100644",
+      "git_blob": "9f90e5777f6f60a6bf6d49d8bfd6895f94dee879"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-15-quota.png",
+      "mode": "100644",
+      "git_blob": "be36d5dfd844242633cb92e6fa2b43de8008a443"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-15.png",
+      "mode": "100644",
+      "git_blob": "58188465b9f213bd5be1970866a8b60f3af9625b"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-16-conflict.png",
+      "mode": "100644",
+      "git_blob": "6a6ee71a090190b9937687ddb477f86505dc0ffd"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-16.png",
+      "mode": "100644",
+      "git_blob": "bb0f232d3e16bfeaff4555071acc4b16f14e86d8"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-17-query.csv",
+      "mode": "100644",
+      "git_blob": "d3fa32601d7da035caf3cfd412c71d1a9a33703d"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-17-query.json",
+      "mode": "100644",
+      "git_blob": "1a153a1df49738d4c2fc12cbefe5609498a09ff6"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-17.png",
+      "mode": "100644",
+      "git_blob": "478cb7aef025e6c0eceb2e65086dda4521df3227"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-18-dialog.png",
+      "mode": "100644",
+      "git_blob": "7e1721b50e7571ffc304f39329c08bdf770cd6d6"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-18-mobile.png",
+      "mode": "100644",
+      "git_blob": "de8ac6e93c9392ac8dc63d63b121a309fcb00c69"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-19-cache-missing.png",
+      "mode": "100644",
+      "git_blob": "310db2dfcfd944b265abb9cb13a3a39c5d60d483"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-19-cache-repaired.png",
+      "mode": "100644",
+      "git_blob": "5f9da4edb25d175696c48de38e7ec456c3e9071b"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-20-catalog-unavailable.png",
+      "mode": "100644",
+      "git_blob": "c7c023be0cf3ea2629cae9985b2f6aed3a09140e"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-20-saved-query.png",
+      "mode": "100644",
+      "git_blob": "04ffa06da8ca68c27c8b7ee767975199c3790feb"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-30-benchmark.json",
+      "mode": "100644",
+      "git_blob": "f269fad49184378a6a4c3de796fc8e3094eec906"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-31-release-benchmark.json",
+      "mode": "100644",
+      "git_blob": "1fa132b9e3adc8523a06e9105c0827fa2ba624cd"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-32-layout.json",
+      "mode": "100644",
+      "git_blob": "85d4e4df79190718dc739233b1ccac0b064a355f"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-34-consent.json",
+      "mode": "100644",
+      "git_blob": "c8b7cdc6665dc07046299277a59a00752ae2176c"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-35-removal.json",
+      "mode": "100644",
+      "git_blob": "08aec06d29b4866d9d1ab32fb44046b3920f74d7"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/browser-pulse-38-checkpoint.json",
+      "mode": "100644",
+      "git_blob": "56f23b117a021ff98bed12643bb66123838243de"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-01.md",
+      "mode": "100644",
+      "git_blob": "83a87974670ab02f3e09992c7d4424fcb474e158"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-02.md",
+      "mode": "100644",
+      "git_blob": "0006c8a1e000c726d8abfb10112034d3ca576302"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-03.md",
+      "mode": "100644",
+      "git_blob": "356811f8efa5e5c0552f1454a45e57edecc1e033"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-04.md",
+      "mode": "100644",
+      "git_blob": "7911bec31b7f6cf6c393dc0b79b434abfd00a65a"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-05.md",
+      "mode": "100644",
+      "git_blob": "310c77b6db5872d9ae073786490efbaae0917f8f"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-06.md",
+      "mode": "100644",
+      "git_blob": "d3a7fd562058ce190e7df0123195cddf2de056ac"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-07.md",
+      "mode": "100644",
+      "git_blob": "63bbe92465c1b037cc451140e47fadcfbb5fe16d"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-08.md",
+      "mode": "100644",
+      "git_blob": "3608694e3180d86515a156fade0368122d9ce8db"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-09.md",
+      "mode": "100644",
+      "git_blob": "5596bffaf3037278e0ee5875b8eea06c5e155e62"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-10.md",
+      "mode": "100644",
+      "git_blob": "ce6aa77a1b7d46b010158956c8ac0f90b3014e5a"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-11.md",
+      "mode": "100644",
+      "git_blob": "6bac42611feb0be0ba5fae6e19c713c1039ca904"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-12.md",
+      "mode": "100644",
+      "git_blob": "5e6c666452065b15e5da3e19191116363bc406c9"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-13.md",
+      "mode": "100644",
+      "git_blob": "f048d4991c539372c3c6731ccc91c433b8866a8f"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-14.md",
+      "mode": "100644",
+      "git_blob": "b4b155c2e827b03507682d775edb287ab1f8dfc7"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-15.md",
+      "mode": "100644",
+      "git_blob": "997cb5e619db3b0d11731f473fffcc76b99a3611"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-16.md",
+      "mode": "100644",
+      "git_blob": "b79b1dfbf6ed0abb2f453c769014dbfa9fa94102"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-17.md",
+      "mode": "100644",
+      "git_blob": "b4597408a3bc651bee36c907331eb9ce650e6fb9"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-18.md",
+      "mode": "100644",
+      "git_blob": "6ddc1144944ed1c127bbdf0058ea3b93466851e9"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-19.md",
+      "mode": "100644",
+      "git_blob": "e67606ba7d8b866fb47fcebb60cc59ef1b1e6165"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-20.md",
+      "mode": "100644",
+      "git_blob": "18687f473388089bcd2fc2adfec5f6af8c138260"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-21.md",
+      "mode": "100644",
+      "git_blob": "82d2dac8cd00b3c090cbdc8b5c0d8ceda386e4b1"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-22.md",
+      "mode": "100644",
+      "git_blob": "542852767844975618478fc517b56bbab10e1d12"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-23.md",
+      "mode": "100644",
+      "git_blob": "a93f9dc9c38b7acfa4b07cffc70a22563db78980"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-24.md",
+      "mode": "100644",
+      "git_blob": "c57356ca749d486d177e05eec7066f84287feec0"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-25.md",
+      "mode": "100644",
+      "git_blob": "0ce7eea0dd5dd87fbe5da1b9c247e8d689bc9cb1"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-26.md",
+      "mode": "100644",
+      "git_blob": "cabf596820f7a5fda7ebdd75ed23049c48c1c879"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-27.md",
+      "mode": "100644",
+      "git_blob": "6c66ade74b821f49cc19468351a300f9488a05e5"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-28.md",
+      "mode": "100644",
+      "git_blob": "5ace70f5507c75e3fa7b329ee475262d4adb328b"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-29.md",
+      "mode": "100644",
+      "git_blob": "b4b0670272f4c123a12f7594702ed575e10f4905"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-30.md",
+      "mode": "100644",
+      "git_blob": "708a368358343ebe604c02c5d5a7ca0b3864c444"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-31.md",
+      "mode": "100644",
+      "git_blob": "ec51f9bffe0cd2c83d40682bb7661764a8e85bc1"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-32.md",
+      "mode": "100644",
+      "git_blob": "48258b49fa326caf6a016194fecbcec937b7522c"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-33.md",
+      "mode": "100644",
+      "git_blob": "eb1d24514f1d95d02c81239edbe6d985de1760f5"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-34.md",
+      "mode": "100644",
+      "git_blob": "ffb0b3a746c6ad0e533b76b93684a2e7a9581328"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-35.md",
+      "mode": "100644",
+      "git_blob": "622d0ee3767afebab6973bc83578a70d3c88c1c3"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-36.md",
+      "mode": "100644",
+      "git_blob": "a134c808a877e64cd497704a3317b9395b524651"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-37.md",
+      "mode": "100644",
+      "git_blob": "1b1ddbf83c8690fcf4673b1f5b8d5835c095233c"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/pulses/pulse-38.md",
+      "mode": "100644",
+      "git_blob": "99bf953fb5620ae9044c3c28baa57296164456b8"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/screenshots/pulse-21-package-cancelled.png",
+      "mode": "100644",
+      "git_blob": "0dab7cc4c89fa1862f26f65a6758dfab10e4c104"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/screenshots/pulse-21-package-retry.png",
+      "mode": "100644",
+      "git_blob": "87f78e67b6f74298d4c66e96b493476fe277da8f"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/screenshots/pulse-22-package-imported.png",
+      "mode": "100644",
+      "git_blob": "418c9393c916e3ef386c760dd7ee8aaf55a3c504"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/screenshots/pulse-25-subpath-restored.png",
+      "mode": "100644",
+      "git_blob": "26fab0d49f4c3b8d3cd4acf783fd4a3ca711e226"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/screenshots/pulse-27-offline-query.png",
+      "mode": "100644",
+      "git_blob": "26fab0d49f4c3b8d3cd4acf783fd4a3ca711e226"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/screenshots/pulse-28-updated-offline-query.png",
+      "mode": "100644",
+      "git_blob": "26fab0d49f4c3b8d3cd4acf783fd4a3ca711e226"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/screenshots/pulse-29-migrated-query.png",
+      "mode": "100644",
+      "git_blob": "26fab0d49f4c3b8d3cd4acf783fd4a3ca711e226"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/screenshots/pulse-30-resident-benchmark.png",
+      "mode": "100644",
+      "git_blob": "ecab26dddb0238ecb7592c9c261a5d9a4913acb1"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/screenshots/pulse-30-session-residency.png",
+      "mode": "100644",
+      "git_blob": "7bc2c8831344805e63a2f75c407c76bc9b5f1472"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/screenshots/pulse-31-playoff-archive.png",
+      "mode": "100644",
+      "git_blob": "74300b4ff16cab3c583f3a1a91d90f8a49102060"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/screenshots/pulse-31-release-benchmark.png",
+      "mode": "100644",
+      "git_blob": "39d9152581ce8b76ba7571660be6c27bd4583f7a"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/screenshots/pulse-32-narrow-dialog.png",
+      "mode": "100644",
+      "git_blob": "d1186e2f9122cc41eedc56de075ed9200739e9f0"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/screenshots/pulse-33-cross-tab-removal.png",
+      "mode": "100644",
+      "git_blob": "320894019c1297b56805619d4d6e9f21230dc684"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/screenshots/pulse-34-transaction-consent.png",
+      "mode": "100644",
+      "git_blob": "94ff82b645010e096ae1d67ac23e927c0a5e3afd"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/screenshots/pulse-35-removal-conflict.png",
+      "mode": "100644",
+      "git_blob": "0249838274f9e8c9cca5a8921dd1a2b99b50648a"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/screenshots/pulse-37-analysis-desktop.png",
+      "mode": "100644",
+      "git_blob": "6dfd4ade318c7fba74c334a328f48dbb9f59f2f5"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/screenshots/pulse-37-analysis-narrow.png",
+      "mode": "100644",
+      "git_blob": "4b3ca172fc19e80d07399b69a5d31ff888640a3e"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/screenshots/pulse-37-cold-desktop.png",
+      "mode": "100644",
+      "git_blob": "f50b9ef8c370b96734a608417fd4d7e5d2ad9b27"
+    },
+    {
+      "path": "context/waves/2026-10-03-browser-wasm/screenshots/pulse-37-cold-narrow.png",
+      "mode": "100644",
+      "git_blob": "0bde3c1d0fc6d04f86e51ecdf94794d184a7e70e"
+    },
+    {
+      "path": "design/plans/2026-10-03-browser-wasm-workbench.md",
+      "mode": "100644",
+      "git_blob": "8e2935294753af6f2a2c8fd45282124de2c0e83f"
+    },
+    {
+      "path": "design/plans/INDEX.md",
+      "mode": "100644",
+      "git_blob": "e4d43a8a94f497d968fe746c2e941d07a0997e18"
+    },
+    {
+      "path": "docs/vtrace/CHANGE_CONTROL.md",
+      "mode": "100644",
+      "git_blob": "35f385dca861ea7dc28f6b331191652dc18d108d"
+    },
+    {
+      "path": "docs/vtrace/INTERFACES.md",
+      "mode": "100644",
+      "git_blob": "031bf0c933f5fd44e3ad4e9b5b6a63e358ab214c"
+    },
+    {
+      "path": "docs/vtrace/REQUIREMENTS.md",
+      "mode": "100644",
+      "git_blob": "0fa93923dc30c05960a50b07b0cb0fd83354547e"
+    },
+    {
+      "path": "docs/vtrace/REVIEW.md",
+      "mode": "100644",
+      "git_blob": "fa775f6b89f8d285ff344d81cd4641aaf2df22b5"
+    },
+    {
+      "path": "docs/vtrace/TRACE.md",
+      "mode": "100644",
+      "git_blob": "5c9c05fc29b12ec639fb955d4ef111c42a9bbdce"
+    },
+    {
+      "path": "docs/vtrace/VALIDATION.md",
+      "mode": "100644",
+      "git_blob": "a829a9c5683f53550de72b18beb99273500b8b31"
+    },
+    {
+      "path": "docs/vtrace/VERIFICATION.md",
+      "mode": "100644",
+      "git_blob": "0cca1ab5f52bd7a953bd5237276fc1094256c062"
+    },
+    {
+      "path": "docs/vtrace/WORK_PACKAGES.md",
+      "mode": "100644",
+      "git_blob": "63ff35fcdfc5b4a297dd7df4ed8ea82364e7e313"
+    },
+    {
+      "path": "icelines-browser/.gitignore",
+      "mode": "100644",
+      "git_blob": "7581e4ab83a631bdba1645698cb239462ec4ae20"
+    },
+    {
+      "path": "icelines-browser/PAGES.md",
+      "mode": "100644",
+      "git_blob": "817892f5cbc506a0ab22893c9e2b848192a98356"
+    },
+    {
+      "path": "icelines-browser/README.md",
+      "mode": "100644",
+      "git_blob": "0c67fb909f58a6ec4a57b1500070c2d402594db4"
+    },
+    {
+      "path": "icelines-browser/build.mjs",
+      "mode": "100644",
+      "git_blob": "c3b5d0bf360f430cf308ebea9c28798807464eed"
+    },
+    {
+      "path": "icelines-browser/index.html",
+      "mode": "100644",
+      "git_blob": "15377a1bebd512587fbdec0d7625a9c9794fafa9"
+    },
+    {
+      "path": "icelines-browser/offline-build.mjs",
+      "mode": "100644",
+      "git_blob": "ba4fa7154517e00cc4179e6ad71e40261d079f20"
+    },
+    {
+      "path": "icelines-browser/package-lock.json",
+      "mode": "100644",
+      "git_blob": "94ef86f7e87ad4604fb3ba19f7203d418fa5f554"
+    },
+    {
+      "path": "icelines-browser/package.json",
+      "mode": "100644",
+      "git_blob": "ffac323167604365a037c42f6a04f489978d0175"
+    },
+    {
+      "path": "icelines-browser/service-worker.template.js",
+      "mode": "100644",
+      "git_blob": "e14a78b6b81997e78345d7c1e1e4e57d61a91989"
+    },
+    {
+      "path": "icelines-browser/src/acquisition.ts",
+      "mode": "100644",
+      "git_blob": "47ff1ffd35009beeee4951b7d154bee1330d77eb"
+    },
+    {
+      "path": "icelines-browser/src/archive.ts",
+      "mode": "100644",
+      "git_blob": "0de5778f306558b82d6cc4fb046ae546110cd1f1"
+    },
+    {
+      "path": "icelines-browser/src/catalog.ts",
+      "mode": "100644",
+      "git_blob": "9d8da3273d2c6949185287c8ba0d5880615009b8"
+    },
+    {
+      "path": "icelines-browser/src/engine-client.ts",
+      "mode": "100644",
+      "git_blob": "ca551041f937919a3ae8e6b4b4fe67ee6db3fbbb"
+    },
+    {
+      "path": "icelines-browser/src/library.ts",
+      "mode": "100644",
+      "git_blob": "520d11ae8fe19e39046bd46659e494bb9b865353"
+    },
+    {
+      "path": "icelines-browser/src/live-coordination.ts",
+      "mode": "100644",
+      "git_blob": "1863ce51b2297c3b82d59cb5bde7933cf9b6bf96"
+    },
+    {
+      "path": "icelines-browser/src/main.ts",
+      "mode": "100644",
+      "git_blob": "af3348280df3500c8a75769d5c6f19cf12615815"
+    },
+    {
+      "path": "icelines-browser/src/network.ts",
+      "mode": "100644",
+      "git_blob": "bbc6617dae6ef632718202d6c0b9e1fe4bd4cffd"
+    },
+    {
+      "path": "icelines-browser/src/offline.ts",
+      "mode": "100644",
+      "git_blob": "a51250fc89a3b854afb85c477628e3e8c7d6d5a1"
+    },
+    {
+      "path": "icelines-browser/src/polling.ts",
+      "mode": "100644",
+      "git_blob": "5372db54795e2989babeeb5be54c4c0f4f393eb6"
+    },
+    {
+      "path": "icelines-browser/src/query-export.ts",
+      "mode": "100644",
+      "git_blob": "ba22bf7e9690c4658d0b9b6b97b706ab34d1eece"
+    },
+    {
+      "path": "icelines-browser/src/save-policy.ts",
+      "mode": "100644",
+      "git_blob": "d8ae0d24b4a6bfc2ee255bc94c251b1d680457e0"
+    },
+    {
+      "path": "icelines-browser/src/schedule.ts",
+      "mode": "100644",
+      "git_blob": "047b9ffc4bba8b3ad6ea79535ac17e2bee42823b"
+    },
+    {
+      "path": "icelines-browser/src/types.ts",
+      "mode": "100644",
+      "git_blob": "1ae6cff563934f16f184fce33e9d1a30e3914f48"
+    },
+    {
+      "path": "icelines-browser/src/view-state.ts",
+      "mode": "100644",
+      "git_blob": "639506f7a029be9b8a9bea78b108b75a734e4eb7"
+    },
+    {
+      "path": "icelines-browser/src/worker.ts",
+      "mode": "100644",
+      "git_blob": "fcc01e0644aa2b2e7a76cbf1face3af080d73559"
+    },
+    {
+      "path": "icelines-browser/style.css",
+      "mode": "100644",
+      "git_blob": "ff60b4062bc438b7da48b59f2636eb03cdd23228"
+    },
+    {
+      "path": "icelines-browser/tests/acquisition.test.mjs",
+      "mode": "100644",
+      "git_blob": "1c4cd416325d2a46e3f77d08ecc6fbd0a90fd2d3"
+    },
+    {
+      "path": "icelines-browser/tests/archive.test.mjs",
+      "mode": "100644",
+      "git_blob": "7622489f5a6146597df19ad07dda3a8a7c24ec6a"
+    },
+    {
+      "path": "icelines-browser/tests/catalog.test.mjs",
+      "mode": "100644",
+      "git_blob": "58de883b77c80932fe587f7962af3f333a713341"
+    },
+    {
+      "path": "icelines-browser/tests/engine-client.test.mjs",
+      "mode": "100644",
+      "git_blob": "fb7c6535402be570d70ffff617149ca950119900"
+    },
+    {
+      "path": "icelines-browser/tests/library.test.mjs",
+      "mode": "100644",
+      "git_blob": "525b848211c3eaf3da37e6802d053acd639a9aa9"
+    },
+    {
+      "path": "icelines-browser/tests/live-coordination.test.mjs",
+      "mode": "100644",
+      "git_blob": "ce9869a66398863e08dcc7bedad723a999a45721"
+    },
+    {
+      "path": "icelines-browser/tests/offline-ui.test.mjs",
+      "mode": "100644",
+      "git_blob": "873ad5352bdaea8f28622ff206666755d5c5bf17"
+    },
+    {
+      "path": "icelines-browser/tests/offline.test.mjs",
+      "mode": "100644",
+      "git_blob": "fffb621d50e224dc6cc7fe7a9db66ade9c69c496"
+    },
+    {
+      "path": "icelines-browser/tests/package-read.test.mjs",
+      "mode": "100644",
+      "git_blob": "7d99b1359fafea83cc5274d6e26091c1365deeda"
+    },
+    {
+      "path": "icelines-browser/tests/polling.test.mjs",
+      "mode": "100644",
+      "git_blob": "9c44b4a4d9777db5437127b60fd5901d01af5b85"
+    },
+    {
+      "path": "icelines-browser/tests/query-export.test.mjs",
+      "mode": "100644",
+      "git_blob": "fdf72fa09378814b03d3777d195dd6c923c10475"
+    },
+    {
+      "path": "icelines-browser/tests/save-policy.test.mjs",
+      "mode": "100644",
+      "git_blob": "8608e4dddaaea57738df4de71e638bf5ea031312"
+    },
+    {
+      "path": "icelines-browser/tests/schedule-library.test.mjs",
+      "mode": "100644",
+      "git_blob": "44c99b8e5bcd0268c3e39c985569e069dc7ed016"
+    },
+    {
+      "path": "icelines-browser/tests/schedule.test.mjs",
+      "mode": "100644",
+      "git_blob": "e0621e0dcf2c7f46744669ab07fb5881acc69eb4"
+    },
+    {
+      "path": "icelines-browser/tests/view-state.test.mjs",
+      "mode": "100644",
+      "git_blob": "0566d087bd3c0cb04fa0fcd104c2bb738fa4d27f"
+    },
+    {
+      "path": "icelines-browser/toolchain.json",
+      "mode": "100644",
+      "git_blob": "0e8da34ccaf544b1bf5553f33ae9b1fb03f4d2de"
+    },
+    {
+      "path": "icelines-browser/tsconfig.json",
+      "mode": "100644",
+      "git_blob": "b7a84d6877307fa31dafc243048b8fd491192bbb"
+    },
+    {
+      "path": "icelines-core/src/stats_catalog.rs",
+      "mode": "100644",
+      "git_blob": "05a02a21a1310df5cce3ffbbaaed627542de1359"
+    },
+    {
+      "path": "icelines-core/src/view_model/goalies.rs",
+      "mode": "100644",
+      "git_blob": "1ee4cec5c3da184f71e70bd18cc579d998c81237"
+    },
+    {
+      "path": "icelines-data/Cargo.toml",
+      "mode": "100644",
+      "git_blob": "5021cc3cafef80902f78e65323671032551d4278"
+    },
+    {
+      "path": "icelines-data/src/lib.rs",
+      "mode": "100644",
+      "git_blob": "abfd0ee409a7fef136add6b1547762ef9f070c38"
+    },
+    {
+      "path": "icelines-fetch/Cargo.toml",
+      "mode": "100644",
+      "git_blob": "eeb5a474bfe91f37fa9ba16b04d5cb1f3eff17ce"
+    },
+    {
+      "path": "icelines-fetch/examples/browser_parity_goldens.rs",
+      "mode": "100644",
+      "git_blob": "5e3263199f9fb40be1969900687c790a1178827e"
+    },
+    {
+      "path": "icelines-fetch/src/nhl_api.rs",
+      "mode": "100644",
+      "git_blob": "519b7ff8f3acaf435d7c5926d18838fabccdd851"
+    },
+    {
+      "path": "icelines-fetch/src/stats_loader.rs",
+      "mode": "100644",
+      "git_blob": "33aac592941df6968d10bacd317fbe413c65290b"
+    },
+    {
+      "path": "icelines-fetch/tests/browser_native_parity.rs",
+      "mode": "100644",
+      "git_blob": "d050b6338e60cd15d3b71d46780793e0e138bfbf"
+    },
+    {
+      "path": "icelines-sources/src/nhl/schedule.rs",
+      "mode": "100644",
+      "git_blob": "9f241fa3d2499d77c460edc023e7b18b0e685204"
+    },
+    {
+      "path": "icelines-sources/tests/fixtures/browser-schedule-week.json",
+      "mode": "100644",
+      "git_blob": "ded637d04ba77a93b32993dac3d37099b44c3321"
+    },
+    {
+      "path": "icelines-wasm/Cargo.toml",
+      "mode": "100644",
+      "git_blob": "0b86d1989f16cf95d46ba5d7163f576c3d0d9979"
+    },
+    {
+      "path": "icelines-wasm/examples/verify_catalog.rs",
+      "mode": "100644",
+      "git_blob": "099535a402609df5fc858c6948a6ec4a8755b4cb"
+    },
+    {
+      "path": "icelines-wasm/src/lib.rs",
+      "mode": "100644",
+      "git_blob": "8ba7ff6be800d53e8a17c5c1d1a5b23d739f9e85"
+    },
+    {
+      "path": "icelines-web/src/handlers/goalies.rs",
+      "mode": "100644",
+      "git_blob": "c1bd827c9b729a23b366e029594e2d933edcdbf8"
+    },
+    {
+      "path": "icelines-web/src/handlers/leaders.rs",
+      "mode": "100644",
+      "git_blob": "1a836dedb6d6f55dda9969e92b15949807e1a22c"
+    },
+    {
+      "path": "scripts/browser-npm-lock.mjs",
+      "mode": "100644",
+      "git_blob": "1fd41db75350c31e0095b5bb13279a611093f5d0"
+    },
+    {
+      "path": "scripts/build-browser-catalog.py",
+      "mode": "100644",
+      "git_blob": "d069c0ccbdef7b8fbaffcebf011654ec921b71f3"
+    },
+    {
+      "path": "scripts/build-browser.mjs",
+      "mode": "100644",
+      "git_blob": "7c06dcce848e7df2c5fa591d853df190d656e955"
+    },
+    {
+      "path": "scripts/download-browser-rollback.py",
+      "mode": "100644",
+      "git_blob": "ad3773d91103f198eabb41ccd4cef018dc41e756"
+    },
+    {
+      "path": "scripts/prepare-browser-benchmark-preview.mjs",
+      "mode": "100644",
+      "git_blob": "e4f53d851345ee119fcf2df2644bf8f52ad19d57"
+    },
+    {
+      "path": "scripts/prepare-browser-catalog-preview.mjs",
+      "mode": "100644",
+      "git_blob": "3c7bbd6ccfddbea80aac0b9669a3d602faace652"
+    },
+    {
+      "path": "scripts/prepare-browser-composition-preview.mjs",
+      "mode": "100644",
+      "git_blob": "5043773f0828b552ed005a053789fe4f7646b6d6"
+    },
+    {
+      "path": "scripts/prepare-browser-consent-preview.mjs",
+      "mode": "100644",
+      "git_blob": "abb4f229759eafcfc1b9d49d77e488d1682fd928"
+    },
+    {
+      "path": "scripts/prepare-browser-migration-preview.mjs",
+      "mode": "100644",
+      "git_blob": "22d72937872108e4dc764da5e7f7d3756a7f0766"
+    },
+    {
+      "path": "scripts/prepare-browser-offline-preview.mjs",
+      "mode": "100644",
+      "git_blob": "c4c245174698343620fcd61cd8d4037fa49e77b7"
+    },
+    {
+      "path": "scripts/prepare-browser-package-preview.mjs",
+      "mode": "100644",
+      "git_blob": "129f63957ba32efb59e423397f430d71108798fb"
+    },
+    {
+      "path": "scripts/prepare-browser-recovery-preview.mjs",
+      "mode": "100644",
+      "git_blob": "dd8237556bc23b10e5d8b6dc8c54f8fe66c865a5"
+    },
+    {
+      "path": "scripts/prepare-browser-release-benchmark-preview.mjs",
+      "mode": "100644",
+      "git_blob": "2c2b4e0ea649c7e4b08fc2c3065734bd32aec244"
+    },
+    {
+      "path": "scripts/prepare-browser-responsive-preview.mjs",
+      "mode": "100644",
+      "git_blob": "0916a21730dea47b213227aadc5b7d5870363ded"
+    },
+    {
+      "path": "scripts/prepare-browser-schedule-preview.mjs",
+      "mode": "100644",
+      "git_blob": "6c06a767ac5e98b3542b03c407a14e94dc840fcb"
+    },
+    {
+      "path": "scripts/prepare-browser-session-layout-preview.mjs",
+      "mode": "100644",
+      "git_blob": "61d177a9984aca832ad1a22eb7ad4ee26175a3a0"
+    },
+    {
+      "path": "scripts/prepare-browser-storage-preview.mjs",
+      "mode": "100644",
+      "git_blob": "d49fc0da12620fbaf691f32a2610ae2bc839e198"
+    },
+    {
+      "path": "scripts/stage-browser-pages.py",
+      "mode": "100644",
+      "git_blob": "bfbaa4cf255b0c894ce68ac1d61bec74a9f869df"
+    },
+    {
+      "path": "scripts/tests/test_browser_artifact.py",
+      "mode": "100644",
+      "git_blob": "50b91a279c5bd6fc5a220ab17487876cb7594bdd"
+    },
+    {
+      "path": "scripts/tests/test_browser_catalog.py",
+      "mode": "100644",
+      "git_blob": "74fd03c4771125affab7f278ee1a23120f29971a"
+    },
+    {
+      "path": "scripts/tests/test_browser_pages.py",
+      "mode": "100644",
+      "git_blob": "e35c4321cff234d2a1328177e271db1110cb5e31"
+    },
+    {
+      "path": "scripts/verify-browser-artifact.py",
+      "mode": "100644",
+      "git_blob": "5456d5a3f9ed292cd11019045909339f306e2018"
+    },
+    {
+      "path": "scripts/verify-browser-dist.mjs",
+      "mode": "100644",
+      "git_blob": "1ff22b1da8af0d5255bff0a73fc790d359e041da"
+    },
+    {
+      "path": "scripts/verify-browser-file-roundtrip.py",
+      "mode": "100644",
+      "git_blob": "baeeb8ebf19cc5735c5461f1fd09d7b8db582b70"
+    },
+    {
+      "path": "scripts/verify-browser-native-parity.mjs",
+      "mode": "100644",
+      "git_blob": "ede1e606c2a526acacc1f7b5bb5ae4da94e9da79"
+    },
+    {
+      "path": "scripts/verify-browser-release.mjs",
+      "mode": "100644",
+      "git_blob": "8913284e9f6cc7c311ddc46495f9a09b85c4fbd1"
+    },
+    {
+      "path": "signals/roles/check/browser-wasm-handoff-roles-check-2026-10-04.md",
+      "mode": "100644",
+      "git_blob": "2540df87778de5d61f389106e35d1a45388583cc"
+    },
+    {
+      "path": "signals/roles/check/browser-wasm-workbench-roles-check-2026-10-03.md",
+      "mode": "100644",
+      "git_blob": "81f7afed2fb1eab58e6d921187ff7201218b0abc"
+    }
+  ],
+  "scope_verified": true,
+  "whitespace_check": "passed",
+  "commit_created": false,
+  "independent_full_check": "running: terminal 27828"
+}

@@ -4943,3 +4943,12 @@ Markdown export front-matter metadata. Broad `WP-001`, `VAL-002`, `VAL-004`,
 CLI leaders text context/source-state presentation. Broad `WP-001`, `VAL-004`,
 `EVID-VAL-004`, `EVID-CR-003`, `EVID-CR-018`, `EVID-CODE-001`, and WP-008
 integration rehearsal remain open.
+
+## Browser WASM workbench planning review (2026-10-03)
+
+Twelve installed role lenses reviewed the plan: approved with conditions for
+implementation planning. Review artifact: signals/roles/check/browser-wasm-workbench-roles-check-2026-10-03.md.
+Top open gate: direct live source browser access or a constrained relay with
+allocated host/owner. Import integrity, generations, shared normalization and
+transactional save behavior require implementation evidence before ship approval.
+No runtime/deployed/persistence capability is accepted by this planning review.

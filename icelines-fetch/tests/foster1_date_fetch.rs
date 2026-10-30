@@ -89,7 +89,8 @@ async fn l1_foster1_fetch_schedule_url_includes_date_segment() {
     let server = MockServer::start();
     server.mock(|when, then| {
         when.method(GET).path("/schedule/2026-01-15");
-        then.status(200).body(r#"{"gameWeek": []}"#);
+        then.status(200)
+            .body(r#"{"gameWeek": [{"date": "2026-01-15", "games": []}]}"#);
     });
 
     let client = NhlApiClient::new("http://unused", server.base_url()).with_retry_params(0, 1, 10);
@@ -100,5 +101,8 @@ async fn l1_foster1_fetch_schedule_url_includes_date_segment() {
         .fetch_schedule_for_date("2026-01-15")
         .await
         .expect("URL must hit the mounted path");
-    assert!(games.is_empty(), "empty gameWeek → empty result");
+    assert!(
+        games.is_empty(),
+        "requested day with no games → empty result"
+    );
 }

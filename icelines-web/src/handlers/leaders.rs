@@ -991,6 +991,9 @@ async fn build_leader_result(
         let total = all.len();
 
         all.sort_by(|a, b| {
+            if let Some(order) = count_leader_order(sort_key, a, b) {
+                return order;
+            }
             let primary = match sort_key {
                 SortKey::Points => b.points.cmp(&a.points),
                 SortKey::Goals => b.goals.cmp(&a.goals),
@@ -1350,9 +1353,12 @@ pub async fn build_leaders_template(
             .collect();
         let total = all.len();
 
-        // Sort by chosen key descending. Secondary: goals
-        // desc, then name asc — deterministic tie-break.
+        // Common count metrics use the shared ID tiebreak. Other web metrics
+        // retain their existing secondary points/name ordering.
         all.sort_by(|a, b| {
+            if let Some(order) = count_leader_order(sort_key, a, b) {
+                return order;
+            }
             let primary = match sort_key {
                 SortKey::Points => b.points.cmp(&a.points),
                 SortKey::Goals => b.goals.cmp(&a.goals),
@@ -1701,6 +1707,23 @@ fn error_page(msg: String) -> Response {
         .into_response()
 }
 
+fn count_leader_order(sort: SortKey, a: &LeaderRow, b: &LeaderRow) -> Option<std::cmp::Ordering> {
+    use icelines_core::stats_catalog::StatId;
+    let (metric, av, bv) = match sort {
+        SortKey::Points => (StatId::Points, a.points, b.points),
+        SortKey::Goals => (StatId::Goals, a.goals, b.goals),
+        SortKey::Assists => (StatId::Assists, a.assists, b.assists),
+        SortKey::Games => (StatId::Games, a.gp, b.gp),
+        _ => return None,
+    };
+    Some(metric.sort_values_cmp(
+        Some(f64::from(av)),
+        PlayerId(a.nhl_id),
+        Some(f64::from(bv)),
+        PlayerId(b.nhl_id),
+    ))
+}
+
 fn leaders_position_chips(active_pos: &str) -> Vec<crate::templates::PosChip> {
     ["", "C", "LW", "RW", "F", "D", "G"]
         .iter()
@@ -1760,6 +1783,38 @@ mod tests {
             points_delta_str: "+30".to_string(),
             points_delta_class: "up".to_string(),
         }
+    }
+
+    #[test]
+    fn l0_count_leader_order_matches_shared_identity_tiebreak() {
+        let mut a = leader_fixture();
+        let mut b = leader_fixture();
+        a.nhl_id = 1;
+        a.name = "Zed".into();
+        a.points = 50;
+        b.nhl_id = 2;
+        b.name = "Alpha".into();
+        b.points = 70;
+        for metric in [SortKey::Goals, SortKey::Assists, SortKey::Games] {
+            assert_eq!(
+                count_leader_order(metric, &a, &b),
+                Some(std::cmp::Ordering::Less)
+            );
+            assert_eq!(
+                count_leader_order(metric, &b, &a),
+                Some(std::cmp::Ordering::Greater)
+            );
+        }
+        assert_eq!(
+            count_leader_order(SortKey::Points, &a, &b),
+            Some(std::cmp::Ordering::Greater)
+        );
+        b.points = 50;
+        assert_eq!(
+            count_leader_order(SortKey::Points, &a, &b),
+            Some(std::cmp::Ordering::Less)
+        );
+        assert_eq!(count_leader_order(SortKey::PointsPerGame, &a, &b), None);
     }
 
     #[test]

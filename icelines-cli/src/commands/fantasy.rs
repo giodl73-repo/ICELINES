@@ -3,12 +3,12 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fmt::Write as _;
 use std::io::Read as _;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::{bail, Context};
 use axum::{
-    extract::{Path, State},
+    extract::{Path as AxumPath, State},
     http::StatusCode,
     routing::{get, post},
     Json,
@@ -22,8 +22,8 @@ use icelines_core::view_model::{
 use icelines_core::{
     apply_fantasy_pickup_reserve, build_fantasy_bench_coverage, build_fantasy_category_matchup,
     build_fantasy_daily_lineup, build_fantasy_draft_board, build_fantasy_draft_card,
-    build_fantasy_draft_simulation, build_fantasy_goalie_plan, build_fantasy_matchup_strategy,
-    build_fantasy_morning_briefing, build_fantasy_morning_card,
+    build_fantasy_draft_simulation, build_fantasy_goalie_plan, build_fantasy_market_pulse,
+    build_fantasy_matchup_strategy, build_fantasy_morning_briefing, build_fantasy_morning_card,
     build_fantasy_platform_snapshot_view, build_fantasy_playoff_portfolio,
     build_fantasy_replacement_lookahead, build_fantasy_roster_card, build_fantasy_schedule_view,
     build_fantasy_simulation_view, build_fantasy_sleeper_board, build_fantasy_today,
@@ -53,8 +53,9 @@ use icelines_core::{
     FantasyDraftSimulationStrategy, FantasyDraftSimulationView, FantasyGoalieGameInput,
     FantasyGoaliePlanInput, FantasyGoaliePlanPlayerInput, FantasyGoalieStartObservation,
     FantasyGoalieStartState, FantasyInjuryPlanView, FantasyLeagueInput, FantasyLeagueTeamInput,
-    FantasyLeagueView, FantasyLineupPlayerInput, FantasyMatchupPointsSnapshotInput,
-    FantasyMatchupStrategy, FantasyMatchupStrategyInput, FantasyMatchupStrategyPlayerInput,
+    FantasyLeagueView, FantasyLineupPlayerInput, FantasyMarketDirection, FantasyMarketPulseView,
+    FantasyMarketSnapshot, FantasyMatchupPointsSnapshotInput, FantasyMatchupStrategy,
+    FantasyMatchupStrategyInput, FantasyMatchupStrategyPlayerInput,
     FantasyMatchupStrategyTeamInput, FantasyMatchupStrategyView, FantasyMatchupSwingInput,
     FantasyMatchupTiePolicy, FantasyMorningCardInput, FantasyObservationConfidence,
     FantasyPickupSequenceView, FantasyPlatformSnapshot, FantasyPlatformSnapshotView,
@@ -4015,6 +4016,110 @@ struct FantasyPlatformSnapshotImportView {
     matchup_schedule_added: bool,
     unknown_teams: Vec<String>,
     observed: FantasyPlatformSnapshotView,
+}
+
+pub fn run_market_pulse(
+    current_file: PathBuf,
+    previous_file: Option<PathBuf>,
+    json_output: bool,
+) -> anyhow::Result<()> {
+    if current_file.as_os_str() == "-"
+        && previous_file
+            .as_ref()
+            .is_some_and(|path| path.as_os_str() == "-")
+    {
+        bail!("--current and --previous cannot both read from stdin");
+    }
+    let current = read_market_snapshot(&current_file, "current")?;
+    let previous = previous_file
+        .as_ref()
+        .map(|path| read_market_snapshot(path, "previous"))
+        .transpose()?;
+    let view =
+        build_fantasy_market_pulse(current, previous.as_ref()).map_err(anyhow::Error::msg)?;
+    if json_output {
+        println!("{}", serde_json::to_string_pretty(&view)?);
+    } else {
+        print_market_pulse(&view);
+    }
+    Ok(())
+}
+
+fn read_market_snapshot(path: &Path, label: &str) -> anyhow::Result<FantasyMarketSnapshot> {
+    let raw = if path.as_os_str() == "-" {
+        let mut input = String::new();
+        std::io::stdin()
+            .read_to_string(&mut input)
+            .with_context(|| format!("read {label} fantasy market snapshot JSON from stdin"))?;
+        input
+    } else {
+        std::fs::read_to_string(path)
+            .with_context(|| format!("read {label} fantasy market snapshot {}", path.display()))?
+    };
+    serde_json::from_str(&raw)
+        .with_context(|| format!("parse {label} fantasy market snapshot JSON"))
+}
+
+fn print_market_pulse(view: &FantasyMarketPulseView) {
+    println!(
+        "Fantasy market pulse — {} at {}{}",
+        view.provider,
+        view.captured_at,
+        view.previous_captured_at
+            .map(|captured_at| format!(" vs {captured_at}"))
+            .unwrap_or_default()
+    );
+    println!(
+        "{} players · {} rising · {} mixed · {} new · {} steady · {} falling",
+        view.summary.players,
+        view.summary.rising,
+        view.summary.mixed,
+        view.summary.new_observations,
+        view.summary.steady,
+        view.summary.falling
+    );
+    println!(
+        "{:<24} {:<9} {:<13} {:>8} {:>9} {:>9}",
+        "Player", "Team/Pos", "Direction", "Ros Δ", "Net adds", "ADP imp"
+    );
+    for row in &view.players {
+        let team_positions = format!(
+            "{}/{}",
+            row.team.as_deref().unwrap_or("—"),
+            if row.positions.is_empty() {
+                "—".to_owned()
+            } else {
+                row.positions.join(",")
+            }
+        );
+        println!(
+            "{:<24} {:<9} {:<13} {:>8} {:>9} {:>9}",
+            row.name,
+            team_positions,
+            market_direction_label(row.direction),
+            format_optional_signed(row.rostered_pct_change, 1),
+            row.net_adds
+                .map(|value| format!("{value:+}"))
+                .unwrap_or_else(|| "—".to_owned()),
+            format_optional_signed(row.adp_improvement, 1),
+        );
+    }
+}
+
+fn market_direction_label(direction: FantasyMarketDirection) -> &'static str {
+    match direction {
+        FantasyMarketDirection::Rising => "rising",
+        FantasyMarketDirection::Mixed => "mixed",
+        FantasyMarketDirection::NewObservation => "new",
+        FantasyMarketDirection::Steady => "steady",
+        FantasyMarketDirection::Falling => "falling",
+    }
+}
+
+fn format_optional_signed(value: Option<f64>, precision: usize) -> String {
+    value
+        .map(|value| format!("{value:+.*}", precision))
+        .unwrap_or_else(|| "—".to_owned())
 }
 
 pub async fn run_snapshot_yahoo(
@@ -10406,7 +10511,7 @@ pub(crate) fn build_roster_player_json(
 
 async fn handle_api_team_roster(
     State(state): State<Arc<AppState>>,
-    Path(team_name): Path<String>,
+    AxumPath(team_name): AxumPath<String>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
     let db = state
         .open_db()
@@ -10448,7 +10553,7 @@ async fn handle_api_team_roster(
 
 async fn handle_api_team_add(
     State(state): State<Arc<AppState>>,
-    Path(team_name): Path<String>,
+    AxumPath(team_name): AxumPath<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
     let player_q = body["player"]
@@ -10492,7 +10597,7 @@ async fn handle_api_team_add(
 
 async fn handle_api_team_drop(
     State(state): State<Arc<AppState>>,
-    Path(team_name): Path<String>,
+    AxumPath(team_name): AxumPath<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
     let player_q = body["player"]

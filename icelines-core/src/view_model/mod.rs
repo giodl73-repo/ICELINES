@@ -30,6 +30,7 @@ pub mod fantasy_gap;
 pub mod fantasy_goalie_plan;
 pub mod fantasy_import;
 pub mod fantasy_league;
+pub mod fantasy_market_pulse;
 pub mod fantasy_matchup;
 pub mod fantasy_matchup_strategy;
 pub mod fantasy_pickup_sequence;
@@ -269,6 +270,11 @@ pub use fantasy_import::{
 pub use fantasy_league::{
     FantasyLeagueInput, FantasyLeagueRow, FantasyLeagueTeamInput, FantasyLeagueTeamRow,
     FantasyLeagueView,
+};
+pub use fantasy_market_pulse::{
+    build_fantasy_market_pulse, FantasyMarketDirection, FantasyMarketPlayerSnapshot,
+    FantasyMarketPulseRow, FantasyMarketPulseSummary, FantasyMarketPulseView,
+    FantasyMarketSnapshot, FANTASY_MARKET_PULSE_SCHEMA, FANTASY_MARKET_SNAPSHOT_SCHEMA,
 };
 pub use fantasy_matchup::{
     FantasyMatchupOutcome, FantasyMatchupRow, FantasyMatchupScheduleInput, FantasyMatchupSideRow,

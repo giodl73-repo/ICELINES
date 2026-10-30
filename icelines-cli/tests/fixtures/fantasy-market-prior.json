@@ -1,0 +1,20 @@
+{
+  "schema": "fantasy_market_snapshot.v1",
+  "provider": "yahoo",
+  "captured_at": "2026-09-07T14:00:00Z",
+  "source_url": "https://example.invalid/yahoo/player-pool",
+  "players": [
+    {
+      "provider_player_id": "12345",
+      "name": "Example Riser",
+      "team": "SEA",
+      "positions": ["LW", "RW"],
+      "xrank": 120.0,
+      "adp": 145.0,
+      "rostered_pct": 10.0,
+      "drafted_pct": 3.0,
+      "adds": 100,
+      "drops": 100
+    }
+  ]
+}

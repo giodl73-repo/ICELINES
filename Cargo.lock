@@ -1732,6 +1732,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "icelines-data"
+version = "0.26.0"
+dependencies = [
+ "icelines-core",
+ "icelines-sources",
+ "serde_json",
+ "thiserror 2.0.20",
+]
+
+[[package]]
 name = "icelines-fetch"
 version = "0.26.0"
 dependencies = [
@@ -1743,8 +1753,10 @@ dependencies = [
  "fletch-core",
  "httpmock",
  "icelines-core",
+ "icelines-data",
  "icelines-query",
  "icelines-sources",
+ "icelines-wasm",
  "reqwest",
  "rusqlite",
  "serde",
@@ -1795,6 +1807,22 @@ dependencies = [
  "sha2",
  "thiserror 2.0.20",
  "url",
+]
+
+[[package]]
+name = "icelines-wasm"
+version = "0.26.0"
+dependencies = [
+ "chrono",
+ "icelines-core",
+ "icelines-data",
+ "icelines-query",
+ "icelines-sources",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 2.0.20",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -3260,9 +3288,9 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.23.39"
+version = "0.23.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c2c118cb077cca2822033836dfb1b975355dfb784b5e8da48f7b6c5db74e60e"
+checksum = "0d41d731c7d2f962d1ccc364cec258de3c0e93b38c2fb3ba97ac74513048d634"
 dependencies = [
  "once_cell",
  "ring",
@@ -3284,9 +3312,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-webpki"
-version = "0.103.13"
+version = "0.103.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61c429a8649f110dddef65e2a5ad240f747e85f7758a6bccc7e5777bd33f756e"
+checksum = "f3c3cf1d8b1e7d4927e2d154c3fcb02979afb9939629c62cd9048d4f07b60ac2"
 dependencies = [
  "ring",
  "rustls-pki-types",

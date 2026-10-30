@@ -1755,3 +1755,23 @@ a.team-link:hover {
   .team-card-player-tile { grid-template-columns: 50px 1fr auto; }
   .team-card-player-tile img, .team-card-fallback { width: 46px; height: 46px; }
 }
+
+
+/* Side-by-side shooting-hand leaderboards. */
+.shot-hands-intro { max-width: 75ch; }
+.shot-hands-controls { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; margin: 1.25rem 0; padding: 1rem; background: #f3f6fa; border: 1px solid #d9e0e9; border-radius: .7rem; }
+.shot-hands-controls label { display: grid; gap: .3rem; font-weight: 700; }
+.shot-hands-controls select { min-width: 9rem; padding: .5rem; }
+.shot-hands-coverage { padding: .75rem 1rem; background: #e9f3f8; border-left: 4px solid #1476a3; }
+.shot-hands-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: start; }
+.shot-hands-panel { min-width: 0; padding: 1rem; border: 1px solid #d9e0e9; border-radius: .7rem; background: #fff; }
+.shot-hands-panel h2 { margin-top: 0; }
+.shot-hands-panel table { width: 100%; }
+.shot-hands-panel td:nth-child(2) { min-width: 9rem; }
+.shot-hands-teams, .shot-hands-team-detail { margin: 1.5rem 0; }
+.shot-hands-teams table { width: 100%; }
+.shot-hands-teams tr.shot-hands-selected-team { background: #e9f3f8; font-weight: 700; }
+.shot-hands-share { display: inline-block; width: min(160px, 60%); height: .65rem; margin-right: .5rem; vertical-align: middle; background: #dbe5ec; border-radius: 999px; overflow: hidden; }
+.shot-hands-share-fill { display: block; height: 100%; background: #1476a3; }
+.shot-hands-team-detail { scroll-margin-top: 5rem; }
+@media (max-width: 1050px) { .shot-hands-grid { grid-template-columns: 1fr; } }

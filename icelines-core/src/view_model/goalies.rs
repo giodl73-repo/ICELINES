@@ -13,6 +13,15 @@ use crate::view_model::tokens::{
     MetricCell, MetricUnit, MetricValue, SemanticToken, StatKey, ValuePrecision,
 };
 
+/// Native/browser leaderboard default qualification. Explicit GP overrides are
+/// applied by callers; this does not change the nullable underlying rate values.
+pub fn qualified_goalie_games(season_type: SeasonType) -> u32 {
+    match season_type {
+        SeasonType::Regular => 5,
+        SeasonType::Playoff => 1,
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum GoalieLeaderboardSort {

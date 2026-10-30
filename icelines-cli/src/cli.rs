@@ -8777,6 +8777,32 @@ mod tui_surface_tests {
     }
 
     #[test]
+    fn l0_fantasy_market_pulse_clap_surface_parses() {
+        with_large_stack(|| {
+            let cli = Cli::try_parse_from([
+                "icelines",
+                "fantasy",
+                "market-pulse",
+                "--current",
+                "today.json",
+                "--previous",
+                "yesterday.json",
+                "--json",
+            ])
+            .expect("fantasy market-pulse should parse");
+            assert!(matches!(
+                cli.command,
+                Commands::Fantasy(FantasySubcommand::MarketPulse {
+                    current,
+                    previous: Some(previous),
+                    json: true,
+                }) if current == PathBuf::from("today.json")
+                    && previous == PathBuf::from("yesterday.json")
+            ));
+        });
+    }
+
+    #[test]
     fn l0_fantasy_playoff_portfolio_clap_surface_parses() {
         with_large_stack(|| {
             let cli = Cli::try_parse_from([
@@ -11394,6 +11420,19 @@ pub enum FantasySubcommand {
     SnapshotShow {
         #[arg(long)]
         league: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Compare provider player-pool observations and show transparent demand movement.
+    #[command(name = "market-pulse")]
+    MarketPulse {
+        /// Current `fantasy_market_snapshot.v1` JSON file, or `-` for stdin.
+        #[arg(long)]
+        current: PathBuf,
+        /// Optional prior snapshot used to calculate movement.
+        #[arg(long)]
+        previous: Option<PathBuf>,
         #[arg(long)]
         json: bool,
     },

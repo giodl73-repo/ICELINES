@@ -3407,6 +3407,68 @@ fn l2_cmd_fantasy_gaps_json_emits_view_contract() {
 }
 
 #[test]
+fn l2_cmd_fantasy_market_pulse_has_text_json_parity() {
+    let fixtures = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures");
+    let current = fixtures.join("fantasy-market-current.json");
+    let previous = fixtures.join("fantasy-market-prior.json");
+    let current = current.to_string_lossy();
+    let previous = previous.to_string_lossy();
+
+    let text = run(&[
+        "fantasy",
+        "market-pulse",
+        "--current",
+        &current,
+        "--previous",
+        &previous,
+    ]);
+    assert!(
+        text.status.success(),
+        "market-pulse text must succeed: {}",
+        String::from_utf8_lossy(&text.stderr)
+    );
+    let text = String::from_utf8_lossy(&text.stdout);
+    assert!(text.contains("Example Riser"));
+    assert!(text.contains("rising"));
+    assert!(text.contains("+2.0"));
+    assert!(text.contains("+100"));
+
+    let json = run(&[
+        "fantasy",
+        "market-pulse",
+        "--current",
+        &current,
+        "--previous",
+        &previous,
+        "--json",
+    ]);
+    assert!(
+        json.status.success(),
+        "market-pulse JSON must succeed: {}",
+        String::from_utf8_lossy(&json.stderr)
+    );
+    let value: serde_json::Value =
+        serde_json::from_slice(&json.stdout).expect("market-pulse output should be valid JSON");
+    assert_eq!(value["schema"], "fantasy_market_pulse.v1");
+    assert_eq!(value["summary"]["rising"], 1);
+    assert_eq!(value["players"][0]["name"], "Example Riser");
+    assert_eq!(value["players"][0]["rostered_pct_change"], 2.0);
+    assert_eq!(value["players"][0]["net_adds"], 100);
+
+    let ambiguous_stdin = run(&[
+        "fantasy",
+        "market-pulse",
+        "--current",
+        "-",
+        "--previous",
+        "-",
+    ]);
+    assert!(!ambiguous_stdin.status.success());
+    assert!(String::from_utf8_lossy(&ambiguous_stdin.stderr)
+        .contains("--current and --previous cannot both read from stdin"));
+}
+
+#[test]
 fn l2_cmd_fantasy_roster_shape_json_surfaces_persisted_shape_validation() {
     let tmp = tempfile::tempdir().expect("tempdir for isolated HOME");
     let home = tmp.path();

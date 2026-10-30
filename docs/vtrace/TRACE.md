@@ -350,3 +350,11 @@ constraints, and prior review findings.
 evidence remains pending and dependency/lean rows remain target-not-met. Reopen
 Trace only if a later wave changes controlled IDs or records new evidence that
 updates row status.
+
+## Browser workbench trace (2026-10-03)
+
+REQ-BROWSER-001 -> IF-BROWSER-001 -> WP-BW-01..06 -> browser plan gates.
+Initial implementation: icelines-data portable normalization + icelines-wasm
+engine binding; native stats_loader delegates to shared functions.
+Evidence record: context/waves/2026-10-03-browser-wasm/pulses/pulse-01.md.
+Verification and validation remain pending until recorded command/browser results.

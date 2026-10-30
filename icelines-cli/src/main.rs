@@ -1506,6 +1506,11 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             FantasySubcommand::SnapshotShow { league, json } => {
                 commands::fantasy::run_snapshot_show(league, json).await?
             }
+            FantasySubcommand::MarketPulse {
+                current,
+                previous,
+                json,
+            } => commands::fantasy::run_market_pulse(current, previous, json)?,
             FantasySubcommand::RosterShape { league, json } => {
                 commands::fantasy::run_roster_shape_show(league, json).await?
             }

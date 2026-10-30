@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "icelines-relay",
+  "account_id": "24e21232ca785c8e590ccfccffb42c83",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-04",
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "ratelimits": [{ "name": "NHL_RATE_LIMIT", "namespace_id": "1001", "simple": { "limit": 120, "period": 60 } }]
+}

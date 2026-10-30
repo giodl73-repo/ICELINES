@@ -12,12 +12,6 @@ use icelines_core::{
 };
 use serde::Deserialize;
 
-/// Spec's rate-stat floor for goalie save-pct: 5+ GP qualifies
-/// for ranking. Without this, a goalie who plays one perfect
-/// period tops the leaderboard at 1.000 SV%.
-const QUALIFIED_GP_REGULAR: u32 = 5;
-const QUALIFIED_GP_PLAYOFF: u32 = 1;
-
 #[derive(Debug, Deserialize, Default)]
 pub struct GoaliesQuery {
     /// Sort key: `save_pct` (default), `wins`, `gaa`, `gp`,
@@ -137,10 +131,8 @@ async fn build_goalie_result(state: &WebState, q: &GoaliesQuery) -> Result<Goali
         .parse()
         .map_err(|_| error_500(format!("active season '{season_str}' is not a YYYYZZZZ id")))?;
     let season = Season(season_u32);
-    let qualified_threshold = match season_type {
-        SeasonType::Regular => QUALIFIED_GP_REGULAR,
-        SeasonType::Playoff => QUALIFIED_GP_PLAYOFF,
-    };
+    let qualified_threshold =
+        icelines_core::view_model::goalies::qualified_goalie_games(season_type);
     let include_below_threshold = q.include_below_threshold.unwrap_or(false);
     let requested_floor = q.gp_min.unwrap_or(qualified_threshold);
     let effective_floor = if include_below_threshold {

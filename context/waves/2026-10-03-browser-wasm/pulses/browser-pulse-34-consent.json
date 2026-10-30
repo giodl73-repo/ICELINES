@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "measured_at": "2026-10-04T14:38:01.143Z",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+  "scope": "Local fixtures; actual IndexedDB and production WASM; no notification listeners or upstream calls",
+  "build": "578250fde92813ab1a2fc7ab12d1b69b1569feeb8d60b14f0988081c978bed94",
+  "season": {
+    "revocation_error": "Error: Local refresh saving is disabled or the saved copy was removed. Save explicitly to enable it again.",
+    "removal_error": "Error: Local refresh saving is disabled or the saved copy was removed. Save explicitly to enable it again.",
+    "saved_count": 0,
+    "memory_query_rows": 6
+  },
+  "schedule": {
+    "saved_revision": "1edd33c806e3987aaef5a1e8f4bf02c9cfc58a0f52f618cc7748fa5259627e7f",
+    "fresh_memory_revision": "9a1f080fccbc7bea5390a7b95fa0ef7053d7362c20618e4a46ab7d1dd0fc3cc4",
+    "saved_policy": false,
+    "memory_policy": false,
+    "games": 2,
+    "message": "Fresh schedule is available in memory, but saving failed. Your earlier saved copy is unchanged. Error: Local refresh saving is disabled or the saved copy was removed. Save explicitly to enable it again."
+  }
+}

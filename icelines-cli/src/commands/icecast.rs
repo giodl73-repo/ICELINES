@@ -16041,10 +16041,13 @@ mod tests {
             .write_file("unproved-local", &SnapshotTier::Rosters, "NYR.json", roster)
             .unwrap();
         store.seal("unproved-local").unwrap();
+        // Unproven snapshots use their creation time. Keep this fixture before
+        // the boundary so the assertion tests provenance, independent of today.
+        let opening_day = chrono::Utc::now().date_naive().succ_opt().unwrap();
         let authority = audit_opening_roster_authority(
             &store,
             20262027,
-            NaiveDate::from_ymd_opt(2026, 9, 29).unwrap(),
+            opening_day,
             &["NYR".to_owned()].into_iter().collect(),
         );
         assert_eq!(authority.status, "invalid");

@@ -1,0 +1,16 @@
+[
+  {
+    "endpoint": "https://api.nhle.com/stats/rest/en/skater/bios?isAggregate=false&isGame=false&start=0&limit=100&cayenneExp=seasonId%3D20252026+and+gameTypeId%3D2",
+    "status": 200,
+    "allow_origin": null,
+    "content_type": "application/json",
+    "bytes": 48851
+  },
+  {
+    "endpoint": "https://api-web.nhle.com/v1/schedule/2026-10-04",
+    "status": 200,
+    "allow_origin": null,
+    "content_type": "application/json",
+    "bytes": 95197
+  }
+]

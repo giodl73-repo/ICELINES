@@ -1,0 +1,68 @@
+name: Browser Pages artifact rollback
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'Successful master Browser WASM / Pages run containing the previous-good artifact'
+        type: string
+        required: true
+      commit:
+        description: 'Full 40-character source commit of that artifact'
+        type: string
+        required: true
+      shell_build:
+        description: 'Reviewed previous-good shell-manifest build SHA-256'
+        type: string
+        required: true
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: browser-pages-refs/heads/master
+  cancel-in-progress: false
+jobs:
+  restore:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Download selected previous-good master artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ROLLBACK_RUN_ID: ${{ inputs.run_id }}
+          ROLLBACK_COMMIT: ${{ inputs.commit }}
+        run: python scripts/download-browser-rollback.py
+      - name: Verify retained artifact without running its code
+        env:
+          ROLLBACK_COMMIT: ${{ inputs.commit }}
+          ROLLBACK_BUILD: ${{ inputs.shell_build }}
+        run: python scripts/verify-browser-artifact.py target/rollback-browser "$ROLLBACK_COMMIT" "$ROLLBACK_BUILD"
+      - name: Read current documentation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: gh-pages
+          path: target/pages-baseline
+          persist-credentials: false
+      - name: Compose retained browser with current documentation
+        run: python scripts/stage-browser-pages.py target/pages-baseline target/rollback-browser target/pages-site > target/rollback-preservation.json
+      - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: target/pages-site
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: rollback-preservation-${{ github.run_id }}
+          path: target/rollback-preservation.json
+          retention-days: 30
+  deploy:
+    needs: restore
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+      - id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

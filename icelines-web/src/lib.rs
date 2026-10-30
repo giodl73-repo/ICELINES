@@ -78,6 +78,7 @@ pub fn router(state: WebState) -> Router {
         .route("/static/:asset", get(static_assets::serve_static))
         // Real handlers — replace coming-soon stubs as each lands.
         .route("/leaders", get(handlers::leaders::get_leaders))
+        .route("/shot-hands", get(handlers::shot_hands::get_shot_hands))
         // JSON API — King.2.4. /api/v1/leaders is the JSON twin of
         // /leaders. Same query params; envelope shape per spec.
         .route("/api/v1/leaders", get(handlers::leaders::get_leaders_json))
@@ -723,6 +724,7 @@ mod handlers {
     /// - JSON twin at /api/v1/leaders
     /// - moka response cache
     pub mod leaders;
+    pub mod shot_hands;
 
     /// `/depth` — Phase Lady Byng follow-up. Cross-team line-value
     /// rankings (same data the TUI Depth tab consumes). Mirrors the

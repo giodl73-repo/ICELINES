@@ -1,0 +1,1902 @@
+{
+  "schema_version": 1,
+  "measured_at": "2026-10-04T02:14:14.385Z",
+  "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+  "note": "Local desktop measurement; no mobile or total-browser-memory claim. One active package; no eight-window residency or archive expansion measurement.",
+  "packages": [
+    {
+      "id": "20252026-regular",
+      "season": 20252026,
+      "season_type": "regular",
+      "bytes": 926515,
+      "download_and_integrity_ms": 23.400000005960464,
+      "load_ms": 20.5,
+      "cold_query_ms": 4.9000000059604645,
+      "filtered_rows": 407,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 1,
+        "median": 1.2000000029802322,
+        "p95": 1.5,
+        "maximum": 1.7000000029802322
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 6488064
+    },
+    {
+      "id": "20242025-regular",
+      "season": 20242025,
+      "season_type": "regular",
+      "bytes": 908625,
+      "download_and_integrity_ms": 31.700000002980232,
+      "load_ms": 13.200000002980232,
+      "cold_query_ms": 1.2999999970197678,
+      "filtered_rows": 396,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.7999999970197678,
+        "median": 1,
+        "p95": 1.2000000029802322,
+        "maximum": 1.2000000029802322
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20242025-playoff",
+      "season": 20242025,
+      "season_type": "playoff",
+      "bytes": 259978,
+      "download_and_integrity_ms": 23.200000002980232,
+      "load_ms": 4,
+      "cold_query_ms": 0.29999999701976776,
+      "filtered_rows": 11,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.09999999403953552,
+        "median": 0.19999998807907104,
+        "p95": 0.20000000298023224,
+        "maximum": 0.30000001192092896
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20232024-regular",
+      "season": 20232024,
+      "season_type": "regular",
+      "bytes": 909591,
+      "download_and_integrity_ms": 24,
+      "load_ms": 9.799999997019768,
+      "cold_query_ms": 1.0999999940395355,
+      "filtered_rows": 394,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.7999999970197678,
+        "median": 1,
+        "p95": 1.0999999940395355,
+        "maximum": 1.2000000029802322
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20232024-playoff",
+      "season": 20232024,
+      "season_type": "playoff",
+      "bytes": 264960,
+      "download_and_integrity_ms": 21.299999997019768,
+      "load_ms": 4,
+      "cold_query_ms": 0.10000000894069672,
+      "filtered_rows": 9,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.10000000894069672,
+        "p95": 0.29999999701976776,
+        "maximum": 0.29999999701976776
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20222023-regular",
+      "season": 20222023,
+      "season_type": "regular",
+      "bytes": 936534,
+      "download_and_integrity_ms": 25.700000002980232,
+      "load_ms": 10.5,
+      "cold_query_ms": 1.2999999970197678,
+      "filtered_rows": 411,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.7999999970197678,
+        "median": 1,
+        "p95": 1.2000000029802322,
+        "maximum": 1.7000000029802322
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20222023-playoff",
+      "season": 20222023,
+      "season_type": "playoff",
+      "bytes": 262089,
+      "download_and_integrity_ms": 30.400000005960464,
+      "load_ms": 4,
+      "cold_query_ms": 0.29999999701976776,
+      "filtered_rows": 7,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.09999999403953552,
+        "p95": 0.20000000298023224,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20212022-regular",
+      "season": 20212022,
+      "season_type": "regular",
+      "bytes": 988849,
+      "download_and_integrity_ms": 39.900000005960464,
+      "load_ms": 10.5,
+      "cold_query_ms": 1.199999988079071,
+      "filtered_rows": 420,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.8999999910593033,
+        "median": 1.0999999940395355,
+        "p95": 1.4000000059604645,
+        "maximum": 1.5
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20212022-playoff",
+      "season": 20212022,
+      "season_type": "playoff",
+      "bytes": 263293,
+      "download_and_integrity_ms": 23.700000002980232,
+      "load_ms": 3.5999999940395355,
+      "cold_query_ms": 0.10000000894069672,
+      "filtered_rows": 10,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.10000000894069672,
+        "p95": 0.20000000298023224,
+        "maximum": 0.29999999701976776
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20202021-regular",
+      "season": 20202021,
+      "season_type": "regular",
+      "bytes": 892768,
+      "download_and_integrity_ms": 23.599999994039536,
+      "load_ms": 9.299999997019768,
+      "cold_query_ms": 1.1000000089406967,
+      "filtered_rows": 272,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.5999999940395355,
+        "median": 0.6000000089406967,
+        "p95": 1,
+        "maximum": 1.4000000059604645
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20202021-playoff",
+      "season": 20202021,
+      "season_type": "playoff",
+      "bytes": 262152,
+      "download_and_integrity_ms": 23,
+      "load_ms": 3.300000011920929,
+      "cold_query_ms": 0.19999998807907104,
+      "filtered_rows": 2,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.10000000894069672,
+        "p95": 0.20000000298023224,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20192020-regular",
+      "season": 20192020,
+      "season_type": "regular",
+      "bytes": 860817,
+      "download_and_integrity_ms": 25.100000008940697,
+      "load_ms": 9.899999991059303,
+      "cold_query_ms": 1,
+      "filtered_rows": 349,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.699999988079071,
+        "median": 0.8999999910593033,
+        "p95": 1.0999999940395355,
+        "maximum": 1.300000011920929
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20192020-playoff",
+      "season": 20192020,
+      "season_type": "playoff",
+      "bytes": 402760,
+      "download_and_integrity_ms": 23.099999994039536,
+      "load_ms": 5,
+      "cold_query_ms": 0.09999999403953552,
+      "filtered_rows": 8,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.10000000894069672,
+        "p95": 0.20000000298023224,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20182019-regular",
+      "season": 20182019,
+      "season_type": "regular",
+      "bytes": 884461,
+      "download_and_integrity_ms": 24.700000002980232,
+      "load_ms": 10,
+      "cold_query_ms": 1,
+      "filtered_rows": 400,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.7999999970197678,
+        "median": 0.9000000059604645,
+        "p95": 1,
+        "maximum": 1
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20182019-playoff",
+      "season": 20182019,
+      "season_type": "playoff",
+      "bytes": 258349,
+      "download_and_integrity_ms": 22.799999997019768,
+      "load_ms": 3.4000000059604645,
+      "cold_query_ms": 0.20000000298023224,
+      "filtered_rows": 4,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.09999999403953552,
+        "p95": 0.20000000298023224,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20172018-regular",
+      "season": 20172018,
+      "season_type": "regular",
+      "bytes": 869271,
+      "download_and_integrity_ms": 41.20000000298023,
+      "load_ms": 8.900000005960464,
+      "cold_query_ms": 1.0999999940395355,
+      "filtered_rows": 385,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.7999999970197678,
+        "median": 1,
+        "p95": 1.1000000089406967,
+        "maximum": 1.2000000029802322
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20172018-playoff",
+      "season": 20172018,
+      "season_type": "playoff",
+      "bytes": 260915,
+      "download_and_integrity_ms": 23.799999997019768,
+      "load_ms": 3.5,
+      "cold_query_ms": 0.20000000298023224,
+      "filtered_rows": 12,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.09999999403953552,
+        "median": 0.10000000894069672,
+        "p95": 0.20000000298023224,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20162017-regular",
+      "season": 20162017,
+      "season_type": "regular",
+      "bytes": 865646,
+      "download_and_integrity_ms": 22.5,
+      "load_ms": 8.700000002980232,
+      "cold_query_ms": 1.1000000089406967,
+      "filtered_rows": 352,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.5999999940395355,
+        "median": 0.7999999970197678,
+        "p95": 0.9000000059604645,
+        "maximum": 1
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20162017-playoff",
+      "season": 20162017,
+      "season_type": "playoff",
+      "bytes": 266101,
+      "download_and_integrity_ms": 22.600000008940697,
+      "load_ms": 3.3999999910593033,
+      "cold_query_ms": 0.20000000298023224,
+      "filtered_rows": 4,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.09999999403953552,
+        "p95": 0.20000000298023224,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20152016-regular",
+      "season": 20152016,
+      "season_type": "regular",
+      "bytes": 872850,
+      "download_and_integrity_ms": 24.200000002980232,
+      "load_ms": 9.5,
+      "cold_query_ms": 1.199999988079071,
+      "filtered_rows": 338,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.7000000029802322,
+        "median": 0.8999999910593033,
+        "p95": 1,
+        "maximum": 1.1000000089406967
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20152016-playoff",
+      "season": 20152016,
+      "season_type": "playoff",
+      "bytes": 265706,
+      "download_and_integrity_ms": 22.900000005960464,
+      "load_ms": 3.699999988079071,
+      "cold_query_ms": 0.4000000059604645,
+      "filtered_rows": 5,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.10000000894069672,
+        "p95": 0.20000000298023224,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20142015-regular",
+      "season": 20142015,
+      "season_type": "regular",
+      "bytes": 857046,
+      "download_and_integrity_ms": 23.700000002980232,
+      "load_ms": 10,
+      "cold_query_ms": 1.2000000029802322,
+      "filtered_rows": 360,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.7999999970197678,
+        "median": 0.9000000059604645,
+        "p95": 1.1000000089406967,
+        "maximum": 1.2000000029802322
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20142015-playoff",
+      "season": 20142015,
+      "season_type": "playoff",
+      "bytes": 264283,
+      "download_and_integrity_ms": 22.599999994039536,
+      "load_ms": 3.800000011920929,
+      "cold_query_ms": 0.19999998807907104,
+      "filtered_rows": 6,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.10000000894069672,
+        "p95": 0.20000000298023224,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20132014-regular",
+      "season": 20132014,
+      "season_type": "regular",
+      "bytes": 862203,
+      "download_and_integrity_ms": 23.899999991059303,
+      "load_ms": 10.099999994039536,
+      "cold_query_ms": 0.9000000059604645,
+      "filtered_rows": 356,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.699999988079071,
+        "median": 0.8999999910593033,
+        "p95": 1.2000000029802322,
+        "maximum": 1.5
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20132014-playoff",
+      "season": 20132014,
+      "season_type": "playoff",
+      "bytes": 269000,
+      "download_and_integrity_ms": 20.599999994039536,
+      "load_ms": 3.5999999940395355,
+      "cold_query_ms": 0.09999999403953552,
+      "filtered_rows": 5,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.09999999403953552,
+        "median": 0.20000000298023224,
+        "p95": 0.30000001192092896,
+        "maximum": 0.4000000059604645
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20122013-regular",
+      "season": 20122013,
+      "season_type": "regular",
+      "bytes": 809752,
+      "download_and_integrity_ms": 47.3999999910593,
+      "load_ms": 8.5,
+      "cold_query_ms": 0.5,
+      "filtered_rows": 199,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.29999999701976776,
+        "median": 0.5,
+        "p95": 0.6000000089406967,
+        "maximum": 0.800000011920929
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20122013-playoff",
+      "season": 20122013,
+      "season_type": "playoff",
+      "bytes": 270604,
+      "download_and_integrity_ms": 23.299999997019768,
+      "load_ms": 3.5,
+      "cold_query_ms": 0.10000000894069672,
+      "filtered_rows": 1,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.19999998807907104,
+        "p95": 0.20000000298023224,
+        "maximum": 0.29999999701976776
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20112012-regular",
+      "season": 20112012,
+      "season_type": "regular",
+      "bytes": 865276,
+      "download_and_integrity_ms": 24.200000002980232,
+      "load_ms": 8.600000008940697,
+      "cold_query_ms": 1.0999999940395355,
+      "filtered_rows": 340,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.7000000029802322,
+        "median": 0.9000000059604645,
+        "p95": 2.2000000029802322,
+        "maximum": 2.7999999970197678
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20112012-playoff",
+      "season": 20112012,
+      "season_type": "playoff",
+      "bytes": 268863,
+      "download_and_integrity_ms": 21.69999998807907,
+      "load_ms": 3.6000000089406967,
+      "cold_query_ms": 0.09999999403953552,
+      "filtered_rows": 2,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.10000000894069672,
+        "p95": 0.20000000298023224,
+        "maximum": 0.29999999701976776
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20102011-regular",
+      "season": 20102011,
+      "season_type": "regular",
+      "bytes": 861262,
+      "download_and_integrity_ms": 26.099999994039536,
+      "load_ms": 8.5,
+      "cold_query_ms": 0.9000000059604645,
+      "filtered_rows": 359,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.5999999940395355,
+        "median": 0.7000000029802322,
+        "p95": 0.9000000059604645,
+        "maximum": 1
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20102011-playoff",
+      "season": 20102011,
+      "season_type": "playoff",
+      "bytes": 263962,
+      "download_and_integrity_ms": 21.700000002980232,
+      "load_ms": 3.7999999970197678,
+      "cold_query_ms": 0.20000000298023224,
+      "filtered_rows": 5,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.10000000894069672,
+        "p95": 0.19999998807907104,
+        "maximum": 0.19999998807907104
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20092010-regular",
+      "season": 20092010,
+      "season_type": "regular",
+      "bytes": 848598,
+      "download_and_integrity_ms": 24.700000002980232,
+      "load_ms": 9.200000002980232,
+      "cold_query_ms": 1.2999999970197678,
+      "filtered_rows": 354,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.699999988079071,
+        "median": 0.7999999970197678,
+        "p95": 0.9000000059604645,
+        "maximum": 1
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20092010-playoff",
+      "season": 20092010,
+      "season_type": "playoff",
+      "bytes": 267154,
+      "download_and_integrity_ms": 31.399999991059303,
+      "load_ms": 3.5,
+      "cold_query_ms": 0.30000001192092896,
+      "filtered_rows": 7,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.09999999403953552,
+        "p95": 0.20000000298023224,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20082009-regular",
+      "season": 20082009,
+      "season_type": "regular",
+      "bytes": 856255,
+      "download_and_integrity_ms": 33,
+      "load_ms": 9.299999997019768,
+      "cold_query_ms": 1.4000000059604645,
+      "filtered_rows": 365,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.7999999970197678,
+        "median": 1,
+        "p95": 1.0999999940395355,
+        "maximum": 1.0999999940395355
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20082009-playoff",
+      "season": 20082009,
+      "season_type": "playoff",
+      "bytes": 259274,
+      "download_and_integrity_ms": 22.399999991059303,
+      "load_ms": 3.6000000089406967,
+      "cold_query_ms": 0.19999998807907104,
+      "filtered_rows": 5,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.09999999403953552,
+        "p95": 0.20000000298023224,
+        "maximum": 0.29999999701976776
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20072008-regular",
+      "season": 20072008,
+      "season_type": "regular",
+      "bytes": 825438,
+      "download_and_integrity_ms": 24,
+      "load_ms": 8.399999991059303,
+      "cold_query_ms": 1,
+      "filtered_rows": 346,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.7999999970197678,
+        "median": 0.8999999910593033,
+        "p95": 1,
+        "maximum": 1.1000000089406967
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20072008-playoff",
+      "season": 20072008,
+      "season_type": "playoff",
+      "bytes": 263177,
+      "download_and_integrity_ms": 26.599999994039536,
+      "load_ms": 3.4000000059604645,
+      "cold_query_ms": 0.09999999403953552,
+      "filtered_rows": 5,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.10000000894069672,
+        "p95": 0.20000000298023224,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20062007-regular",
+      "season": 20062007,
+      "season_type": "regular",
+      "bytes": 829179,
+      "download_and_integrity_ms": 13.899999991059303,
+      "load_ms": 9.100000008940697,
+      "cold_query_ms": 1,
+      "filtered_rows": 365,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.5999999940395355,
+        "median": 0.7999999970197678,
+        "p95": 1,
+        "maximum": 1
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20062007-playoff",
+      "season": 20062007,
+      "season_type": "playoff",
+      "bytes": 256138,
+      "download_and_integrity_ms": 20.900000005960464,
+      "load_ms": 3.2000000029802322,
+      "cold_query_ms": 0.20000000298023224,
+      "filtered_rows": 3,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.09999999403953552,
+        "p95": 0.20000000298023224,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20052006-regular",
+      "season": 20052006,
+      "season_type": "regular",
+      "bytes": 843241,
+      "download_and_integrity_ms": 30.900000005960464,
+      "load_ms": 8.799999997019768,
+      "cold_query_ms": 1.2000000029802322,
+      "filtered_rows": 390,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.7000000029802322,
+        "median": 0.8999999910593033,
+        "p95": 1,
+        "maximum": 1.2000000029802322
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20052006-playoff",
+      "season": 20052006,
+      "season_type": "playoff",
+      "bytes": 259019,
+      "download_and_integrity_ms": 25.80000001192093,
+      "load_ms": 3.5999999940395355,
+      "cold_query_ms": 0.09999999403953552,
+      "filtered_rows": 3,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.10000000894069672,
+        "p95": 0.20000000298023224,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20032004-regular",
+      "season": 20032004,
+      "season_type": "regular",
+      "bytes": 886180,
+      "download_and_integrity_ms": 24.400000005960464,
+      "load_ms": 9.299999997019768,
+      "cold_query_ms": 1,
+      "filtered_rows": 351,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.7999999970197678,
+        "median": 0.8999999910593033,
+        "p95": 1.7999999970197678,
+        "maximum": 2.0999999940395355
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20032004-playoff",
+      "season": 20032004,
+      "season_type": "playoff",
+      "bytes": 267212,
+      "download_and_integrity_ms": 34.8999999910593,
+      "load_ms": 3.300000011920929,
+      "cold_query_ms": 0.29999999701976776,
+      "filtered_rows": 3,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.10000000894069672,
+        "p95": 0.20000000298023224,
+        "maximum": 0.29999999701976776
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20022003-regular",
+      "season": 20022003,
+      "season_type": "regular",
+      "bytes": 859084,
+      "download_and_integrity_ms": 19,
+      "load_ms": 8,
+      "cold_query_ms": 0.9000000059604645,
+      "filtered_rows": 335,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.5999999940395355,
+        "median": 0.7000000029802322,
+        "p95": 0.8999999910593033,
+        "maximum": 1.4000000059604645
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20022003-playoff",
+      "season": 20022003,
+      "season_type": "playoff",
+      "bytes": 262138,
+      "download_and_integrity_ms": 25.599999994039536,
+      "load_ms": 3.5,
+      "cold_query_ms": 0.29999999701976776,
+      "filtered_rows": 0,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.09999999403953552,
+        "p95": 0.10000000894069672,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20012002-regular",
+      "season": 20012002,
+      "season_type": "regular",
+      "bytes": 845117,
+      "download_and_integrity_ms": 23.299999997019768,
+      "load_ms": 9.099999994039536,
+      "cold_query_ms": 1.7999999970197678,
+      "filtered_rows": 337,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.5999999940395355,
+        "median": 0.7000000029802322,
+        "p95": 3,
+        "maximum": 4.700000002980232
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20012002-playoff",
+      "season": 20012002,
+      "season_type": "playoff",
+      "bytes": 268188,
+      "download_and_integrity_ms": 24,
+      "load_ms": 3.5,
+      "cold_query_ms": 0,
+      "filtered_rows": 2,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.09999999403953552,
+        "p95": 0.20000000298023224,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20002001-regular",
+      "season": 20002001,
+      "season_type": "regular",
+      "bytes": 854477,
+      "download_and_integrity_ms": 40.20000000298023,
+      "load_ms": 8.100000008940697,
+      "cold_query_ms": 0.7999999970197678,
+      "filtered_rows": 355,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.6000000089406967,
+        "median": 0.7999999970197678,
+        "p95": 1.2000000029802322,
+        "maximum": 3.6000000089406967
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "20002001-playoff",
+      "season": 20002001,
+      "season_type": "playoff",
+      "bytes": 261769,
+      "download_and_integrity_ms": 26.69999998807907,
+      "load_ms": 3.4000000059604645,
+      "cold_query_ms": 0.09999999403953552,
+      "filtered_rows": 5,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.09999999403953552,
+        "p95": 0.20000000298023224,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19992000-regular",
+      "season": 19992000,
+      "season_type": "regular",
+      "bytes": 809404,
+      "download_and_integrity_ms": 22.399999991059303,
+      "load_ms": 7.799999997019768,
+      "cold_query_ms": 0.7999999970197678,
+      "filtered_rows": 337,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.5999999940395355,
+        "median": 0.7000000029802322,
+        "p95": 0.7999999970197678,
+        "maximum": 1.2000000029802322
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19992000-playoff",
+      "season": 19992000,
+      "season_type": "playoff",
+      "bytes": 257832,
+      "download_and_integrity_ms": 23.299999997019768,
+      "load_ms": 3.5,
+      "cold_query_ms": 0.20000000298023224,
+      "filtered_rows": 4,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.09999999403953552,
+        "p95": 0.20000000298023224,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19981999-regular",
+      "season": 19981999,
+      "season_type": "regular",
+      "bytes": 787336,
+      "download_and_integrity_ms": 27.299999997019768,
+      "load_ms": 8.5,
+      "cold_query_ms": 0.9000000059604645,
+      "filtered_rows": 297,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.5,
+        "median": 0.7000000029802322,
+        "p95": 0.7999999970197678,
+        "maximum": 0.8999999910593033
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19981999-playoff",
+      "season": 19981999,
+      "season_type": "playoff",
+      "bytes": 277483,
+      "download_and_integrity_ms": 23.299999997019768,
+      "load_ms": 3.2999999970197678,
+      "cold_query_ms": 0.20000000298023224,
+      "filtered_rows": 3,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.10000000894069672,
+        "p95": 0.20000000298023224,
+        "maximum": 0.29999999701976776
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19971998-regular",
+      "season": 19971998,
+      "season_type": "regular",
+      "bytes": 734809,
+      "download_and_integrity_ms": 23,
+      "load_ms": 7.5,
+      "cold_query_ms": 1.199999988079071,
+      "filtered_rows": 292,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.5,
+        "median": 0.7000000029802322,
+        "p95": 0.9000000059604645,
+        "maximum": 1.7000000029802322
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19971998-playoff",
+      "season": 19971998,
+      "season_type": "playoff",
+      "bytes": 265265,
+      "download_and_integrity_ms": 26.600000008940697,
+      "load_ms": 3.199999988079071,
+      "cold_query_ms": 0.10000000894069672,
+      "filtered_rows": 2,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.09999999403953552,
+        "p95": 0.19999998807907104,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19961997-regular",
+      "season": 19961997,
+      "season_type": "regular",
+      "bytes": 739627,
+      "download_and_integrity_ms": 24.400000005960464,
+      "load_ms": 7.200000002980232,
+      "cold_query_ms": 0.699999988079071,
+      "filtered_rows": 312,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.5999999940395355,
+        "median": 0.7000000029802322,
+        "p95": 0.7999999970197678,
+        "maximum": 0.800000011920929
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19961997-playoff",
+      "season": 19961997,
+      "season_type": "playoff",
+      "bytes": 264916,
+      "download_and_integrity_ms": 24.100000008940697,
+      "load_ms": 3.5,
+      "cold_query_ms": 0.29999999701976776,
+      "filtered_rows": 8,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.20000000298023224,
+        "p95": 0.29999999701976776,
+        "maximum": 0.29999999701976776
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19951996-regular",
+      "season": 19951996,
+      "season_type": "regular",
+      "bytes": 747478,
+      "download_and_integrity_ms": 37.6000000089407,
+      "load_ms": 7.799999997019768,
+      "cold_query_ms": 0.800000011920929,
+      "filtered_rows": 316,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.6000000089406967,
+        "median": 0.7000000029802322,
+        "p95": 0.800000011920929,
+        "maximum": 0.9000000059604645
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19951996-playoff",
+      "season": 19951996,
+      "season_type": "playoff",
+      "bytes": 270316,
+      "download_and_integrity_ms": 35.900000005960464,
+      "load_ms": 3.0999999940395355,
+      "cold_query_ms": 0.20000000298023224,
+      "filtered_rows": 8,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.09999999403953552,
+        "p95": 0.20000000298023224,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19941995-regular",
+      "season": 19941995,
+      "season_type": "regular",
+      "bytes": 705563,
+      "download_and_integrity_ms": 29.200000002980232,
+      "load_ms": 6.700000002980232,
+      "cold_query_ms": 0.5,
+      "filtered_rows": 191,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.3999999910593033,
+        "median": 0.5,
+        "p95": 0.5999999940395355,
+        "maximum": 0.699999988079071
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19941995-playoff",
+      "season": 19941995,
+      "season_type": "playoff",
+      "bytes": 268354,
+      "download_and_integrity_ms": 27.30000001192093,
+      "load_ms": 3.2999999970197678,
+      "cold_query_ms": 0.20000000298023224,
+      "filtered_rows": 2,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.10000000894069672,
+        "p95": 0.20000000298023224,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19931994-regular",
+      "season": 19931994,
+      "season_type": "regular",
+      "bytes": 760939,
+      "download_and_integrity_ms": 43,
+      "load_ms": 7.4000000059604645,
+      "cold_query_ms": 1.0999999940395355,
+      "filtered_rows": 333,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.5,
+        "median": 0.7000000029802322,
+        "p95": 0.9000000059604645,
+        "maximum": 0.9000000059604645
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19931994-playoff",
+      "season": 19931994,
+      "season_type": "playoff",
+      "bytes": 265306,
+      "download_and_integrity_ms": 24.100000008940697,
+      "load_ms": 3.7000000029802322,
+      "cold_query_ms": 0.20000000298023224,
+      "filtered_rows": 6,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.10000000894069672,
+        "p95": 0.20000000298023224,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19921993-regular",
+      "season": 19921993,
+      "season_type": "regular",
+      "bytes": 687976,
+      "download_and_integrity_ms": 43.19999998807907,
+      "load_ms": 7.5,
+      "cold_query_ms": 0.9000000059604645,
+      "filtered_rows": 320,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.5999999940395355,
+        "median": 0.7000000029802322,
+        "p95": 0.8999999910593033,
+        "maximum": 1
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19921993-playoff",
+      "season": 19921993,
+      "season_type": "playoff",
+      "bytes": 261498,
+      "download_and_integrity_ms": 22.5,
+      "load_ms": 3.2999999970197678,
+      "cold_query_ms": 0.09999999403953552,
+      "filtered_rows": 7,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.10000000894069672,
+        "p95": 0.20000000298023224,
+        "maximum": 0.29999999701976776
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19911992-regular",
+      "season": 19911992,
+      "season_type": "regular",
+      "bytes": 681944,
+      "download_and_integrity_ms": 30,
+      "load_ms": 7,
+      "cold_query_ms": 0.800000011920929,
+      "filtered_rows": 276,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.5,
+        "median": 0.6000000089406967,
+        "p95": 0.7999999970197678,
+        "maximum": 0.7999999970197678
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19911992-playoff",
+      "season": 19911992,
+      "season_type": "playoff",
+      "bytes": 276696,
+      "download_and_integrity_ms": 23.799999997019768,
+      "load_ms": 3.3999999910593033,
+      "cold_query_ms": 0.10000000894069672,
+      "filtered_rows": 7,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.20000000298023224,
+        "p95": 0.20000000298023224,
+        "maximum": 0.29999999701976776
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19901991-regular",
+      "season": 19901991,
+      "season_type": "regular",
+      "bytes": 637269,
+      "download_and_integrity_ms": 29,
+      "load_ms": 6.699999988079071,
+      "cold_query_ms": 0.7000000029802322,
+      "filtered_rows": 281,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.5999999940395355,
+        "median": 0.7000000029802322,
+        "p95": 0.9000000059604645,
+        "maximum": 1.5999999940395355
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19901991-playoff",
+      "season": 19901991,
+      "season_type": "playoff",
+      "bytes": 275451,
+      "download_and_integrity_ms": 22.100000008940697,
+      "load_ms": 3.2999999970197678,
+      "cold_query_ms": 0.09999999403953552,
+      "filtered_rows": 14,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.10000000894069672,
+        "p95": 0.20000000298023224,
+        "maximum": 0.29999999701976776
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19891990-regular",
+      "season": 19891990,
+      "season_type": "regular",
+      "bytes": 631007,
+      "download_and_integrity_ms": 40.80000001192093,
+      "load_ms": 6.899999991059303,
+      "cold_query_ms": 0.7000000029802322,
+      "filtered_rows": 288,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.6000000089406967,
+        "median": 0.7999999970197678,
+        "p95": 1.0999999940395355,
+        "maximum": 1.2000000029802322
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19891990-playoff",
+      "season": 19891990,
+      "season_type": "playoff",
+      "bytes": 274505,
+      "download_and_integrity_ms": 31.5,
+      "load_ms": 3.2999999970197678,
+      "cold_query_ms": 0.4000000059604645,
+      "filtered_rows": 10,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.09999999403953552,
+        "p95": 0.29999999701976776,
+        "maximum": 0.5999999940395355
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19881989-regular",
+      "season": 19881989,
+      "season_type": "regular",
+      "bytes": 637726,
+      "download_and_integrity_ms": 30.200000002980232,
+      "load_ms": 6.399999991059303,
+      "cold_query_ms": 0.7000000029802322,
+      "filtered_rows": 279,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.5,
+        "median": 0.5999999940395355,
+        "p95": 0.7000000029802322,
+        "maximum": 0.7999999970197678
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19881989-playoff",
+      "season": 19881989,
+      "season_type": "playoff",
+      "bytes": 273661,
+      "download_and_integrity_ms": 29.700000002980232,
+      "load_ms": 3.2000000029802322,
+      "cold_query_ms": 0.09999999403953552,
+      "filtered_rows": 6,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.10000000894069672,
+        "p95": 0.29999999701976776,
+        "maximum": 0.29999999701976776
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19871988-regular",
+      "season": 19871988,
+      "season_type": "regular",
+      "bytes": 644102,
+      "download_and_integrity_ms": 22.099999994039536,
+      "load_ms": 6.5999999940395355,
+      "cold_query_ms": 0.800000011920929,
+      "filtered_rows": 290,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0.6000000089406967,
+        "median": 0.7000000029802322,
+        "p95": 1,
+        "maximum": 1.1000000089406967
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    },
+    {
+      "id": "19871988-playoff",
+      "season": 19871988,
+      "season_type": "playoff",
+      "bytes": 284302,
+      "download_and_integrity_ms": 25.099999994039536,
+      "load_ms": 3.4000000059604645,
+      "cold_query_ms": 0.09999999403953552,
+      "filtered_rows": 10,
+      "warm_roundtrip_ms": {
+        "samples": 20,
+        "minimum": 0,
+        "median": 0.10000000894069672,
+        "p95": 0.20000000298023224,
+        "maximum": 0.20000000298023224
+      },
+      "warm_worker_ms": {
+        "samples": 20,
+        "minimum": null,
+        "median": null,
+        "p95": null,
+        "maximum": null
+      },
+      "worker_linear_memory_bytes": 9175040
+    }
+  ],
+  "peak_worker_linear_memory_bytes": 9175040,
+  "sampled_main_js_heap_peak_bytes": 44350054,
+  "shell_bytes": 747137,
+  "shell_gzip_bytes_sum": 245395,
+  "shell_build": "2e9371cd551a9515894114059f56ad0ce54b709b7f5fd7f3ca864d5fdf1106e5",
+  "engine_current_season": 20262027,
+  "instrumented_startup_ms": 126,
+  "package_p95_roundtrip_ms": {
+    "samples": 75,
+    "minimum": 0.10000000894069672,
+    "median": 0.5999999940395355,
+    "p95": 1.5,
+    "maximum": 3
+  },
+  "provisional_checks": {
+    "shell_under_10_mib_gzip": true,
+    "each_package_warm_roundtrip_p95_under_500_ms": true,
+    "total_desktop_peak_memory_under_250_mib": "unproven: linear memory and main heap samples exclude worker JS/browser/native overhead"
+  }
+}

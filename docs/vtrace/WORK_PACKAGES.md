@@ -993,3 +993,17 @@ Before implementation starts, confirm:
 
 Open checklist item: none for this VTRACE wave. Assurance/security lane
 decisions are accepted with risk through the WP-008 closeout review.
+
+## WP-BW-01: Browser feasibility and shared loader foundation
+
+Parent: REQ-BROWSER-001; interfaces IF-BROWSER-001, IF-FETCH-001, IF-BUILD-001.
+Scope: shared portable record normalization, isolated engine binding build,
+fixture projection tests, transitive dependency audit and browser source probes.
+Forbidden scope: blanket surface parity claim, relay/publication without evidence,
+unrelated native changes, and premature saved/offline/live capability promotion.
+Exit: native and WASM builds; shared normalization parity fixtures; source/CORS
+matrix from real browser; relay host/owner disposition where necessary.
+L0: model/season/null/normalization fixtures. L1: native/WASM portable parity.
+L2: browser source probes separately recorded, not CI live upstream calls.
+Status: active foundation; remaining acquisition/environment gates pending.
+Execution: context/waves/2026-10-03-browser-wasm/pulses/pulse-01.md.

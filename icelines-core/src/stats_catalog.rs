@@ -1666,9 +1666,20 @@ impl StatId {
     /// `higher_is_better`. Codified here so every catalog-driven sort
     /// across the app inherits the same ordering.
     pub fn sort_cmp(self, a: &PlayerView<'_>, b: &PlayerView<'_>) -> std::cmp::Ordering {
+        self.sort_values_cmp(self.read(a), a.id(), self.read(b), b.id())
+    }
+
+    /// The same ordering for owned projections: full-precision metric values,
+    /// missing last, then canonical player identity. Rendering adapters must not
+    /// substitute names or unrelated secondary statistics for the identity tie.
+    pub fn sort_values_cmp(
+        self,
+        va: Option<f64>,
+        a_id: crate::identity::PlayerId,
+        vb: Option<f64>,
+        b_id: crate::identity::PlayerId,
+    ) -> std::cmp::Ordering {
         use std::cmp::Ordering;
-        let va = self.read(a);
-        let vb = self.read(b);
         match (va, vb) {
             (Some(x), Some(y)) => {
                 let primary = if self.higher_is_better() {
@@ -1676,12 +1687,12 @@ impl StatId {
                 } else {
                     x.partial_cmp(&y).unwrap_or(Ordering::Equal)
                 };
-                primary.then_with(|| a.id().0.cmp(&b.id().0))
+                primary.then_with(|| a_id.0.cmp(&b_id.0))
             }
             // None sorts last — direction-agnostic per AI-06.
             (Some(_), None) => Ordering::Less,
             (None, Some(_)) => Ordering::Greater,
-            (None, None) => a.id().0.cmp(&b.id().0),
+            (None, None) => a_id.0.cmp(&b_id.0),
         }
     }
 
@@ -3640,6 +3651,35 @@ mod tests {
             time_on_ice_sec: 3000 * 60,
         })
         .build()
+    }
+
+    /// `sort_cmp`: higher_is_better stats sort descending; None last.
+    #[test]
+    fn l0_owned_sort_values_keep_precision_identity_and_missing_rules() {
+        use crate::identity::PlayerId;
+        use std::cmp::Ordering;
+        let a = PlayerId(1);
+        let b = PlayerId(2);
+        assert_eq!(
+            StatId::Goals.sort_values_cmp(Some(20.0), a, Some(20.0), b),
+            Ordering::Less
+        );
+        assert_eq!(
+            StatId::Goals.sort_values_cmp(Some(10.0), a, Some(20.0), b),
+            Ordering::Greater
+        );
+        assert_eq!(
+            StatId::Gaa.sort_values_cmp(Some(3.001), b, Some(3.002), a),
+            Ordering::Less
+        );
+        for stat in [StatId::Goals, StatId::Gaa] {
+            assert_eq!(
+                stat.sort_values_cmp(None, a, Some(1.0), b),
+                Ordering::Greater
+            );
+            assert_eq!(stat.sort_values_cmp(Some(1.0), b, None, a), Ordering::Less);
+            assert_eq!(stat.sort_values_cmp(None, a, None, b), Ordering::Less);
+        }
     }
 
     /// `sort_cmp`: higher_is_better stats sort descending; None last.

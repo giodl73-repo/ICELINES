@@ -1,0 +1,39 @@
+[
+  {
+    "origin": null,
+    "status": 200,
+    "url": "https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=false&isGame=false&start=0&limit=100&cayenneExp=seasonId%3D20252026+and+gameTypeId%3D2",
+    "headers": {
+      "Content-Type": "application/json",
+      "Vary": "Origin",
+      "Server": "cloudflare"
+    },
+    "body_excerpt": "{\"data\":[{\"assists\":6,\"evGoals\":1,\"evPoints\":7,\"faceoffWinPct\":null,\"gameWinningGoals\":0,\"gamesPlayed\":26,\"goals\":1,\"lastName\":\"Chisholm\",\"otGoals\":0,\"penaltyMinutes\":4,\"playerId\":8480990,\"plusMinus\":3,\"points\":7,\"pointsPerGame\":0.26923,\"positionCode\":\"D\",\"ppGoals\":0,\"ppPoints\":0,\"seasonId\":20252026,\"shGoals\":0,\"shPoints\":0,\"shootingPct\":0.05000,\"shootsCatches\":\"L\",\"shots\":20,\"skaterFullName\":\"Dec",
+    "bytes": 45845
+  },
+  {
+    "origin": "https://giodl73-repo.github.io",
+    "status": 200,
+    "url": "https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=false&isGame=false&start=0&limit=100&cayenneExp=seasonId%3D20252026+and+gameTypeId%3D2",
+    "headers": {
+      "Content-Type": "application/json",
+      "Vary": "Origin",
+      "Server": "cloudflare"
+    },
+    "body_excerpt": "{\"data\":[{\"assists\":6,\"evGoals\":1,\"evPoints\":7,\"faceoffWinPct\":null,\"gameWinningGoals\":0,\"gamesPlayed\":26,\"goals\":1,\"lastName\":\"Chisholm\",\"otGoals\":0,\"penaltyMinutes\":4,\"playerId\":8480990,\"plusMinus\":3,\"points\":7,\"pointsPerGame\":0.26923,\"positionCode\":\"D\",\"ppGoals\":0,\"ppPoints\":0,\"seasonId\":20252026,\"shGoals\":0,\"shPoints\":0,\"shootingPct\":0.05000,\"shootsCatches\":\"L\",\"shots\":20,\"skaterFullName\":\"Dec",
+    "bytes": 45845
+  },
+  {
+    "origin": "https://www.nhl.com",
+    "status": 200,
+    "url": "https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=false&isGame=false&start=0&limit=100&cayenneExp=seasonId%3D20252026+and+gameTypeId%3D2",
+    "headers": {
+      "Content-Type": "application/json",
+      "Vary": "Origin",
+      "Access-Control-Allow-Origin": "https://www.nhl.com",
+      "Server": "cloudflare"
+    },
+    "body_excerpt": "{\"data\":[{\"assists\":6,\"evGoals\":1,\"evPoints\":7,\"faceoffWinPct\":null,\"gameWinningGoals\":0,\"gamesPlayed\":26,\"goals\":1,\"lastName\":\"Chisholm\",\"otGoals\":0,\"penaltyMinutes\":4,\"playerId\":8480990,\"plusMinus\":3,\"points\":7,\"pointsPerGame\":0.26923,\"positionCode\":\"D\",\"ppGoals\":0,\"ppPoints\":0,\"seasonId\":20252026,\"shGoals\":0,\"shPoints\":0,\"shootingPct\":0.05000,\"shootsCatches\":\"L\",\"shots\":20,\"skaterFullName\":\"Dec",
+    "bytes": 45845
+  }
+]

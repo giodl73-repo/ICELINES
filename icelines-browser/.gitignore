@@ -1,0 +1,6 @@
+node_modules/
+dist/
+public/data/
+public/catalog.json
+public/pkg/
+public/build-info.json

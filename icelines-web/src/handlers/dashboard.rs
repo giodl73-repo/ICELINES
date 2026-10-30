@@ -3894,8 +3894,16 @@ mod tests {
                 assists: 2,
                 points: 3,
                 plus_minus: 1,
+                toi: "20:00".to_string(),
+                sog: 3,
+                hits: 0,
+                blocked_shots: 0,
+                takeaways: 0,
+                giveaways: 0,
             }],
             home_top_skaters: Vec::new(),
+            away_skaters: Vec::new(),
+            home_skaters: Vec::new(),
         };
 
         let rows = game_summary_rows(&view);

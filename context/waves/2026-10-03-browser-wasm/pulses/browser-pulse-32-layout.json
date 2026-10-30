@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "build": "6067e95c6a393e7acf567703b1d8520b14a12060b408c5649dc0d55c304c7056",
+  "scope": "Local actual production UI in a measured 360x800 iframe; synthetic long-source import fixture; not physical mobile hardware",
+  "before": {"viewport":360,"client":345,"scroll":4586,"sessionCount":"(8/8)","sourceFixture":true,"pageContained":false},
+  "after": {"viewport":360,"client":345,"scroll":345,"sessionCount":"(8/8)","sourceFixture":true,"pageContained":true},
+  "tables": [{"name":"League leaders table","client":313,"scroll":465},{"name":"Scores and schedule table","client":313,"scroll":444}],
+  "keyboard": {"regionTabIndex":0,"arrowRightScrollLeft":40,"arrowLeftFinalScrollLeft":0,"tabReached":"Nikita Kucherov","enterDialog":"Nikita Kucherov","initialDialogFocus":"Close","escapeRestoredFocus":"Nikita Kucherov"},
+  "tests": {"passed":121,"failed":0},
+  "app_and_largest_package_gzip_bytes":403584
+}

@@ -18,6 +18,8 @@ pub struct GameView {
     pub goals: Vec<GameGoalRow>,
     pub away_top_skaters: Vec<GameSkaterRow>,
     pub home_top_skaters: Vec<GameSkaterRow>,
+    pub away_skaters: Vec<GameSkaterRow>,
+    pub home_skaters: Vec<GameSkaterRow>,
     pub warnings: Vec<ViewWarning>,
 }
 
@@ -41,10 +43,8 @@ impl GameView {
         let is_live = matches!(state, "LIVE" | "CRIT");
         let auto_refresh = matches!(state, "LIVE" | "CRIT" | "PRE");
 
-        let mut away_skaters = boxscore.away_skaters;
-        away_skaters.sort_by_key(|skater| std::cmp::Reverse(skater.goals + skater.assists));
-        let mut home_skaters = boxscore.home_skaters;
-        home_skaters.sort_by_key(|skater| std::cmp::Reverse(skater.goals + skater.assists));
+        let away_skaters = skater_rows(boxscore.away_skaters);
+        let home_skaters = skater_rows(boxscore.home_skaters);
 
         Self {
             context,
@@ -83,8 +83,10 @@ impl GameView {
                     home_score: goal.home_score,
                 })
                 .collect(),
-            away_top_skaters: top_skaters(away_skaters),
-            home_top_skaters: top_skaters(home_skaters),
+            away_top_skaters: away_skaters.iter().take(5).cloned().collect(),
+            home_top_skaters: home_skaters.iter().take(5).cloned().collect(),
+            away_skaters,
+            home_skaters,
             warnings: Vec::new(),
         }
     }
@@ -184,10 +186,9 @@ pub struct GameSkaterRow {
     pub giveaways: u32,
 }
 
-fn top_skaters(skaters: Vec<GameSkaterInput>) -> Vec<GameSkaterRow> {
-    skaters
+fn skater_rows(skaters: Vec<GameSkaterInput>) -> Vec<GameSkaterRow> {
+    let mut rows: Vec<_> = skaters
         .into_iter()
-        .take(5)
         .map(|skater| {
             let points = skater.goals + skater.assists;
             GameSkaterRow {
@@ -206,5 +207,7 @@ fn top_skaters(skaters: Vec<GameSkaterInput>) -> Vec<GameSkaterRow> {
                 giveaways: skater.giveaways,
             }
         })
-        .collect()
+        .collect();
+    rows.sort_by_key(|row| std::cmp::Reverse(row.points));
+    rows
 }
