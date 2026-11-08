@@ -1,5 +1,10 @@
 # Trace Matrix
 
+CHG-130 / IF-RINKCRAFT-NUMBERS-001: REQ-WEB-001 -> strict source parsing, pure
+numerical vectors/peer ranks, CLI/native renderer -> deterministic boundary tests
+and fixed-season 25-player rehearsal. Evidence:
+`docs/rinkcraft-numerical-validation-2026-11-08.md`.
+
 CHG-125: REQ-STAT-001 / REQ-STAT-002 / REQ-DATA-001 / REQ-DATA-DEPTH-001
 → IF-RINKCRAFT-PROFILE-001 → core stat-profile view, fetch report hydration and CLI
 adapter → synthetic aggregation/missingness tests, season-fence/report regressions,

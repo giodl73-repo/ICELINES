@@ -1,5 +1,15 @@
 # Change Control
 
+## CHG-130 — Source-backed numerical Rinkcraft assessments (2026-11-08)
+
+Owner requests more numerical assessment and less quote-led classification.
+Add pure per-situation evidence vectors and league percentiles, strict local
+MoneyPuck ingestion, `profile-numbers` JSON CLI, and explicit native numerical
+page/API. Fifteen skater/five goalie measures retain component formulas, peers
+and source/reference hashes. No quote inputs, automatic class changes, composite
+ability scores or browser/WASM integration claim for the new adapter. Contract:
+`design/specs/rinkcraft-numerical-evidence.md`.
+
 ## CHG-129 — Feature evidence and external player atlas (2026-11-08)
 
 Owner requests denser character cards, relevant feature statistics and a 25-star

@@ -1,5 +1,12 @@
 # Work Packages
 
+## WP-RINKCRAFT-06 (CHG-130)
+
+Compute source-backed numerical evidence independently of class dossiers and
+quotes. Validate formulas, league peers, source boundaries, observed zero versus
+missing, and a matched fixed-season sample. Display exact scope, peer counts and
+interpretation limits. First pass: CLI/native, no new browser adapter claim.
+
 ## WP-RINKCRAFT-05 (CHG-129)
 
 Deliver generic showcase navigation and feature-specific numeric context while

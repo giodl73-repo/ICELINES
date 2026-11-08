@@ -142,6 +142,17 @@ fn should_auto_setup(
 
 async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
     match cli.command {
+        Commands::ProfileNumbers {
+            season,
+            skaters,
+            goalies,
+            player,
+        } => {
+            let view = icelines_fetch::rinkcraft_numbers::from_csv_files(
+                &skaters, &goalies, season, &player,
+            )?;
+            println!("{}", serde_json::to_string_pretty(&view)?);
+        }
         Commands::Profile {
             player,
             first_season,

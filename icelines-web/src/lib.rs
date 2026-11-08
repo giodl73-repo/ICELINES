@@ -70,6 +70,11 @@ pub use state::WebState;
 pub fn router(state: WebState) -> Router {
     Router::new()
         .route("/rinkcraft", get(handlers::rinkcraft::get_atlas))
+        .route("/rinkcraft/numbers", get(handlers::rinkcraft::get_numbers))
+        .route(
+            "/api/v1/rinkcraft/numbers",
+            get(handlers::rinkcraft::get_numbers_json),
+        )
         .route("/", get(handlers::home::get_home))
         .route("/dashboard", get(handlers::dashboard::get_dashboard))
         .route(

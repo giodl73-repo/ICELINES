@@ -2,6 +2,15 @@
 
 ## Statistical evidence profile
 
+`icelines profile-numbers --season 20242025 --skaters skaters.csv --goalies
+goalies.csv --player 8478402,8477492` computes a numerical evidence catalog from
+local MoneyPuck season summaries. Selection limits output after full-league peer
+ranking. Skaters use five-on-five, goalies all strengths. JSON includes raw
+values, components, percentiles, peer counts and source/reference hashes.
+See `design/specs/rinkcraft-numerical-evidence.md` for source/interpretation limits.
+Native `/rinkcraft/numbers` consumes this JSON through the explicit
+`ICELINES_RINKCRAFT_NUMBERS` path; no live fetch occurs in the command.
+
 `icelines profile "Full Player Name" --json` computes career, latest-available
 and per-season catalog evidence. Use numeric NHL player id for ambiguous names,
 `--first-season YYYYZZZZ --last-season YYYYZZZZ` for inclusive whole seasons,

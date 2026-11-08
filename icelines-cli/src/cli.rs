@@ -79,6 +79,20 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
+    /// Compute source-backed numerical Rinkcraft evidence and league percentiles.
+    ProfileNumbers {
+        #[arg(long)]
+        season: u32,
+        /// Local MoneyPuck season-summary skater CSV.
+        #[arg(long)]
+        skaters: PathBuf,
+        /// Local MoneyPuck season-summary goalie CSV.
+        #[arg(long)]
+        goalies: PathBuf,
+        /// Limit output after ranking against the full source population.
+        #[arg(long, value_delimiter = ',')]
+        player: Vec<u32>,
+    },
     /// Compute a source-aware career/season statistical profile for one player.
     Profile {
         /// Full player name or numeric NHL player id.

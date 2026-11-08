@@ -49,6 +49,97 @@ struct AtlasCard {
     evidence: String,
     featured: bool,
 }
+#[derive(Template)]
+#[template(path = "rinkcraft_numbers.html")]
+struct NumbersTemplate {
+    active_label: String,
+    period: String,
+    credit: String,
+    sources: Vec<icelines_core::view_model::rinkcraft_numbers::Source>,
+    limits: Vec<String>,
+    cards: Vec<NumberCard>,
+}
+struct NumberCard {
+    id: u32,
+    name: String,
+    scope: String,
+    metrics: Vec<NumberRow>,
+}
+struct NumberRow {
+    label: String,
+    domain: String,
+    value: String,
+    percentile: String,
+    peers: usize,
+    meaning: String,
+}
+fn numerical_catalog(
+) -> Result<icelines_core::view_model::rinkcraft_numbers::NumericalCatalog, WebError> {
+    let path =
+        std::env::var_os("ICELINES_RINKCRAFT_NUMBERS").ok_or_else(|| WebError::NotFound {
+            what: "No numerical assessment dataset has been loaded".into(),
+            hint: None,
+        })?;
+    icelines_fetch::rinkcraft_numbers::load_catalog(std::path::Path::new(&path))
+        .map_err(WebError::Internal)
+}
+pub async fn get_numbers_json() -> Result<Response, WebError> {
+    Ok(crate::api::json_data_meta(
+        "rinkcraft-numbers",
+        numerical_catalog()?,
+        serde_json::json!({"source_state":"explicit_local_measurement_catalog","live_fetch":false}),
+    ))
+}
+pub async fn get_numbers(State(state): State<WebState>) -> Result<Response, WebError> {
+    let catalog = numerical_catalog()?;
+    let cards = catalog
+        .profiles
+        .iter()
+        .map(|p| NumberCard {
+            id: p.player_id,
+            name: p.name.clone(),
+            scope: format!(
+                "{} · {} · {} GP · {:.1} minutes · {} eligible peers",
+                p.group, p.situation, p.games, p.minutes, p.eligible_peers
+            ),
+            metrics: p
+                .metrics
+                .iter()
+                .map(|m| NumberRow {
+                    label: m.label.clone(),
+                    domain: m.domain.clone(),
+                    value: m
+                        .value
+                        .map(|v| {
+                            if m.unit == "Pct" {
+                                format!("{:.2}%", v * 100.)
+                            } else {
+                                format!("{v:.2}")
+                            }
+                        })
+                        .unwrap_or_else(|| "—".into()),
+                    percentile: m
+                        .percentile
+                        .map(percentile_label)
+                        .unwrap_or_else(|| "Unranked".into()),
+                    peers: m.measured_peers,
+                    meaning: m.interpretation.clone(),
+                })
+                .collect(),
+        })
+        .collect();
+    NumbersTemplate {
+        active_label: state.config.read().await.active_label.clone(),
+        period: season_label(catalog.season),
+        credit: catalog.source_credit,
+        sources: catalog.sources,
+        limits: catalog.limitations,
+        cards,
+    }
+    .render()
+    .map(|s| Html(s).into_response())
+    .map_err(|e| WebError::Internal(e.into()))
+}
 pub async fn get_atlas(State(state): State<WebState>) -> Result<Response, WebError> {
     let mut cards = Vec::new();
     let mut title = "Rinkcraft player atlas".to_string();

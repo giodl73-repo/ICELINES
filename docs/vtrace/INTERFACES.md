@@ -1,5 +1,14 @@
 # Interfaces
 
+## IF-RINKCRAFT-NUMBERS-001 (CHG-130)
+
+`icelines.rinkcraft-numerical.v1`, protocol
+`rinkcraft.numerical-evidence.0.1.0-experimental`: normalized rows to a catalog
+with sources, profiles, missing player IDs and limits. Fetch parses local CSVs;
+CLI `profile-numbers` emits JSON. Native `ICELINES_RINKCRAFT_NUMBERS` supplies
+`/rinkcraft/numbers` and `/api/v1/rinkcraft/numbers`. Contract:
+`design/specs/rinkcraft-numerical-evidence.md`.
+
 ## IF-RINKCRAFT-CHARACTER-001 (CHG-128)
 
 CHG-129 additive extension: catalog `showcase_title`/`showcase_notes` default empty;
