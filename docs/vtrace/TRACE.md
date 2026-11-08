@@ -406,3 +406,12 @@ borrowed core profile builder, native player HTML/JSON and browser WASM worker
 profile -> core/profile, both storage modes, formatting, actual browser and CLI
 snapshot parity checks. Evidence: `docs/rinkcraft-ui-validation-2026-11-08.md`.
 Coverage remains explicit; classes and tactical responsibility are unclassified.
+
+## Rinkcraft descriptive attributes (CHG-127)
+
+REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> IF-RINKCRAFT-ATTRIBUTES-001
+-> shared borrowed-view measurement/reference builder, native source adapter,
+normal/sparse WASM profile and native/browser cards/step charts -> focused core,
+both storage modes, actual engine/UI parity, source-snapshot regression and mobile
+checks. Evidence: `docs/rinkcraft-attributes-validation-2026-11-08.md`.
+Experimental descriptive bands do not establish skill, style or role validity.

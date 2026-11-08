@@ -29,6 +29,10 @@ reusable and deterministic; surfaces are thin callers/renderers.
 
 ## Player UI and WASM subset (CHG-126)
 
+CHG-127 adds experimental descriptive `attribute_seasons` and player-specific
+band/step-chart rendering; see [attribute contract](rinkcraft-attributes.md).
+This is separate from the unvalidated class/ability/style fields.
+
 The native player page links to `/player/:id/rinkcraft`; its JSON twin is
 `/api/v1/player/:id/rinkcraft` (standard IceLines data/meta envelope). Both accept
 `type=regular|playoff`, optional inclusive `first_season`/`last_season` IDs;

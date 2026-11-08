@@ -15,13 +15,19 @@ try {
     const response=await page.goto(`${base}/player/${id}/rinkcraft${query}`);
     expect(response.status()).toBe(200);
     await expect(page.getByRole('heading',{level:1})).not.toBeEmpty();
-    await expect(page.getByRole('heading',{name:'Six job families'})).toBeVisible();
+    await expect(page.getByRole('heading',{name:'Profile attributes'})).toBeVisible();
     expect(await page.locator('.rc-family').count()).toBe(6);
     const api=await context.request.get(`${base}/api/v1/player/${id}/rinkcraft${query}`);
     expect(api.status()).toBe(200);const profile=(await api.json()).data;
     expect(profile.schema).toBe('icelines.rinkcraft-stat-profile.v1');
+    const assessment=profile.attribute_seasons.at(-1);expect(assessment).toBeTruthy();
+    const levels=await page.locator('.rc-attribute .rc-level').allTextContents();
+    expect(levels).toEqual(assessment.attributes.map(a=>a.band===null?'Unranked':`${a.band} / 5`));
+    expect(await page.locator('.rc-chart').count()).toBe(id===8478048?3:7);
     results.push({name,player:profile.player_name,seasons:profile.included_seasons,latest:profile.latest_available?.season});
     await page.screenshot({path:new URL(`${name}.png`,output).pathname.replace(/^\/([A-Z]:)/,'$1'),fullPage:false});
+    await page.locator('#rc-attributes-title').evaluate(e=>window.scrollTo(0,e.getBoundingClientRect().top+window.scrollY-130));
+    await page.screenshot({path:new URL(`${name}-attributes.png`,output).pathname.replace(/^\/([A-Z]:)/,'$1'),fullPage:false});
   }
   await page.goto(`${base}/player/8479323/rinkcraft`);
   await page.getByLabel('Display',{exact:true}).selectOption('20262027');

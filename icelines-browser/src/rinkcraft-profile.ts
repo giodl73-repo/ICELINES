@@ -1,4 +1,6 @@
 // Presentation only. Values, missingness, rates and changes come from Rust.
+import {renderAttributeSheet} from './rinkcraft-attributes.js';
+import type {AttributeSeason} from './rinkcraft-attributes.js';
 export interface ProfileMetric {
   key: string; label: string; unit: string; value: number | null; status: string;
   aggregation: string; observed_seasons: number; missing_seasons: number[];
@@ -7,6 +9,7 @@ export interface ProfileMetric {
 }
 export interface ProfileSeason { season: number; games: number; position: string; teams: string[]; traded: boolean; metrics: ProfileMetric[]; }
 export interface RinkcraftProfile {
+  attribute_seasons?:AttributeSeason[];
   schema: string; player_name: string; request: { season_type: string }; scope: string;
   included_seasons: number[]; current_season_available: boolean; latest_available: ProfileSeason | null;
   summary: ProfileMetric[]; timeline: ProfileSeason[];
@@ -43,12 +46,14 @@ export function renderRinkcraftProfile(profile: RinkcraftProfile): HTMLElement {
     const card = node('details'); card.append(node('summary', f.name), node('p', f.interpretation), node('p', f.catalog_keys.join(' · ') || 'No measurements in this source'));
     families.append(card);
   }
-  section.append(families, context);
+  const attributeHolder=node('div');section.append(attributeHolder,families,context);
   const scroll = node('div'); scroll.className = 'table-scroll'; const table = node('table');
   const head = node('thead'); const hr = node('tr'); for (const t of ['Metric / evidence', 'Value', 'State']) hr.append(node('th', t)); head.append(hr);
   const body = node('tbody'); table.append(head, body); scroll.append(table); section.append(scroll);
   const render = (): void => {
     const selected = profile.timeline.find(s => String(s.season) === scope.value);
+    const assessments=profile.attribute_seasons??[];
+    attributeHolder.replaceChildren(renderAttributeSheet(assessments.find(s=>s.season===selected?.season)??assessments.at(-1),assessments));
     const metrics = selected?.metrics ?? profile.summary;
     const rows = metrics.filter(m => (missing.checked || m.value !== null) && `${m.label} ${m.key}`.toLowerCase().includes(search.value.toLowerCase()));
     context.textContent = selected ? `${selected.games} GP · ${selected.position} · ${selected.teams.join(', ')} · Traded: ${selected.traded} · ${rows.length} matching metrics` : `Loaded window summary · ${rows.length} matching metrics. Rates use supported denominators; incomplete coverage stays unavailable.`;

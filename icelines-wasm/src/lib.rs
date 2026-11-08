@@ -337,6 +337,21 @@ impl BrowserEngine {
                 missing_reports:vec!["Package v1: realtime, MoneyPuck, time-on-ice, goals-for-against and goalie advanced reports are not included".into()],
             }).collect();
         profile.limitations.push("Browser profile covers resident prepared packages only (at most eight windows), not a fetched or verified complete career. Package v1 omits optional realtime, MoneyPuck, TOI and advanced reports; those metrics remain unavailable. Eviction can shorten this profile.".into());
+        profile.attribute_seasons = profile
+            .included_seasons
+            .iter()
+            .filter_map(|s| {
+                let w = windows.iter().find(|w| {
+                    w.package.season == s.0 && w.package.season_type == request.season_type
+                })?;
+                icelines_core::view_model::rinkcraft_attributes::build_attribute_season(
+                    request.player_id,
+                    *s,
+                    request.season_type,
+                    w.repository.read_league(*s, request.season_type).collect(),
+                )
+            })
+            .collect();
         Ok(profile)
     }
 
@@ -701,6 +716,13 @@ mod tests {
             ProfileMetricStatus::Unavailable
         );
         assert_eq!(profile.changes.len(), 1);
+        assert_eq!(profile.attribute_seasons.len(), 2);
+        assert_eq!(profile.attribute_seasons[0].attributes[0].value, Some(0.0));
+        assert_eq!(
+            profile.attribute_seasons[0].attributes[0].state,
+            "insufficient_reference"
+        );
+        assert_eq!(profile.attribute_seasons[0].attributes[0].band, None);
         assert_eq!(engine.resident_revisions(), revisions);
         let playoff = engine
             .prepared_rinkcraft_profile(RinkcraftProfileRequest {

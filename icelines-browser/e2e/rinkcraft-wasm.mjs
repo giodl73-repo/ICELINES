@@ -29,6 +29,11 @@ try {
   const profile=page.locator('#rinkcraft-profile');await expect(profile).toBeVisible();
   await expect(profile).toContainText('2 loaded seasons');
   expect(await profile.locator('.rinkcraft-families > details').count()).toBe(6);
+  const assessment=expected.attribute_seasons.at(-1);expect(assessment.attributes).toHaveLength(7);
+  expect(await profile.locator('.rc-attribute .rc-level').allTextContents()).toEqual(assessment.attributes.map(a=>a.band===null?'Unranked':`${a.band} / 5`));
+  expect(await profile.locator('svg.rc-chart').count()).toBe(7);
+  await expect(profile.locator('[data-attribute="shooting-involvement"] svg path')).toHaveAttribute('d',/ H /);
+  await expect(profile.locator('[data-attribute="recorded-contact"] svg path')).toHaveAttribute('d','');
   const goals=profile.locator('tbody tr').filter({has:page.getByText('Goals · goals',{exact:true})});
   const latest=expected.latest_available.metrics.find(m=>m.key==='goals').value;
   await expect(goals.locator('td').nth(1)).toHaveText(String(latest));

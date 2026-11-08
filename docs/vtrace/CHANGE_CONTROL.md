@@ -1,5 +1,15 @@
 # Change Control
 
+## CHG-127 — Descriptive Rinkcraft attributes (2026-11-08)
+
+Add versioned experimental attribute measurements, reference populations, tie-aware
+percentiles and five display bands to native/CLI JSON/WASM profiles. Replace the
+generic-first presentation with player-specific cards and seasonal step charts.
+Separate involvement, observed output/outcome and deployment; no ability/class score.
+Interface IF-RINKCRAFT-ATTRIBUTES-001; work WP-RINKCRAFT-03; contract
+`design/specs/rinkcraft-attributes.md`. Rinkcraft owns protocol 0.1.0-experimental
+and producer-applied role review; no change to its action taxonomy 0.2.0-draft.
+
 ## CHG-126 — Rinkcraft player UI and WASM subset (2026-11-08)
 
 Expose CHG-125 profiles through native player HTML/JSON and the standalone browser

@@ -1,5 +1,13 @@
 # Work Packages
 
+## WP-RINKCRAFT-03 (CHG-127)
+
+Implement role-reviewed experimental descriptive attributes with peer cohorts,
+missingness, source formulas and seasonal step charts in native and WASM profiles.
+Verify exposure arithmetic, ties, positional/competition isolation, goalie branch,
+duplicate identities, small cohorts and actual UI/engine parity. No statistical
+reliability, persistent skill or player-role validity claim.
+
 ## WP-RINKCRAFT-02 (CHG-126)
 
 Add native player HTML/JSON and resident-browser profile rendering, shared

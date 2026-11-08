@@ -1,5 +1,13 @@
 # Interfaces
 
+## IF-RINKCRAFT-ATTRIBUTES-001 (CHG-127)
+
+Additive `attribute_seasons` in profile v1, built by core `rinkcraft_attributes`;
+normal/sparse WASM and native local-reference loading use the same protocol.
+Fields, provisional cohorts, missingness and band formula:
+`design/specs/rinkcraft-attributes.md`. Every level is a descriptive band for a
+specific measured quantity, not overall talent or validated role membership.
+
 ## IF-RINKCRAFT-UI-001 (CHG-126)
 
 HTML `/player/:id/rinkcraft`, JSON `/api/v1/player/:id/rinkcraft`, browser worker

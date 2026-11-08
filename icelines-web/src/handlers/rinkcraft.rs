@@ -101,6 +101,7 @@ async fn profile(
         )?;
         let mut profile = build_rinkcraft_stat_profile(&repo, req)?;
         profile.source_windows = sources;
+        icelines_fetch::rinkcraft_profile::attach_attribute_seasons(&mut profile, &store)?;
         Ok(profile)
     })
     .await
@@ -140,6 +141,8 @@ pub async fn get_json(
 #[derive(Template)]
 #[template(path = "rinkcraft.html")]
 struct ProfileTemplate {
+    attribute_cards: Vec<AttributeCard>,
+    attribute_context: String,
     active_label: String,
     profile: RinkcraftStatProfile,
     id: u32,
@@ -153,6 +156,72 @@ struct ProfileTemplate {
     sources_json: String,
     changes: Vec<ChangeSection>,
     absent_json: String,
+}
+struct AttributeCard {
+    label: String,
+    layer: String,
+    value: String,
+    level: String,
+    percentile: String,
+    evidence: String,
+    explanation: String,
+    steps: Vec<bool>,
+    path: String,
+    points: Vec<ChartPoint>,
+    first: String,
+    last: String,
+    history: Vec<String>,
+}
+struct ChartPoint {
+    x: f64,
+    y: f64,
+    title: String,
+}
+fn attribute_cards(
+    view: &RinkcraftStatProfile,
+    selected: Option<u32>,
+) -> (Vec<AttributeCard>, String) {
+    let current = selected
+        .and_then(|s| view.attribute_seasons.iter().find(|r| r.season.0 == s))
+        .or_else(|| view.attribute_seasons.last());
+    let Some(current) = current else {
+        return (Vec::new(), "Attribute assessment unavailable".into());
+    };
+    let context=format!("{} · {} · {} GP · {} · Same-season, same-competition peers; ≥ {} GP. Descriptive bands, not skill grades.",
+        season_label(current.season.0),current.group,current.games,current.strength_scope,current.minimum_games);
+    let first = view.attribute_seasons.first().unwrap().season.0 / 10000;
+    let last = view.attribute_seasons.last().unwrap().season.0 / 10000;
+    let cards=current.attributes.iter().map(|a|{
+        let mut path=String::new();let mut points=Vec::new();let mut history=Vec::new();let mut previous=None;
+        for s in &view.attribute_seasons {
+            let Some(at)=s.attributes.iter().find(|m|m.key==a.key) else{previous=None;continue;};
+            let raw=attribute_value(&at.unit,at.value);
+            history.push(format!("{}: {} · band {} · {} GP · {} measured / {} eligible {}",season_label(s.season.0),raw,at.band.map(|v|v.to_string()).unwrap_or_else(||"unknown".into()),s.games,at.measured_peers,s.eligible_peers,s.group));
+            if let Some(band)=at.band {
+                let year=s.season.0/10000;let x=24.0+252.0*f64::from(year-first)/f64::from((last-first).max(1));let y=94.0-f64::from(band-1)*18.0;
+                if previous.is_some_and(|p|p+1==year){path.push_str(&format!(" H {x:.2} V {y:.2}"));}else{path.push_str(&format!(" M {x:.2} {y:.2}"));}
+                points.push(ChartPoint{x,y,title:format!("{} · band {} · {}",season_label(s.season.0),band,raw)});previous=Some(year);
+            }else{previous=None;}
+        }
+        AttributeCard{label:a.label.clone(),layer:a.layer.clone(),value:attribute_value(&a.unit,a.value),
+            level:a.band.map(|v|format!("{v} / 5")).unwrap_or_else(||"Unranked".into()),
+            percentile:a.percentile.map(|p|format!("{p:.1} percentile")).unwrap_or_else(||a.state.replace('_'," ")),
+            evidence:format!("{} measured / {} eligible {} · {} GP",a.measured_peers,current.eligible_peers,current.group,current.games),
+            explanation:format!("{} Formula: {}. Reference minimum: {} measured peers. Reference fingerprint: {}. Protocol: {}.",a.interpretation,a.formula,current.minimum_peers,a.reference_sha256,current.protocol),
+            steps:(1..=5).map(|n|a.band.is_some_and(|b|n<=b)).collect(),path,points,first:first.to_string(),last:last.to_string(),history}
+    }).collect();
+    (cards, context)
+}
+fn attribute_value(unit: &str, value: Option<f64>) -> String {
+    match value {
+        None => "Unknown".into(),
+        Some(v) => match unit {
+            "Pct" => format!("{:.2}%", v * 100.0),
+            "Seconds" => format!("{:.1} min / game", v / 60.0),
+            "Count" => format!("{v:.0} starts"),
+            _ => format!("{v:.2} / game"),
+        },
+    }
 }
 struct MetricRow {
     label: String,
@@ -234,7 +303,10 @@ pub async fn get_html(
             ),
         })
         .collect();
+    let (attribute_cards, attribute_context) = attribute_cards(&view, p.season);
     let template = ProfileTemplate {
+        attribute_cards,
+        attribute_context,
         active_label: state.config.read().await.active_label.clone(),
         id,
         season_type: req.season_type.to_string(),

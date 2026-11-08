@@ -8,6 +8,32 @@ use icelines_core::{
     identity::PlayerId, model::Season, season_stats::SeasonType, stats_repository::StatsRepository,
 };
 
+/// Reference populations come from the same canonical local season loader.
+pub fn attach_attribute_seasons(
+    profile: &mut icelines_core::view_model::rinkcraft_profile::RinkcraftStatProfile,
+    store: &SnapshotStore,
+) -> Result<(), LoadError> {
+    let mut assessments = Vec::new();
+    for season in &profile.included_seasons {
+        let loaded = load_into_repo(*season, profile.request.season_type, store)?;
+        if let Some(assessment) =
+            icelines_core::view_model::rinkcraft_attributes::build_attribute_season(
+                profile.request.player_id,
+                *season,
+                profile.request.season_type,
+                loaded
+                    .repo
+                    .read_league(*season, profile.request.season_type)
+                    .collect(),
+            )
+        {
+            assessments.push(assessment);
+        }
+    }
+    profile.attribute_seasons = assessments;
+    Ok(())
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum ProfileHydrationError {
     #[error(transparent)]
