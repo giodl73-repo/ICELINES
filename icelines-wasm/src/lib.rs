@@ -298,6 +298,23 @@ impl BrowserEngine {
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
         serde_json::to_string(&profile).map_err(|e| JsValue::from_str(&e.to_string()))
     }
+    /// Curated research input is explicitly supplied; no stat-to-class inference or IO.
+    pub fn character_sheet(
+        &self,
+        catalog: &str,
+        player_id: u32,
+        season: u32,
+    ) -> Result<String, JsValue> {
+        if catalog.len() > 128 * 1024 {
+            return Err(JsValue::from_str("character catalog exceeds 128 KiB"));
+        }
+        let c: icelines_core::view_model::rinkcraft_character::CharacterCatalog =
+            serde_json::from_str(catalog).map_err(|e| JsValue::from_str(&e.to_string()))?;
+        let s = c
+            .sheet(PlayerId(player_id), Season(season))
+            .map_err(|e| JsValue::from_str(&e))?;
+        serde_json::to_string(&s).map_err(|e| JsValue::from_str(&e.to_string()))
+    }
 }
 
 impl BrowserEngine {

@@ -1,6 +1,8 @@
 // Presentation only. Values, missingness, rates and changes come from Rust.
 import {renderAttributeSheet} from './rinkcraft-attributes.js';
 import type {AttributeSeason} from './rinkcraft-attributes.js';
+import {renderCharacterCard} from './rinkcraft-character.js';
+import type {CharacterSheet} from './rinkcraft-character.js';
 export interface ProfileMetric {
   key: string; label: string; unit: string; value: number | null; status: string;
   aggregation: string; observed_seasons: number; missing_seasons: number[];
@@ -9,6 +11,7 @@ export interface ProfileMetric {
 }
 export interface ProfileSeason { season: number; games: number; position: string; teams: string[]; traded: boolean; metrics: ProfileMetric[]; }
 export interface RinkcraftProfile {
+  character_sheet?:CharacterSheet;
   attribute_seasons?:AttributeSeason[];
   schema: string; player_name: string; request: { season_type: string }; scope: string;
   included_seasons: number[]; current_season_available: boolean; latest_available: ProfileSeason | null;
@@ -30,8 +33,12 @@ function node<K extends keyof HTMLElementTagNameMap>(tag: K, text?: string): HTM
 }
 export function renderRinkcraftProfile(profile: RinkcraftProfile): HTMLElement {
   const section = node('section'); section.id = 'rinkcraft-profile'; section.className = 'rinkcraft-profile';
-  section.append(node('h3', 'Rinkcraft profile'), node('p', `${profile.request.season_type} · ${profile.included_seasons.length} loaded seasons · Latest: ${profile.latest_available ? seasonLabel(profile.latest_available.season) : 'unavailable'}`));
-  section.append(node('p', 'Statistical evidence for six job families. Classes and tactical styles remain unclassified. Resident windows are not a verified complete career.'));
+  const cardAssessment=profile.attribute_seasons?.find(s=>s.season===profile.character_sheet?.as_of_season)??profile.attribute_seasons?.at(-1);
+  section.append(renderCharacterCard(profile.player_name,profile.character_sheet,cardAssessment));
+  const history=node('details');history.className='rk-history';history.append(node('summary','Trait evolution, time travel & statistical evidence'));section.append(history);
+  const content=node('div');history.append(content);
+  content.append(node('h3', 'Rinkcraft profile'), node('p', `${profile.request.season_type} · ${profile.included_seasons.length} loaded seasons · Latest: ${profile.latest_available ? seasonLabel(profile.latest_available.season) : 'unavailable'}`));
+  content.append(node('p', 'Statistical evidence is separate from the documentary identity above. Resident windows are not a verified complete career.'));
   const controls = node('div'); controls.className = 'actions';
   const scopeLabel = node('label', 'View '); const scope = node('select'); scope.setAttribute('aria-label', 'Rinkcraft season view');
   const all = node('option', 'Loaded window summary'); all.value = 'summary'; scope.append(all);
@@ -39,17 +46,17 @@ export function renderRinkcraftProfile(profile: RinkcraftProfile): HTMLElement {
   scope.value = profile.latest_available ? String(profile.latest_available.season) : 'summary'; scopeLabel.append(scope);
   const searchLabel = node('label', 'Find metric '); const search = node('input'); search.type = 'search'; search.placeholder = 'Goals, assists, save-pct…'; searchLabel.append(search);
   const missingLabel = node('label'); const missing = node('input'); missing.type = 'checkbox'; missingLabel.append(missing, node('span', ' Show unavailable metrics'));
-  controls.append(scopeLabel, searchLabel, missingLabel); section.append(controls);
+  controls.append(scopeLabel, searchLabel, missingLabel); content.append(controls);
   const context = node('p'); context.setAttribute('aria-live', 'polite');
   const families = node('div'); families.className = 'rinkcraft-families';
   for (const f of profile.job_families) {
     const card = node('details'); card.append(node('summary', f.name), node('p', f.interpretation), node('p', f.catalog_keys.join(' · ') || 'No measurements in this source'));
     families.append(card);
   }
-  const attributeHolder=node('div');section.append(attributeHolder,families,context);
+  const attributeHolder=node('div');content.append(attributeHolder,families,context);
   const scroll = node('div'); scroll.className = 'table-scroll'; const table = node('table');
   const head = node('thead'); const hr = node('tr'); for (const t of ['Metric / evidence', 'Value', 'State']) hr.append(node('th', t)); head.append(hr);
-  const body = node('tbody'); table.append(head, body); scroll.append(table); section.append(scroll);
+  const body = node('tbody'); table.append(head, body); scroll.append(table); content.append(scroll);
   const render = (): void => {
     const selected = profile.timeline.find(s => String(s.season) === scope.value);
     const assessments=profile.attribute_seasons??[];
@@ -79,5 +86,5 @@ export function renderRinkcraftProfile(profile: RinkcraftProfile): HTMLElement {
   const limits = node('details'); limits.append(node('summary', 'Methods, unmeasured dimensions and limits'));
   for (const l of profile.limitations) limits.append(node('p', l));
   limits.append(node('p', `Unmeasured: ${profile.unmeasured_dimensions.join(', ')}`));
-  section.append(changes, limits); return section;
+  content.append(changes, limits); return section;
 }

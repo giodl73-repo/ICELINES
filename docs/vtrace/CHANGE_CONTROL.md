@@ -1,5 +1,14 @@
 # Change Control
 
+## CHG-128 — Character identity before statistical history (2026-11-08)
+
+Owner requests the actual D&D character-card hierarchy. Add a source-linked
+documentary class catalog/selector and native/WASM identity cards; move graphs
+and statistical controls into default-closed expanders. Research inputs stay
+external and optional; classes are curated interpretations, not stat thresholds.
+Contract `design/specs/rinkcraft-character-card.md`, IF-RINKCRAFT-CHARACTER-001,
+WP-RINKCRAFT-04. No game mechanics or NHL-wide class-validity claim.
+
 ## CHG-127 — Descriptive Rinkcraft attributes (2026-11-08)
 
 Add versioned experimental attribute measurements, reference populations, tie-aware

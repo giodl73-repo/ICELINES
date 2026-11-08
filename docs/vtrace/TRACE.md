@@ -415,3 +415,13 @@ normal/sparse WASM profile and native/browser cards/step charts -> focused core,
 both storage modes, actual engine/UI parity, source-snapshot regression and mobile
 checks. Evidence: `docs/rinkcraft-attributes-validation-2026-11-08.md`.
 Experimental descriptive bands do not establish skill, style or role validity.
+
+## Rinkcraft primary character card (CHG-128)
+
+REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> IF-RINKCRAFT-CHARACTER-001 ->
+external documentary catalog, shared Rust validation/dated selection, native
+and explicit WASM binding, original shared character design and default-closed
+history -> source/temporal unit tests, actual UI/binding, offline, no-JS, mobile,
+legacy-link and existing-history checks. Evidence:
+`docs/rinkcraft-character-card-validation-2026-11-08.md`. No automatic or validated
+NHL-wide role classifier is claimed.

@@ -21,12 +21,18 @@ try {
       const p=catalog.packages.find(p=>p.id===id);engine.load_package(new Uint8Array(await (await fetch('/'+p.url)).arrayBuffer()));
     }
     const profile=JSON.parse(engine.rinkcraft_profile(JSON.stringify({player_id:8479323,season_type:'regular',first_season:null,last_season:null})));
+    const characters=await(await fetch('/rinkcraft-characters.json')).json();
+    profile.character_sheet=JSON.parse(engine.character_sheet(JSON.stringify(characters),8479323,20252026));
     engine.free();return profile;
   });
   expect(expected.included_seasons).toEqual([20242025,20252026]);
   await page.locator('#filter').fill('team=NYR');await page.getByRole('button',{name:'Run query',exact:true}).click();
   await page.getByRole('button',{name:'Adam Fox',exact:true}).click();
   const profile=page.locator('#rinkcraft-profile');await expect(profile).toBeVisible();
+  await expect(profile.locator('.rk-class-name')).toHaveText(expected.character_sheet.primary.name);
+  expect(await profile.locator('.rk-history').first().evaluate(e=>e.open)).toBe(false);
+  await page.screenshot({path:new URL('fox-character.png',output).pathname.replace(/^\/([A-Z]:)/,'$1')});
+  await profile.locator('.rk-history > summary').first().click();
   await expect(profile).toContainText('2 loaded seasons');
   expect(await profile.locator('.rinkcraft-families > details').count()).toBe(6);
   const assessment=expected.attribute_seasons.at(-1);expect(assessment.attributes).toHaveLength(7);

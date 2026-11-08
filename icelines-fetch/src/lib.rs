@@ -72,6 +72,7 @@ pub mod prospect_source_audit;
 pub mod query_provider;
 pub mod records_provider;
 pub mod resolver;
+pub mod rinkcraft_character;
 pub mod rinkcraft_profile;
 pub mod scenario_registry;
 pub mod schedule_remaining;

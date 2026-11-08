@@ -81,6 +81,7 @@ pub mod prospect_study;
 pub mod records;
 pub mod report;
 pub mod rinkcraft_attributes;
+pub mod rinkcraft_character;
 pub mod rinkcraft_profile;
 pub mod scenario_development_calibration;
 pub mod scenario_registry;

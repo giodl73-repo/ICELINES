@@ -3,6 +3,8 @@ import { ViewportTable } from './viewport-table.js';
 import { PlayerComparison, renderComparison } from './comparison.js';
 import type { ComparisonContext } from './comparison.js';
 import { renderPlayerHistory } from './player-history.js';
+import {readCharacterCatalog} from './rinkcraft-character.js';
+import type {CharacterSheet} from './rinkcraft-character.js';
 import { renderRinkcraftProfile } from './rinkcraft-profile.js';
 import type { RinkcraftProfile } from './rinkcraft-profile.js';
 import type { PlayerHistory } from './player-history.js';
@@ -244,9 +246,11 @@ async function player(row: PlayerRow): Promise<void> {
   if (!snapshot || !context) return;
   const detail = await engine.request<{ identity: { bio: unknown }; stats: unknown; history?: PlayerHistory }>('detail', row.player_id);
   const profile = await engine.request<RinkcraftProfile>('rinkcraftProfile', { player_id:row.player_id, season_type:snapshot.season_type, first_season:null,last_season:null });
+  const characterCatalog=await readCharacterCatalog();
+  if(characterCatalog) profile.character_sheet=await engine.request<CharacterSheet|undefined>('characterSheet',{catalog:characterCatalog,player_id:row.player_id,season:snapshot.season})??undefined;
   if (result !== snapshot || generation !== engine.generation) return;
   element('player-name').textContent = row.name;
-  const summary = document.createElement('p'); summary.textContent = `${row.team} · ${row.position} · ${row.gp} games · ${row.points} points`;
+
   const details = document.createElement('details'); const label = document.createElement('summary'); label.textContent = 'Player evidence and season record';
   const pre = document.createElement('pre'); pre.textContent = JSON.stringify(detail, null, 2); details.append(label, pre);
   const choose = document.createElement('button'); choose.type = 'button'; choose.id = 'compare-player';
@@ -276,7 +280,9 @@ async function player(row: PlayerRow): Promise<void> {
   const teamHelp = document.createElement('p');
   teamHelp.textContent = 'Team shortcuts replace your filter and set Minimum GP to 0. Players match any team stint; values remain full-season totals.';
   if (teams.childElementCount) teams.append(teamHelp);
-  element('player-body').replaceChildren(summary, actions, teams, renderRinkcraftProfile(profile), renderPlayerHistory(detail.history), details);
+  const recordHistory=document.createElement('details');recordHistory.className='rk-history';
+  const recordLabel=document.createElement('summary');recordLabel.textContent='Loaded records and source context';recordHistory.append(recordLabel,renderPlayerHistory(detail.history),details);
+  element('player-body').replaceChildren(renderRinkcraftProfile(profile), actions, teams, recordHistory);
   openPlayerContext = { revision: snapshot.revision, generation };
   element<HTMLDialogElement>('player-dialog').showModal();
 }

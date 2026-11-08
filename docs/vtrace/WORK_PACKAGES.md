@@ -1,5 +1,13 @@
 # Work Packages
 
+## WP-RINKCRAFT-04 (CHG-128)
+
+Implement external documentary class input, shared validation/dated projection,
+native and WASM primary character card, default-closed statistical history and
+optional offline research artifact. Verify source/date boundaries, invalid input,
+actual card/engine identity, no-JS, mobile and explicit multiclass. Research owns
+authored pilot records and class interpretation, not the application engine.
+
 ## WP-RINKCRAFT-03 (CHG-127)
 
 Implement role-reviewed experimental descriptive attributes with peer cohorts,

@@ -68,6 +68,7 @@ fn request(id: u32, p: &Params) -> Result<RinkcraftProfileRequest, WebError> {
 async fn profile(
     state: &WebState,
     req: RinkcraftProfileRequest,
+    character_season: Option<Season>,
 ) -> Result<RinkcraftStatProfile, WebError> {
     let root = state.snapshots_root.as_ref().clone();
     // Preserve the active (possibly newer than bundled) window, as the CLI does.
@@ -102,6 +103,19 @@ async fn profile(
         let mut profile = build_rinkcraft_stat_profile(&repo, req)?;
         profile.source_windows = sources;
         icelines_fetch::rinkcraft_profile::attach_attribute_seasons(&mut profile, &store)?;
+        if let Some(path) = std::env::var_os("ICELINES_RINKCRAFT_SHEETS") {
+            let catalog = icelines_fetch::rinkcraft_character::load_character_catalog(
+                std::path::Path::new(&path),
+            )
+            .map_err(anyhow::Error::msg)?;
+            let season = character_season
+                .or(req.last_season)
+                .or(profile.latest_available.as_ref().map(|s| s.season))
+                .unwrap_or(Season(icelines_core::CURRENT_SEASON));
+            profile.character_sheet = catalog
+                .sheet(req.player_id, season)
+                .map_err(anyhow::Error::msg)?;
+        }
         Ok(profile)
     })
     .await
@@ -130,7 +144,7 @@ pub async fn get_json(
     Path(id): Path<u32>,
     Query(p): Query<Params>,
 ) -> Result<Response, WebError> {
-    let view = profile(&state, request(id, &p)?).await?;
+    let view = profile(&state, request(id, &p)?, p.season.map(Season)).await?;
     Ok(crate::api::json_data_meta(
         "rinkcraft-profile",
         view,
@@ -141,6 +155,7 @@ pub async fn get_json(
 #[derive(Template)]
 #[template(path = "rinkcraft.html")]
 struct ProfileTemplate {
+    card_stats_context: String,
     attribute_cards: Vec<AttributeCard>,
     attribute_context: String,
     active_label: String,
@@ -265,7 +280,7 @@ pub async fn get_html(
     Query(p): Query<Params>,
 ) -> Result<Response, WebError> {
     let req = request(id, &p)?;
-    let view = profile(&state, req).await?;
+    let view = profile(&state, req, p.season.map(Season)).await?;
     let metrics = match p.season {
         Some(s) => {
             &view
@@ -304,7 +319,22 @@ pub async fn get_html(
         })
         .collect();
     let (attribute_cards, attribute_context) = attribute_cards(&view, p.season);
+    let card_stats_context = view
+        .attribute_seasons
+        .iter()
+        .find(|s| Some(s.season.0) == p.season)
+        .or_else(|| view.attribute_seasons.last())
+        .map(|s| {
+            format!(
+                "{} · {} GP · {} · all strengths",
+                season_label(s.season.0),
+                s.games,
+                s.group
+            )
+        })
+        .unwrap_or_else(|| "Statistical snapshot unavailable".into());
     let template = ProfileTemplate {
+        card_stats_context,
         attribute_cards,
         attribute_context,
         active_label: state.config.read().await.active_label.clone(),

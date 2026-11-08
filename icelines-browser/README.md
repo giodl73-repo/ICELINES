@@ -29,7 +29,15 @@ dialog is reopened. A dataset change closes any open stale dialog.
 Run the local browser history check after building with
 `npm --prefix icelines-browser run acceptance:player-history`.
 
-The player dialog also includes a **Rinkcraft profile** with experimental,
+The player dialog opens with a **Rinkcraft character card**: documentary hockey
+class/fantasy analogy, specialty, source-linked features/methods, optional
+multiclass and compact measured attributes. Trait evolution/statistical history
+is a closed expander. The class is curated research, never inferred from bands.
+Supply an authored research catalog as ignored `public/rinkcraft-characters.json`
+before building to include it in the offline shell. Without a dossier, the card
+says Unscouted. See `design/specs/rinkcraft-character-card.md` in the repo root.
+
+The profile's history expander includes experimental,
 player-specific descriptive attribute bands and seasonal step charts. Each band
 shows its observed value, layer, positional peer group, exposure, reference
 coverage and versioned rule. These are unadjusted all-strength measurements,

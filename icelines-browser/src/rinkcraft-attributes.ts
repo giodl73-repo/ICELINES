@@ -50,6 +50,6 @@ export function renderAttributeSheet(current:AttributeSeason|undefined,history:A
     make('path',{d:path});make('text',{x:'24',y:'116'},String(first));make('text',{x:'247',y:'116'},String(last));
     evidence.append(list);card.append(svg,evidence);grid.append(card);
   }
-  section.append(grid,node('p','Style and ability need separate evidence: north–south, east–west, entry method, pressure/recovery, creativity, finishing, coverage and goalie technique remain unclassified.'));
+  section.append(grid,node('p','Statistical aggregates do not measure directional style, assignments or persistent ability. The documentary identity above is a separate evidence layer.'));
   return section;
 }

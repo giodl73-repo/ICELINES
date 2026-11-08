@@ -1,5 +1,13 @@
 # Interfaces
 
+## IF-RINKCRAFT-CHARACTER-001 (CHG-128)
+
+Optional `rinkcraft.character-catalog.v1` input and `character_sheet` profile
+projection; stateless WASM selector and `characterSheet` worker operation;
+native explicit `ICELINES_RINKCRAFT_SHEETS` path and optional offline browser
+snapshot. Dated documentary selection, validation and UI contract:
+`design/specs/rinkcraft-character-card.md`. Missing dossier stays unscouted.
+
 ## IF-RINKCRAFT-ATTRIBUTES-001 (CHG-127)
 
 Additive `attribute_seasons` in profile v1, built by core `rinkcraft_attributes`;
