@@ -1,5 +1,13 @@
 # Work Packages
 
+## WP-RINKCRAFT-05 (CHG-129)
+
+Deliver generic showcase navigation and feature-specific numeric context while
+preserving external research ownership, class/stat separation, unknowns and old
+catalog compatibility. Validate all configured featured cards, actual WASM dated
+selection, active-package skater/goalie opening, existing profile controls and
+mobile rendering. Evidence: `docs/rinkcraft-star-atlas-validation-2026-11-08.md`.
+
 ## WP-RINKCRAFT-04 (CHG-128)
 
 Implement external documentary class input, shared validation/dated projection,

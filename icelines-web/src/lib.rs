@@ -69,6 +69,7 @@ pub use state::WebState;
 /// directory mounts, reintroduce a `RouterConfig` then.
 pub fn router(state: WebState) -> Router {
     Router::new()
+        .route("/rinkcraft", get(handlers::rinkcraft::get_atlas))
         .route("/", get(handlers::home::get_home))
         .route("/dashboard", get(handlers::dashboard::get_dashboard))
         .route(

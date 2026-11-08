@@ -68,6 +68,12 @@ fn definitions(goalie: bool) -> Vec<Definition> {
         Definition{key:"conversion-outcome",label:"Observed shot conversion",layer:"Observed outcome",stat:ShootingPct,per_game:false,unit:"Pct",meaning:"Goals divided by shots on goal; shot mix and sampling affect it, not a calibrated finisher grade."},
     ]
 }
+pub fn is_attribute_key(key: &str) -> bool {
+    definitions(false)
+        .iter()
+        .chain(definitions(true).iter())
+        .any(|d| d.key == key)
+}
 fn group(p: Position) -> &'static str {
     if p.is_forward() {
         "Forwards"

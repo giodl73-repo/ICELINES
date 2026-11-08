@@ -8,6 +8,10 @@ pub const CHARACTER_CATALOG_SCHEMA: &str = "rinkcraft.character-catalog.v1";
 pub struct CharacterCatalog {
     pub schema: String,
     pub protocol: String,
+    #[serde(default)]
+    pub showcase_title: String,
+    #[serde(default)]
+    pub showcase_notes: String,
     pub classes: Vec<CharacterClass>,
     pub assessments: Vec<CharacterAssessment>,
 }
@@ -20,6 +24,8 @@ pub struct CharacterClass {
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CharacterAssessment {
+    #[serde(default)]
+    pub featured: bool,
     pub player_id: PlayerId,
     pub player_name: String,
     pub assessed: String,
@@ -45,6 +51,33 @@ pub struct CharacterFeature {
     pub evidence_type: String,
     pub from_season: Season,
     pub source_ids: Vec<String>,
+    #[serde(default)]
+    pub stat_evidence: Vec<FeatureStatLink>,
+    #[serde(default)]
+    pub unmeasured_stats: Vec<String>,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FeatureStatLink {
+    pub attribute_key: String,
+    pub relation: FeatureStatRelation,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FeatureStatRelation {
+    MeasuredAspect,
+    ActivityContext,
+    OutcomeContext,
+    DeploymentContext,
+}
+impl FeatureStatRelation {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::MeasuredAspect => "Measured aspect",
+            Self::ActivityContext => "Activity context",
+            Self::OutcomeContext => "Outcome context",
+            Self::DeploymentContext => "Deployment context",
+        }
+    }
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CharacterSource {
@@ -85,7 +118,13 @@ impl CharacterCatalog {
         for c in &self.classes {
             if !matches!(
                 c.id.as_str(),
-                "conductor" | "hunter" | "warden" | "vanguard" | "marksman" | "connector"
+                "conductor"
+                    | "hunter"
+                    | "warden"
+                    | "vanguard"
+                    | "marksman"
+                    | "connector"
+                    | "pathfinder"
             ) || c.name.is_empty()
                 || !class_ids.insert(&c.id)
             {
@@ -101,7 +140,11 @@ impl CharacterCatalog {
             for s in &a.sources {
                 if !ids.insert(&s.id)
                     || !s.url.starts_with("https://")
-                    || chrono::NaiveDate::parse_from_str(&s.published, "%Y-%m-%d").is_err()
+                    || !(chrono::NaiveDate::parse_from_str(&s.published, "%Y-%m-%d").is_ok()
+                        || (s.published.len() == 4
+                            && s.published
+                                .parse::<u16>()
+                                .is_ok_and(|y| (1900..=2200).contains(&y))))
                 {
                     return Err("invalid character source".into());
                 }
@@ -120,6 +163,14 @@ impl CharacterCatalog {
             for f in a.traits.iter().chain(&a.features) {
                 if !supported(f.from_season, &f.source_ids) {
                     return Err("unsupported character feature".into());
+                }
+                let mut linked = HashSet::new();
+                for stat in &f.stat_evidence {
+                    if !super::rinkcraft_attributes::is_attribute_key(&stat.attribute_key)
+                        || !linked.insert(&stat.attribute_key)
+                    {
+                        return Err("unknown or duplicate feature statistic".into());
+                    }
                 }
             }
         }
@@ -232,6 +283,24 @@ mod tests {
         assert!(c.validate().is_err());
         let mut c = catalog();
         c.assessments[0].sources[0].url = "javascript:alert(1)".into();
+        assert!(c.validate().is_err());
+    }
+    #[test]
+    fn feature_links_validate_and_year_precision_stays_explicit() {
+        let mut c = catalog();
+        c.assessments[0].sources[0].published = "2024".into();
+        assert!(c.validate().is_ok());
+        c.assessments[0].features[0]
+            .stat_evidence
+            .push(FeatureStatLink {
+                attribute_key: "made-up-skill".into(),
+                relation: FeatureStatRelation::OutcomeContext,
+            });
+        assert!(c.validate().is_err());
+        c.assessments[0].features[0].stat_evidence[0].attribute_key = "assist-output".into();
+        assert!(c.validate().is_ok());
+        let duplicate = c.assessments[0].features[0].stat_evidence[0].clone();
+        c.assessments[0].features[0].stat_evidence.push(duplicate);
         assert!(c.validate().is_err());
     }
 }

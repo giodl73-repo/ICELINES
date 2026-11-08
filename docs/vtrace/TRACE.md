@@ -425,3 +425,11 @@ history -> source/temporal unit tests, actual UI/binding, offline, no-JS, mobile
 legacy-link and existing-history checks. Evidence:
 `docs/rinkcraft-character-card-validation-2026-11-08.md`. No automatic or validated
 NHL-wide role classifier is claimed.
+
+## Feature evidence and star atlas (CHG-129)
+
+REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> IF-RINKCRAFT-CHARACTER-001 ->
+external catalog selection, native/browser atlas, feature-stat readouts and
+compact percentile/peer display -> catalog validation, all configured featured
+cards, actual WASM class selection, skater/goalie opening, mobile and existing
+profile regressions. Evidence: `docs/rinkcraft-star-atlas-validation-2026-11-08.md`.

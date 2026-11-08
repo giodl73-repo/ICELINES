@@ -34,7 +34,7 @@ function node<K extends keyof HTMLElementTagNameMap>(tag: K, text?: string): HTM
 export function renderRinkcraftProfile(profile: RinkcraftProfile): HTMLElement {
   const section = node('section'); section.id = 'rinkcraft-profile'; section.className = 'rinkcraft-profile';
   const cardAssessment=profile.attribute_seasons?.find(s=>s.season===profile.character_sheet?.as_of_season)??profile.attribute_seasons?.at(-1);
-  section.append(renderCharacterCard(profile.player_name,profile.character_sheet,cardAssessment));
+  section.append(renderCharacterCard(profile.player_name,profile.character_sheet,cardAssessment,profile.timeline.find(s=>s.season===cardAssessment?.season)??profile.latest_available??undefined));
   const history=node('details');history.className='rk-history';history.append(node('summary','Trait evolution, time travel & statistical evidence'));section.append(history);
   const content=node('div');history.append(content);
   content.append(node('h3', 'Rinkcraft profile'), node('p', `${profile.request.season_type} · ${profile.included_seasons.length} loaded seasons · Latest: ${profile.latest_available ? seasonLabel(profile.latest_available.season) : 'unavailable'}`));

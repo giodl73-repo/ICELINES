@@ -2,6 +2,14 @@
 
 ## IF-RINKCRAFT-CHARACTER-001 (CHG-128)
 
+CHG-129 additive extension: catalog `showcase_title`/`showcase_notes` default empty;
+assessment `featured` defaults false; feature `stat_evidence` and
+`unmeasured_stats` default empty. Relations: measured_aspect, activity_context,
+outcome_context, deployment_context. Unknown/duplicate attribute keys reject.
+Source publication accepts ISO day or four-digit year, preserving precision.
+Native `/rinkcraft` lists configured assessments without profile hydration.
+Browser atlas opens the existing player dialog against the active package.
+
 Optional `rinkcraft.character-catalog.v1` input and `character_sheet` profile
 projection; stateless WASM selector and `characterSheet` worker operation;
 native explicit `ICELINES_RINKCRAFT_SHEETS` path and optional offline browser

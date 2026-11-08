@@ -1,5 +1,16 @@
 # Change Control
 
+## CHG-129 — Feature evidence and external player atlas (2026-11-08)
+
+Owner requests denser character cards, relevant feature statistics and a 25-star
+cohort. Add optional showcase/featured metadata, Pathfinder support, declared
+feature-stat relations and missing-measurement fields; validate stat keys and
+retain publication-date precision (day/year). Generic native `/rinkcraft` and
+browser atlas consume the optional external research catalog. Primary cards show
+raw season lines, existing percentiles and measured/eligible peer counts. No new
+rank computation, automatic class inference or player dossiers in IceLines.
+Contract: `design/specs/rinkcraft-character-card.md`, IF-RINKCRAFT-CHARACTER-001.
+
 ## CHG-128 — Character identity before statistical history (2026-11-08)
 
 Owner requests the actual D&D character-card hierarchy. Add a source-linked

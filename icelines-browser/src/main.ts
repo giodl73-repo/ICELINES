@@ -42,6 +42,27 @@ const resident = new Map<string, Dataset>();
 let saved: SavedDatasetEntry[] = [];
 let librarySequence = 0;
 let result: QueryResult | undefined;
+void readCharacterCatalog().then(raw => {
+  if (!raw) { element('rinkcraft-atlas').hidden = true; return; }
+  const c = raw as {showcase_notes?:string;classes:{id:string;name:string}[];assessments:{featured?:boolean;player_id:number;player_name:string;primary:{class_id:string};specialty:string}[]};
+  element('rinkcraft-atlas-notes').textContent = c.showcase_notes ?? 'Source-linked documentary pilot.';
+  const container = element('rinkcraft-atlas-cards');
+  for (const a of [...c.assessments].sort((a,b)=>Number(!!b.featured)-Number(!!a.featured)||a.player_name.localeCompare(b.player_name))) {
+    const button = document.createElement('button');button.type='button';button.className=`rk-sheet rk-${a.primary.class_id} rk-atlas-card`;
+    button.textContent=`${a.player_name} · ${c.classes.find(c=>c.id===a.primary.class_id)?.name??'Unscouted'} · ${a.specialty}`;
+    button.onclick=()=>{void perform(async()=>{
+      if(!result)throw new Error('Load a season package first.');
+      const snapshot=result;const generation=engine.generation;
+      for(const goalies of [false,true]){
+        const candidates=await engine.request<QueryResult>('query',{filter:'',sort:goalies?'wins':'points',goalies,minimum_games:0,today:new Date().toISOString().slice(0,10)});
+        if(result!==snapshot||engine.generation!==generation)return;
+        const row=candidates.rows.find(row=>row.player_id===a.player_id);
+        if(row){await player(row);return;}
+      }
+      throw new Error(`${a.player_name} is unavailable in the active package. Choose another season.`);
+    });};container.append(button);
+  }
+}).catch(error=>{element('rinkcraft-atlas-notes').textContent=String(error);});
 let resultRequest: QueryRequest | undefined;
 let resultState: ViewState | undefined;
 let routing = false;

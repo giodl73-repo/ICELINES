@@ -50,3 +50,18 @@ dashboard. Original D&D-inspired design is shared by native and browser surfaces
 
 No NHL-wide automatic classifier, proficiency bonus, synergy model, player
 personality inference or validated skill/role level is introduced.
+
+## Feature evidence and showcase extension (CHG-129)
+
+The optional external catalog can name a showcase and mark featured assessments;
+the application does not select or rank its members. Native `/rinkcraft` and a
+browser atlas expose dossiers. Missing active-package players yield an explicit
+unavailable message. Old catalogs remain valid through serde defaults.
+
+Pathfinder is the carrier class alias; methods remain in features/specialties.
+Feature stat links resolve existing season attributes, using their Rust-computed
+values, percentiles and peer counts. Relation labels distinguish a measured aspect
+from activity, outcome or deployment context. Missing measurements stay visible.
+No UI recomputes ranks or infers class membership. Raw season lines preserve nulls
+and percentage scales. Day/year publication precision is retained; research owns
+the conservative season cutoff for year-only sources. All classes remain provisional.

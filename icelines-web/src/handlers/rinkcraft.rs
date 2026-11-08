@@ -31,6 +31,67 @@ fn optional_season<'de, D: serde::Deserializer<'de>>(d: D) -> Result<Option<u32>
     }
 }
 
+#[derive(Template)]
+#[template(path = "rinkcraft_atlas.html")]
+struct AtlasTemplate {
+    active_label: String,
+    title: String,
+    notes: String,
+    cards: Vec<AtlasCard>,
+}
+struct AtlasCard {
+    id: u32,
+    name: String,
+    class_id: String,
+    class_name: String,
+    specialty: String,
+    summary: String,
+    evidence: String,
+    featured: bool,
+}
+pub async fn get_atlas(State(state): State<WebState>) -> Result<Response, WebError> {
+    let mut cards = Vec::new();
+    let mut title = "Rinkcraft player atlas".to_string();
+    let mut notes = "No character catalog configured.".to_string();
+    if let Some(path) = std::env::var_os("ICELINES_RINKCRAFT_SHEETS") {
+        let catalog = icelines_fetch::rinkcraft_character::load_character_catalog(
+            std::path::Path::new(&path),
+        )
+        .map_err(|e| WebError::Internal(anyhow::anyhow!(e)))?;
+        if !catalog.showcase_title.is_empty() {
+            title = catalog.showcase_title.clone();
+        }
+        notes = catalog.showcase_notes.clone();
+        for a in &catalog.assessments {
+            if let Some(s) = catalog
+                .sheet(a.player_id, Season(icelines_core::CURRENT_SEASON))
+                .map_err(|e| WebError::Internal(anyhow::anyhow!(e)))?
+            {
+                cards.push(AtlasCard {
+                    id: a.player_id.0,
+                    name: a.player_name.clone(),
+                    class_id: s.primary.id,
+                    class_name: s.primary.name,
+                    specialty: s.specialty,
+                    summary: s.summary,
+                    evidence: s.evidence_through,
+                    featured: a.featured,
+                });
+            }
+        }
+        cards.sort_by(|a, b| b.featured.cmp(&a.featured).then(a.name.cmp(&b.name)));
+    }
+    AtlasTemplate {
+        active_label: state.config.read().await.active_label.clone(),
+        title,
+        notes,
+        cards,
+    }
+    .render()
+    .map(|s| Html(s).into_response())
+    .map_err(|e| WebError::Internal(e.into()))
+}
+
 fn request(id: u32, p: &Params) -> Result<RinkcraftProfileRequest, WebError> {
     let bad = |name: &str, message: &str| WebError::BadParam {
         param: name.into(),
@@ -155,6 +216,8 @@ pub async fn get_json(
 #[derive(Template)]
 #[template(path = "rinkcraft.html")]
 struct ProfileTemplate {
+    stat_line: Vec<StatCell>,
+    feature_cards: Vec<FeatureCard>,
     card_stats_context: String,
     attribute_cards: Vec<AttributeCard>,
     attribute_context: String,
@@ -173,6 +236,10 @@ struct ProfileTemplate {
     absent_json: String,
 }
 struct AttributeCard {
+    percentile_short: String,
+    peer_short: String,
+    percentile_fill: f64,
+    ranked: bool,
     label: String,
     layer: String,
     value: String,
@@ -218,7 +285,7 @@ fn attribute_cards(
                 points.push(ChartPoint{x,y,title:format!("{} · band {} · {}",season_label(s.season.0),band,raw)});previous=Some(year);
             }else{previous=None;}
         }
-        AttributeCard{label:a.label.clone(),layer:a.layer.clone(),value:attribute_value(&a.unit,a.value),
+        AttributeCard{percentile_short:a.percentile.map(percentile_label).unwrap_or_else(||"—".into()),peer_short:format!("n={}/{}",a.measured_peers,current.eligible_peers),percentile_fill:a.percentile.unwrap_or(0.0),ranked:a.percentile.is_some(),label:a.label.clone(),layer:a.layer.clone(),value:attribute_value(&a.unit,a.value),
             level:a.band.map(|v|format!("{v} / 5")).unwrap_or_else(||"Unranked".into()),
             percentile:a.percentile.map(|p|format!("{p:.1} percentile")).unwrap_or_else(||a.state.replace('_'," ")),
             evidence:format!("{} measured / {} eligible {} · {} GP",a.measured_peers,current.eligible_peers,current.group,current.games),
@@ -237,6 +304,140 @@ fn attribute_value(unit: &str, value: Option<f64>) -> String {
             _ => format!("{v:.2} / game"),
         },
     }
+}
+struct StatCell {
+    key: String,
+    label: String,
+    value: String,
+}
+struct FeatureCard {
+    name: String,
+    detail: String,
+    evidence: String,
+    stats: Vec<FeatureReadout>,
+    gaps: Vec<String>,
+}
+struct FeatureReadout {
+    key: String,
+    label: String,
+    value: String,
+    percentile: String,
+    peers: String,
+    relation: String,
+}
+fn stat_line(view: &RinkcraftStatProfile, selected: Option<u32>) -> Vec<StatCell> {
+    let row = selected
+        .and_then(|s| view.timeline.iter().find(|r| r.season.0 == s))
+        .or(view.latest_available.as_ref());
+    let Some(row) = row else { return Vec::new() };
+    let goalie = row.position == icelines_core::model::Position::Goalie;
+    let slots = if goalie {
+        vec![
+            ("goalie-starts", "GS"),
+            ("wins", "W"),
+            ("save-pct", "SV%"),
+            ("gaa", "GAA"),
+            ("shots-against", "SA"),
+            ("saves", "SV"),
+            ("goals-against", "GA"),
+            ("shutouts", "SO"),
+        ]
+    } else {
+        vec![
+            ("goals", "G"),
+            ("assists", "A"),
+            ("points", "PTS"),
+            ("shots", "SOG"),
+            ("hits", "HIT"),
+            ("blocked-shots", "BLK"),
+            ("pp-points", "PP PTS"),
+            ("total-toi-per-game", "TOI/G"),
+        ]
+    };
+    let mut cells = vec![StatCell {
+        key: "games".into(),
+        label: "GP".into(),
+        value: row.games.to_string(),
+    }];
+    cells.extend(slots.into_iter().map(|(key, label)| {
+        StatCell {
+            key: key.into(),
+            label: label.into(),
+            value: row
+                .metrics
+                .iter()
+                .find(|m| m.key == key)
+                .map(compact_metric)
+                .unwrap_or_else(|| "—".into()),
+        }
+    }));
+    cells
+}
+fn percentile_label(p: f64) -> String {
+    format!("P{:.1}", (p * 10.0).round() / 10.0)
+}
+fn compact_metric(m: &ProfileMetric) -> String {
+    let Some(v) = m.value else {
+        return "—".into();
+    };
+    match m.unit.as_str() {
+        "Count" => format!("{v:.0}"),
+        "Pct" => format!("{:.2}%", v * 100.0),
+        "Seconds" => {
+            let s = v.round() as u64;
+            format!("{}:{:02}", s / 60, s % 60)
+        }
+        _ => format!("{v:.2}"),
+    }
+}
+fn feature_cards(view: &RinkcraftStatProfile, selected: Option<u32>) -> Vec<FeatureCard> {
+    let Some(sheet) = &view.character_sheet else {
+        return Vec::new();
+    };
+    let assessment = selected
+        .and_then(|s| view.attribute_seasons.iter().find(|a| a.season.0 == s))
+        .or_else(|| view.attribute_seasons.last());
+    sheet
+        .features
+        .iter()
+        .map(|f| FeatureCard {
+            name: f.name.clone(),
+            detail: f.detail.clone(),
+            evidence: format!("{} · {}", f.evidence_type, f.source_ids.join(", ")),
+            gaps: f.unmeasured_stats.clone(),
+            stats: f
+                .stat_evidence
+                .iter()
+                .map(|link| {
+                    let attribute = assessment
+                        .and_then(|s| s.attributes.iter().find(|a| a.key == link.attribute_key));
+                    FeatureReadout {
+                        key: link.attribute_key.clone(),
+                        label: attribute
+                            .map(|a| a.label.clone())
+                            .unwrap_or_else(|| link.attribute_key.replace('-', " ")),
+                        value: attribute
+                            .map(|a| attribute_value(&a.unit, a.value))
+                            .unwrap_or_else(|| "—".into()),
+                        percentile: attribute
+                            .and_then(|a| a.percentile)
+                            .map(percentile_label)
+                            .unwrap_or_else(|| "Unranked".into()),
+                        peers: attribute
+                            .map(|a| {
+                                format!(
+                                    "n={}/{}",
+                                    a.measured_peers,
+                                    assessment.map(|s| s.eligible_peers).unwrap_or_default()
+                                )
+                            })
+                            .unwrap_or_else(|| "No reference".into()),
+                        relation: link.relation.label().into(),
+                    }
+                })
+                .collect(),
+        })
+        .collect()
 }
 struct MetricRow {
     label: String,
@@ -334,6 +535,8 @@ pub async fn get_html(
         })
         .unwrap_or_else(|| "Statistical snapshot unavailable".into());
     let template = ProfileTemplate {
+        stat_line: stat_line(&view, p.season),
+        feature_cards: feature_cards(&view, p.season),
         card_stats_context,
         attribute_cards,
         attribute_context,
@@ -428,6 +631,7 @@ mod tests {
     }
     #[test]
     fn rinkcraft_formats_null_and_fractional_percentages() {
+        assert_eq!(percentile_label(56.25), "P56.3");
         let mut m:ProfileMetric=serde_json::from_value(serde_json::json!({"key":"save-pct","label":"SV%","unit":"Pct","value":0.915,"status":"available","aggregation":"catalog_read","observed_seasons":1,"missing_seasons":[],"report_source":null,"ratio":null})).unwrap();
         assert_eq!(format_metric(&m), "91.50%");
         m.value = None;
