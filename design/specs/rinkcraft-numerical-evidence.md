@@ -15,9 +15,8 @@ arguments/serialization only.
 
 Native `/rinkcraft/numbers` and `/api/v1/rinkcraft/numbers` consume the explicit
 local JSON path `ICELINES_RINKCRAFT_NUMBERS`. The numerical page links from the
-existing atlas. Documentary classes remain unchanged. This first pass adds no
-WASM source adapter or offline numerical artifact; the existing browser character
-and statistical subset remains available separately.
+existing atlas. Documentary classes remain unchanged. The CHG-131 extension below
+adds prepared numerical evidence to character cards and the browser/WASM subset.
 
 Native JSON input is capped at 2 MiB for this cohort pilot; unrestricted whole-
 league CLI output can exceed that display budget and is still emitted normally.
@@ -69,3 +68,35 @@ denominators. Fetch checks schema/season and blank cells. Real-data acceptance
 checks all selected players, source hashes, recomposed components, rendered values/
 ranks, disclosure and mobile layout. Research owns the fixed-season run and role
 review. Software acceptance does not validate classes or persistent hockey skill.
+
+## Integrated cards and comparisons (CHG-131)
+
+Core projects a validated catalog to `icelines.rinkcraft-evidence-card.v1`:
+six skater facets (primary assists, shots, individual xG, average shot quality,
+hits and goals-minus-xG) or four goalie facets (GSAx rate, save fraction, threat
+faced and shot workload). All 15/5 measurements remain available. Leading signals
+are the highest two percentiles among primary assists, shots, individual xG and
+hits; ties use that order. Goalies use GSAx rate alone. This editorial shortlist
+can contain correlated measurements; it is neither an ability composite nor a
+class classifier. Class hypotheses and documented methods remain separate.
+
+Native profiles attach optional `numerical_evidence` only for regular season,
+an included snapshot season, and an exact explicit display season if supplied.
+Core applies a season ceiling. Numeric primary cards suppress mixed-window raw
+season lines and documentary feature stat snippets. Missing documentary classes
+do not suppress available numerical evidence. Legacy cards/history still work.
+
+Native GET `/api/v1/rinkcraft/numbers/compare?left=ID&right=ID` returns a shared
+core comparison; `/rinkcraft/numbers` provides controls and visual tracks. Reject
+identical IDs, unknown players, different groups/situations and incompatible
+metric units/reference hashes. Differences are left minus right at full precision;
+fraction differences display percentage points, as do percentile differences.
+Neither signifies a difference in overall ability or class fit.
+
+WASM `numerical_evidence` and `numerical_comparison` validate the same bounded JSON
+and call shared Rust. Corresponding worker operations are stateless; optional
+prepared `rinkcraft-numbers.json` is copied and authenticated in the offline shell.
+The browser adapter owns presentation only. Active regular-season package ceilings
+prevent future evidence; the independently prepared snapshot displays its own
+season/situation/peers. The JSON input budget remains 2 MiB. No CSV browser ingestion,
+new measurement formula, automatic role transition or opportunity-adjusted model.

@@ -2,6 +2,13 @@
 
 ## IF-RINKCRAFT-NUMBERS-001 (CHG-130)
 
+CHG-131 extension: additive optional profile `numerical_evidence`, shared
+`icelines.rinkcraft-evidence-card.v1` projection and same-reference comparison.
+Native GET `/api/v1/rinkcraft/numbers/compare?left=ID&right=ID`; WASM methods
+`numerical_evidence`/`numerical_comparison` and matching worker operations.
+Optional prepared `rinkcraft-numbers.json` is part of the authenticated shell.
+Snapshot/competition guards and legacy catalog/profile fallback are required.
+
 `icelines.rinkcraft-numerical.v1`, protocol
 `rinkcraft.numerical-evidence.0.1.0-experimental`: normalized rows to a catalog
 with sources, profiles, missing player IDs and limits. Fetch parses local CSVs;

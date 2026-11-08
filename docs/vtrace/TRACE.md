@@ -1,5 +1,11 @@
 # Trace Matrix
 
+CHG-131 / IF-RINKCRAFT-NUMBERS-001: REQ-PARITY-001 / REQ-WEB-001 /
+REQ-BROWSER-001 -> shared numerical projection/comparison -> primary native/WASM
+cards, compatible comparisons and optional offline artifact -> core guards,
+25-card actual engine checks, exact comparison parity, offline/history/no-JS and
+mobile checks. Evidence: `docs/rinkcraft-integrated-numerical-validation-2026-11-08.md`.
+
 CHG-130 / IF-RINKCRAFT-NUMBERS-001: REQ-WEB-001 -> strict source parsing, pure
 numerical vectors/peer ranks, CLI/native renderer -> deterministic boundary tests
 and fixed-season 25-player rehearsal. Evidence:

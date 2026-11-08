@@ -1,5 +1,16 @@
 # Change Control
 
+## CHG-131 — Integrated numerical character cards and comparison (2026-11-08)
+
+Owner requests continued numerical differentiation before the next review. Shared
+core projects fixed facets and transparent leading signals, retains all measures,
+and computes compatible player differences. Native cards/API and WASM/browser use
+the same model. Optional prepared numerical artifact joins the authenticated
+offline shell. Documentary class hypotheses remain separate; no class relabeling,
+overall ability score or new source/formula. Contract and acceptance:
+`design/specs/rinkcraft-numerical-evidence.md`,
+`docs/rinkcraft-integrated-numerical-validation-2026-11-08.md`.
+
 ## CHG-130 — Source-backed numerical Rinkcraft assessments (2026-11-08)
 
 Owner requests more numerical assessment and less quote-led classification.

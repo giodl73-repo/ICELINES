@@ -72,6 +72,10 @@ pub fn router(state: WebState) -> Router {
         .route("/rinkcraft", get(handlers::rinkcraft::get_atlas))
         .route("/rinkcraft/numbers", get(handlers::rinkcraft::get_numbers))
         .route(
+            "/api/v1/rinkcraft/numbers/compare",
+            get(handlers::rinkcraft::get_numerical_comparison),
+        )
+        .route(
             "/api/v1/rinkcraft/numbers",
             get(handlers::rinkcraft::get_numbers_json),
         )

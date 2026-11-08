@@ -1,0 +1,44 @@
+// Display only: Rust selects facets/leaders and computes comparison differences.
+export interface NumericalMeasurement {
+  key:string;label:string;domain:string;unit:string;value:number|null;percentile:number|null;
+  measured_peers:number;interpretation:string;state:string;
+}
+export interface NumericalEvidence {
+  season:number;player_id:number;name:string;group:string;situation:string;games:number;minutes:number;
+  eligible_peers:number;facets:{label:string;measurement:NumericalMeasurement}[];leading:string[];
+  metrics:NumericalMeasurement[];source_credit:string;unknowns:string[];
+}
+export interface NumericalCatalog {season:number;profiles:{player_id:number;name:string;group:string}[];}
+export interface NumericalComparison {
+  season:number;left:NumericalEvidence;right:NumericalEvidence;
+  rows:{key:string;label:string;unit:string;left:number|null;right:number|null;left_percentile:number|null;right_percentile:number|null;difference:number|null;percentile_difference:number|null}[];
+}
+let catalogPromise:Promise<NumericalCatalog|undefined>|undefined;
+export function readNumericalCatalog():Promise<NumericalCatalog|undefined>{
+  catalogPromise??=(async()=>{let response:Response;try{response=await fetch(new URL('../rinkcraft-numbers.json',import.meta.url));}catch{return undefined;}
+    if(response.status===404)return undefined;if(!response.ok)throw new Error('Numerical evidence could not be loaded.');
+    const text=await response.text();if(text.length>2*1024*1024)throw new Error('Numerical evidence exceeds 2 MiB');return JSON.parse(text) as NumericalCatalog;
+  })();return catalogPromise;
+}
+const node=<K extends keyof HTMLElementTagNameMap>(tag:K,text?:string):HTMLElementTagNameMap[K]=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e;};
+const period=(s:number):string=>`${Math.floor(s/10000)}–${String(s%100).padStart(2,'0')}`;
+const rank=(v:number|null):string=>v===null?'Unranked':`P${(Math.round(v*10)/10).toFixed(1)}`;
+const value=(unit:string,v:number|null,signed=false):string=>v===null?'—':`${signed&&v>=0?'+':''}${(v*(unit==='Pct'?100:1)).toFixed(2)}${unit==='Pct'?(signed?' pp':'%'):''}`;
+export function renderNumericalPanel(card:NumericalEvidence):HTMLElement {
+  const section=node('section');section.className='rk-panel rn-integrated';section.append(node('h4','Numerical profile'));
+  const scope=node('p',`${period(card.season)} · ${card.situation} · ${card.games} GP · ${card.minutes.toFixed(1)} minutes · ${card.eligible_peers} peers`);scope.className='rk-stat-period';section.append(scope);
+  const leading=node('p');leading.className='rn-leading';leading.append(node('small','Leading recorded signals'),document.createTextNode(card.leading.map(key=>card.facets.find(f=>f.measurement.key===key)?.label??key).join(' · ')));section.append(leading);
+  const facets=node('div');facets.className='rn-facets';for(const f of card.facets){const m=f.measurement;const tile=node('div');tile.className='rn-facet';tile.setAttribute('data-numerical-key',m.key);tile.title=m.interpretation;
+    tile.append(node('span',f.label),node('strong',rank(m.percentile)),node('b',`${value(m.unit,m.value)}${m.unit==='Per60'?' /60':''}`));
+    if(m.percentile!==null){const track=node('i');track.className='rk-mini-track';track.setAttribute('aria-hidden','true');const fill=node('i');fill.style.width=`${m.percentile}%`;track.append(fill);tile.append(track);}tile.append(node('small',`n=${m.measured_peers}`));facets.append(tile);
+  }section.append(facets);
+  const note=node('p','Raw-value percentiles, not skill grades. Leading signals are the highest ranks among a fixed involvement/output shortlist.');note.className='rk-footnote';section.append(note);
+  const details=node('details');details.append(node('summary',`All ${card.metrics.length} numerical measures`));const table=node('table');table.className='rn-inline-table';const body=node('tbody');for(const m of card.metrics){const row=node('tr');const label=node('td',m.label);label.title=m.interpretation;row.append(label,node('td',value(m.unit,m.value)),node('td',rank(m.percentile)));body.append(row);}table.append(body);details.append(table);section.append(details);
+  const credit=node('p',card.source_credit);credit.className='rk-footnote';section.append(credit);
+  const compare=node('button','Compare this numerical profile');compare.type='button';compare.onclick=()=>document.dispatchEvent(new CustomEvent('rinkcraft-numerical-compare',{detail:{player_id:card.player_id}}));section.append(compare);return section;
+}
+export function renderNumericalComparison(c:NumericalComparison):HTMLElement {
+  const section=node('section');section.className='rn-comparison';section.append(node('h3',`${c.left.name} / ${c.right.name}`),node('p',`${period(c.season)} · ${c.left.group} · ${c.left.situation} · MoneyPuck.com`));
+  const scroll=node('div');scroll.className='rn-comparison-scroll';scroll.setAttribute('role','region');scroll.setAttribute('aria-label','Numerical comparison table');scroll.tabIndex=0;const table=node('table');const head=node('tr');for(const label of ['Measurement',c.left.name,'Peer ranks · 0 → 100',c.right.name,'Left − right'])head.append(node('th',label));const thead=node('thead');thead.append(head);table.append(thead);const body=node('tbody');
+  for(const r of c.rows.filter(r=>c.left.facets.some(f=>f.measurement.key===r.key))){const row=node('tr');const left=node('td',value(r.unit,r.left));left.className='rn-left';left.append(node('small',rank(r.left_percentile)));const right=node('td',value(r.unit,r.right));right.className='rn-right';right.append(node('small',rank(r.right_percentile)));const axis=node('td');axis.className='rn-comparison-axis';if(r.left_percentile!==null&&r.right_percentile!==null){const track=node('div');track.className='rn-dumbbell';for(const [cls,p]of [['rn-left-dot',r.left_percentile],['rn-right-dot',r.right_percentile]] as const){const dot=node('i');dot.className=cls;dot.style.left=`${p}%`;track.append(dot);}axis.append(track);}const difference=node('td',value(r.unit,r.difference,true));difference.append(node('small',r.percentile_difference===null?'—':`${r.percentile_difference>=0?'+':''}${r.percentile_difference.toFixed(1)} pp`));row.append(node('td',r.label),left,axis,right,difference);body.append(row);}table.append(body);scroll.append(table);section.append(scroll,node('p','Differences describe measured rates and raw percentile ranks. They are not differences in overall ability or class fit.'));return section;
+}

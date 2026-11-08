@@ -14,13 +14,13 @@ pub struct InputRow {
     pub seconds: f64,
     pub values: BTreeMap<String, f64>,
 }
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Source {
     pub url: String,
     pub sha256: String,
     pub bytes: usize,
 }
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct NumericalCatalog {
     pub schema: String,
     pub protocol: String,
@@ -32,7 +32,7 @@ pub struct NumericalCatalog {
     pub missing_players: Vec<u32>,
     pub limitations: Vec<String>,
 }
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct NumericalProfile {
     pub player_id: u32,
     pub name: String,
@@ -44,7 +44,7 @@ pub struct NumericalProfile {
     pub eligible_peers: usize,
     pub metrics: Vec<Measurement>,
 }
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Measurement {
     pub key: String,
     pub label: String,
@@ -244,9 +244,263 @@ pub fn build(
     ]})
 }
 
+/// Presentation projection over already computed measures; no new hockey score.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct EvidenceCard {
+    pub schema: String,
+    pub season: u32,
+    pub player_id: u32,
+    pub name: String,
+    pub group: String,
+    pub situation: String,
+    pub games: u32,
+    pub minutes: f64,
+    pub eligible_peers: usize,
+    pub facets: Vec<EvidenceFacet>,
+    pub leading: Vec<String>,
+    pub metrics: Vec<Measurement>,
+    pub source_credit: String,
+    pub sources: Vec<Source>,
+    pub unknowns: Vec<String>,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct EvidenceFacet {
+    pub label: String,
+    pub measurement: Measurement,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct NumericalComparison {
+    pub season: u32,
+    pub left: EvidenceCard,
+    pub right: EvidenceCard,
+    pub rows: Vec<ComparisonRow>,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ComparisonRow {
+    pub key: String,
+    pub label: String,
+    pub unit: String,
+    pub left: Option<f64>,
+    pub right: Option<f64>,
+    pub left_percentile: Option<f64>,
+    pub right_percentile: Option<f64>,
+    pub difference: Option<f64>,
+    pub percentile_difference: Option<f64>,
+    pub interpretation: String,
+}
+impl NumericalCatalog {
+    pub fn validate(&self) -> Result<(), String> {
+        if self.schema != SCHEMA || self.protocol != PROTOCOL || self.competition != "regular" {
+            return Err("unsupported numerical catalog".into());
+        }
+        let year = self.season / 10000;
+        if !(1900..=2200).contains(&year) || self.season % 10000 != year + 1 {
+            return Err("invalid numerical season".into());
+        }
+        let mut ids = BTreeSet::new();
+        for source in &self.sources {
+            if !source.url.starts_with("https://")
+                || source.sha256.len() != 64
+                || !source.sha256.bytes().all(|b| b.is_ascii_hexdigit())
+            {
+                return Err("invalid numerical source".into());
+            }
+        }
+        for p in &self.profiles {
+            if !ids.insert(p.player_id)
+                || p.player_id == 0
+                || !matches!(p.group.as_str(), "Forwards" | "Defense" | "Goalies")
+                || !p.minutes.is_finite()
+                || p.minutes < 0.
+                || p.situation != if p.group == "Goalies" { "all" } else { "5on5" }
+            {
+                return Err("invalid numerical profile".into());
+            }
+            let mut keys = BTreeSet::new();
+            for m in &p.metrics {
+                if !keys.insert(&m.key)
+                    || [m.value, m.percentile, m.numerator, m.denominator]
+                        .into_iter()
+                        .flatten()
+                        .any(|v| !v.is_finite())
+                    || m.percentile.is_some_and(|v| !(0.0..=100.0).contains(&v))
+                    || m.measured_peers > p.eligible_peers
+                {
+                    return Err("invalid numerical measurement".into());
+                }
+            }
+        }
+        Ok(())
+    }
+    /// Latest supplied snapshot must not be later than the caller's active window.
+    pub fn card(&self, pid: u32, ceiling: Option<u32>) -> Result<Option<EvidenceCard>, String> {
+        self.validate()?;
+        if ceiling.is_some_and(|s| self.season > s) {
+            return Ok(None);
+        }
+        let Some(p) = self.profiles.iter().find(|p| p.player_id == pid) else {
+            return Ok(None);
+        };
+        let keys: Vec<(&str, &str)> = if p.group == "Goalies" {
+            vec![
+                ("gsax-per-60", "Saving vs model"),
+                ("save-fraction", "Save outcome"),
+                ("goalie-threat-rate", "Threat faced"),
+                ("goalie-shot-workload", "Shot workload"),
+            ]
+        } else {
+            vec![
+                ("primary-assists-per-60", "Primary-assist output"),
+                ("shots-per-60", "Shot volume"),
+                ("ixg-per-60", "Shot-opportunity volume"),
+                ("shot-quality", "Average shot quality"),
+                ("contact-per-60", "Recorded contact"),
+                ("goals-above-xg-per-60", "Observed conversion residual"),
+            ]
+        };
+        let facets = keys
+            .iter()
+            .filter_map(|(key, label)| {
+                p.metrics
+                    .iter()
+                    .find(|m| m.key == *key)
+                    .map(|m| EvidenceFacet {
+                        label: (*label).into(),
+                        measurement: m.clone(),
+                    })
+            })
+            .collect();
+        let leader_keys = if p.group == "Goalies" {
+            vec!["gsax-per-60"]
+        } else {
+            vec![
+                "primary-assists-per-60",
+                "shots-per-60",
+                "ixg-per-60",
+                "contact-per-60",
+            ]
+        };
+        let mut leaders: Vec<_> = leader_keys
+            .iter()
+            .enumerate()
+            .filter_map(|(i, key)| {
+                p.metrics
+                    .iter()
+                    .find(|m| m.key == *key && m.state == "ranked")
+                    .and_then(|m| m.percentile.map(|rank| (i, *key, rank)))
+            })
+            .collect();
+        leaders.sort_by(|a, b| b.2.total_cmp(&a.2).then(a.0.cmp(&b.0)));
+        let leading = leaders
+            .into_iter()
+            .take(2)
+            .map(|(_, key, _)| key.to_string())
+            .collect();
+        Ok(Some(EvidenceCard {
+            schema: "icelines.rinkcraft-evidence-card.v1".into(),
+            season: self.season,
+            player_id: p.player_id,
+            name: p.name.clone(),
+            group: p.group.clone(),
+            situation: p.situation.clone(),
+            games: p.games,
+            minutes: p.minutes,
+            eligible_peers: p.eligible_peers,
+            facets,
+            leading,
+            metrics: p.metrics.clone(),
+            source_credit: self.source_credit.clone(),
+            sources: self.sources.clone(),
+            unknowns: if p.group == "Goalies" {
+                vec![
+                    "Depth, movement and recovery mechanics",
+                    "Rebound decisions and puck exchanges",
+                ]
+            } else {
+                vec![
+                    "Controlled entries/exits and carry/pass/dump choice",
+                    "Direction, passing deception and off-puck options",
+                    "Coverage duties and teammate relationships",
+                ]
+            }
+            .into_iter()
+            .map(str::to_string)
+            .collect(),
+        }))
+    }
+    pub fn compare(&self, left: u32, right: u32) -> Result<NumericalComparison, String> {
+        if left == right {
+            return Err("choose two different players".into());
+        }
+        let left = self
+            .card(left, None)?
+            .ok_or("left player has no numerical snapshot")?;
+        let right = self
+            .card(right, None)?
+            .ok_or("right player has no numerical snapshot")?;
+        if left.group != right.group || left.situation != right.situation {
+            return Err("compare players in the same position group and situation".into());
+        }
+        let mut rows = Vec::new();
+        for a in &left.metrics {
+            let Some(b) = right.metrics.iter().find(|m| m.key == a.key) else {
+                continue;
+            };
+            if a.unit != b.unit || a.reference_sha256 != b.reference_sha256 {
+                return Err("comparison requires the same units and reference population".into());
+            }
+            rows.push(ComparisonRow {
+                key: a.key.clone(),
+                label: a.label.clone(),
+                unit: a.unit.clone(),
+                left: a.value,
+                right: b.value,
+                left_percentile: a.percentile,
+                right_percentile: b.percentile,
+                difference: a.value.zip(b.value).map(|(a, b)| a - b),
+                percentile_difference: a.percentile.zip(b.percentile).map(|(a, b)| a - b),
+                interpretation: a.interpretation.clone(),
+            });
+        }
+        Ok(NumericalComparison {
+            season: self.season,
+            left,
+            right,
+            rows,
+        })
+    }
+}
+pub fn parse_catalog(text: &str) -> Result<NumericalCatalog, String> {
+    if text.len() > 2 * 1024 * 1024 {
+        return Err("numerical catalog exceeds 2 MiB".into());
+    }
+    let c: NumericalCatalog = serde_json::from_str(text).map_err(|e| e.to_string())?;
+    c.validate()?;
+    Ok(c)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn numerical_card_and_comparison_keep_scope_and_do_not_create_ability_scores() {
+        let c = build(&rows(), 20242025, &[], vec![]).unwrap();
+        let card = c.card(25, Some(20252026)).unwrap().unwrap();
+        assert_eq!(card.leading[0], "primary-assists-per-60");
+        assert_eq!(card.facets.len(), 6);
+        assert!(c.card(25, Some(20232024)).unwrap().is_none());
+        assert!(c.card(999, None).unwrap().is_none());
+        let comparison = c.compare(25, 1).unwrap();
+        assert_eq!(comparison.rows[0].difference, Some(3.6));
+        assert_eq!(comparison.rows[0].percentile_difference, Some(96.));
+        assert!(c.compare(1, 1).is_err());
+        let mut other = c.clone();
+        other.profiles[0].metrics[0].reference_sha256 = "different".into();
+        assert!(other.compare(25, 1).is_err());
+        let mut invalid = c;
+        invalid.profiles[0].metrics[0].percentile = Some(101.);
+        assert!(invalid.validate().is_err());
+    }
     fn rows() -> Vec<InputRow> {
         (1..=25)
             .map(|id| InputRow {

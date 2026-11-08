@@ -58,6 +58,38 @@ struct NumbersTemplate {
     sources: Vec<icelines_core::view_model::rinkcraft_numbers::Source>,
     limits: Vec<String>,
     cards: Vec<NumberCard>,
+    comparison: Option<ComparisonView>,
+    choices: Vec<NumberChoice>,
+    right_choices: Vec<NumberChoice>,
+    left_id: u32,
+}
+#[derive(Default, Deserialize)]
+pub struct NumberParams {
+    left: Option<u32>,
+    right: Option<u32>,
+}
+struct NumberChoice {
+    id: u32,
+    name: String,
+    selected: bool,
+}
+struct ComparisonView {
+    left: String,
+    right: String,
+    scope: String,
+    rows: Vec<ComparisonViewRow>,
+}
+struct ComparisonViewRow {
+    label: String,
+    left: String,
+    right: String,
+    gap: String,
+    point_gap: String,
+    left_p: String,
+    right_p: String,
+    left_fill: f64,
+    right_fill: f64,
+    ranked: bool,
 }
 struct NumberCard {
     id: u32,
@@ -90,8 +122,129 @@ pub async fn get_numbers_json() -> Result<Response, WebError> {
         serde_json::json!({"source_state":"explicit_local_measurement_catalog","live_fetch":false}),
     ))
 }
-pub async fn get_numbers(State(state): State<WebState>) -> Result<Response, WebError> {
+pub async fn get_numerical_comparison(
+    Query(params): Query<NumberParams>,
+) -> Result<Response, WebError> {
+    let bad = |message: &str| WebError::BadParam {
+        param: "comparison".into(),
+        message: message.into(),
+        hint: None,
+    };
+    let left = params
+        .left
+        .ok_or_else(|| bad("left player id is required"))?;
+    let right = params
+        .right
+        .ok_or_else(|| bad("right player id is required"))?;
+    let comparison = numerical_catalog()?
+        .compare(left, right)
+        .map_err(|message| bad(&message))?;
+    Ok(crate::api::json_data_meta(
+        "rinkcraft-numerical-comparison",
+        comparison,
+        serde_json::json!({"live_fetch":false}),
+    ))
+}
+pub async fn get_numbers(
+    State(state): State<WebState>,
+    Query(params): Query<NumberParams>,
+) -> Result<Response, WebError> {
     let catalog = numerical_catalog()?;
+    if [params.left, params.right]
+        .into_iter()
+        .flatten()
+        .any(|id| !catalog.profiles.iter().any(|p| p.player_id == id))
+    {
+        return Err(WebError::BadParam {
+            param: "comparison".into(),
+            message: "player has no numerical snapshot".into(),
+            hint: None,
+        });
+    }
+    let left = catalog
+        .profiles
+        .iter()
+        .find(|p| Some(p.player_id) == params.left)
+        .or_else(|| catalog.profiles.first());
+    let right = left.and_then(|left| {
+        catalog
+            .profiles
+            .iter()
+            .find(|p| Some(p.player_id) == params.right)
+            .or_else(|| {
+                catalog
+                    .profiles
+                    .iter()
+                    .find(|p| p.group == left.group && p.player_id != left.player_id)
+            })
+    });
+    let choices = catalog
+        .profiles
+        .iter()
+        .map(|p| NumberChoice {
+            id: p.player_id,
+            name: format!("{} · {}", p.name, p.group),
+            selected: left.is_some_and(|l| l.player_id == p.player_id),
+        })
+        .collect();
+    let right_choices = catalog
+        .profiles
+        .iter()
+        .filter(|p| left.is_some_and(|l| p.group == l.group && p.player_id != l.player_id))
+        .map(|p| NumberChoice {
+            id: p.player_id,
+            name: p.name.clone(),
+            selected: right.is_some_and(|r| r.player_id == p.player_id),
+        })
+        .collect();
+    let comparison = left
+        .zip(right)
+        .map(|(l, r)| catalog.compare(l.player_id, r.player_id))
+        .transpose()
+        .map_err(|message| WebError::BadParam {
+            param: "comparison".into(),
+            message,
+            hint: None,
+        })?
+        .map(|c| {
+            let rows = c
+                .rows
+                .iter()
+                .filter(|r| c.left.facets.iter().any(|f| f.measurement.key == r.key))
+                .map(|r| ComparisonViewRow {
+                    label: r.label.clone(),
+                    left: comparison_value(&r.unit, r.left, false),
+                    right: comparison_value(&r.unit, r.right, false),
+                    gap: comparison_value(&r.unit, r.difference, true),
+                    point_gap: r
+                        .percentile_difference
+                        .map(|v| format!("{v:+.1} pp"))
+                        .unwrap_or_else(|| "—".into()),
+                    left_p: r
+                        .left_percentile
+                        .map(percentile_label)
+                        .unwrap_or_else(|| "Unranked".into()),
+                    right_p: r
+                        .right_percentile
+                        .map(percentile_label)
+                        .unwrap_or_else(|| "Unranked".into()),
+                    left_fill: r.left_percentile.unwrap_or_default(),
+                    right_fill: r.right_percentile.unwrap_or_default(),
+                    ranked: r.left_percentile.is_some() && r.right_percentile.is_some(),
+                })
+                .collect();
+            ComparisonView {
+                scope: format!(
+                    "{} · {} · {}",
+                    season_label(c.season),
+                    c.left.situation,
+                    c.left.group
+                ),
+                left: c.left.name,
+                right: c.right.name,
+                rows,
+            }
+        });
     let cards = catalog
         .profiles
         .iter()
@@ -129,6 +282,10 @@ pub async fn get_numbers(State(state): State<WebState>) -> Result<Response, WebE
         })
         .collect();
     NumbersTemplate {
+        left_id: left.map(|p| p.player_id).unwrap_or_default(),
+        comparison,
+        choices,
+        right_choices,
         active_label: state.config.read().await.active_label.clone(),
         period: season_label(catalog.season),
         credit: catalog.source_credit,
@@ -139,6 +296,30 @@ pub async fn get_numbers(State(state): State<WebState>) -> Result<Response, WebE
     .render()
     .map(|s| Html(s).into_response())
     .map_err(|e| WebError::Internal(e.into()))
+}
+fn comparison_value(unit: &str, value: Option<f64>, signed: bool) -> String {
+    value
+        .map(|v| {
+            let v = if unit == "Pct" { v * 100. } else { v };
+            format!(
+                "{}{}",
+                if signed {
+                    format!("{v:+.2}")
+                } else {
+                    format!("{v:.2}")
+                },
+                if unit == "Pct" {
+                    if signed {
+                        " pp"
+                    } else {
+                        "%"
+                    }
+                } else {
+                    ""
+                }
+            )
+        })
+        .unwrap_or_else(|| "—".into())
 }
 pub async fn get_atlas(State(state): State<WebState>) -> Result<Response, WebError> {
     let mut cards = Vec::new();
@@ -255,6 +436,22 @@ async fn profile(
         let mut profile = build_rinkcraft_stat_profile(&repo, req)?;
         profile.source_windows = sources;
         icelines_fetch::rinkcraft_profile::attach_attribute_seasons(&mut profile, &store)?;
+        if req.season_type == SeasonType::Regular {
+            if let Some(path) = std::env::var_os("ICELINES_RINKCRAFT_NUMBERS") {
+                let catalog =
+                    icelines_fetch::rinkcraft_numbers::load_catalog(std::path::Path::new(&path))?;
+                if profile
+                    .included_seasons
+                    .iter()
+                    .any(|s| s.0 == catalog.season)
+                    && character_season.is_none_or(|s| s.0 == catalog.season)
+                {
+                    profile.numerical_evidence = catalog
+                        .card(req.player_id.0, req.last_season.map(|s| s.0))
+                        .map_err(anyhow::Error::msg)?;
+                }
+            }
+        }
         if let Some(path) = std::env::var_os("ICELINES_RINKCRAFT_SHEETS") {
             let catalog = icelines_fetch::rinkcraft_character::load_character_catalog(
                 std::path::Path::new(&path),
@@ -307,6 +504,7 @@ pub async fn get_json(
 #[derive(Template)]
 #[template(path = "rinkcraft.html")]
 struct ProfileTemplate {
+    numerical: Option<EvidenceView>,
     stat_line: Vec<StatCell>,
     feature_cards: Vec<FeatureCard>,
     card_stats_context: String,
@@ -325,6 +523,99 @@ struct ProfileTemplate {
     sources_json: String,
     changes: Vec<ChangeSection>,
     absent_json: String,
+}
+struct EvidenceView {
+    scope: String,
+    leading: String,
+    facets: Vec<FacetView>,
+    metrics: Vec<NumberRow>,
+    credit: String,
+}
+struct FacetView {
+    label: String,
+    key: String,
+    value: String,
+    rank: String,
+    fill: f64,
+    ranked: bool,
+    peers: usize,
+    meaning: String,
+}
+fn measurement_value(m: &icelines_core::view_model::rinkcraft_numbers::Measurement) -> String {
+    m.value
+        .map(|v| {
+            if m.unit == "Pct" {
+                format!("{:.2}%", v * 100.)
+            } else {
+                format!("{v:.2}")
+            }
+        })
+        .unwrap_or_else(|| "—".into())
+}
+fn evidence_view(c: &icelines_core::view_model::rinkcraft_numbers::EvidenceCard) -> EvidenceView {
+    EvidenceView {
+        scope: format!(
+            "{} · {} · {} GP · {:.1} minutes · {} peers",
+            season_label(c.season),
+            c.situation,
+            c.games,
+            c.minutes,
+            c.eligible_peers
+        ),
+        leading: c
+            .leading
+            .iter()
+            .filter_map(|key| {
+                c.facets
+                    .iter()
+                    .find(|f| f.measurement.key == *key)
+                    .map(|f| f.label.clone())
+            })
+            .collect::<Vec<_>>()
+            .join(" · "),
+        facets: c
+            .facets
+            .iter()
+            .map(|f| FacetView {
+                label: f.label.clone(),
+                key: f.measurement.key.clone(),
+                value: format!(
+                    "{}{}",
+                    measurement_value(&f.measurement),
+                    if f.measurement.unit == "Per60" {
+                        " /60"
+                    } else {
+                        ""
+                    }
+                ),
+                rank: f
+                    .measurement
+                    .percentile
+                    .map(percentile_label)
+                    .unwrap_or_else(|| "Unranked".into()),
+                fill: f.measurement.percentile.unwrap_or_default(),
+                ranked: f.measurement.percentile.is_some(),
+                peers: f.measurement.measured_peers,
+                meaning: f.measurement.interpretation.clone(),
+            })
+            .collect(),
+        metrics: c
+            .metrics
+            .iter()
+            .map(|m| NumberRow {
+                label: m.label.clone(),
+                domain: m.domain.clone(),
+                value: measurement_value(m),
+                percentile: m
+                    .percentile
+                    .map(percentile_label)
+                    .unwrap_or_else(|| "Unranked".into()),
+                peers: m.measured_peers,
+                meaning: m.interpretation.clone(),
+            })
+            .collect(),
+        credit: c.source_credit.clone(),
+    }
 }
 struct AttributeCard {
     percentile_short: String,
@@ -626,6 +917,7 @@ pub async fn get_html(
         })
         .unwrap_or_else(|| "Statistical snapshot unavailable".into());
     let template = ProfileTemplate {
+        numerical: view.numerical_evidence.as_ref().map(evidence_view),
         stat_line: stat_line(&view, p.season),
         feature_cards: feature_cards(&view, p.season),
         card_stats_context,

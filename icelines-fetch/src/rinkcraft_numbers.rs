@@ -129,12 +129,7 @@ pub fn load_catalog(path: &Path) -> anyhow::Result<NumericalCatalog> {
         std::fs::metadata(path)?.len() <= 2 * 1024 * 1024,
         "numerical catalog exceeds 2 MiB"
     );
-    let c: NumericalCatalog = serde_json::from_slice(&std::fs::read(path)?)?;
-    anyhow::ensure!(
-        c.schema == core::SCHEMA && c.protocol == core::PROTOCOL,
-        "unsupported numerical catalog"
-    );
-    Ok(c)
+    core::parse_catalog(&std::fs::read_to_string(path)?).map_err(anyhow::Error::msg)
 }
 
 #[cfg(test)]

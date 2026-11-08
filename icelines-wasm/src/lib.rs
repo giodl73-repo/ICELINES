@@ -299,6 +299,30 @@ impl BrowserEngine {
         serde_json::to_string(&profile).map_err(|e| JsValue::from_str(&e.to_string()))
     }
     /// Curated research input is explicitly supplied; no stat-to-class inference or IO.
+    pub fn numerical_evidence(
+        &self,
+        catalog: &str,
+        player_id: u32,
+        ceiling: Option<u32>,
+    ) -> Result<String, JsValue> {
+        let c = icelines_core::view_model::rinkcraft_numbers::parse_catalog(catalog)
+            .map_err(|e| JsValue::from_str(&e))?;
+        let card = c
+            .card(player_id, ceiling)
+            .map_err(|e| JsValue::from_str(&e))?;
+        serde_json::to_string(&card).map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+    pub fn numerical_comparison(
+        &self,
+        catalog: &str,
+        left: u32,
+        right: u32,
+    ) -> Result<String, JsValue> {
+        let c = icelines_core::view_model::rinkcraft_numbers::parse_catalog(catalog)
+            .map_err(|e| JsValue::from_str(&e))?;
+        let comparison = c.compare(left, right).map_err(|e| JsValue::from_str(&e))?;
+        serde_json::to_string(&comparison).map_err(|e| JsValue::from_str(&e.to_string()))
+    }
     pub fn character_sheet(
         &self,
         catalog: &str,

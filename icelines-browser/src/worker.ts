@@ -5,6 +5,8 @@ interface Engine {
   player_detail(id: number): string; current_season(): number; free(): void;
   rinkcraft_profile(request: string): string;
   character_sheet(catalog:string,playerId:number,season:number):string;
+  numerical_evidence(catalog:string,playerId:number,ceiling?:number):string;
+  numerical_comparison(catalog:string,left:number,right:number):string;
   schedule_week(bytes: Uint8Array): string;
   select_resident(revision: string): void; resident_revisions(): string; unload_active(): void;
 }
@@ -47,6 +49,8 @@ self.onmessage = (event: MessageEvent<EngineRequest>) => {
         case 'detail': response.value = JSON.parse(engine.player_detail(Number(request.payload))); break;
         case 'rinkcraftProfile': response.value = JSON.parse(engine.rinkcraft_profile(JSON.stringify(request.payload))); break;
         case 'characterSheet': {const p=request.payload as {catalog:unknown;player_id:number;season:number};response.value=JSON.parse(engine.character_sheet(JSON.stringify(p.catalog),p.player_id,p.season));break;}
+        case 'numericalEvidence': {const p=request.payload as {catalog:unknown;player_id:number;ceiling:number|null};response.value=JSON.parse(engine.numerical_evidence(JSON.stringify(p.catalog),p.player_id,p.ceiling??undefined));break;}
+        case 'numericalComparison': {const p=request.payload as {catalog:unknown;left:number;right:number};response.value=JSON.parse(engine.numerical_comparison(JSON.stringify(p.catalog),p.left,p.right));break;}
         case 'currentSeason': response.value = engine.current_season(); break;
         case 'schedule': response.value = JSON.parse(engine.schedule_week(new Uint8Array(request.payload as ArrayBuffer))); break;
         case 'selectResident': engine.select_resident(String(request.payload)); response.value = true; break;

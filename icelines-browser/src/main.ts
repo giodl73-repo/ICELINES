@@ -4,6 +4,8 @@ import { PlayerComparison, renderComparison } from './comparison.js';
 import type { ComparisonContext } from './comparison.js';
 import { renderPlayerHistory } from './player-history.js';
 import {readCharacterCatalog} from './rinkcraft-character.js';
+import {readNumericalCatalog,renderNumericalComparison} from './rinkcraft-numbers.js';
+import type {NumericalEvidence,NumericalComparison} from './rinkcraft-numbers.js';
 import type {CharacterSheet} from './rinkcraft-character.js';
 import { renderRinkcraftProfile } from './rinkcraft-profile.js';
 import type { RinkcraftProfile } from './rinkcraft-profile.js';
@@ -42,6 +44,17 @@ const resident = new Map<string, Dataset>();
 let saved: SavedDatasetEntry[] = [];
 let librarySequence = 0;
 let result: QueryResult | undefined;
+void readNumericalCatalog().then(c=>{
+  if(!c)return;
+  const left=element<HTMLSelectElement>('rinkcraft-numeric-left');const right=element<HTMLSelectElement>('rinkcraft-numeric-right');
+  const option=(id:number,name:string):HTMLOptionElement=>{const o=document.createElement('option');o.value=String(id);o.textContent=name;return o;};
+  for(const p of c.profiles)left.append(option(p.player_id,`${p.name} · ${p.group}`));
+  const updateRight=():void=>{const chosen=c.profiles.find(p=>p.player_id===Number(left.value));right.replaceChildren(...c.profiles.filter(p=>p.group===chosen?.group&&p.player_id!==chosen.player_id).map(p=>option(p.player_id,p.name)));};
+  const draw=async():Promise<void>=>{const comparison=await engine.request<NumericalComparison>('numericalComparison',{catalog:c,left:Number(left.value),right:Number(right.value)});element('rinkcraft-numeric-result').replaceChildren(renderNumericalComparison(comparison));};
+  left.onchange=()=>{updateRight();};updateRight();element('rinkcraft-numeric-controls').hidden=false;
+  element('rinkcraft-numeric-compare').onclick=()=>{void perform(draw);};
+  document.addEventListener('rinkcraft-numerical-compare',event=>{const pid=(event as CustomEvent<{player_id:number}>).detail.player_id;left.value=String(pid);updateRight();void perform(async()=>{await draw();element<HTMLDialogElement>('player-dialog').close();element<HTMLDetailsElement>('rinkcraft-atlas').open=true;element<HTMLDetailsElement>('rinkcraft-numeric-controls').open=true;element('rinkcraft-numeric-controls').scrollIntoView({block:'start'});});});
+}).catch(error=>{element('rinkcraft-numeric-result').textContent=String(error);});
 void readCharacterCatalog().then(raw => {
   if (!raw) { element('rinkcraft-atlas').hidden = true; return; }
   const c = raw as {showcase_notes?:string;classes:{id:string;name:string}[];assessments:{featured?:boolean;player_id:number;player_name:string;primary:{class_id:string};specialty:string}[]};
@@ -269,6 +282,8 @@ async function player(row: PlayerRow): Promise<void> {
   const profile = await engine.request<RinkcraftProfile>('rinkcraftProfile', { player_id:row.player_id, season_type:snapshot.season_type, first_season:null,last_season:null });
   const characterCatalog=await readCharacterCatalog();
   if(characterCatalog) profile.character_sheet=await engine.request<CharacterSheet|undefined>('characterSheet',{catalog:characterCatalog,player_id:row.player_id,season:snapshot.season})??undefined;
+  const numericalCatalog=await readNumericalCatalog();
+  if(numericalCatalog&&snapshot.season_type==='regular')profile.numerical_evidence=await engine.request<NumericalEvidence|undefined>('numericalEvidence',{catalog:numericalCatalog,player_id:row.player_id,ceiling:snapshot.season})??undefined;
   if (result !== snapshot || generation !== engine.generation) return;
   element('player-name').textContent = row.name;
 

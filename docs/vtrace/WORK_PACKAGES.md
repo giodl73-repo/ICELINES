@@ -1,5 +1,13 @@
 # Work Packages
 
+## WP-RINKCRAFT-07 (CHG-131)
+
+Deliver shared numerical card/comparison projections, integrated character views,
+compatible pair controls, explicit temporal scope and prepared offline artifact.
+Local implementation/acceptance complete within the validation report's scope.
+No source acquisition, class relabeling, validated skill model, chemistry engine
+or publication. See `docs/rinkcraft-integrated-numerical-validation-2026-11-08.md`.
+
 ## WP-RINKCRAFT-06 (CHG-130)
 
 Compute source-backed numerical evidence independently of class dossiers and
