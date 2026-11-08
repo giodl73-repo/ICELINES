@@ -142,6 +142,22 @@ fn should_auto_setup(
 
 async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
     match cli.command {
+        Commands::Profile {
+            player,
+            first_season,
+            last_season,
+            season_type,
+            json,
+        } => {
+            commands::profile::run(
+                player,
+                first_season,
+                last_season,
+                season_type.to_core(),
+                json,
+            )
+            .await?;
+        }
         // ── Phase 1 implemented commands ──────────────────────────────────────
         Commands::Fetch(sub) => {
             commands::fetch::run(sub).await?;

@@ -440,7 +440,11 @@ pub fn load_into_repo(
                 &season_str,
             )
             .or_else(|_| {
-                store.read_tier::<Vec<SkaterRealtime>>(&SnapshotTier::Realtime, "realtime.json")
+                store.read_tier_for_season::<Vec<SkaterRealtime>>(
+                    &SnapshotTier::Realtime,
+                    "realtime.json",
+                    &season_str,
+                )
             })
             .unwrap_or_default(),
         SeasonType::Playoff => Vec::new(),
@@ -940,8 +944,18 @@ pub fn load_player_career_into_repo(
     repo: &mut StatsRepository,
     pid: PlayerId,
 ) -> Result<usize, LoadError> {
+    let store = crate::snapshot::SnapshotStore::new(crate::snapshot::SnapshotStore::default_root());
+    load_player_career_into_repo_with_store(repo, pid, &store)
+}
+
+/// Career fan-out using an explicitly selected local store (including in tests).
+pub fn load_player_career_into_repo_with_store(
+    repo: &mut StatsRepository,
+    pid: PlayerId,
+    store: &crate::snapshot::SnapshotStore,
+) -> Result<usize, LoadError> {
     use crate::bundled;
-    use crate::snapshot::{SnapshotStore, SnapshotTier};
+    use crate::snapshot::SnapshotTier;
     use icelines_core::season_stats::SeasonType;
 
     let mut inserted = 0usize;
@@ -960,7 +974,6 @@ pub fn load_player_career_into_repo(
     // the fan-out passed None and overwrote the active-season row
     // that DID have realtime loaded. Fix: read snapshot realtime per
     // season (where it exists) and merge it into the upsert.
-    let store = SnapshotStore::new(SnapshotStore::default_root());
     let mut realtime_cache: std::collections::HashMap<&'static str, Vec<SkaterRealtime>> =
         std::collections::HashMap::new();
 
@@ -970,6 +983,30 @@ pub fn load_player_career_into_repo(
             Err(_) => continue,
         };
         let season = Season(season_u32);
+
+        // Goalies use their own summary species. Previously this function only
+        // loaded skaters despite being called by historical goalie consumers.
+        let mut found_goalie = false;
+        for (ty, rows) in [
+            (SeasonType::Regular, bundled::get_goalie_stats(season_id)),
+            (
+                SeasonType::Playoff,
+                bundled::get_playoff_goalie_stats(season_id),
+            ),
+        ] {
+            if let Some(g) = rows.and_then(|rows| rows.into_iter().find(|g| g.player_id == pid.0)) {
+                if !identity_inserted {
+                    repo.upsert_identity(build_goalie_identity(&g))?;
+                    identity_inserted = true;
+                }
+                repo.upsert_stats(build_goalie_season_stats(pid, season, ty, &g)?)?;
+                inserted += 1;
+                found_goalie = true;
+            }
+        }
+        if found_goalie {
+            continue;
+        }
 
         // Lazy-resolve realtime for this season once.
         let realtime_for_season: &Vec<SkaterRealtime> =

@@ -1,5 +1,11 @@
 # Trace Matrix
 
+CHG-125: REQ-STAT-001 / REQ-STAT-002 / REQ-DATA-001 / REQ-DATA-DEPTH-001
+→ IF-RINKCRAFT-PROFILE-001 → core stat-profile view, fetch report hydration and CLI
+adapter → synthetic aggregation/missingness tests, season-fence/report regressions,
+CLI contract checks and recorded actual player rehearsals. Validation scope and
+remaining limits: `signals/roles/check/rinkcraft-stat-profile-2026-11-08.md`.
+
 ## Scope
 
 Repo or feature: `icelines` repo-baseline VTRACE adoption.

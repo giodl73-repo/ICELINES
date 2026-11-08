@@ -1,5 +1,18 @@
 # Change Control
 
+## CHG-125 — Rinkcraft statistical evidence profiles (2026-11-08)
+
+Add `profile PLAYER --first-season/--last-season --type --json` over shared
+core/catalog semantics and canonical report-aware loading. Schema and limits:
+`design/specs/rinkcraft-stat-profile.md`; interface IF-RINKCRAFT-PROFILE-001.
+Preserve era/trade/missingness, strict aggregation and denominator evidence;
+season differences are descriptive, not role-change or causal classification.
+During actual career rehearsal, discovered regular/goalie active-snapshot shadowing
+of other seasons; fence those reads and realtime fallback by requested season,
+matching the existing playoff contract. Local regression evidence required.
+CLI only; other surfaces and exact calendar-date profiling deferred. No automatic
+workflows, releases, existing-data migrations or class-score thresholds.
+
 ## Scope
 
 Repo or feature: `icelines` repo-baseline VTRACE implementation.

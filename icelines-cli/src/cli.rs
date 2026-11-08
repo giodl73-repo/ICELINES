@@ -79,6 +79,23 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
+    /// Compute a source-aware career/season statistical profile for one player.
+    Profile {
+        /// Full player name or numeric NHL player id.
+        player: String,
+        /// First whole season to include (YYYYZZZZ).
+        #[arg(long)]
+        first_season: Option<String>,
+        /// Last whole season to include (YYYYZZZZ).
+        #[arg(long)]
+        last_season: Option<String>,
+        /// Regular season or playoffs, kept separate.
+        #[arg(long = "type", value_enum, default_value_t = QuerySeasonType::Regular)]
+        season_type: QuerySeasonType,
+        /// Emit the complete shared profile, all catalog metrics and season changes.
+        #[arg(long)]
+        json: bool,
+    },
     /// Fetch NHL data from the API or a CSV export.
     #[command(subcommand)]
     Fetch(FetchSubcommand),

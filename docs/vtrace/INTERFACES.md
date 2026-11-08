@@ -1,5 +1,15 @@
 # Interfaces
 
+## IF-RINKCRAFT-PROFILE-001 (CHG-125)
+
+`icelines profile PLAYER [--first-season YYYYZZZZ] [--last-season YYYYZZZZ]
+[--type regular|playoff] [--json]` emits the shared
+`view_model::rinkcraft_profile::RinkcraftStatProfile` evidence contract. Full-name
+or numeric-id resolution, inclusive whole-season scope, latest loaded/current
+distinction, catalog cells, strict component-based summaries, missing reports,
+arithmetic season differences and unmeasured dimensions. No class scores or
+automatic blame; `design/specs/rinkcraft-stat-profile.md` defines the schema.
+
 ## Scope
 
 Repo or feature: `icelines` repo-baseline VTRACE adoption.

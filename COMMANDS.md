@@ -1,5 +1,14 @@
 # IceLines — Command Reference
 
+## Statistical evidence profile
+
+`icelines profile "Full Player Name" --json` computes career, latest-available
+and per-season catalog evidence. Use numeric NHL player id for ambiguous names,
+`--first-season YYYYZZZZ --last-season YYYYZZZZ` for inclusive whole seasons,
+and `--type playoff` for separate postseason evidence. Without `--json`, print a
+readable report. Coverage, aggregation components and arithmetic differences are
+retained; family headings do not constitute validated role scores.
+
 Visible report headings use The Rink product language—such as **The Insider —
 Morning Skate** and **The Crease — Who Gets the Net?**—without renaming the
 stable commands documented below. Branded commands such as `icecast` are

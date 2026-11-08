@@ -1,5 +1,14 @@
 # Work Packages
 
+## WP-RINKCRAFT-01 (CHG-125)
+
+Compute catalog-backed career/whole-season profiles and numeric changes through
+one shared view. Own core view, fetch hydration/season fences, CLI adapter,
+focused tests and evidence. Schema/interface scope:
+`design/specs/rinkcraft-stat-profile.md`. No TUI/Web/browser, arbitrary calendar
+date slices, validated classes, hidden scoring weights or deployment authority.
+Local gate results are recorded in the feature review before closure.
+
 ## Scope
 
 Repo or feature: `icelines` repo-baseline VTRACE implementation.
