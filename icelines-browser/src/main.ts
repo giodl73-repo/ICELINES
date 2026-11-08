@@ -3,6 +3,8 @@ import { ViewportTable } from './viewport-table.js';
 import { PlayerComparison, renderComparison } from './comparison.js';
 import type { ComparisonContext } from './comparison.js';
 import { renderPlayerHistory } from './player-history.js';
+import { renderRinkcraftProfile } from './rinkcraft-profile.js';
+import type { RinkcraftProfile } from './rinkcraft-profile.js';
 import type { PlayerHistory } from './player-history.js';
 import { initializeAppearance } from './appearance.js';
 import { EngineClient, EngineStoppedError } from './engine-client.js';
@@ -241,6 +243,7 @@ async function player(row: PlayerRow): Promise<void> {
   const context = comparisonContext();
   if (!snapshot || !context) return;
   const detail = await engine.request<{ identity: { bio: unknown }; stats: unknown; history?: PlayerHistory }>('detail', row.player_id);
+  const profile = await engine.request<RinkcraftProfile>('rinkcraftProfile', { player_id:row.player_id, season_type:snapshot.season_type, first_season:null,last_season:null });
   if (result !== snapshot || generation !== engine.generation) return;
   element('player-name').textContent = row.name;
   const summary = document.createElement('p'); summary.textContent = `${row.team} · ${row.position} · ${row.gp} games · ${row.points} points`;
@@ -273,7 +276,7 @@ async function player(row: PlayerRow): Promise<void> {
   const teamHelp = document.createElement('p');
   teamHelp.textContent = 'Team shortcuts replace your filter and set Minimum GP to 0. Players match any team stint; values remain full-season totals.';
   if (teams.childElementCount) teams.append(teamHelp);
-  element('player-body').replaceChildren(summary, actions, teams, renderPlayerHistory(detail.history), details);
+  element('player-body').replaceChildren(summary, actions, teams, renderRinkcraftProfile(profile), renderPlayerHistory(detail.history), details);
   openPlayerContext = { revision: snapshot.revision, generation };
   element<HTMLDialogElement>('player-dialog').showModal();
 }

@@ -35,3 +35,13 @@ table{border-collapse:collapse;width:100%;background:var(--surface);color:var(--
 @media print{#player-comparison{display:none!important}}
 
 .history-windows{list-style:none;padding:0}.history-window{border:1px solid var(--border);border-radius:var(--radius);margin:12px 0;padding:14px}.history-window h4{margin:0 0 8px;color:var(--fg)}.history-window p{overflow-wrap:anywhere}.history-stats{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px}.history-stats dt{color:var(--muted)}.history-stats dd{margin:0;color:var(--fg);font-variant-numeric:tabular-nums}.history-source{font-size:12px;color:var(--muted)}
+
+/* Rinkcraft renders shared Rust evidence; controls only select visible rows. */
+.rinkcraft-profile { border-top: 2px solid var(--accent, #46c7bb); margin-top: 1.5rem; padding-top: 1rem; }
+.rinkcraft-profile .actions { flex-wrap: wrap; gap: 1rem; }
+.rinkcraft-profile label { max-width: 100%; }
+.rinkcraft-families { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .6rem; margin: 1rem 0; }
+.rinkcraft-families details { border: 1px solid var(--border, #65758a); padding: .7rem; border-radius: .5rem; }
+.rinkcraft-profile .table-scroll { max-width: 100%; overflow: auto; }
+.rinkcraft-profile td { vertical-align: top; }
+.rinkcraft-profile summary { cursor: pointer; }

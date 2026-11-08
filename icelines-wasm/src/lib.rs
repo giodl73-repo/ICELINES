@@ -288,9 +288,58 @@ impl BrowserEngine {
         }))
         .map_err(|e| JsValue::from_str(&e.to_string()))
     }
+
+    /// Same profile semantics as native IceLines, limited to resident packages.
+    pub fn rinkcraft_profile(&self, request: &str) -> Result<String, JsValue> {
+        let request = serde_json::from_str(request)
+            .map_err(|e| JsValue::from_str(&format!("invalid profile request: {e}")))?;
+        let profile = self
+            .prepared_rinkcraft_profile(request)
+            .map_err(|e| JsValue::from_str(&e.to_string()))?;
+        serde_json::to_string(&profile).map_err(|e| JsValue::from_str(&e.to_string()))
+    }
 }
 
 impl BrowserEngine {
+    pub fn prepared_rinkcraft_profile(
+        &self,
+        request: icelines_core::view_model::rinkcraft_profile::RinkcraftProfileRequest,
+    ) -> Result<icelines_core::view_model::rinkcraft_profile::RinkcraftStatProfile, EngineError>
+    {
+        use icelines_core::view_model::rinkcraft_profile::build_rinkcraft_stat_profile_from_views;
+        let windows: Vec<_> = self
+            .active
+            .iter()
+            .chain(self.resident.iter().rev())
+            .collect();
+        let identity = windows
+            .iter()
+            .find_map(|w| w.repository.identity(request.player_id))
+            .ok_or_else(|| {
+                EngineError::MissingData("player identity absent from resident packages".into())
+            })?;
+        let views = windows
+            .iter()
+            .filter_map(|w| {
+                w.repository.view(
+                    request.player_id,
+                    Season(w.package.season),
+                    w.package.season_type,
+                )
+            })
+            .collect();
+        let mut profile =
+            build_rinkcraft_stat_profile_from_views(&identity.full_name, request, views)
+                .map_err(|e| EngineError::InvalidQuery(e.to_string()))?;
+        profile.source_windows = profile.included_seasons.iter().map(|s|
+            icelines_core::view_model::rinkcraft_profile::ProfileSourceWindow {
+                season:*s,season_type:request.season_type,
+                missing_reports:vec!["Package v1: realtime, MoneyPuck, time-on-ice, goals-for-against and goalie advanced reports are not included".into()],
+            }).collect();
+        profile.limitations.push("Browser profile covers resident prepared packages only (at most eight windows), not a fetched or verified complete career. Package v1 omits optional realtime, MoneyPuck, TOI and advanced reports; those metrics remain unavailable. Eviction can shorten this profile.".into());
+        Ok(profile)
+    }
+
     /// Read the resident windows without selecting them, changing LRU order or fetching.
     fn history(&self, player_id: u32) -> PlayerHistory {
         let mut rows: Vec<_> = self
@@ -608,6 +657,68 @@ impl BrowserEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn rinkcraft_browser_uses_shared_builder_and_only_resident_competition() {
+        use icelines_core::view_model::rinkcraft_profile::{
+            ProfileMetricStatus, RinkcraftProfileRequest,
+        };
+        let mut engine = BrowserEngine::new();
+        let request = RinkcraftProfileRequest {
+            player_id: PlayerId(1),
+            season_type: SeasonType::Regular,
+            first_season: None,
+            last_season: None,
+        };
+        assert!(engine.prepared_rinkcraft_profile(request).is_err());
+        for season in [20242025, 20252026] {
+            engine
+                .load_bytes(&serde_json::to_vec(&season_package(season)).unwrap())
+                .unwrap();
+        }
+        let revisions = engine.resident_revisions();
+        let profile = engine.prepared_rinkcraft_profile(request).unwrap();
+        assert_eq!(
+            profile.included_seasons,
+            vec![Season(20242025), Season(20252026)]
+        );
+        assert_eq!(
+            profile
+                .summary
+                .iter()
+                .find(|m| m.key == "goals")
+                .unwrap()
+                .value,
+            Some(40.0)
+        );
+        assert_eq!(
+            profile
+                .summary
+                .iter()
+                .find(|m| m.key == "hits")
+                .unwrap()
+                .status,
+            ProfileMetricStatus::Unavailable
+        );
+        assert_eq!(profile.changes.len(), 1);
+        assert_eq!(engine.resident_revisions(), revisions);
+        let playoff = engine
+            .prepared_rinkcraft_profile(RinkcraftProfileRequest {
+                season_type: SeasonType::Playoff,
+                ..request
+            })
+            .unwrap();
+        assert!(playoff.timeline.is_empty());
+        engine.unload_active();
+        assert_eq!(
+            engine
+                .prepared_rinkcraft_profile(request)
+                .unwrap()
+                .timeline
+                .len(),
+            1
+        );
+    }
 
     fn package() -> serde_json::Value {
         // Hand-audited 82 GP, 20 G + 30 A = 50 P, 50 P/82 pace.

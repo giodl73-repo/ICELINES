@@ -1,5 +1,12 @@
 # Work Packages
 
+## WP-RINKCRAFT-02 (CHG-126)
+
+Add native player HTML/JSON and resident-browser profile rendering, shared
+normal/sparse borrowed-view computation, explicit coverage and local browser
+preview. Verify core regression, both WASM storage modes, UI formatting/controls,
+route responses and actual browser rendering. No role validity claims or releases.
+
 ## WP-RINKCRAFT-01 (CHG-125)
 
 Compute catalog-backed career/whole-season profiles and numeric changes through

@@ -3,6 +3,7 @@ import { importArchive } from './archive.js';
 interface Engine {
   load_package(bytes: Uint8Array): string; package_metadata(): string; query(request: string): string;
   player_detail(id: number): string; current_season(): number; free(): void;
+  rinkcraft_profile(request: string): string;
   schedule_week(bytes: Uint8Array): string;
   select_resident(revision: string): void; resident_revisions(): string; unload_active(): void;
 }
@@ -43,6 +44,7 @@ self.onmessage = (event: MessageEvent<EngineRequest>) => {
         }
         case 'query': response.value = JSON.parse(engine.query(JSON.stringify(request.payload as QueryRequest))); break;
         case 'detail': response.value = JSON.parse(engine.player_detail(Number(request.payload))); break;
+        case 'rinkcraftProfile': response.value = JSON.parse(engine.rinkcraft_profile(JSON.stringify(request.payload))); break;
         case 'currentSeason': response.value = engine.current_season(); break;
         case 'schedule': response.value = JSON.parse(engine.schedule_week(new Uint8Array(request.payload as ArrayBuffer))); break;
         case 'selectResident': engine.select_resident(String(request.payload)); response.value = true; break;

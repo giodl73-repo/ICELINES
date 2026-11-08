@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ profile.player_name }} · Rinkcraft profile{% endblock %}
+{% block head_extra %}
+<style>
+.rc-header{border-left:4px solid #46c7bb;padding:12px 24px;margin:24px 0}.rc-header h1{margin:4px 0}.rc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}.rc-family{padding:16px;border:1px solid #456078;border-radius:10px}.rc-family h3{margin-top:0}.rc-controls{display:flex;gap:16px;flex-wrap:wrap;align-items:end;margin:24px 0}.rc-controls label{display:flex;flex-direction:column;gap:6px}.rc-controls input{max-width:140px}.rc-scroll{overflow:auto}.rc-number{font-variant-numeric:tabular-nums;white-space:nowrap}.rc-note{color:var(--ice-muted,#647386)}.rc-facts{display:flex;gap:28px;flex-wrap:wrap}.rc-facts strong{display:block;font-size:1.3rem}details{margin:8px 0}summary{cursor:pointer}
+</style>
+{% endblock %}
+{% block content %}
+<nav class="action-row" aria-label="Profile navigation"><a href="/player/{{ id }}">← Player overview</a><a href="/api/v1/player/{{ id }}/rinkcraft?type={{ season_type }}&amp;first_season={{ first }}&amp;last_season={{ last }}">Profile JSON</a><a href="/player/8481789/rinkcraft">Kartye</a><a href="/player/8479323/rinkcraft">Fox</a><a href="/player/8478048/rinkcraft">Shesterkin</a></nav>
+<header class="rc-header"><p>RINKCRAFT · PLAYER PROFILE</p><h1>{{ profile.player_name }}</h1><p>Statistical evidence · {{ season_type }} · {{ profile.scope }}</p></header>
+<div class="rc-facts"><p><strong>{{ profile.included_seasons.len() }}</strong>loaded seasons in scope</p><p><strong>{{ latest }}</strong>latest available season</p><p><strong>{{ profile.current_season_available }}</strong>league current season in scope</p></div>
+<p class="rc-note">Available career means loaded records. Family links describe evidence; role classes and tactical styles remain unclassified.</p>
+<form method="get" class="rc-controls">
+<label>Competition<select name="type"><option value="regular" {% if season_type == "regular" %}selected{% endif %}>Regular season</option><option value="playoff" {% if season_type == "playoff" %}selected{% endif %}>Playoffs</option></select></label>
+<label>First season ID<input name="first_season" placeholder="YYYYZZZZ" value="{{ first }}"></label>
+<label>Last season ID<input name="last_season" placeholder="YYYYZZZZ" value="{{ last }}"></label>
+<label>Display<select name="season" aria-label="Display"><option value="">Window summary</option>{% for s in profile.timeline %}<option value="{{ s.season.0 }}" {% if selected == s.season.0.to_string() %}selected{% endif %}>{{ s.season.0 }}</option>{% endfor %}</select></label><button type="submit">Update profile</button></form>
+<h2>Six job families</h2><div class="rc-grid">{% for f in profile.job_families %}<article class="rc-family"><h3>{{ f.name }}</h3><p>{{ f.interpretation }}</p><p class="rc-note">{% for k in f.catalog_keys %}<code>{{ k }}</code> {% endfor %}</p></article>{% endfor %}</div>
+<h2>{{ label }}</h2><p>Missing values are shown as —. Open a metric for its aggregation, unit and coverage.</p>
+<div class="rc-scroll"><table><thead><tr><th>Metric / evidence</th><th>Value</th><th>State</th></tr></thead><tbody>{% for r in rows %}<tr><td><details><summary>{{ r.label }} <code>{{ r.key }}</code></summary><p>{{ r.evidence }}</p></details></td><td class="rc-number">{{ r.value }}</td><td>{{ r.status }}</td></tr>{% endfor %}</tbody></table></div>
+<details><summary>Season context and source gaps</summary><ul>{% for s in profile.timeline %}<li>{{ s.season.0 }} · {{ s.games }} games · {{ s.position.abbreviation() }} · traded: {{ s.traded }} · {% for t in s.teams %}{{ t }} {% endfor %}</li>{% endfor %}</ul><pre>{{ sources_json }}</pre><p>Absent requested seasons: {{ absent_json }}</p></details>
+<details><summary>Season changes</summary><p>Arithmetic differences only; games and deployment affect totals. This does not establish a changed role. Percentage differences are percentage points.</p>{% for c in changes %}<details><summary>{{ c.label }} · {{ c.games }}</summary><div class="rc-scroll"><table><thead><tr><th>Metric</th><th>Previous</th><th>Latest</th><th>Difference</th></tr></thead><tbody>{% for r in c.rows %}<tr><td>{{ r.label }}</td><td>{{ r.previous }}</td><td>{{ r.latest }}</td><td>{{ r.difference }}</td></tr>{% endfor %}</tbody></table></div></details>{% endfor %}</details>
+<details><summary>Unmeasured dimensions</summary><ul>{% for d in profile.unmeasured_dimensions %}<li>{{ d }}</li>{% endfor %}</ul></details>
+<details><summary>Methods and limitations</summary><ul>{% for l in profile.limitations %}<li>{{ l }}</li>{% endfor %}</ul></details>
+{% endblock %}

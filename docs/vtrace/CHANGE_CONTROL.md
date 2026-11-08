@@ -1,5 +1,14 @@
 # Change Control
 
+## CHG-126 — Rinkcraft player UI and WASM subset (2026-11-08)
+
+Expose CHG-125 profiles through native player HTML/JSON and the standalone browser
+player dialog. Use one borrowed-view core builder for normal/sparse storage,
+retaining catalog guards and strict denominators. Native loading remains local;
+WASM uses resident prepared packages only and discloses omitted optional reports.
+No class assignment, new scores, automatic fetch/publication or TUI expansion.
+Interface: IF-RINKCRAFT-UI-001; work: WP-RINKCRAFT-02.
+
 ## CHG-125 — Rinkcraft statistical evidence profiles (2026-11-08)
 
 Add `profile PLAYER --first-season/--last-season --type --json` over shared

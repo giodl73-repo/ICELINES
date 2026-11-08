@@ -4,7 +4,7 @@
 
 Shared engine: `icelines-core::view_model::rinkcraft_profile`; canonical source
 hydration in `icelines-fetch::rinkcraft_profile`. CLI: `icelines profile`.
-CLI/JSON only; TUI, Web and browser surfaces deferred. Whole-season scope,
+Native player HTML/JSON and browser/WASM subset added by CHG-126; TUI deferred. Whole-season scope,
 coverage and strict aggregation are implemented; class scores, causal duties
 and arbitrary dates are not. Local evidence:
 `signals/roles/check/rinkcraft-stat-profile-2026-11-08.md`.

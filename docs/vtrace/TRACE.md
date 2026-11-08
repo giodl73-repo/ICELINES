@@ -398,3 +398,11 @@ concrete PlayerView alias/shared ReadPlayerView, common BrowserEngine reads and 
 -> sparse_season integration/golden/mutation tests, both-mode browser tests and
 native/WASM compilation -> actual native owner/query samples and full browser-engine
 replay. WASM/browser resource and physical-device acceptance remain separate.
+
+## Rinkcraft player UI (CHG-126)
+
+REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> IF-RINKCRAFT-UI-001 ->
+borrowed core profile builder, native player HTML/JSON and browser WASM worker
+profile -> core/profile, both storage modes, formatting, actual browser and CLI
+snapshot parity checks. Evidence: `docs/rinkcraft-ui-validation-2026-11-08.md`.
+Coverage remains explicit; classes and tactical responsibility are unclassified.

@@ -83,6 +83,11 @@ pub fn router(state: WebState) -> Router {
         .route("/api/v1/leaders", get(handlers::leaders::get_leaders_json))
         // Player card — King.3.1. Name links on /leaders point here.
         .route("/player/:id", get(handlers::player::get_player))
+        .route("/player/:id/rinkcraft", get(handlers::rinkcraft::get_html))
+        .route(
+            "/api/v1/player/:id/rinkcraft",
+            get(handlers::rinkcraft::get_json),
+        )
         .route(
             "/player/by-name/:name",
             get(handlers::player::get_player_by_name),
@@ -756,6 +761,7 @@ mod handlers {
     /// `/player/:id` — King.3.1 + King.3.2. Player card + career table.
     pub mod player;
     pub mod records;
+    pub mod rinkcraft;
     pub mod scoring;
     pub mod scouting;
     pub mod signals;

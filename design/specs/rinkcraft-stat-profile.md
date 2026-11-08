@@ -24,8 +24,32 @@ Season-to-season differences do not establish a role change, trend significance
 or increased ability. Partial seasons have different exposure.
 
 Exact calendar-date ranges need coherent game-level inputs and are not implemented
-by slicing season aggregates. TUI, Web and browser support remain deferred. The
-core view is reusable and deterministic; the CLI is a thin caller/renderer.
+by slicing season aggregates. TUI support remains deferred. The core view is
+reusable and deterministic; surfaces are thin callers/renderers.
+
+## Player UI and WASM subset (CHG-126)
+
+The native player page links to `/player/:id/rinkcraft`; its JSON twin is
+`/api/v1/player/:id/rinkcraft` (standard IceLines data/meta envelope). Both accept
+`type=regular|playoff`, optional inclusive `first_season`/`last_season` IDs;
+HTML also accepts `season` to display one loaded season instead of the summary.
+Omitted competition defaults to regular, independent of the global header.
+The native adapter uses canonical local career fan-out and report hydration on
+a blocking worker, without mutating the shared repository or fetching data.
+
+The standalone browser player dialog includes the same evidence profile. Worker
+operation `rinkcraftProfile` calls `BrowserEngine.rinkcraft_profile(request_json)`
+with the core request shape. The storage-independent core builder accepts
+borrowed views from normal or sparse repositories. It filters identity, competition
+and scope, sorts and deduplicates seasons (first supplied matching view wins),
+and uses the same stat catalog and aggregation as native IceLines.
+
+Browser coverage is only the resident prepared packages, up to eight windows.
+Unloading/eviction shortens it. It never initiates career downloads and package
+v1 does not carry native optional reports. Those values remain unavailable;
+this is semantic parity for identical inputs, not equal source coverage. The
+dialog preserves the existing per-package source/date evidence. Rendering, search
+and season selection do not introduce alternative hockey calculations or scores.
 
 ## Source and aggregation policy
 

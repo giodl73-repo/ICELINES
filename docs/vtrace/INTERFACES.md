@@ -1,5 +1,13 @@
 # Interfaces
 
+## IF-RINKCRAFT-UI-001 (CHG-126)
+
+HTML `/player/:id/rinkcraft`, JSON `/api/v1/player/:id/rinkcraft`, browser worker
+`rinkcraftProfile` and WASM `rinkcraft_profile(request_json)` render the core
+statistical profile. Native uses report-aware local career loading; browser uses
+resident packages only. Query and coverage limits:
+`design/specs/rinkcraft-stat-profile.md`. No hosted publication is implied.
+
 ## IF-RINKCRAFT-PROFILE-001 (CHG-125)
 
 `icelines profile PLAYER [--first-season YYYYZZZZ] [--last-season YYYYZZZZ]

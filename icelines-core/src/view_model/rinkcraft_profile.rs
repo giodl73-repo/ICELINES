@@ -7,7 +7,9 @@ use crate::identity::PlayerId;
 use crate::model::{Position, Season};
 use crate::season_stats::SeasonType;
 use crate::stats_catalog::{StatId, StatUnit};
-use crate::stats_repository::{PlayerView, StatsRepository};
+use crate::stats_repository::ReadPlayerView;
+use crate::stats_repository::StatsRepository;
+use crate::SeasonStatsRead;
 
 pub const RINKCRAFT_PROFILE_SCHEMA: &str = "icelines.rinkcraft-stat-profile.v1";
 
@@ -125,11 +127,11 @@ pub struct ProfileSourceWindow {
     pub missing_reports: Vec<String>,
 }
 
-fn read(stat: StatId, view: &PlayerView<'_>) -> Option<f64> {
+fn read<R: SeasonStatsRead>(stat: StatId, view: &ReadPlayerView<'_, R>) -> Option<f64> {
     if !stat.applies_to(view.position(), view.is_goalie()) || !stat.applies_to_era(view.season()) {
         return None;
     }
-    stat.read(view).filter(|v| v.is_finite())
+    stat.read_from(&view.stats).filter(|v| v.is_finite())
 }
 
 fn cell(
@@ -195,7 +197,11 @@ fn ratio_components(stat: StatId) -> Option<(StatId, StatId, f64)> {
     })
 }
 
-fn summary_metric(stat: StatId, views: &[PlayerView<'_>], seasons: &[Season]) -> ProfileMetric {
+fn summary_metric<R: SeasonStatsRead>(
+    stat: StatId,
+    views: &[ReadPlayerView<'_, R>],
+    seasons: &[Season],
+) -> ProfileMetric {
     let applicable = views
         .iter()
         .any(|v| stat.applies_to(v.position(), v.is_goalie()));
@@ -294,7 +300,7 @@ pub fn build_rinkcraft_stat_profile(
     let identity = repo
         .identity(request.player_id)
         .ok_or(RinkcraftProfileError::UnknownPlayer(request.player_id))?;
-    let mut views: Vec<_> = repo
+    let views: Vec<_> = repo
         .career_all(request.player_id)
         .into_iter()
         .flatten()
@@ -305,7 +311,31 @@ pub fn build_rinkcraft_stat_profile(
         })
         .filter_map(|s| repo.view(request.player_id, s.season, s.season_type))
         .collect();
+    build_rinkcraft_stat_profile_from_views(&identity.full_name, request, views)
+}
+
+/// Storage-independent builder for prepared native and browser windows.
+/// No loading occurs. For duplicate windows the first supplied view wins.
+pub fn build_rinkcraft_stat_profile_from_views<R: SeasonStatsRead>(
+    player_name: &str,
+    request: RinkcraftProfileRequest,
+    mut views: Vec<ReadPlayerView<'_, R>>,
+) -> Result<RinkcraftStatProfile, RinkcraftProfileError> {
+    if request
+        .first_season
+        .zip(request.last_season)
+        .is_some_and(|(a, b)| a > b)
+    {
+        return Err(RinkcraftProfileError::ReversedWindow);
+    }
+    views.retain(|v| {
+        v.id() == request.player_id
+            && v.season_type() == request.season_type
+            && request.first_season.is_none_or(|s| v.season() >= s)
+            && request.last_season.is_none_or(|s| v.season() <= s)
+    });
     views.sort_by_key(|v| v.season());
+    views.dedup_by_key(|v| v.season());
     let seasons: Vec<_> = views.iter().map(|v| v.season()).collect();
     let timeline: Vec<_> = views
         .iter()
@@ -314,7 +344,7 @@ pub fn build_rinkcraft_stat_profile(
             position: v.position(),
             teams: v
                 .stats
-                .team_stints
+                .team_stints()
                 .iter()
                 .map(|s| s.team.0.clone())
                 .collect(),
@@ -373,7 +403,7 @@ pub fn build_rinkcraft_stat_profile(
         })
         .unwrap_or_default();
     Ok(RinkcraftStatProfile {
-        schema:RINKCRAFT_PROFILE_SCHEMA.into(),request,player_name:identity.full_name.clone(),
+        schema:RINKCRAFT_PROFILE_SCHEMA.into(),request,player_name:player_name.into(),
         scope:if request.first_season.is_none() && request.last_season.is_none(){"available_career"}else{"selected_seasons"}.into(),
         league_current_season:Season(crate::CURRENT_SEASON),current_season_available:seasons.contains(&Season(crate::CURRENT_SEASON)),source_windows:Vec::new(),
         included_seasons:seasons.clone(),absent_seasons_in_requested_range,

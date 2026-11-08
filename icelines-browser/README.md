@@ -29,6 +29,14 @@ dialog is reopened. A dataset change closes any open stale dialog.
 Run the local browser history check after building with
 `npm --prefix icelines-browser run acceptance:player-history`.
 
+The player dialog also includes a **Rinkcraft profile** with latest/loaded-season
+and loaded-window summary views, searchable catalog evidence, explicit gaps,
+six job-family descriptions and arithmetic season differences. Its calculations
+come from the shared Rust builder through the WASM worker, including the opt-in
+sparse backend. Only resident packages are included; optional native reports
+absent from package v1 stay unavailable. Classes, directional styles and causal
+assignment responsibility are not inferred from these aggregate statistics.
+
 For the opt-in sparse prepared-season backend, use
 `node scripts/build-browser.mjs --sparse-storage` from the repository root.
 The generated build-info records the selected WASM features. Ordinary builds use
