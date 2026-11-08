@@ -4,9 +4,20 @@ export interface NumericalMeasurement {
   measured_peers:number;interpretation:string;state:string;
 }
 export interface NumericalEvidence {
+  style_evidence?:StyleEvidence|null;
   season:number;player_id:number;name:string;group:string;situation:string;games:number;minutes:number;
   eligible_peers:number;facets:{label:string;measurement:NumericalMeasurement}[];leading:string[];
   metrics:NumericalMeasurement[];source_credit:string;unknowns:string[];
+}
+interface StyleEvidence {
+  season:number;limitations:string[];gaps:{axis:string;reason:string}[];
+  measured:{key:string;label:string;value:number;unit:string;numerator:number;denominator:number;scope:string;meaning:string;sources:{url:string;sha256:string}[]}[];
+}
+export function renderStyleEvidence(s:StyleEvidence):HTMLElement {
+  const section=node('section');section.className='rs-style';section.setAttribute('aria-label','Playing style evidence');section.append(node('h4','Playing style'),node('p',`${period(s.season)} · measured tendencies & open questions`));
+  const measures=node('div');measures.className='rs-measures';for(const m of s.measured){const tile=node('div');tile.className='rs-measure';tile.dataset.styleKey=m.key;const suffix:Record<string,string>={Pct:'%',Mph:' mph',Per60:' /60',PerGame:' /game',MilesPerGame:' mi/game'};tile.append(node('span',m.label),node('strong',`${(m.value*(m.unit==='Pct'?100:1)).toFixed(2)}${suffix[m.unit]??''}`),node('small',m.scope),node('p',m.meaning));measures.append(tile);}section.append(measures);
+  const gaps=node('div');gaps.className='rs-gaps';for(const g of s.gaps){const row=node('div');row.append(node('b',g.axis),node('span','Unmeasured'),node('p',g.reason));gaps.append(row);}section.append(gaps);
+  const details=node('details');details.append(node('summary','Style evidence, calculations & limits'));for(const m of s.measured){details.append(node('p',`${m.label} · ${m.numerator} / ${m.denominator} = ${m.value}`));for(const src of m.sources){const link=node('a','Source');link.href=src.url;link.target='_blank';link.rel='noopener noreferrer';details.append(link,node('p',`SHA256 ${src.sha256}`));}}for(const limit of s.limitations)details.append(node('p',limit));section.append(details);return section;
 }
 export interface NumericalCatalog {season:number;profiles:{player_id:number;name:string;group:string}[];}
 export interface NumericalComparison {

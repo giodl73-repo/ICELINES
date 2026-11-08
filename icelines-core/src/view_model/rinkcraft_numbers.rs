@@ -34,6 +34,8 @@ pub struct NumericalCatalog {
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct NumericalProfile {
+    #[serde(default)]
+    pub style_evidence: Option<super::rinkcraft_style::StyleEvidence>,
     pub player_id: u32,
     pub name: String,
     pub group: String,
@@ -222,6 +224,7 @@ pub fn build(
             })
             .collect();
         profiles.push(NumericalProfile {
+            style_evidence: None,
             player_id: row.player_id,
             name: row.name.clone(),
             group: row.group.clone(),
@@ -247,6 +250,8 @@ pub fn build(
 /// Presentation projection over already computed measures; no new hockey score.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EvidenceCard {
+    #[serde(default)]
+    pub style_evidence: Option<super::rinkcraft_style::StyleEvidence>,
     pub schema: String,
     pub season: u32,
     pub player_id: u32,
@@ -307,6 +312,9 @@ impl NumericalCatalog {
             }
         }
         for p in &self.profiles {
+            if let Some(s) = &p.style_evidence {
+                super::rinkcraft_style::validate(s, self.season)?;
+            }
             if !ids.insert(p.player_id)
                 || p.player_id == 0
                 || !matches!(p.group.as_str(), "Forwards" | "Defense" | "Goalies")
@@ -397,6 +405,7 @@ impl NumericalCatalog {
             .map(|(_, key, _)| key.to_string())
             .collect();
         Ok(Some(EvidenceCard {
+            style_evidence: p.style_evidence.clone(),
             schema: "icelines.rinkcraft-evidence-card.v1".into(),
             season: self.season,
             player_id: p.player_id,

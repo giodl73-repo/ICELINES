@@ -79,6 +79,13 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
+    /// Add measured playing-method evidence from a verified local EDGE capture directory.
+    ProfileStyle {
+        #[arg(long)]
+        numbers: PathBuf,
+        #[arg(long)]
+        edge_captures: PathBuf,
+    },
     /// Compute source-backed numerical Rinkcraft evidence and league percentiles.
     ProfileNumbers {
         #[arg(long)]

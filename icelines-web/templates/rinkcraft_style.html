@@ -1,0 +1,6 @@
+{% match n.style %}{% when Some with (s) %}
+<section class="rs-style" aria-label="Playing style evidence"><header><h3>Playing style</h3><p>{{ s.season }} · measured tendencies &amp; open questions</p></header>
+<div class="rs-measures">{% for m in s.measured %}<div class="rs-measure" data-style-key="{{ m.key }}"><span>{{ m.label }}</span><strong>{{ m.value }}</strong><small>{{ m.scope }}</small><p>{{ m.meaning }}</p></div>{% endfor %}</div>
+<div class="rs-gaps">{% for g in s.gaps %}<div><b>{{ g.axis }}</b><span>Unmeasured</span><p>{{ g.reason }}</p></div>{% endfor %}</div>
+<details><summary>Style evidence, calculations &amp; limits</summary>{% for m in s.measured %}<p><b>{{ m.label }}</b> · {{ m.formula }}</p><ul>{% for src in m.sources %}<li><a href="{{ src.url }}">Source</a> · SHA256 {{ src.sha256 }}</li>{% endfor %}</ul>{% endfor %}{% for limit in s.limitations %}<p>{{ limit }}</p>{% endfor %}</details></section>
+{% when None %}{% endmatch %}

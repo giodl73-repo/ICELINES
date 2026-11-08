@@ -1,5 +1,14 @@
 # Change Control
 
+## CHG-132 — Measured playing methods and explicit tactical gaps (2026-11-08)
+
+Add optional style evidence to numerical profiles/cards, a strict local verified
+EDGE capture adapter and `profile-style` CLI. Native/WASM cards show shot/contact
+tendencies and available tracking separately from missing tactical axes. Preserve
+all original measurements/classes. Actual source access limits tracking to one
+player; no automated acquisition, bypass, style validity or publication claim.
+Contract: `design/specs/rinkcraft-playing-methods.md`.
+
 ## CHG-131 — Integrated numerical character cards and comparison (2026-11-08)
 
 Owner requests continued numerical differentiation before the next review. Shared

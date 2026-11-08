@@ -1,5 +1,11 @@
 # Trace Matrix
 
+CHG-132 / IF-RINKCRAFT-NUMBERS-001: REQ-PARITY-001 / REQ-WEB-001 /
+REQ-BROWSER-001 -> bounded source capture parser, pure descriptive style extension
+and native/WASM cards -> denominator/hash/season/missingness tests, unchanged
+original measurements, actual card parity, no-JS/offline/mobile. Evidence:
+`docs/rinkcraft-playing-methods-validation-2026-11-08.md`.
+
 CHG-131 / IF-RINKCRAFT-NUMBERS-001: REQ-PARITY-001 / REQ-WEB-001 /
 REQ-BROWSER-001 -> shared numerical projection/comparison -> primary native/WASM
 cards, compatible comparisons and optional offline artifact -> core guards,

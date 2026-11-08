@@ -142,6 +142,36 @@ fn should_auto_setup(
 
 async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
     match cli.command {
+        Commands::ProfileStyle {
+            numbers,
+            edge_captures,
+        } => {
+            let mut catalog = icelines_fetch::rinkcraft_numbers::load_catalog(&numbers)?;
+            icelines_fetch::rinkcraft_style::enrich_from_capture_dir(&mut catalog, &edge_captures)?;
+            // Preserve original numeric tokens; only add the style projection.
+            type RawObject = std::collections::BTreeMap<String, Box<serde_json::value::RawValue>>;
+            let mut root: RawObject = serde_json::from_str(&std::fs::read_to_string(&numbers)?)?;
+            let mut profiles: Vec<RawObject> = serde_json::from_str(root["profiles"].get())?;
+            anyhow::ensure!(
+                profiles.len() == catalog.profiles.len(),
+                "profile count changed during enrichment"
+            );
+            for (raw, profile) in profiles.iter_mut().zip(&catalog.profiles) {
+                anyhow::ensure!(
+                    serde_json::from_str::<u32>(raw["player_id"].get())? == profile.player_id,
+                    "profile identity changed during enrichment"
+                );
+                raw.insert(
+                    "style_evidence".into(),
+                    serde_json::value::to_raw_value(&profile.style_evidence)?,
+                );
+            }
+            root.insert(
+                "profiles".into(),
+                serde_json::value::to_raw_value(&profiles)?,
+            );
+            println!("{}", serde_json::to_string_pretty(&root)?);
+        }
         Commands::ProfileNumbers {
             season,
             skaters,

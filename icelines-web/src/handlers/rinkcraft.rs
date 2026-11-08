@@ -525,6 +525,7 @@ struct ProfileTemplate {
     absent_json: String,
 }
 struct EvidenceView {
+    style: Option<StyleView>,
     scope: String,
     leading: String,
     facets: Vec<FacetView>,
@@ -541,6 +542,21 @@ struct FacetView {
     peers: usize,
     meaning: String,
 }
+struct StyleView {
+    season: String,
+    measured: Vec<StyleMeasureView>,
+    gaps: Vec<icelines_core::view_model::rinkcraft_style::StyleGap>,
+    limitations: Vec<String>,
+}
+struct StyleMeasureView {
+    key: String,
+    label: String,
+    value: String,
+    scope: String,
+    meaning: String,
+    formula: String,
+    sources: Vec<icelines_core::view_model::rinkcraft_numbers::Source>,
+}
 fn measurement_value(m: &icelines_core::view_model::rinkcraft_numbers::Measurement) -> String {
     m.value
         .map(|v| {
@@ -554,6 +570,35 @@ fn measurement_value(m: &icelines_core::view_model::rinkcraft_numbers::Measureme
 }
 fn evidence_view(c: &icelines_core::view_model::rinkcraft_numbers::EvidenceCard) -> EvidenceView {
     EvidenceView {
+        style: c.style_evidence.as_ref().map(|s| StyleView {
+            season: season_label(s.season),
+            gaps: s.gaps.clone(),
+            limitations: s.limitations.clone(),
+            measured: s
+                .measured
+                .iter()
+                .map(|m| StyleMeasureView {
+                    key: m.key.clone(),
+                    label: m.label.clone(),
+                    value: format!(
+                        "{:.2}{}",
+                        m.value * if m.unit == "Pct" { 100. } else { 1. },
+                        match m.unit.as_str() {
+                            "Pct" => "%",
+                            "Mph" => " mph",
+                            "Per60" => " /60",
+                            "PerGame" => " /game",
+                            "MilesPerGame" => " mi/game",
+                            _ => "",
+                        }
+                    ),
+                    scope: m.scope.clone(),
+                    meaning: m.meaning.clone(),
+                    formula: format!("{} / {} = {}", m.numerator, m.denominator, m.value),
+                    sources: m.sources.clone(),
+                })
+                .collect(),
+        }),
         scope: format!(
             "{} · {} · {} GP · {:.1} minutes · {} peers",
             season_label(c.season),

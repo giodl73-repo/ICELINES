@@ -84,6 +84,7 @@ pub mod rinkcraft_attributes;
 pub mod rinkcraft_character;
 pub mod rinkcraft_numbers;
 pub mod rinkcraft_profile;
+pub mod rinkcraft_style;
 pub mod scenario_development_calibration;
 pub mod scenario_registry;
 pub mod schedule;

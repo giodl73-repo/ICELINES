@@ -75,6 +75,7 @@ pub mod resolver;
 pub mod rinkcraft_character;
 pub mod rinkcraft_numbers;
 pub mod rinkcraft_profile;
+pub mod rinkcraft_style;
 pub mod scenario_registry;
 pub mod schedule_remaining;
 pub mod schema;

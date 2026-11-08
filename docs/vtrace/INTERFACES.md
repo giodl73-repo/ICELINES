@@ -2,6 +2,12 @@
 
 ## IF-RINKCRAFT-NUMBERS-001 (CHG-130)
 
+CHG-132 extension: optional `style_evidence` in numerical profile and EvidenceCard,
+protocol `rinkcraft.playing-methods.0.1.0-experimental`; bounded local capture
+manifest and `profile-style` CLI. Existing native API and WASM numerical projection
+share validation/selection. Old catalogs default to None. Contract:
+`design/specs/rinkcraft-playing-methods.md`.
+
 CHG-131 extension: additive optional profile `numerical_evidence`, shared
 `icelines.rinkcraft-evidence-card.v1` projection and same-reference comparison.
 Native GET `/api/v1/rinkcraft/numbers/compare?left=ID&right=ID`; WASM methods

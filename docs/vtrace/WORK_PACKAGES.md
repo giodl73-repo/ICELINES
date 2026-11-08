@@ -1,5 +1,13 @@
 # Work Packages
 
+## WP-RINKCRAFT-08 (CHG-132)
+
+Deliver the first measured playing-method layer from retained data, with source
+coverage and unmeasured tactical axes explicit. Core owns ratios and missingness;
+fetch owns local byte/identity checks; native/browser own presentation. Tracking
+coverage is one pilot, not the whole 25-player cohort. Validation and remaining
+research limits: `docs/rinkcraft-playing-methods-validation-2026-11-08.md`.
+
 ## WP-RINKCRAFT-07 (CHG-131)
 
 Deliver shared numerical card/comparison projections, integrated character views,
