@@ -19,6 +19,9 @@ export function renderStyleEvidence(s:StyleEvidence):HTMLElement {
   const gaps=node('div');gaps.className='rs-gaps';for(const g of s.gaps){const row=node('div');row.append(node('b',g.axis),node('span','Unmeasured'),node('p',g.reason));gaps.append(row);}section.append(gaps);
   const details=node('details');details.append(node('summary','Style evidence, calculations & limits'));for(const m of s.measured){details.append(node('p',`${m.label} · ${m.numerator} / ${m.denominator} = ${m.value}`));for(const src of m.sources){const link=node('a','Source');link.href=src.url;link.target='_blank';link.rel='noopener noreferrer';details.append(link,node('p',`SHA256 ${src.sha256}`));}}for(const limit of s.limitations)details.append(node('p',limit));section.append(details);return section;
 }
+export interface SnapshotSelection {selected_season:number|null;newest_supplied_season:number|null;requested_season:number|null;state:string;note:string;}
+export interface SnapshotResult {selection:SnapshotSelection;card:NumericalEvidence|null;}
+export interface CatalogView {catalog:NumericalCatalog;seasons:number[];}
 export interface NumericalCatalog {season:number;profiles:{player_id:number;name:string;group:string}[];}
 export interface NumericalComparison {
   style?:{rows:{key:string;label:string;unit:string;left:StyleEvidence['measured'][number]|null;right:StyleEvidence['measured'][number]|null;difference:number|null;status:string;reason:string}[];shared_gaps:{axis:string;reason:string}[]}|null;
@@ -55,7 +58,7 @@ export function renderNumericalPanel(card:NumericalEvidence):HTMLElement {
   const note=node('p','Raw-value percentiles, not skill grades. Leading signals are the highest ranks among a fixed involvement/output shortlist.');note.className='rk-footnote';section.append(note);
   const details=node('details');details.append(node('summary',`All ${card.metrics.length} numerical measures`));const table=node('table');table.className='rn-inline-table';const body=node('tbody');for(const m of card.metrics){const row=node('tr');const label=node('td',m.label);label.title=m.interpretation;row.append(label,node('td',value(m.unit,m.value)),node('td',rank(m.percentile)));body.append(row);}table.append(body);details.append(table);section.append(details);
   const credit=node('p',card.source_credit);credit.className='rk-footnote';section.append(credit);
-  const compare=node('button','Compare this numerical profile');compare.type='button';compare.onclick=()=>document.dispatchEvent(new CustomEvent('rinkcraft-numerical-compare',{detail:{player_id:card.player_id}}));section.append(compare);return section;
+  const compare=node('button','Compare this numerical profile');compare.type='button';compare.onclick=()=>document.dispatchEvent(new CustomEvent('rinkcraft-numerical-compare',{detail:{player_id:card.player_id,season:card.season}}));section.append(compare);return section;
 }
 export function renderNumericalComparison(c:NumericalComparison):HTMLElement {
   const section=node('section');section.className='rn-comparison';section.append(node('h3',`${c.left.name} / ${c.right.name}`),node('p',`${period(c.season)} · ${c.left.group} · ${c.left.situation} · MoneyPuck.com`));

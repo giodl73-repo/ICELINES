@@ -1,5 +1,10 @@
 # Work Packages
 
+## WP-RINKCRAFT-12 (CHG-136)
+
+Deliver shared selection metadata, bounded/latest/exact semantics, legacy compatibility, explicit seasonal comparisons and native/browser parity. Acceptance: `docs/rinkcraft-snapshot-validation-2026-11-08.md`.
+
+
 ## WP-RINKCRAFT-11 (CHG-135)
 
 Deliver a visible, reproducible measured summary of existing annual evidence,

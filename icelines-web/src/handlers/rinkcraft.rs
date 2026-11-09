@@ -54,6 +54,8 @@ struct AtlasCard {
 struct NumbersTemplate {
     active_label: String,
     period: String,
+    seasons: Vec<NumberChoice>,
+    season: u32,
     credit: String,
     sources: Vec<icelines_core::view_model::rinkcraft_numbers::Source>,
     limits: Vec<String>,
@@ -62,9 +64,12 @@ struct NumbersTemplate {
     choices: Vec<NumberChoice>,
     right_choices: Vec<NumberChoice>,
     left_id: u32,
+    right_id: u32,
 }
 #[derive(Default, Deserialize)]
 pub struct NumberParams {
+    #[serde(default, deserialize_with = "optional_season")]
+    season: Option<u32>,
     left: Option<u32>,
     right: Option<u32>,
 }
@@ -121,21 +126,33 @@ struct NumberRow {
     peers: usize,
     meaning: String,
 }
-fn numerical_catalog(
-) -> Result<icelines_core::view_model::rinkcraft_numbers::NumericalCatalog, WebError> {
-    let path =
-        std::env::var_os("ICELINES_RINKCRAFT_NUMBERS").ok_or_else(|| WebError::NotFound {
-            what: "No numerical assessment dataset has been loaded".into(),
+fn numerical_source(
+) -> Result<icelines_core::view_model::rinkcraft_history::NumericalHistory, WebError> {
+    let path = std::env::var_os("ICELINES_RINKCRAFT_HISTORY")
+        .or_else(|| std::env::var_os("ICELINES_RINKCRAFT_NUMBERS"))
+        .ok_or_else(|| WebError::NotFound {
+            what: "No numerical evidence source loaded".into(),
             hint: None,
         })?;
-    icelines_fetch::rinkcraft_numbers::load_catalog(std::path::Path::new(&path))
-        .map_err(WebError::Internal)
+    icelines_fetch::rinkcraft_history::load(std::path::Path::new(&path)).map_err(WebError::Internal)
 }
-pub async fn get_numbers_json() -> Result<Response, WebError> {
+fn numerical_catalog(
+    season: Option<u32>,
+) -> Result<icelines_core::view_model::rinkcraft_history::CatalogView, WebError> {
+    numerical_source()?
+        .catalog_view(season)
+        .map_err(|message| WebError::BadParam {
+            param: "season".into(),
+            message,
+            hint: None,
+        })
+}
+pub async fn get_numbers_json(Query(params): Query<NumberParams>) -> Result<Response, WebError> {
+    let view = numerical_catalog(params.season)?;
     Ok(crate::api::json_data_meta(
         "rinkcraft-numbers",
-        numerical_catalog()?,
-        serde_json::json!({"source_state":"explicit_local_measurement_catalog","live_fetch":false}),
+        view.catalog,
+        serde_json::json!({"source_state":"explicit_local_measurement_catalog","live_fetch":false,"available_seasons":view.seasons}),
     ))
 }
 pub async fn get_numerical_comparison(
@@ -152,7 +169,8 @@ pub async fn get_numerical_comparison(
     let right = params
         .right
         .ok_or_else(|| bad("right player id is required"))?;
-    let comparison = numerical_catalog()?
+    let comparison = numerical_catalog(params.season)?
+        .catalog
         .compare(left, right)
         .map_err(|message| bad(&message))?;
     Ok(crate::api::json_data_meta(
@@ -165,7 +183,8 @@ pub async fn get_numbers(
     State(state): State<WebState>,
     Query(params): Query<NumberParams>,
 ) -> Result<Response, WebError> {
-    let catalog = numerical_catalog()?;
+    let view = numerical_catalog(params.season)?;
+    let catalog = view.catalog;
     if [params.left, params.right]
         .into_iter()
         .flatten()
@@ -173,7 +192,7 @@ pub async fn get_numbers(
     {
         return Err(WebError::BadParam {
             param: "comparison".into(),
-            message: "player has no numerical snapshot".into(),
+            message: format!("A requested player has no numerical snapshot in {}. Choose a different source season or player; no fallback was used.", season_label(catalog.season)),
             hint: None,
         });
     }
@@ -338,7 +357,18 @@ pub async fn get_numbers(
         })
         .collect();
     NumbersTemplate {
+        season: catalog.season,
+        seasons: view
+            .seasons
+            .into_iter()
+            .map(|id| NumberChoice {
+                id,
+                name: season_label(id),
+                selected: id == catalog.season,
+            })
+            .collect(),
         left_id: left.map(|p| p.player_id).unwrap_or_default(),
+        right_id: right.map(|p| p.player_id).unwrap_or_default(),
         comparison,
         choices,
         right_choices,
@@ -506,7 +536,9 @@ async fn profile(
         profile.source_windows = sources;
         icelines_fetch::rinkcraft_profile::attach_attribute_seasons(&mut profile, &store)?;
         if req.season_type == SeasonType::Regular {
-            if let Some(path) = std::env::var_os("ICELINES_RINKCRAFT_HISTORY") {
+            if let Some(path) = std::env::var_os("ICELINES_RINKCRAFT_HISTORY")
+                .or_else(|| std::env::var_os("ICELINES_RINKCRAFT_NUMBERS"))
+            {
                 let history = icelines_fetch::rinkcraft_history::load(std::path::Path::new(&path))?;
                 let ceiling = character_season
                     .map(|s| s.0)
@@ -520,20 +552,16 @@ async fn profile(
                         Some(ceiling),
                     )
                     .map_err(anyhow::Error::msg)?;
-            }
-            if let Some(path) = std::env::var_os("ICELINES_RINKCRAFT_NUMBERS") {
-                let catalog =
-                    icelines_fetch::rinkcraft_numbers::load_catalog(std::path::Path::new(&path))?;
-                if profile
-                    .included_seasons
-                    .iter()
-                    .any(|s| s.0 == catalog.season)
-                    && character_season.is_none_or(|s| s.0 == catalog.season)
-                {
-                    profile.numerical_evidence = catalog
-                        .card(req.player_id.0, req.last_season.map(|s| s.0))
-                        .map_err(anyhow::Error::msg)?;
-                }
+                let selected = history
+                    .snapshot(
+                        req.player_id.0,
+                        req.first_season.map(|s| s.0),
+                        Some(ceiling),
+                        character_season.map(|s| s.0),
+                    )
+                    .map_err(anyhow::Error::msg)?;
+                profile.numerical_evidence = selected.card;
+                profile.numerical_snapshot = Some(selected.selection);
             }
         }
         if let Some(path) = std::env::var_os("ICELINES_RINKCRAFT_SHEETS") {
@@ -610,6 +638,7 @@ struct ProfileTemplate {
     absent_json: String,
 }
 struct EvidenceView {
+    season: u32,
     style: Option<StyleView>,
     scope: String,
     leading: String,
@@ -841,6 +870,7 @@ fn measurement_value(m: &icelines_core::view_model::rinkcraft_numbers::Measureme
 }
 fn evidence_view(c: &icelines_core::view_model::rinkcraft_numbers::EvidenceCard) -> EvidenceView {
     EvidenceView {
+        season: c.season,
         style: c.style_evidence.as_ref().map(|s| StyleView {
             season: season_label(s.season),
             gaps: s.gaps.clone(),

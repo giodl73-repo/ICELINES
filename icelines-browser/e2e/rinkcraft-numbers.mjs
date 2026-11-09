@@ -6,10 +6,10 @@ const output=new URL('../../target/rinkcraft-numbers-check/',import.meta.url);aw
 const browser=await chromium.launch({channel:'msedge',headless:true});
 try{
  const context=await browser.newContext({viewport:{width:1440,height:1000},javaScriptEnabled:false});const page=await context.newPage();
- const response=await page.request.get(`${base}/api/v1/rinkcraft/numbers`);expect(response.status()).toBe(200);const catalog=(await response.json()).data;
+ const response=await page.request.get(`${base}/api/v1/rinkcraft/numbers?season=20242025`);expect(response.status()).toBe(200);const catalog=(await response.json()).data;
  expect(catalog.profiles).toHaveLength(25);expect(catalog.missing_players).toEqual([]);expect(catalog.season).toBe(20242025);
  expect(catalog.sources.map(s=>s.sha256)).toEqual(['467260ae6b411621fc3e736ed005588f75dd4470610416626584f2878a463fd4','a718782ffbeb8d0d05eb6921f4cbea300dbcaa86be8e068930e71be4a22a9d8d']);
- await page.goto(`${base}/rinkcraft/numbers`);await expect(page.locator('.rn-card')).toHaveCount(25);await expect(page.getByRole('heading',{name:'2024–25 regular season',exact:true})).toBeVisible();
+ await page.goto(`${base}/rinkcraft/numbers?season=20242025`);await expect(page.locator('.rn-card')).toHaveCount(25);await expect(page.getByRole('heading',{name:'2024–25 regular season',exact:true})).toBeVisible();
  let measured=0;
  for(const p of catalog.profiles){const card=page.locator(`[data-player-id="${p.player_id}"]`);await expect(card.locator('h2')).toHaveText(p.name);const rows=card.locator('tbody tr');await expect(rows).toHaveCount(p.group==='Goalies'?5:15);
   expect(p.situation).toBe(p.group==='Goalies'?'all':'5on5');

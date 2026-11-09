@@ -5,6 +5,8 @@ interface Engine {
   player_detail(id: number): string; current_season(): number; free(): void;
   rinkcraft_profile(request: string): string;
   character_sheet(catalog:string,playerId:number,season:number):string;
+  numerical_catalog(source:string,season?:number):string;
+  numerical_snapshot(source:string,playerId:number,first?:number,last?:number,exact?:number):string;
   numerical_evidence(catalog:string,playerId:number,ceiling?:number):string;
   numerical_history(catalog:string,playerId:number,first?:number,last?:number):string;
   numerical_comparison(catalog:string,left:number,right:number):string;
@@ -50,6 +52,8 @@ self.onmessage = (event: MessageEvent<EngineRequest>) => {
         case 'detail': response.value = JSON.parse(engine.player_detail(Number(request.payload))); break;
         case 'rinkcraftProfile': response.value = JSON.parse(engine.rinkcraft_profile(JSON.stringify(request.payload))); break;
         case 'characterSheet': {const p=request.payload as {catalog:unknown;player_id:number;season:number};response.value=JSON.parse(engine.character_sheet(JSON.stringify(p.catalog),p.player_id,p.season));break;}
+        case 'numericalCatalog': {const p=request.payload as {source:unknown;season?:number};response.value=JSON.parse(engine.numerical_catalog(JSON.stringify(p.source),p.season));break;}
+        case 'numericalSnapshot': {const p=request.payload as {source:unknown;player_id:number;first?:number;last?:number;exact?:number};response.value=JSON.parse(engine.numerical_snapshot(JSON.stringify(p.source),p.player_id,p.first,p.last,p.exact));break;}
         case 'numericalEvidence': {const p=request.payload as {catalog:unknown;player_id:number;ceiling:number|null};response.value=JSON.parse(engine.numerical_evidence(JSON.stringify(p.catalog),p.player_id,p.ceiling??undefined));break;}
         case 'numericalHistory': {const p=request.payload as {catalog:unknown;player_id:number;first?:number;last?:number};response.value=JSON.parse(engine.numerical_history(JSON.stringify(p.catalog),p.player_id,p.first,p.last));break;}
         case 'numericalComparison': {const p=request.payload as {catalog:unknown;left:number;right:number};response.value=JSON.parse(engine.numerical_comparison(JSON.stringify(p.catalog),p.left,p.right));break;}

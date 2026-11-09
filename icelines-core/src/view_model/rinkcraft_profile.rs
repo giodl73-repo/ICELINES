@@ -104,6 +104,8 @@ pub struct RinkcraftStatProfile {
     #[serde(default)]
     pub numerical_history: Option<super::rinkcraft_history::HistoryCard>,
     #[serde(default)]
+    pub numerical_snapshot: Option<super::rinkcraft_history::SnapshotSelection>,
+    #[serde(default)]
     pub numerical_evidence: Option<super::rinkcraft_numbers::EvidenceCard>,
     #[serde(default)]
     pub character_sheet: Option<super::rinkcraft_character::CharacterSheet>,
@@ -416,7 +418,7 @@ pub fn build_rinkcraft_stat_profile_from_views<R: SeasonStatsRead>(
         league_current_season:Season(crate::CURRENT_SEASON),current_season_available:seasons.contains(&Season(crate::CURRENT_SEASON)),source_windows:Vec::new(),
         included_seasons:seasons.clone(),absent_seasons_in_requested_range,
         latest_available:timeline.last().cloned(),summary:StatId::all().iter().map(|&s|summary_metric(s,&views,&seasons)).collect(),
-        timeline,changes,job_families:families(),attribute_seasons:Vec::new(),character_sheet:None,numerical_evidence:None,numerical_history:None,
+        timeline,changes,job_families:families(),attribute_seasons:Vec::new(),character_sheet:None,numerical_evidence:None,numerical_snapshot:None,numerical_history:None,
         unmeasured_dimensions:vec!["north_south_east_west_style".into(),"pressure_and_controlled_recovery".into(),"off_puck_availability".into(),"system_assignment_and_error_responsibility".into(),"goalie_depth_stance_and_commitment".into(),"causal_lineup_fit".into()],
         limitations:vec![
             "Available career means loaded repository rows, not verified complete career coverage. Latest means latest loaded season within the selected scope, not necessarily the league's current season.".into(),

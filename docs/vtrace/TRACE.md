@@ -1,5 +1,10 @@
 # Trace Matrix
 
+## Explicit source selection (CHG-136)
+
+REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> IF-RINKCRAFT-NUMBERS-001 -> core source selection, native query/HTML and WASM worker/browser consumers -> all-player parity, missing/exact/bounds, legacy and offline/mobile checks. Evidence: `docs/rinkcraft-snapshot-validation-2026-11-08.md`.
+
+
 CHG-135 / IF-RINKCRAFT-NUMBERS-001: REQ-PARITY-001 / REQ-WEB-001 /
 REQ-BROWSER-001 -> shared measured assessment policy and explicit CLI -> visible
 native/WASM card -> P80/tie/bound/cutoff/missing/context guards, 25 CLI/WASM and

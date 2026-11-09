@@ -21,7 +21,7 @@ try{
     const card=p.numerical_evidence;
     await expect(page.locator('.rn-facet')).toHaveCount(card.facets.length);
     expect(await page.locator('.rn-facet>strong').allTextContents()).toEqual(card.facets.map(f=>f.measurement.percentile==null?'Unranked':`P${(Math.round(f.measurement.percentile*10)/10).toFixed(1)}`));
-    await expect(page.locator('.rn-integrated')).toContainText('2024–25');
+    await expect(page.locator('.rn-integrated')).toContainText(`${Math.floor(card.season/10000)}–${String(card.season%100).padStart(2,'0')}`);
     expect(await page.locator('.rk-ability:visible').count()).toBe(0);
   }else{
     expect(await page.locator('.rk-stat-cell').count()).toBe(9);

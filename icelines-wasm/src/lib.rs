@@ -299,6 +299,27 @@ impl BrowserEngine {
         serde_json::to_string(&profile).map_err(|e| JsValue::from_str(&e.to_string()))
     }
     /// Curated research input is explicitly supplied; no stat-to-class inference or IO.
+    pub fn numerical_catalog(&self, source: &str, season: Option<u32>) -> Result<String, JsValue> {
+        let h = icelines_core::view_model::rinkcraft_history::parse_source(source)
+            .map_err(|e| JsValue::from_str(&e))?;
+        let view = h.catalog_view(season).map_err(|e| JsValue::from_str(&e))?;
+        serde_json::to_string(&view).map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+    pub fn numerical_snapshot(
+        &self,
+        source: &str,
+        player_id: u32,
+        first: Option<u32>,
+        last: Option<u32>,
+        exact: Option<u32>,
+    ) -> Result<String, JsValue> {
+        let h = icelines_core::view_model::rinkcraft_history::parse_source(source)
+            .map_err(|e| JsValue::from_str(&e))?;
+        let selected = h
+            .snapshot(player_id, first, last, exact)
+            .map_err(|e| JsValue::from_str(&e))?;
+        serde_json::to_string(&selected).map_err(|e| JsValue::from_str(&e.to_string()))
+    }
     pub fn numerical_history(
         &self,
         catalog: &str,
@@ -306,7 +327,7 @@ impl BrowserEngine {
         first: Option<u32>,
         last: Option<u32>,
     ) -> Result<String, JsValue> {
-        let history = icelines_core::view_model::rinkcraft_history::parse(catalog)
+        let history = icelines_core::view_model::rinkcraft_history::parse_source(catalog)
             .map_err(|e| JsValue::from_str(&e))?;
         let card = history
             .card(player_id, first, last)

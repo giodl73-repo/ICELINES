@@ -9,6 +9,27 @@ pub struct NumericalHistory {
     pub catalogs: Vec<NumericalCatalog>,
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SnapshotSelection {
+    pub selected_season: Option<u32>,
+    pub newest_supplied_season: Option<u32>,
+    pub requested_season: Option<u32>,
+    pub state: String,
+    pub note: String,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SnapshotResult {
+    pub selection: SnapshotSelection,
+    pub card: Option<super::rinkcraft_numbers::EvidenceCard>,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CatalogView {
+    pub catalog: NumericalCatalog,
+    pub seasons: Vec<u32>,
+}
+fn period(s: u32) -> String {
+    format!("{}–{:02}", s / 10000, s % 100)
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct HistoryCard {
     #[serde(default)]
     pub assessment: Option<super::rinkcraft_assessment::MeasuredAssessment>,
@@ -45,6 +66,59 @@ pub struct HistoryPoint {
     pub measurement: Option<Measurement>,
 }
 impl NumericalHistory {
+    /// Comparisons use exactly one supplied season, never a per-player fallback.
+    pub fn catalog_view(&self, season: Option<u32>) -> Result<CatalogView, String> {
+        self.validate()?;
+        let mut seasons = self.catalogs.iter().map(|c| c.season).collect::<Vec<_>>();
+        seasons.sort_unstable();
+        let selected = season.unwrap_or(*seasons.last().expect("validated nonempty history"));
+        let catalog = self
+            .catalogs
+            .iter()
+            .find(|c| c.season == selected)
+            .ok_or_else(|| format!("No numerical source for {}", period(selected)))?
+            .clone();
+        Ok(CatalogView { catalog, seasons })
+    }
+    /// Filter first; exact requests cannot fall back to a different year.
+    pub fn snapshot(
+        &self,
+        pid: u32,
+        first: Option<u32>,
+        last: Option<u32>,
+        exact: Option<u32>,
+    ) -> Result<SnapshotResult, String> {
+        self.validate()?;
+        let mut frames = self
+            .catalogs
+            .iter()
+            .filter(|c| first.is_none_or(|s| c.season >= s) && last.is_none_or(|s| c.season <= s))
+            .collect::<Vec<_>>();
+        frames.sort_by_key(|c| c.season);
+        let newest = frames.last().map(|c| c.season);
+        let selected = frames.iter().rev().find(|c| {
+            exact.is_none_or(|s| c.season == s) && c.profiles.iter().any(|p| p.player_id == pid)
+        });
+        let selected_season = selected.map(|c| c.season);
+        let card = selected.map(|c| c.card(pid, last)).transpose()?.flatten();
+        let (state, note) = match selected_season {
+            None => ("unavailable", exact.map(|s| format!("No player snapshot for {} within the requested window. No fallback used.", period(s)))
+                .unwrap_or_else(|| "No player snapshot within the requested window.".into())),
+            Some(s) if exact.is_some() => ("exact", format!("Selected {} snapshot. Historical request; no fallback used.", period(s))),
+            Some(s) if Some(s) != newest => ("older_fallback", format!("Player missing from latest supplied {} source; showing {}. Latest available player snapshot within the requested window.", period(newest.expect("selected frame implies newest")), period(s))),
+            Some(s) => ("latest", format!("Latest available player snapshot within the requested window: {}.", period(s))),
+        };
+        Ok(SnapshotResult {
+            selection: SnapshotSelection {
+                selected_season,
+                newest_supplied_season: newest,
+                requested_season: exact,
+                state: state.into(),
+                note,
+            },
+            card,
+        })
+    }
     pub fn validate(&self) -> Result<(), String> {
         if self.schema != SCHEMA || self.catalogs.is_empty() || self.catalogs.len() > 20 {
             return Err("unsupported or unbounded numerical history".into());
@@ -177,6 +251,25 @@ pub fn parse(text: &str) -> Result<NumericalHistory, String> {
     h.validate()?;
     Ok(h)
 }
+/// Accept an archive or the legacy single-season source without reserializing floats.
+pub fn parse_source(text: &str) -> Result<NumericalHistory, String> {
+    if text.len() > 8 * 1024 * 1024 {
+        return Err("numerical source exceeds 8 MiB".into());
+    }
+    #[derive(Deserialize)]
+    struct Header {
+        schema: String,
+    }
+    let header: Header = serde_json::from_str(text).map_err(|e| e.to_string())?;
+    if header.schema == SCHEMA {
+        return parse(text);
+    }
+    let catalog = super::rinkcraft_numbers::parse_catalog(text)?;
+    Ok(NumericalHistory {
+        schema: SCHEMA.into(),
+        catalogs: vec![catalog],
+    })
+}
 
 #[cfg(test)]
 mod tests {
@@ -204,6 +297,56 @@ mod tests {
             schema: SCHEMA.into(),
             catalogs: vec![c, a, b],
         };
+        let latest = h.snapshot(1, None, None, None).unwrap();
+        assert_eq!(latest.selection.state, "latest");
+        assert_eq!(latest.card.unwrap().season, 20252026);
+        let fallback = h.snapshot(25, None, None, None).unwrap();
+        assert_eq!(fallback.selection.state, "older_fallback");
+        assert_eq!(fallback.selection.newest_supplied_season, Some(20252026));
+        assert_eq!(fallback.card.unwrap().season, 20242025);
+        let exact = h.snapshot(25, None, None, Some(20252026)).unwrap();
+        assert_eq!(exact.selection.state, "unavailable");
+        assert!(exact.card.is_none());
+        assert!(h
+            .snapshot(25, Some(20252026), None, None)
+            .unwrap()
+            .card
+            .is_none());
+        assert!(h
+            .snapshot(1, Some(20252026), Some(20242025), None)
+            .unwrap()
+            .card
+            .is_none());
+        assert!(h
+            .snapshot(1, Some(20242025), None, Some(20232024))
+            .unwrap()
+            .card
+            .is_none());
+        let earlier = h.snapshot(25, None, Some(20242025), None).unwrap();
+        assert_eq!(earlier.selection.state, "latest");
+        assert_eq!(earlier.card.unwrap().season, 20242025);
+        assert_eq!(h.catalog_view(None).unwrap().catalog.season, 20252026);
+        assert!(h
+            .catalog_view(None)
+            .unwrap()
+            .catalog
+            .compare(1, 25)
+            .is_err());
+        assert!(h
+            .catalog_view(Some(20242025))
+            .unwrap()
+            .catalog
+            .compare(1, 25)
+            .is_ok());
+        assert!(h.catalog_view(Some(20222023)).is_err());
+        let legacy = serde_json::to_string(&h.catalogs[1]).unwrap();
+        assert_eq!(
+            parse_source(&legacy).unwrap().catalogs,
+            vec![rinkcraft_numbers::parse_catalog(&legacy).unwrap()]
+        );
+        let archive = serde_json::to_string(&h).unwrap();
+        assert_eq!(parse_source(&archive).unwrap(), parse(&archive).unwrap());
+        assert!(parse_source(r#"{"schema":"unknown"}"#).is_err());
         let card = h.card(25, None, None).unwrap().unwrap();
         assert_eq!(card.seasons.len(), 3);
         assert_eq!(card.rows[0].upper_quintile_seasons, Some(2));

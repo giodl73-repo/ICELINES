@@ -7,7 +7,7 @@ import {readCharacterCatalog} from './rinkcraft-character.js';
 import {readNumericalCatalog,renderNumericalComparison} from './rinkcraft-numbers.js';
 import {readNumericalHistory} from './rinkcraft-history.js';
 import type {HistoryCard} from './rinkcraft-history.js';
-import type {NumericalEvidence,NumericalComparison} from './rinkcraft-numbers.js';
+import type {NumericalComparison,CatalogView,SnapshotResult} from './rinkcraft-numbers.js';
 import type {CharacterSheet} from './rinkcraft-character.js';
 import { renderRinkcraftProfile } from './rinkcraft-profile.js';
 import type { RinkcraftProfile } from './rinkcraft-profile.js';
@@ -46,17 +46,49 @@ const resident = new Map<string, Dataset>();
 let saved: SavedDatasetEntry[] = [];
 let librarySequence = 0;
 let result: QueryResult | undefined;
-void readNumericalCatalog().then(c=>{
-  if(!c)return;
+void (async()=>{
+  const source=await readNumericalHistory()??await readNumericalCatalog();
+  if(!source)return;
+  // Initialization resumes after engine construction; all policy stays in shared Rust.
   const left=element<HTMLSelectElement>('rinkcraft-numeric-left');const right=element<HTMLSelectElement>('rinkcraft-numeric-right');
+  const season=element<HTMLSelectElement>('rinkcraft-numeric-season');
+  const output=element('rinkcraft-numeric-result');
+  let view:CatalogView;let sequence=0;
   const option=(id:number,name:string):HTMLOptionElement=>{const o=document.createElement('option');o.value=String(id);o.textContent=name;return o;};
-  for(const p of c.profiles)left.append(option(p.player_id,`${p.name} · ${p.group}`));
-  const updateRight=():void=>{const chosen=c.profiles.find(p=>p.player_id===Number(left.value));right.replaceChildren(...c.profiles.filter(p=>p.group===chosen?.group&&p.player_id!==chosen.player_id).map(p=>option(p.player_id,p.name)));};
-  const draw=async():Promise<void>=>{const comparison=await engine.request<NumericalComparison>('numericalComparison',{catalog:c,left:Number(left.value),right:Number(right.value)});element('rinkcraft-numeric-result').replaceChildren(renderNumericalComparison(comparison));};
-  left.onchange=()=>{updateRight();};updateRight();element('rinkcraft-numeric-controls').hidden=false;
+  const updateRight=(previous=right.value,keepMissing=false):void=>{
+    const chosen=view.catalog.profiles.find(p=>p.player_id===Number(left.value));
+    right.replaceChildren(...view.catalog.profiles.filter(p=>p.group===chosen?.group&&p.player_id!==chosen.player_id).map(p=>option(p.player_id,p.name)));
+    if(keepMissing&&previous&&!Array.from(right.options).some(o=>o.value===previous)){const missing=option(Number(previous),'Previously selected player · unavailable or incompatible this season');missing.disabled=true;right.prepend(missing);}
+    if(Array.from(right.options).some(o=>o.value===previous))right.value=previous;
+  };
+  const draw=async():Promise<void>=>{
+    const token=sequence;const c=view.catalog;const l=left.value;const r=right.value;
+    if(Number(season.value)!==c.season)throw new Error('Wait for the selected source season to load.');
+    if(!l||!r)throw new Error('Choose two available players in this source season.');
+    const comparison=await engine.request<NumericalComparison>('numericalComparison',{catalog:c,left:Number(l),right:Number(r)});
+    if(token!==sequence||l!==left.value||r!==right.value)return;
+    output.replaceChildren(renderNumericalComparison(comparison));
+  };
+  const chooseSeason=async(year?:number,pid?:number):Promise<boolean>=>{
+    const token=++sequence;const previous=pid===undefined?left.value:String(pid);const previousName=left.selectedOptions[0]?.textContent??previous;
+    left.disabled=true;right.disabled=true;element<HTMLButtonElement>('rinkcraft-numeric-compare').disabled=true;output.textContent='Loading source season…';
+    const next=await engine.request<CatalogView>('numericalCatalog',{source,season:year});
+    if(token!==sequence)return false;
+    left.disabled=false;right.disabled=false;element<HTMLButtonElement>('rinkcraft-numeric-compare').disabled=false;
+    view=next;season.replaceChildren(...view.seasons.map(s=>option(s,`${Math.floor(s/10000)}–${String(s%100).padStart(2,'0')}`)));season.value=String(view.catalog.season);
+    left.replaceChildren(...view.catalog.profiles.map(p=>option(p.player_id,`${p.name} · ${p.group}`)));
+    if(previous){if(!Array.from(left.options).some(o=>o.value===previous)){const absent=option(Number(previous),`${previousName} · unavailable this season`);absent.disabled=true;left.prepend(absent);}left.value=previous;}
+    updateRight(pid===undefined?right.value:'',pid===undefined);output.textContent='Both players use the selected source season. Choose players and compare. Missing players cannot fall back to an older year.';
+    return true;
+  };
+  await chooseSeason();
+  season.onchange=()=>{void perform(async()=>{await chooseSeason(Number(season.value));});};
+  left.onchange=()=>{sequence++;updateRight();output.replaceChildren();};
+  right.onchange=()=>{sequence++;output.replaceChildren();};
+  element('rinkcraft-numeric-controls').hidden=false;
   element('rinkcraft-numeric-compare').onclick=()=>{void perform(draw);};
-  document.addEventListener('rinkcraft-numerical-compare',event=>{const pid=(event as CustomEvent<{player_id:number}>).detail.player_id;left.value=String(pid);updateRight();void perform(async()=>{await draw();element<HTMLDialogElement>('player-dialog').close();element<HTMLDetailsElement>('rinkcraft-atlas').open=true;element<HTMLDetailsElement>('rinkcraft-numeric-controls').open=true;element('rinkcraft-numeric-controls').scrollIntoView({block:'start'});});});
-}).catch(error=>{element('rinkcraft-numeric-result').textContent=String(error);});
+  document.addEventListener('rinkcraft-numerical-compare',event=>{const {player_id,season:year}=(event as CustomEvent<{player_id:number;season:number}>).detail;void perform(async()=>{if(!await chooseSeason(year,player_id))return;await draw();element<HTMLDialogElement>('player-dialog').close();element<HTMLDetailsElement>('rinkcraft-atlas').open=true;element<HTMLDetailsElement>('rinkcraft-numeric-controls').open=true;element('rinkcraft-numeric-controls').scrollIntoView({block:'start'});});});
+})().catch(error=>{element('rinkcraft-numeric-result').textContent=String(error);});
 void readCharacterCatalog().then(raw => {
   if (!raw) { element('rinkcraft-atlas').hidden = true; return; }
   const c = raw as {showcase_notes?:string;classes:{id:string;name:string}[];assessments:{featured?:boolean;player_id:number;player_name:string;primary:{class_id:string};specialty:string}[]};
@@ -284,10 +316,12 @@ async function player(row: PlayerRow): Promise<void> {
   const profile = await engine.request<RinkcraftProfile>('rinkcraftProfile', { player_id:row.player_id, season_type:snapshot.season_type, first_season:null,last_season:null });
   const characterCatalog=await readCharacterCatalog();
   if(characterCatalog) profile.character_sheet=await engine.request<CharacterSheet|undefined>('characterSheet',{catalog:characterCatalog,player_id:row.player_id,season:snapshot.season})??undefined;
-  const numericalCatalog=await readNumericalCatalog();
-  if(numericalCatalog&&snapshot.season_type==='regular')profile.numerical_evidence=await engine.request<NumericalEvidence|undefined>('numericalEvidence',{catalog:numericalCatalog,player_id:row.player_id,ceiling:snapshot.season})??undefined;
-  const history=await readNumericalHistory();
-  if(history&&snapshot.season_type==='regular')profile.numerical_history=await engine.request<HistoryCard|undefined>('numericalHistory',{catalog:history,player_id:row.player_id,last:snapshot.season})??undefined;
+  const numericalSource=await readNumericalHistory()??await readNumericalCatalog();
+  if(numericalSource&&snapshot.season_type==='regular'){
+    const selected=await engine.request<SnapshotResult>('numericalSnapshot',{source:numericalSource,player_id:row.player_id,last:snapshot.season});
+    profile.numerical_evidence=selected.card??undefined;profile.numerical_snapshot=selected.selection;
+    profile.numerical_history=await engine.request<HistoryCard|undefined>('numericalHistory',{catalog:numericalSource,player_id:row.player_id,last:snapshot.season})??undefined;
+  }
   if (result !== snapshot || generation !== engine.generation) return;
   element('player-name').textContent = row.name;
 

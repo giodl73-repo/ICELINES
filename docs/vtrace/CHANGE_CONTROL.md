@@ -1,5 +1,10 @@
 # Change Control
 
+## CHG-136 — Explicit numerical snapshot/source periods (2026-11-08)
+
+Align primary records with latest supplied player evidence within bounds; label older fallback, forbid fallback on exact requests/comparisons, and expose comparison year. Contract: `design/specs/rinkcraft-snapshot-selection.md`. No source/data/class changes.
+
+
 ## CHG-135 — Visible measured assessment from annual evidence (2026-11-08)
 
 Add transparent shortlist-based repetition/recent-shift/coverage summaries to

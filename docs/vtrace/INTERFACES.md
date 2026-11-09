@@ -2,6 +2,13 @@
 
 ## IF-RINKCRAFT-NUMBERS-001 (CHG-130)
 
+CHG-136: optional profile `numerical_snapshot`; stateless WASM `numerical_catalog`
+and `numerical_snapshot` plus matching camelCase worker operations. Native numerical
+JSON/comparison/page accept an optional exact source `season`; default newest
+supplied. Primary snapshot allows labeled fallback within bounds, exact requests
+and comparison do not. Legacy single-season input supported. Contract:
+`design/specs/rinkcraft-snapshot-selection.md`.
+
 CHG-135: additive optional HistoryCard `assessment`, schema
 `icelines.rinkcraft-measured-assessment.v1`. Existing native profile/WASM history
 projection transports shared policy/results. New explicit-file `profile-assess`

@@ -13,7 +13,7 @@ try {
   assert.deepEqual(p.metrics,old.profiles.find(x=>x.player_id===p.player_id).metrics);
   const peer=current.profiles.find(x=>x.group===p.group&&x.player_id!==p.player_id);
   // Pure numerical API avoids unrelated career hydration for this source check.
-  const evidence=(await(await page.request.get(`http://127.0.0.1:8765/api/v1/rinkcraft/numbers/compare?left=${p.player_id}&right=${peer.player_id}`)).json()).data.left;
+  const evidence=(await(await page.request.get(`http://127.0.0.1:8765/api/v1/rinkcraft/numbers/compare?season=20242025&left=${p.player_id}&right=${peer.player_id}`)).json()).data.left;
   native.push(evidence);const s=evidence.style_evidence;expect(s.season).toBe(20242025);
   expect(s.measured).toHaveLength(p.group==='Goalies'?0:p.player_id===8478402?5:2);measured+=s.measured.length;
   for(const m of s.measured)expect(m.value).toBeCloseTo(m.numerator/m.denominator,10);
@@ -21,16 +21,16 @@ try {
   if(p.group!=='Goalies')expect(s.gaps.some(g=>g.axis==='North–south / east–west')).toBe(true);
  }
  expect(measured).toBe(47);
- await page.goto('http://127.0.0.1:8765/player/8478402/rinkcraft');await expect(page.locator('.rs-measure')).toHaveCount(5);
+ await page.goto('http://127.0.0.1:8765/player/8478402/rinkcraft?season=20242025');await expect(page.locator('.rs-measure')).toHaveCount(5);
  await expect(page.locator('[data-style-key="max-skating-speed"]')).toContainText('23.97 mph');
  await expect(page.locator('[data-style-key="speed-bursts-per-game"]')).toContainText('6.60 /game');
  await page.locator('.rs-style').screenshot({path:new URL('native-mcdavid-style.png',output).pathname.replace(/^\/([A-Z]:)/,'$1')});
  await page.setViewportSize({width:390,height:844});expect(await page.locator('body').evaluate(e=>e.scrollWidth<=innerWidth)).toBe(true);
- await page.goto('http://127.0.0.1:8765/player/8476945/rinkcraft');await expect(page.locator('.rs-measure')).toHaveCount(0);await expect(page.locator('.rs-style')).toContainText('Depth & movement');
+ await page.goto('http://127.0.0.1:8765/player/8476945/rinkcraft?season=20242025');await expect(page.locator('.rs-measure')).toHaveCount(0);await expect(page.locator('.rs-style')).toContainText('Depth & movement');
  const web=await browser.newContext();const app=await web.newPage();await app.goto('http://127.0.0.1:8766');
  const actual=await app.evaluate(async()=>{const b=await import('/pkg/icelines_wasm.js');await b.default();const e=new b.BrowserEngine();const c=await(await fetch('/rinkcraft-numbers.json')).json();const cards=c.profiles.map(p=>JSON.parse(e.numerical_evidence(JSON.stringify(c),p.player_id,20252026)));e.free();return cards;});
  expect(actual).toEqual(native);
- await app.locator('#data-library').evaluate(e=>e.open=true);await app.locator('#catalog').selectOption('20252026-regular');await app.locator('#load').click();await expect(app.locator('#context')).toHaveText('20252026 · regular');
+ await app.locator('#data-library').evaluate(e=>e.open=true);await app.locator('#catalog').selectOption('20242025-regular');await app.locator('#load').click();await expect(app.locator('#context')).toHaveText('20242025 · regular');
  await app.locator('#rinkcraft-atlas').evaluate(e=>e.open=true);await app.getByRole('button',{name:/Connor McDavid · Pathfinder/}).click();await expect(app.locator('#player-dialog .rs-measure')).toHaveCount(5);
  await web.setOffline(true);await expect(app.locator('#player-dialog .rs-style')).toContainText('Unmeasured');
  await app.locator('#player-dialog .rs-style').scrollIntoViewIfNeeded();await app.screenshot({path:new URL('wasm-mcdavid-style.png',output).pathname.replace(/^\/([A-Z]:)/,'$1')});
