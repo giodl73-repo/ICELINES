@@ -1,5 +1,10 @@
 # Change Control
 
+## CHG-138 — Readable matched numerical contrasts (2026-11-09)
+
+Add shared transparent top-gap summaries before the full numerical comparison, with coverage, signed/raw values and limits. Tighten formula/scale compatibility. No source/data/class changes. Contract: `design/specs/rinkcraft-contrast-summary.md`.
+
+
 ## CHG-137 — Attributes first and inspectable evidence (2026-11-08)
 
 Move six/four fixed facets above methods/history; expose shared attribute explanations and restore declared feature-stat context. No input/value/class changes. Contract: `design/specs/rinkcraft-attribute-explanations.md`.

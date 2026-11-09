@@ -1,5 +1,10 @@
 # Trace Matrix
 
+## Readable matched contrasts (CHG-138)
+
+REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> IF-RINKCRAFT-NUMBERS-001 -> shared fixed-pool contrast selection and native/WASM rendering -> ties/signs/coverage/definition guards, actual pair parity and no-JS/offline/mobile. Evidence: `docs/rinkcraft-contrast-validation-2026-11-09.md`.
+
+
 ## Attribute evidence and primary differentiation (CHG-137)
 
 REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> IF-RINKCRAFT-NUMBERS-001 -> shared explanation/context projection and native/WASM card -> unchanged values, nine contrasting profiles, first-screen placement, legacy/no-JS/offline/mobile. Evidence: `docs/rinkcraft-attributes-first-validation-2026-11-08.md`.

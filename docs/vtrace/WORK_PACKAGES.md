@@ -1,5 +1,10 @@
 # Work Packages
 
+## WP-RINKCRAFT-14 (CHG-138)
+
+Deliver interpretable matched numerical differences across all groups, preserving full evidence and missingness. Acceptance: `docs/rinkcraft-contrast-validation-2026-11-09.md`.
+
+
 ## WP-RINKCRAFT-13 (CHG-137)
 
 Deliver visible differentiation, inspectable per-attribute evidence and contrasting-player review across all positions. Acceptance: `docs/rinkcraft-attributes-first-validation-2026-11-08.md`.

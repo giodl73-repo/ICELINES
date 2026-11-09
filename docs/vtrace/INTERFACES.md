@@ -2,6 +2,12 @@
 
 ## IF-RINKCRAFT-NUMBERS-001 (CHG-130)
 
+CHG-138: optional NumericalComparison `contrast`, schema
+`icelines.rinkcraft-contrast-summary.v1`. Shared Rust selects fixed-facet rank gaps,
+coverage and omissions; existing native/WASM comparison transports the projection.
+Matched definitions now include formula/scale. Legacy rendering remains valid.
+Contract: `design/specs/rinkcraft-contrast-summary.md`.
+
 CHG-137: optional EvidenceFacet `explanation` and default-empty EvidenceCard
 `feature_context`. Shared Rust owns explicit related measures, limitations and
 feature bindings. Existing projection operations carry additive fields; no new

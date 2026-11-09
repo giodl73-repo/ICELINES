@@ -280,6 +280,8 @@ pub struct EvidenceFacet {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct NumericalComparison {
     #[serde(default)]
+    pub contrast: Option<super::rinkcraft_contrast::ContrastSummary>,
+    #[serde(default)]
     pub style: Option<super::rinkcraft_style::StyleComparison>,
     pub season: u32,
     pub left: EvidenceCard,
@@ -298,6 +300,25 @@ pub struct ComparisonRow {
     pub difference: Option<f64>,
     pub percentile_difference: Option<f64>,
     pub interpretation: String,
+}
+pub(crate) fn primary_facets(goalie: bool) -> &'static [(&'static str, &'static str)] {
+    if goalie {
+        &[
+            ("gsax-per-60", "Saving vs model"),
+            ("save-fraction", "Save outcome"),
+            ("goalie-threat-rate", "Threat faced"),
+            ("goalie-shot-workload", "Shot workload"),
+        ]
+    } else {
+        &[
+            ("primary-assists-per-60", "Primary-assist output"),
+            ("shots-per-60", "Shot volume"),
+            ("ixg-per-60", "Shot-opportunity volume"),
+            ("shot-quality", "Average shot quality"),
+            ("contact-per-60", "Recorded contact"),
+            ("goals-above-xg-per-60", "Observed conversion residual"),
+        ]
+    }
 }
 impl NumericalCatalog {
     pub fn validate(&self) -> Result<(), String> {
@@ -355,23 +376,7 @@ impl NumericalCatalog {
         let Some(p) = self.profiles.iter().find(|p| p.player_id == pid) else {
             return Ok(None);
         };
-        let keys: Vec<(&str, &str)> = if p.group == "Goalies" {
-            vec![
-                ("gsax-per-60", "Saving vs model"),
-                ("save-fraction", "Save outcome"),
-                ("goalie-threat-rate", "Threat faced"),
-                ("goalie-shot-workload", "Shot workload"),
-            ]
-        } else {
-            vec![
-                ("primary-assists-per-60", "Primary-assist output"),
-                ("shots-per-60", "Shot volume"),
-                ("ixg-per-60", "Shot-opportunity volume"),
-                ("shot-quality", "Average shot quality"),
-                ("contact-per-60", "Recorded contact"),
-                ("goals-above-xg-per-60", "Observed conversion residual"),
-            ]
-        };
+        let keys = primary_facets(p.group == "Goalies");
         let facets = keys
             .iter()
             .filter_map(|(key, label)| {
@@ -463,8 +468,12 @@ impl NumericalCatalog {
             let Some(b) = right.metrics.iter().find(|m| m.key == a.key) else {
                 continue;
             };
-            if a.unit != b.unit || a.reference_sha256 != b.reference_sha256 {
-                return Err("comparison requires the same units and reference population".into());
+            if a.unit != b.unit
+                || a.reference_sha256 != b.reference_sha256
+                || a.formula != b.formula
+                || a.scale != b.scale
+            {
+                return Err("comparison requires the same definition, scale, units and reference population".into());
             }
             rows.push(ComparisonRow {
                 key: a.key.clone(),
@@ -480,6 +489,7 @@ impl NumericalCatalog {
             });
         }
         Ok(NumericalComparison {
+            contrast: Some(super::rinkcraft_contrast::build(&left, &right, &rows)),
             style: super::rinkcraft_style::compare(&left, &right),
             season: self.season,
             left,

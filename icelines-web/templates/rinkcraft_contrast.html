@@ -1,0 +1,11 @@
+{% match c.contrast %}{% when Some with (s) %}
+<section class="rn-contrast" aria-label="Largest measured differences">
+<h3>Largest measured differences</h3>
+<p>{{ s.ranked_facets }}/{{ s.facet_count }} primary attributes ranked on both sides. Signed differences are <b>{{ c.left }} minus {{ c.right }}</b>.</p>
+<div class="rn-contrast-grid">{% for h in s.highlights %}<article class="rn-contrast-card" data-contrast-key="{{ h.key }}">
+<h4>{{ h.label }}</h4><strong class="rn-contrast-gap">{{ h.gap }}</strong><small>percentile points · raw difference {{ h.raw_gap }}</small>
+<div class="rn-contrast-values"><div class="rn-left"><span>{{ c.left }}</span><b>{{ h.left }}</b><small>{{ h.left_p }}</small></div><div class="rn-right"><span>{{ c.right }}</span><b>{{ h.right }}</b><small>{{ h.right_p }}</small></div></div>
+<p class="rn-contrast-limit">{{ h.limit }}</p></article>{% endfor %}</div>
+{% if s.highlights.is_empty() %}<p>No nonzero ranked gaps to highlight among the displayed attributes.</p>{% endif %}
+<details class="rn-contrast-rules"><summary>Selection rules and coverage</summary><p>{{ s.selection_note }}</p><p>{{ s.equal_rank_facets }} ranked attributes have equal percentile ranks; they remain in the full table.</p>{% for o in s.omitted %}<p><b>{{ o.label }}:</b> {{ o.reason }}</p>{% endfor %}</details>
+</section>{% when None %}{% endmatch %}

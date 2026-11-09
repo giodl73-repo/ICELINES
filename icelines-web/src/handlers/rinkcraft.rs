@@ -79,11 +79,31 @@ struct NumberChoice {
     selected: bool,
 }
 struct ComparisonView {
+    contrast: Option<ContrastView>,
     style: Option<StyleComparisonView>,
     left: String,
     right: String,
     scope: String,
     rows: Vec<ComparisonViewRow>,
+}
+struct ContrastView {
+    facet_count: usize,
+    ranked_facets: usize,
+    equal_rank_facets: usize,
+    highlights: Vec<ContrastHighlightView>,
+    omitted: Vec<icelines_core::view_model::rinkcraft_contrast::ContrastOmission>,
+    selection_note: String,
+}
+struct ContrastHighlightView {
+    key: String,
+    label: String,
+    gap: String,
+    raw_gap: String,
+    left: String,
+    right: String,
+    left_p: String,
+    right_p: String,
+    limit: String,
 }
 struct ComparisonViewRow {
     label: String,
@@ -269,6 +289,40 @@ pub async fn get_numbers(
                 })
                 .collect();
             ComparisonView {
+                contrast: c.contrast.as_ref().map(|s| ContrastView {
+                    facet_count: s.facet_count,
+                    ranked_facets: s.ranked_facets,
+                    equal_rank_facets: s.equal_rank_facets,
+                    selection_note: s.selection_note.clone(),
+                    omitted: s.omitted.clone(),
+                    highlights: s
+                        .highlights
+                        .iter()
+                        .map(|h| {
+                            let r = &h.measurement;
+                            ContrastHighlightView {
+                                key: r.key.clone(),
+                                label: h.label.clone(),
+                                gap: r
+                                    .percentile_difference
+                                    .map(|v| format!("{v:+.1} pp"))
+                                    .unwrap_or_else(|| "—".into()),
+                                raw_gap: style_comparison_value(&r.unit, r.difference, true),
+                                left: style_comparison_value(&r.unit, r.left, false),
+                                right: style_comparison_value(&r.unit, r.right, false),
+                                left_p: r
+                                    .left_percentile
+                                    .map(percentile_label)
+                                    .unwrap_or_else(|| "Unranked".into()),
+                                right_p: r
+                                    .right_percentile
+                                    .map(percentile_label)
+                                    .unwrap_or_else(|| "Unranked".into()),
+                                limit: h.limit.clone(),
+                            }
+                        })
+                        .collect(),
+                }),
                 style: c.style.as_ref().map(|s| StyleComparisonView {
                     rows: s
                         .rows

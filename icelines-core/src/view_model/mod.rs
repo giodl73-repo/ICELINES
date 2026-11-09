@@ -84,6 +84,7 @@ pub mod rinkcraft_assessment;
 pub mod rinkcraft_attribute_evidence;
 pub mod rinkcraft_attributes;
 pub mod rinkcraft_character;
+pub mod rinkcraft_contrast;
 pub mod rinkcraft_history;
 pub mod rinkcraft_numbers;
 pub mod rinkcraft_profile;
