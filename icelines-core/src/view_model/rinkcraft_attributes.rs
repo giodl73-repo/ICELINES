@@ -247,6 +247,9 @@ mod tests {
         assert_eq!(s.attributes[0].band, None);
         let views = r
             .read_league(Season(20252026), SeasonType::Regular)
+            // Player 25 was made ineligible above; hash iteration order must not
+            // decide whether this two-eligible-peer duplicate fixture has one.
+            .filter(|view| view.id() != PlayerId(25))
             .take(2)
             .collect::<Vec<_>>();
         let pid = views[0].id();

@@ -1,5 +1,12 @@
 # Work Packages
 
+## WP-RINKCRAFT-09 (CHG-133)
+
+Deliver matched-method comparison and visible data coverage from existing inputs.
+No new tactical dataset, player labels, grade or inferred chemistry. Validate
+shared Rust output, actual UI/API/WASM parity and legacy/offline/period behavior.
+Report: `docs/rinkcraft-style-comparison-validation-2026-11-08.md`.
+
 ## WP-RINKCRAFT-08 (CHG-132)
 
 Deliver the first measured playing-method layer from retained data, with source

@@ -74,6 +74,7 @@ struct NumberChoice {
     selected: bool,
 }
 struct ComparisonView {
+    style: Option<StyleComparisonView>,
     left: String,
     right: String,
     scope: String,
@@ -90,6 +91,21 @@ struct ComparisonViewRow {
     left_fill: f64,
     right_fill: f64,
     ranked: bool,
+}
+struct StyleComparisonView {
+    rows: Vec<StyleComparisonRowView>,
+    gaps: Vec<icelines_core::view_model::rinkcraft_style::StyleGap>,
+}
+struct StyleComparisonRowView {
+    key: String,
+    label: String,
+    left: String,
+    right: String,
+    left_scope: String,
+    right_scope: String,
+    difference: String,
+    status: String,
+    reason: String,
 }
 struct NumberCard {
     id: u32,
@@ -234,6 +250,46 @@ pub async fn get_numbers(
                 })
                 .collect();
             ComparisonView {
+                style: c.style.as_ref().map(|s| StyleComparisonView {
+                    rows: s
+                        .rows
+                        .iter()
+                        .map(|r| StyleComparisonRowView {
+                            key: r.key.clone(),
+                            label: r.label.clone(),
+                            left: r
+                                .left
+                                .as_ref()
+                                .map(|m| style_comparison_value(&m.unit, Some(m.value), false))
+                                .unwrap_or_else(|| "Unmeasured".into()),
+                            right: r
+                                .right
+                                .as_ref()
+                                .map(|m| style_comparison_value(&m.unit, Some(m.value), false))
+                                .unwrap_or_else(|| "Unmeasured".into()),
+                            left_scope: r
+                                .left
+                                .as_ref()
+                                .map(|m| m.scope.clone())
+                                .unwrap_or_default(),
+                            right_scope: r
+                                .right
+                                .as_ref()
+                                .map(|m| m.scope.clone())
+                                .unwrap_or_default(),
+                            difference: style_comparison_value(&r.unit, r.difference, true),
+                            status: match r.status.as_str() {
+                                "matched" => "Matched definition",
+                                "left_only" => "Left player only",
+                                "right_only" => "Right player only",
+                                _ => "Different context",
+                            }
+                            .into(),
+                            reason: r.reason.clone(),
+                        })
+                        .collect(),
+                    gaps: s.shared_gaps.clone(),
+                }),
                 scope: format!(
                     "{} · {} · {}",
                     season_label(c.season),
@@ -296,6 +352,19 @@ pub async fn get_numbers(
     .render()
     .map(|s| Html(s).into_response())
     .map_err(|e| WebError::Internal(e.into()))
+}
+fn style_comparison_value(unit: &str, value: Option<f64>, signed: bool) -> String {
+    if value.is_none() {
+        return "—".into();
+    }
+    let suffix = match unit {
+        "Per60" => " /60",
+        "Mph" => " mph",
+        "PerGame" => " /game",
+        "MilesPerGame" => " mi/game",
+        _ => "",
+    };
+    format!("{}{}", comparison_value(unit, value, signed), suffix)
 }
 fn comparison_value(unit: &str, value: Option<f64>, signed: bool) -> String {
     value

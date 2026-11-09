@@ -38,6 +38,122 @@ pub struct StyleGap {
     pub axis: String,
     pub reason: String,
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct StyleComparison {
+    pub schema: String,
+    pub rows: Vec<StyleComparisonRow>,
+    pub shared_gaps: Vec<StyleGap>,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct StyleComparisonRow {
+    pub key: String,
+    pub label: String,
+    pub unit: String,
+    pub left: Option<StyleMeasure>,
+    pub right: Option<StyleMeasure>,
+    pub difference: Option<f64>,
+    pub status: String,
+    pub reason: String,
+}
+/// Compare known descriptive definitions; never fill a missing method with zero.
+pub fn compare(
+    left: &super::rinkcraft_numbers::EvidenceCard,
+    right: &super::rinkcraft_numbers::EvidenceCard,
+) -> Option<StyleComparison> {
+    let a = left.style_evidence.as_ref();
+    let b = right.style_evidence.as_ref();
+    if a.is_none() && b.is_none() {
+        return None;
+    }
+    let mut keys = std::collections::BTreeSet::new();
+    let mut rows = Vec::new();
+    for m in a
+        .into_iter()
+        .flat_map(|s| &s.measured)
+        .chain(b.into_iter().flat_map(|s| &s.measured))
+    {
+        if !keys.insert(&m.key) {
+            continue;
+        }
+        let x = a.and_then(|s| s.measured.iter().find(|v| v.key == m.key));
+        let y = b.and_then(|s| s.measured.iter().find(|v| v.key == m.key));
+        let (status,reason) = match (x,y) {
+            (Some(x),Some(y)) if contexts_match(left,right,x,y) => ("matched","Same descriptive definition and compatible source scope; difference is left minus right."),
+            (Some(_),Some(_)) => ("incompatible","Definition, unit, situation or source frame differs; no difference is computed."),
+            (Some(_),None) => ("left_only","Only the left player has this measurement; the right value is unknown."),
+            (None,Some(_)) => ("right_only","Only the right player has this measurement; the left value is unknown."),
+            _ => unreachable!(),
+        };
+        rows.push(StyleComparisonRow {
+            key: m.key.clone(),
+            label: m.label.clone(),
+            unit: m.unit.clone(),
+            left: x.cloned(),
+            right: y.cloned(),
+            difference: if status == "matched" {
+                x.zip(y).map(|(x, y)| x.value - y.value)
+            } else {
+                None
+            },
+            status: status.into(),
+            reason: reason.into(),
+        });
+    }
+    let shared_gaps = a
+        .into_iter()
+        .flat_map(|s| &s.gaps)
+        .filter(|g| b.is_some_and(|s| s.gaps.iter().any(|v| v.axis == g.axis)))
+        .cloned()
+        .collect();
+    Some(StyleComparison {
+        schema: "icelines.rinkcraft-style-comparison.v1".into(),
+        rows,
+        shared_gaps,
+    })
+}
+fn contexts_match(
+    left: &super::rinkcraft_numbers::EvidenceCard,
+    right: &super::rinkcraft_numbers::EvidenceCard,
+    x: &StyleMeasure,
+    y: &StyleMeasure,
+) -> bool {
+    if left.season != right.season || left.group != right.group || x.unit != y.unit {
+        return false;
+    }
+    let expected = match x.key.as_str() {
+        "high-danger-shot-share" => Some(("Pct", "5on5 · provider-defined unblocked attempts")),
+        "contact-frequency" => Some(("Per60", "5on5 · recorded hits / ice time")),
+        _ => None,
+    };
+    if let Some((unit, scope)) = expected {
+        let fingerprints = |m: &StyleMeasure| {
+            m.sources
+                .iter()
+                .map(|s| (s.url.clone(), s.sha256.clone()))
+                .collect::<std::collections::BTreeSet<_>>()
+        };
+        return x.unit == unit
+            && x.scope == scope
+            && y.scope == scope
+            && fingerprints(x) == fingerprints(y);
+    }
+    let unit = match x.key.as_str() {
+        "max-skating-speed" => "Mph",
+        "speed-bursts-per-game" => "PerGame",
+        "distance-per-game" => "MilesPerGame",
+        _ => return false,
+    };
+    let valid = |card: &super::rinkcraft_numbers::EvidenceCard, m: &StyleMeasure| {
+        m.scope.starts_with("All strengths · ")
+            && m.sources.len() == 1
+            && m.sources[0].url
+                == format!(
+                    "https://api-web.nhle.com/v1/edge/skater-detail/{}/{}/2",
+                    card.player_id, card.season
+                )
+    };
+    x.unit == unit && valid(left, x) && valid(right, y)
+}
 #[allow(clippy::too_many_arguments)] // A table-like definition plus its source components.
 fn measure(
     key: &str,
@@ -217,6 +333,57 @@ pub fn validate(s: &StyleEvidence, season: u32) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn comparisons_preserve_unknowns_and_reject_context_changes() {
+        use super::super::rinkcraft_numbers::{self, InputRow};
+        let source = Source {
+            url: "https://example.org/skaters.csv".into(),
+            sha256: "a".repeat(64),
+            bytes: 100,
+        };
+        let rows = (1..=2)
+            .map(|id| InputRow {
+                player_id: id,
+                name: format!("Synthetic {id}"),
+                group: "Forwards".into(),
+                games: 20,
+                seconds: 30000.,
+                values: [
+                    ("high_danger_shots".into(), id as f64 * 10.),
+                    ("unblocked_shots".into(), 100.),
+                    ("hits".into(), id as f64 * 5.),
+                ]
+                .into_iter()
+                .collect(),
+            })
+            .collect::<Vec<_>>();
+        let mut c = rinkcraft_numbers::build(&rows, 20242025, &[], vec![source]).unwrap();
+        enrich(&mut c, &[]).unwrap();
+        let a = c.card(1, None).unwrap().unwrap();
+        let mut b = c.card(2, None).unwrap().unwrap();
+        let result = compare(&a, &b).unwrap();
+        assert_eq!(result.rows[0].status, "matched");
+        assert_eq!(result.rows[0].difference, Some(-0.1));
+        assert!(!result.shared_gaps.is_empty());
+        b.style_evidence.as_mut().unwrap().measured[0].sources[0].sha256 = "b".repeat(64);
+        let result = compare(&a, &b).unwrap();
+        assert_eq!(result.rows[0].status, "incompatible");
+        assert_eq!(result.rows[0].difference, None);
+        b.style_evidence.as_mut().unwrap().measured.remove(0);
+        let result = compare(&a, &b).unwrap();
+        assert_eq!(result.rows[0].status, "left_only");
+        assert!(result.rows[0].right.is_none());
+        assert!(result.rows[0].difference.is_none());
+        b.style_evidence = None;
+        assert!(compare(&a, &b)
+            .unwrap()
+            .rows
+            .iter()
+            .all(|r| r.status == "left_only"));
+        let mut none = a.clone();
+        none.style_evidence = None;
+        assert!(compare(&none, &b).is_none());
+    }
     #[test]
     fn shot_selection_is_a_share_contact_is_a_rate_and_invalid_evidence_rejects() {
         use super::super::rinkcraft_numbers::{self, InputRow};

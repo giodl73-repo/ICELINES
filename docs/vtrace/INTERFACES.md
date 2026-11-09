@@ -2,6 +2,12 @@
 
 ## IF-RINKCRAFT-NUMBERS-001 (CHG-130)
 
+CHG-133: optional NumericalComparison `style` projection, schema
+`icelines.rinkcraft-style-comparison.v1`. Existing native comparison API and WASM
+method carry shared context matching, difference/missingness states and shared
+gaps. No new worker operation or prepared data format. Contract:
+`design/specs/rinkcraft-style-comparison.md`.
+
 CHG-132 extension: optional `style_evidence` in numerical profile and EvidenceCard,
 protocol `rinkcraft.playing-methods.0.1.0-experimental`; bounded local capture
 manifest and `profile-style` CLI. Existing native API and WASM numerical projection

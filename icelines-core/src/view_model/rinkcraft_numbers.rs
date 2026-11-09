@@ -275,6 +275,8 @@ pub struct EvidenceFacet {
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct NumericalComparison {
+    #[serde(default)]
+    pub style: Option<super::rinkcraft_style::StyleComparison>,
     pub season: u32,
     pub left: EvidenceCard,
     pub right: EvidenceCard,
@@ -472,6 +474,7 @@ impl NumericalCatalog {
             });
         }
         Ok(NumericalComparison {
+            style: super::rinkcraft_style::compare(&left, &right),
             season: self.season,
             left,
             right,

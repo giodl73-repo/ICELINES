@@ -1,5 +1,13 @@
 # Change Control
 
+## CHG-133 — Playing-method comparison with explicit coverage (2026-11-08)
+
+Owner asks to continue. Add shared style comparison projection and native/browser
+view with matched, one-sided and incompatible rows plus shared gaps. Original
+measurements and style inputs unchanged. No tactical values inferred from missing
+data, class relabeling or new source acquisition. Contract:
+`design/specs/rinkcraft-style-comparison.md`.
+
 ## CHG-132 — Measured playing methods and explicit tactical gaps (2026-11-08)
 
 Add optional style evidence to numerical profiles/cards, a strict local verified

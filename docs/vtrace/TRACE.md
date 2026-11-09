@@ -1,5 +1,11 @@
 # Trace Matrix
 
+CHG-133 / IF-RINKCRAFT-NUMBERS-001: REQ-PARITY-001 / REQ-WEB-001 /
+REQ-BROWSER-001 -> shared style matching/differences -> native/WASM comparison
+view -> sign reversal, missingness, incompatible source/context, old catalog,
+goalie, exact API/WASM, no-JS/offline/mobile checks. Evidence:
+`docs/rinkcraft-style-comparison-validation-2026-11-08.md`.
+
 CHG-132 / IF-RINKCRAFT-NUMBERS-001: REQ-PARITY-001 / REQ-WEB-001 /
 REQ-BROWSER-001 -> bounded source capture parser, pure descriptive style extension
 and native/WASM cards -> denominator/hash/season/missingness tests, unchanged
