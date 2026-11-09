@@ -2,6 +2,13 @@
 
 ## IF-RINKCRAFT-NUMBERS-001 (CHG-130)
 
+CHG-135: additive optional HistoryCard `assessment`, schema
+`icelines.rinkcraft-measured-assessment.v1`. Existing native profile/WASM history
+projection transports shared policy/results. New explicit-file `profile-assess`
+CLI with whole-season bounds; existing archive/prepared asset unchanged. Legacy
+history cards retain their table. Contract:
+`design/specs/rinkcraft-measured-assessment.md`.
+
 CHG-134: optional profile `numerical_history`; archive schema
 `icelines.rinkcraft-numerical-history.v1`, projected card
 `icelines.rinkcraft-history-card.v1`; CLI `profile-history`, native

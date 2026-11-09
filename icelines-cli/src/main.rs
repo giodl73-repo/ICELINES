@@ -142,6 +142,25 @@ fn should_auto_setup(
 
 async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
     match cli.command {
+        Commands::ProfileAssess {
+            history,
+            player,
+            first_season,
+            last_season,
+        } => {
+            for season in [first_season, last_season].into_iter().flatten() {
+                let year = season / 10000;
+                anyhow::ensure!(
+                    (1900..=2200).contains(&year) && season % 10000 == year + 1,
+                    "season bounds must use YYYYZZZZ, for example 20242025"
+                );
+            }
+            let history = icelines_fetch::rinkcraft_history::load(&history)?;
+            let card = history
+                .card(player, first_season, last_season)
+                .map_err(anyhow::Error::msg)?;
+            println!("{}", serde_json::to_string_pretty(&card)?);
+        }
         Commands::ProfileHistory { catalog } => {
             let mut text = Vec::new();
             let mut frames = Vec::new();

@@ -618,6 +618,7 @@ struct EvidenceView {
     credit: String,
 }
 struct HistoryView {
+    assessment: Option<AssessmentView>,
     sources: Vec<icelines_core::view_model::rinkcraft_numbers::Source>,
     scope: String,
     seasons: Vec<String>,
@@ -632,8 +633,114 @@ struct HistoryRowView {
     repeat: String,
     reason: String,
 }
+struct AssessmentView {
+    scope: String,
+    repeated: Vec<RepeatedView>,
+    repeated_reason: String,
+    recent: Option<RecentView>,
+    recent_reason: String,
+    shortlist: String,
+}
+struct RepeatedView {
+    key: String,
+    label: String,
+    count: String,
+    range: String,
+    latest: String,
+}
+struct RecentView {
+    key: String,
+    label: String,
+    period: String,
+    delta: String,
+    ranks: String,
+    raw: String,
+}
+fn assessment_view(
+    h: &icelines_core::view_model::rinkcraft_history::HistoryCard,
+) -> Option<AssessmentView> {
+    h.assessment.as_ref().map(|a| AssessmentView {
+        scope: format!(
+            "MoneyPuck.com · {} → {} · {}/{} supplied seasons reported · Last reported: {}",
+            season_label(a.first_season),
+            season_label(a.last_season),
+            a.reported_seasons,
+            a.supplied_seasons,
+            h.seasons
+                .iter()
+                .rev()
+                .find(|s| s.group.is_some())
+                .map(|s| format!(
+                    "{}: {} · {}",
+                    season_label(s.season),
+                    s.group.as_deref().unwrap_or("Unavailable"),
+                    if s.situation.as_deref() == Some("all") {
+                        "all strengths"
+                    } else {
+                        s.situation.as_deref().unwrap_or("unavailable")
+                    }
+                ))
+                .unwrap_or_else(|| "Unavailable".into())
+        ),
+        repeated: a
+            .repeated
+            .iter()
+            .map(|s| RepeatedView {
+                key: s.key.clone(),
+                label: s.label.clone(),
+                count: format!("{} / {} seasons ≥ P80", s.seasons, a.supplied_seasons),
+                range: format!(
+                    "{}–{}",
+                    percentile_label(s.minimum_percentile),
+                    percentile_label(s.maximum_percentile)
+                ),
+                latest: format!(
+                    "{}: {} · {}",
+                    season_label(a.last_season),
+                    style_comparison_value(&s.unit, Some(s.latest_value), false),
+                    percentile_label(s.latest_percentile)
+                ),
+            })
+            .collect(),
+        repeated_reason: a.repeated_reason.clone(),
+        recent_reason: a.recent_reason.clone(),
+        recent: a.recent.as_ref().map(|c| RecentView {
+            key: c.key.clone(),
+            label: c.label.clone(),
+            period: format!(
+                "{} → {}",
+                season_label(c.from_season),
+                season_label(c.to_season)
+            ),
+            delta: format!("{:+.1} pp", (c.percentile_difference * 10.).round() / 10.),
+            ranks: format!(
+                "{} → {}",
+                percentile_label(c.previous_percentile),
+                percentile_label(c.latest_percentile)
+            ),
+            raw: format!(
+                "{} → {}",
+                style_comparison_value(&c.unit, Some(c.previous_value), false),
+                style_comparison_value(&c.unit, Some(c.latest_value), false)
+            ),
+        }),
+        shortlist: a
+            .shortlist
+            .iter()
+            .map(|key| {
+                h.rows
+                    .iter()
+                    .find(|r| r.key == *key)
+                    .map(|r| r.label.clone())
+                    .unwrap_or_else(|| key.clone())
+            })
+            .collect::<Vec<_>>()
+            .join(" · "),
+    })
+}
 fn history_view(h: &icelines_core::view_model::rinkcraft_history::HistoryCard) -> HistoryView {
     HistoryView {
+        assessment: assessment_view(h),
         sources: h.seasons.iter().flat_map(|s| s.sources.clone()).collect(),
         scope: format!(
             "{} season snapshots · {} reported for this player",

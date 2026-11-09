@@ -79,6 +79,19 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
+    /// Project a measured assessment and annual evidence from an explicit local history archive.
+    ProfileAssess {
+        #[arg(long)]
+        history: PathBuf,
+        #[arg(long)]
+        player: u32,
+        /// First whole season ID (YYYYZZZZ).
+        #[arg(long)]
+        first_season: Option<u32>,
+        /// Last whole season ID (YYYYZZZZ).
+        #[arg(long)]
+        last_season: Option<u32>,
+    },
     /// Assemble validated numerical season snapshots without pooling their ranks.
     ProfileHistory {
         #[arg(long, num_args=1.., required=true)]

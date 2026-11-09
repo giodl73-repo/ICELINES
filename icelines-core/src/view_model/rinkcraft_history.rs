@@ -10,6 +10,8 @@ pub struct NumericalHistory {
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct HistoryCard {
+    #[serde(default)]
+    pub assessment: Option<super::rinkcraft_assessment::MeasuredAssessment>,
     pub schema: String,
     pub player_id: u32,
     pub name: String,
@@ -139,7 +141,7 @@ impl NumericalHistory {
                 points,
             });
         }
-        let seasons = frames
+        let seasons: Vec<_> = frames
             .iter()
             .map(|c| {
                 let p = c.profiles.iter().find(|p| p.player_id == pid);
@@ -159,7 +161,8 @@ impl NumericalHistory {
                 }
             })
             .collect();
-        Ok(Some(HistoryCard {schema:"icelines.rinkcraft-history-card.v1".into(),player_id:pid,name:target.name.clone(),seasons,rows,limitations:vec![
+        let assessment = Some(super::rinkcraft_assessment::build(&seasons, &rows));
+        Ok(Some(HistoryCard {assessment,schema:"icelines.rinkcraft-history-card.v1".into(),player_id:pid,name:target.name.clone(),seasons,rows,limitations:vec![
             "P >= 80 counts repeated upper-quintile raw values among ranked seasons; higher is not always better. This is a descriptive display threshold, not skill or class validity.".into(),
             "Seasonal ranks use different annual peers; they are not averaged or pooled. Missing seasons and unranked exposure stay explicit.".into(),
             "Historical snapshots were acquired retrospectively; model vintages, opportunity adjustment and statistical persistence are not established.".into(),

@@ -80,6 +80,7 @@ pub mod prospect_conversion;
 pub mod prospect_study;
 pub mod records;
 pub mod report;
+pub mod rinkcraft_assessment;
 pub mod rinkcraft_attributes;
 pub mod rinkcraft_character;
 pub mod rinkcraft_history;

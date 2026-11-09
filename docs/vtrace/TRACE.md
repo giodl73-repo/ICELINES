@@ -1,5 +1,11 @@
 # Trace Matrix
 
+CHG-135 / IF-RINKCRAFT-NUMBERS-001: REQ-PARITY-001 / REQ-WEB-001 /
+REQ-BROWSER-001 -> shared measured assessment policy and explicit CLI -> visible
+native/WASM card -> P80/tie/bound/cutoff/missing/context guards, 25 CLI/WASM and
+representative native parity, legacy/no-JS/offline/mobile/source preservation.
+Evidence: `docs/rinkcraft-measured-assessment-validation-2026-11-08.md`.
+
 CHG-134 / IF-RINKCRAFT-NUMBERS-001: REQ-PARITY-001 / REQ-WEB-001 /
 REQ-BROWSER-001 -> bounded archive/CLI, shared annual projection and range guards
 -> native/WASM character expander -> source preservation, missing/year/group/

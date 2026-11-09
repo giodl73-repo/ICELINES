@@ -1,5 +1,13 @@
 # Work Packages
 
+## WP-RINKCRAFT-11 (CHG-135)
+
+Deliver a visible, reproducible measured summary of existing annual evidence,
+retaining full data/coverage and independent class hypotheses. No new source,
+overall ability/class score, statistical persistence or causal claim. Acceptance
+and actual source/build provenance:
+`docs/rinkcraft-measured-assessment-validation-2026-11-08.md`.
+
 ## WP-RINKCRAFT-10 (CHG-134)
 
 Deliver annual numerical evidence from three independent seasonal snapshots,

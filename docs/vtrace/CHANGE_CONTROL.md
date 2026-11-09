@@ -1,5 +1,13 @@
 # Change Control
 
+## CHG-135 — Visible measured assessment from annual evidence (2026-11-08)
+
+Add transparent shortlist-based repetition/recent-shift/coverage summaries to
+HistoryCard and the primary native/WASM card, plus `profile-assess` CLI. Source
+archive and numerical/class data unchanged. Full coverage required for repetition
+headlines; no missing-latest fallback or skill/class score. Contract:
+`design/specs/rinkcraft-measured-assessment.md`.
+
 ## CHG-134 — Annual numerical evidence and transparent repetition (2026-11-08)
 
 Add optional bounded source-history archive/CLI, shared annual projection and
