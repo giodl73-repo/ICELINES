@@ -79,6 +79,11 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
+    /// Assemble validated numerical season snapshots without pooling their ranks.
+    ProfileHistory {
+        #[arg(long, num_args=1.., required=true)]
+        catalog: Vec<PathBuf>,
+    },
     /// Add measured playing-method evidence from a verified local EDGE capture directory.
     ProfileStyle {
         #[arg(long)]

@@ -2,6 +2,13 @@
 
 ## IF-RINKCRAFT-NUMBERS-001 (CHG-130)
 
+CHG-134: optional profile `numerical_history`; archive schema
+`icelines.rinkcraft-numerical-history.v1`, projected card
+`icelines.rinkcraft-history-card.v1`; CLI `profile-history`, native
+`ICELINES_RINKCRAFT_HISTORY`, stateless WASM `numerical_history` and worker
+`numericalHistory`, optional authenticated `rinkcraft-history.json`. Existing
+single-season/style contracts unchanged. Bounds precede repetition counting.
+
 CHG-133: optional NumericalComparison `style` projection, schema
 `icelines.rinkcraft-style-comparison.v1`. Existing native comparison API and WASM
 method carry shared context matching, difference/missingness states and shared

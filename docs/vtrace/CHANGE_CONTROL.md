@@ -1,5 +1,13 @@
 # Change Control
 
+## CHG-134 — Annual numerical evidence and transparent repetition (2026-11-08)
+
+Add optional bounded source-history archive/CLI, shared annual projection and
+default-closed evidence expander inside native/WASM character cards. New public
+2023–24/2025–26 source snapshots surround preserved 2024–25 data. Annual peers,
+missingness and retrospective limits remain explicit; no pooled rank, stable-skill
+badge or class change. Contract: `design/specs/rinkcraft-numerical-history.md`.
+
 ## CHG-133 — Playing-method comparison with explicit coverage (2026-11-08)
 
 Owner asks to continue. Add shared style comparison projection and native/browser

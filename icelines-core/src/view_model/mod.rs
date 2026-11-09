@@ -82,6 +82,7 @@ pub mod records;
 pub mod report;
 pub mod rinkcraft_attributes;
 pub mod rinkcraft_character;
+pub mod rinkcraft_history;
 pub mod rinkcraft_numbers;
 pub mod rinkcraft_profile;
 pub mod rinkcraft_style;

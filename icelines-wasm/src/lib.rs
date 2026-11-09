@@ -299,6 +299,20 @@ impl BrowserEngine {
         serde_json::to_string(&profile).map_err(|e| JsValue::from_str(&e.to_string()))
     }
     /// Curated research input is explicitly supplied; no stat-to-class inference or IO.
+    pub fn numerical_history(
+        &self,
+        catalog: &str,
+        player_id: u32,
+        first: Option<u32>,
+        last: Option<u32>,
+    ) -> Result<String, JsValue> {
+        let history = icelines_core::view_model::rinkcraft_history::parse(catalog)
+            .map_err(|e| JsValue::from_str(&e))?;
+        let card = history
+            .card(player_id, first, last)
+            .map_err(|e| JsValue::from_str(&e))?;
+        serde_json::to_string(&card).map_err(|e| JsValue::from_str(&e.to_string()))
+    }
     pub fn numerical_evidence(
         &self,
         catalog: &str,

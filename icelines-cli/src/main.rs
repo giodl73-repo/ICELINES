@@ -142,6 +142,35 @@ fn should_auto_setup(
 
 async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
     match cli.command {
+        Commands::ProfileHistory { catalog } => {
+            let mut text = Vec::new();
+            let mut frames = Vec::new();
+            for path in catalog {
+                frames.push(icelines_fetch::rinkcraft_numbers::load_catalog(&path)?);
+                text.push(std::fs::read_to_string(path)?);
+            }
+            let h = icelines_core::view_model::rinkcraft_history::NumericalHistory {
+                schema: icelines_core::view_model::rinkcraft_history::SCHEMA.into(),
+                catalogs: frames,
+            };
+            h.validate().map_err(anyhow::Error::msg)?;
+            let raw = text
+                .iter()
+                .map(|s| serde_json::value::RawValue::from_string(s.clone()))
+                .collect::<Result<Vec<_>, _>>()?;
+            #[derive(serde::Serialize)]
+            struct Archive<'a> {
+                schema: &'a str,
+                catalogs: Vec<Box<serde_json::value::RawValue>>,
+            }
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&Archive {
+                    schema: &h.schema,
+                    catalogs: raw
+                })?
+            );
+        }
         Commands::ProfileStyle {
             numbers,
             edge_captures,

@@ -506,6 +506,21 @@ async fn profile(
         profile.source_windows = sources;
         icelines_fetch::rinkcraft_profile::attach_attribute_seasons(&mut profile, &store)?;
         if req.season_type == SeasonType::Regular {
+            if let Some(path) = std::env::var_os("ICELINES_RINKCRAFT_HISTORY") {
+                let history = icelines_fetch::rinkcraft_history::load(std::path::Path::new(&path))?;
+                let ceiling = character_season
+                    .map(|s| s.0)
+                    .or(req.last_season.map(|s| s.0))
+                    .unwrap_or(icelines_core::CURRENT_SEASON);
+                let ceiling = ceiling.min(req.last_season.map(|s| s.0).unwrap_or(ceiling));
+                profile.numerical_history = history
+                    .card(
+                        req.player_id.0,
+                        req.first_season.map(|s| s.0),
+                        Some(ceiling),
+                    )
+                    .map_err(anyhow::Error::msg)?;
+            }
             if let Some(path) = std::env::var_os("ICELINES_RINKCRAFT_NUMBERS") {
                 let catalog =
                     icelines_fetch::rinkcraft_numbers::load_catalog(std::path::Path::new(&path))?;
@@ -573,6 +588,7 @@ pub async fn get_json(
 #[derive(Template)]
 #[template(path = "rinkcraft.html")]
 struct ProfileTemplate {
+    history: Option<HistoryView>,
     numerical: Option<EvidenceView>,
     stat_line: Vec<StatCell>,
     feature_cards: Vec<FeatureCard>,
@@ -600,6 +616,85 @@ struct EvidenceView {
     facets: Vec<FacetView>,
     metrics: Vec<NumberRow>,
     credit: String,
+}
+struct HistoryView {
+    sources: Vec<icelines_core::view_model::rinkcraft_numbers::Source>,
+    scope: String,
+    seasons: Vec<String>,
+    rows: Vec<HistoryRowView>,
+    coverage: Vec<String>,
+    limits: Vec<String>,
+}
+struct HistoryRowView {
+    key: String,
+    label: String,
+    values: Vec<String>,
+    repeat: String,
+    reason: String,
+}
+fn history_view(h: &icelines_core::view_model::rinkcraft_history::HistoryCard) -> HistoryView {
+    HistoryView {
+        sources: h.seasons.iter().flat_map(|s| s.sources.clone()).collect(),
+        scope: format!(
+            "{} season snapshots · {} reported for this player",
+            h.seasons.len(),
+            h.seasons.iter().filter(|s| s.state == "available").count()
+        ),
+        seasons: h.seasons.iter().map(|s| season_label(s.season)).collect(),
+        rows: h
+            .rows
+            .iter()
+            .map(|r| HistoryRowView {
+                key: r.key.clone(),
+                label: r.label.clone(),
+                values: r
+                    .points
+                    .iter()
+                    .map(|p| {
+                        p.measurement
+                            .as_ref()
+                            .map(|m| {
+                                format!(
+                                    "{}{} · {} · n={}",
+                                    measurement_value(m),
+                                    if m.unit == "Per60" { " /60" } else { "" },
+                                    m.percentile
+                                        .map(percentile_label)
+                                        .unwrap_or_else(|| m.state.replace('_', " ")),
+                                    m.measured_peers
+                                )
+                            })
+                            .unwrap_or_else(|| p.state.replace('_', " "))
+                    })
+                    .collect(),
+                repeat: if r.ranked_seasons == 0 {
+                    "Unranked".into()
+                } else {
+                    r.upper_quintile_seasons
+                        .map(|n| format!("{n} / {}", r.ranked_seasons))
+                        .unwrap_or_else(|| "Not comparable".into())
+                },
+                reason: r.comparability.clone(),
+            })
+            .collect(),
+        coverage: h
+            .seasons
+            .iter()
+            .map(|s| {
+                format!(
+                    "{} · {} · {} GP · {} · {}",
+                    season_label(s.season),
+                    s.group.as_deref().unwrap_or("Missing player"),
+                    s.games.map(|g| g.to_string()).unwrap_or_else(|| "—".into()),
+                    s.situation.as_deref().unwrap_or("unavailable"),
+                    s.minutes
+                        .map(|m| format!("{m:.1} minutes"))
+                        .unwrap_or_else(|| "unavailable".into())
+                )
+            })
+            .collect(),
+        limits: h.limitations.clone(),
+    }
 }
 struct FacetView {
     label: String,
@@ -1031,6 +1126,7 @@ pub async fn get_html(
         })
         .unwrap_or_else(|| "Statistical snapshot unavailable".into());
     let template = ProfileTemplate {
+        history: view.numerical_history.as_ref().map(history_view),
         numerical: view.numerical_evidence.as_ref().map(evidence_view),
         stat_line: stat_line(&view, p.season),
         feature_cards: feature_cards(&view, p.season),

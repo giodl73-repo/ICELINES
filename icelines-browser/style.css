@@ -51,6 +51,8 @@ table{border-collapse:collapse;width:100%;background:var(--surface);color:var(--
 /* The parchment character card keeps its own ink palette inside all host themes. */
 .rk-sheet p{color:var(--rk-ink)}.rk-sheet .rk-specialty,.rk-sheet .rk-footnote,.rk-sheet .rk-stat-period{color:var(--rk-muted)}
 .rk-sheet .rs-style summary,.rk-sheet .rs-style a{color:var(--rk-ink)}
+.rk-sheet .rh-history tr,.rk-sheet .rh-history tr:hover{background:transparent}
+.rk-sheet .rh-history a{color:var(--rk-ink)}
 .rn-comparison{--ice-surface:var(--surface);--ice-divider:var(--border);color:var(--fg)}
 .rn-comparison .rn-left{color:var(--link)}
 .rn-comparison .rn-right{color:#ffb581}

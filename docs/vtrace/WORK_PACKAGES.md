@@ -1,5 +1,13 @@
 # Work Packages
 
+## WP-RINKCRAFT-10 (CHG-134)
+
+Deliver annual numerical evidence from three independent seasonal snapshots,
+preserving primary class/stat/style identity and exposing missing records. Shared
+Rust owns counts and temporal selection. No persistent-talent, directional style
+or class validity model. Actual checks/coverage:
+`docs/rinkcraft-numerical-history-validation-2026-11-08.md`.
+
 ## WP-RINKCRAFT-09 (CHG-133)
 
 Deliver matched-method comparison and visible data coverage from existing inputs.

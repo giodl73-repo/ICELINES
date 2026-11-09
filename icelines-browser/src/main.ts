@@ -5,6 +5,8 @@ import type { ComparisonContext } from './comparison.js';
 import { renderPlayerHistory } from './player-history.js';
 import {readCharacterCatalog} from './rinkcraft-character.js';
 import {readNumericalCatalog,renderNumericalComparison} from './rinkcraft-numbers.js';
+import {readNumericalHistory} from './rinkcraft-history.js';
+import type {HistoryCard} from './rinkcraft-history.js';
 import type {NumericalEvidence,NumericalComparison} from './rinkcraft-numbers.js';
 import type {CharacterSheet} from './rinkcraft-character.js';
 import { renderRinkcraftProfile } from './rinkcraft-profile.js';
@@ -284,6 +286,8 @@ async function player(row: PlayerRow): Promise<void> {
   if(characterCatalog) profile.character_sheet=await engine.request<CharacterSheet|undefined>('characterSheet',{catalog:characterCatalog,player_id:row.player_id,season:snapshot.season})??undefined;
   const numericalCatalog=await readNumericalCatalog();
   if(numericalCatalog&&snapshot.season_type==='regular')profile.numerical_evidence=await engine.request<NumericalEvidence|undefined>('numericalEvidence',{catalog:numericalCatalog,player_id:row.player_id,ceiling:snapshot.season})??undefined;
+  const history=await readNumericalHistory();
+  if(history&&snapshot.season_type==='regular')profile.numerical_history=await engine.request<HistoryCard|undefined>('numericalHistory',{catalog:history,player_id:row.player_id,last:snapshot.season})??undefined;
   if (result !== snapshot || generation !== engine.generation) return;
   element('player-name').textContent = row.name;
 

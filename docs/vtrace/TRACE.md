@@ -1,5 +1,11 @@
 # Trace Matrix
 
+CHG-134 / IF-RINKCRAFT-NUMBERS-001: REQ-PARITY-001 / REQ-WEB-001 /
+REQ-BROWSER-001 -> bounded archive/CLI, shared annual projection and range guards
+-> native/WASM character expander -> source preservation, missing/year/group/
+duplicate guards, actual engine/UI parity, offline/no-JS/mobile and history
+regressions. Evidence: `docs/rinkcraft-numerical-history-validation-2026-11-08.md`.
+
 CHG-133 / IF-RINKCRAFT-NUMBERS-001: REQ-PARITY-001 / REQ-WEB-001 /
 REQ-BROWSER-001 -> shared style matching/differences -> native/WASM comparison
 view -> sign reversal, missingness, incompatible source/context, old catalog,

@@ -6,6 +6,7 @@ export async function buildOfflineShell(root) {
   const files = ['index.html', 'style.css', 'rinkcraft-character.css','catalog.json'];
   try {await readFile(new URL('dist/rinkcraft-characters.json',root));files.push('rinkcraft-characters.json');}catch(error){if(error.code!=='ENOENT')throw error;}
   try {await readFile(new URL('dist/rinkcraft-numbers.json',root));files.push('rinkcraft-numbers.json');}catch(error){if(error.code!=='ENOENT')throw error;}
+  try {await readFile(new URL('dist/rinkcraft-history.json',root));files.push('rinkcraft-history.json');}catch(error){if(error.code!=='ENOENT')throw error;}
   try { await readFile(new URL('dist/build-info.json', root)); files.push('build-info.json'); }
   catch (error) { if (error.code !== 'ENOENT') throw error; }
   for (const name of await readdir(new URL('src/', root))) if (name.endsWith('.ts')) files.push('src/' + name.replace(/\.ts$/, '.js'));
