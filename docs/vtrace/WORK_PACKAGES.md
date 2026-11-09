@@ -1,5 +1,10 @@
 # Work Packages
 
+## WP-RINKCRAFT-15 (CHG-139)
+
+Connect primary character cards to explicit matched comparisons, retaining dated class evidence and numeric independence. Acceptance: `docs/rinkcraft-card-comparison-validation-2026-11-09.md`.
+
+
 ## WP-RINKCRAFT-14 (CHG-138)
 
 Deliver interpretable matched numerical differences across all groups, preserving full evidence and missingness. Acceptance: `docs/rinkcraft-contrast-validation-2026-11-09.md`.

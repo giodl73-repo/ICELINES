@@ -1,5 +1,10 @@
 # Change Control
 
+## CHG-139 — Explicit card comparisons and dated class context (2026-11-09)
+
+Add required source-scoped card counterpart choices and paired documentary identities selected for the comparison year. Preserve numeric data/API, source rules and missing-class availability. Contract: `design/specs/rinkcraft-card-comparison.md`.
+
+
 ## CHG-138 — Readable matched numerical contrasts (2026-11-09)
 
 Add shared transparent top-gap summaries before the full numerical comparison, with coverage, signed/raw values and limits. Tighten formula/scale compatibility. No source/data/class changes. Contract: `design/specs/rinkcraft-contrast-summary.md`.

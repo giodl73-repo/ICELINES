@@ -7,7 +7,7 @@ import {readCharacterCatalog} from './rinkcraft-character.js';
 import {readNumericalCatalog,renderNumericalComparison} from './rinkcraft-numbers.js';
 import {readNumericalHistory} from './rinkcraft-history.js';
 import type {HistoryCard} from './rinkcraft-history.js';
-import type {NumericalComparison,CatalogView,SnapshotResult} from './rinkcraft-numbers.js';
+import type {NumericalComparison,CatalogView,SnapshotResult,ComparisonIdentities} from './rinkcraft-numbers.js';
 import type {CharacterSheet} from './rinkcraft-character.js';
 import { renderRinkcraftProfile } from './rinkcraft-profile.js';
 import type { RinkcraftProfile } from './rinkcraft-profile.js';
@@ -61,15 +61,19 @@ void (async()=>{
     if(keepMissing&&previous&&!Array.from(right.options).some(o=>o.value===previous)){const missing=option(Number(previous),'Previously selected player · unavailable or incompatible this season');missing.disabled=true;right.prepend(missing);}
     if(Array.from(right.options).some(o=>o.value===previous))right.value=previous;
   };
-  const draw=async():Promise<void>=>{
-    const token=sequence;const c=view.catalog;const l=left.value;const r=right.value;
+  const draw=async():Promise<boolean>=>{
+    const token=sequence;const generation=engine.generation;const c=view.catalog;const l=left.value;const r=right.value;
     if(Number(season.value)!==c.season)throw new Error('Wait for the selected source season to load.');
     if(!l||!r)throw new Error('Choose two available players in this source season.');
     const comparison=await engine.request<NumericalComparison>('numericalComparison',{catalog:c,left:Number(l),right:Number(r)});
-    if(token!==sequence||l!==left.value||r!==right.value)return;
-    output.replaceChildren(renderNumericalComparison(comparison));
+    let identity:ComparisonIdentities={catalog_state:'unavailable',note:'No documentary class catalog loaded. Statistics do not assign classes.'};
+    try{const catalog=await readCharacterCatalog();if(catalog){const [a,b]=await Promise.all([engine.request<CharacterSheet|null>('characterSheet',{catalog,player_id:Number(l),season:c.season}),engine.request<CharacterSheet|null>('characterSheet',{catalog,player_id:Number(r),season:c.season})]);identity={catalog_state:'available',left:a,right:b,note:'Documentary class hypotheses are selected for this source season. Numerical differences do not establish class fit.'};}}
+    catch(error){if(error instanceof EngineStoppedError)throw error;identity={catalog_state:'unavailable',note:'Documentary class catalog unavailable. The numerical comparison remains available.'};}
+    if(token!==sequence||generation!==engine.generation||l!==left.value||r!==right.value)return false;
+    output.replaceChildren(renderNumericalComparison(comparison,identity));
+    return true;
   };
-  const chooseSeason=async(year?:number,pid?:number):Promise<boolean>=>{
+  const chooseSeason=async(year?:number,pid?:number,peer?:number):Promise<boolean>=>{
     const token=++sequence;const previous=pid===undefined?left.value:String(pid);const previousName=left.selectedOptions[0]?.textContent??previous;
     left.disabled=true;right.disabled=true;element<HTMLButtonElement>('rinkcraft-numeric-compare').disabled=true;output.textContent='Loading source season…';
     const next=await engine.request<CatalogView>('numericalCatalog',{source,season:year});
@@ -78,7 +82,7 @@ void (async()=>{
     view=next;season.replaceChildren(...view.seasons.map(s=>option(s,`${Math.floor(s/10000)}–${String(s%100).padStart(2,'0')}`)));season.value=String(view.catalog.season);
     left.replaceChildren(...view.catalog.profiles.map(p=>option(p.player_id,`${p.name} · ${p.group}`)));
     if(previous){if(!Array.from(left.options).some(o=>o.value===previous)){const absent=option(Number(previous),`${previousName} · unavailable this season`);absent.disabled=true;left.prepend(absent);}left.value=previous;}
-    updateRight(pid===undefined?right.value:'',pid===undefined);output.textContent='Both players use the selected source season. Choose players and compare. Missing players cannot fall back to an older year.';
+    updateRight(peer===undefined?(pid===undefined?right.value:''):String(peer),peer!==undefined||pid===undefined);output.textContent='Both players use the selected source season. Choose players and compare. Missing players cannot fall back to an older year.';
     return true;
   };
   await chooseSeason();
@@ -86,11 +90,11 @@ void (async()=>{
   left.onchange=()=>{sequence++;updateRight();output.replaceChildren();};
   right.onchange=()=>{sequence++;output.replaceChildren();};
   element('rinkcraft-numeric-controls').hidden=false;
-  element('rinkcraft-numeric-compare').onclick=()=>{void perform(draw);};
-  document.addEventListener('rinkcraft-numerical-compare',event=>{const {player_id,season:year}=(event as CustomEvent<{player_id:number;season:number}>).detail;void perform(async()=>{if(!await chooseSeason(year,player_id))return;await draw();element<HTMLDialogElement>('player-dialog').close();element<HTMLDetailsElement>('rinkcraft-atlas').open=true;element<HTMLDetailsElement>('rinkcraft-numeric-controls').open=true;element('rinkcraft-numeric-controls').scrollIntoView({block:'start'});});});
+  element('rinkcraft-numeric-compare').onclick=()=>{void perform(async()=>{await draw();});};
+  document.addEventListener('rinkcraft-numerical-compare',event=>{const {player_id,season:year,right_id}=(event as CustomEvent<{player_id:number;season:number;right_id?:number}>).detail;void perform(async()=>{if(!await chooseSeason(year,player_id,right_id))return;if(!await draw())return;element<HTMLDialogElement>('player-dialog').close();element<HTMLDetailsElement>('rinkcraft-atlas').open=true;element<HTMLDetailsElement>('rinkcraft-numeric-controls').open=true;element('rinkcraft-numeric-controls').scrollIntoView({block:'start'});});});
 })().catch(error=>{element('rinkcraft-numeric-result').textContent=String(error);});
 void readCharacterCatalog().then(raw => {
-  if (!raw) { element('rinkcraft-atlas').hidden = true; return; }
+  if (!raw) { element('rinkcraft-atlas-notes').textContent='No documentary class catalog loaded. Numerical comparisons remain available.'; return; }
   const c = raw as {showcase_notes?:string;classes:{id:string;name:string}[];assessments:{featured?:boolean;player_id:number;player_name:string;primary:{class_id:string};specialty:string}[]};
   element('rinkcraft-atlas-notes').textContent = c.showcase_notes ?? 'Source-linked documentary pilot.';
   const container = element('rinkcraft-atlas-cards');
@@ -109,7 +113,7 @@ void readCharacterCatalog().then(raw => {
       throw new Error(`${a.player_name} is unavailable in the active package. Choose another season.`);
     });};container.append(button);
   }
-}).catch(error=>{element('rinkcraft-atlas-notes').textContent=String(error);});
+}).catch(()=>{element('rinkcraft-atlas-notes').textContent='Documentary class catalog unavailable. Numerical comparisons remain available.';});
 let resultRequest: QueryRequest | undefined;
 let resultState: ViewState | undefined;
 let routing = false;
@@ -314,12 +318,15 @@ async function player(row: PlayerRow): Promise<void> {
   if (!snapshot || !context) return;
   const detail = await engine.request<{ identity: { bio: unknown }; stats: unknown; history?: PlayerHistory }>('detail', row.player_id);
   const profile = await engine.request<RinkcraftProfile>('rinkcraftProfile', { player_id:row.player_id, season_type:snapshot.season_type, first_season:null,last_season:null });
-  const characterCatalog=await readCharacterCatalog();
-  if(characterCatalog) profile.character_sheet=await engine.request<CharacterSheet|undefined>('characterSheet',{catalog:characterCatalog,player_id:row.player_id,season:snapshot.season})??undefined;
+  profile.documentary_catalog_available=false;
+  try{const characterCatalog=await readCharacterCatalog();if(characterCatalog){profile.character_sheet=await engine.request<CharacterSheet|undefined>('characterSheet',{catalog:characterCatalog,player_id:row.player_id,season:snapshot.season})??undefined;profile.documentary_catalog_available=true;}}
+  catch(error){if(error instanceof EngineStoppedError)throw error;}
+
   const numericalSource=await readNumericalHistory()??await readNumericalCatalog();
   if(numericalSource&&snapshot.season_type==='regular'){
     const selected=await engine.request<SnapshotResult>('numericalSnapshot',{source:numericalSource,player_id:row.player_id,last:snapshot.season});
     profile.numerical_evidence=selected.card??undefined;profile.numerical_snapshot=selected.selection;
+    if(selected.card){const c=selected.card;const peers=await engine.request<CatalogView>('numericalCatalog',{source:numericalSource,season:c.season});profile.numerical_comparison_choices=peers.catalog.profiles.filter(p=>p.group===c.group&&p.player_id!==c.player_id).map(p=>({player_id:p.player_id,name:p.name}));}
     profile.numerical_history=await engine.request<HistoryCard|undefined>('numericalHistory',{catalog:numericalSource,player_id:row.player_id,last:snapshot.season})??undefined;
   }
   if (result !== snapshot || generation !== engine.generation) return;

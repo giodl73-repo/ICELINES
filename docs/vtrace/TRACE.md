@@ -1,5 +1,10 @@
 # Trace Matrix
 
+## Card comparison workflow (CHG-139)
+
+REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> existing Rinkcraft character/numerical interfaces -> shared-selected candidate year/group and documentary identities, native no-JS form/browser action -> IDs/year, class provenance, fallback/unscouted/optional/stale-read and offline/mobile/theme checks. Evidence: `docs/rinkcraft-card-comparison-validation-2026-11-09.md`.
+
+
 ## Readable matched contrasts (CHG-138)
 
 REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> IF-RINKCRAFT-NUMBERS-001 -> shared fixed-pool contrast selection and native/WASM rendering -> ties/signs/coverage/definition guards, actual pair parity and no-JS/offline/mobile. Evidence: `docs/rinkcraft-contrast-validation-2026-11-09.md`.

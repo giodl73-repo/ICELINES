@@ -15,6 +15,8 @@ export interface ProfileSeason { season: number; games: number; position: string
 export interface RinkcraftProfile {
   numerical_history?:HistoryCard;
   numerical_snapshot?:import('./rinkcraft-numbers.js').SnapshotSelection;
+  documentary_catalog_available?:boolean;
+  numerical_comparison_choices?:import('./rinkcraft-numbers.js').ComparisonChoice[];
   numerical_evidence?:NumericalEvidence;
   character_sheet?:CharacterSheet;
   attribute_seasons?:AttributeSeason[];
@@ -39,7 +41,7 @@ function node<K extends keyof HTMLElementTagNameMap>(tag: K, text?: string): HTM
 export function renderRinkcraftProfile(profile: RinkcraftProfile): HTMLElement {
   const section = node('section'); section.id = 'rinkcraft-profile'; section.className = 'rinkcraft-profile';
   const cardAssessment=profile.attribute_seasons?.find(s=>s.season===profile.character_sheet?.as_of_season)??profile.attribute_seasons?.at(-1);
-  section.append(renderCharacterCard(profile.player_name,profile.character_sheet,cardAssessment,profile.timeline.find(s=>s.season===cardAssessment?.season)??profile.latest_available??undefined,profile.numerical_evidence,profile.numerical_history,profile.numerical_snapshot));
+  section.append(renderCharacterCard(profile.player_name,profile.character_sheet,cardAssessment,profile.timeline.find(s=>s.season===cardAssessment?.season)??profile.latest_available??undefined,profile.numerical_evidence,profile.numerical_history,profile.numerical_snapshot,profile.numerical_comparison_choices,profile.documentary_catalog_available));
   const history=node('details');history.className='rk-history';history.append(node('summary','Trait evolution, time travel & statistical evidence'));section.append(history);
   const content=node('div');history.append(content);
   content.append(node('h3', 'Rinkcraft profile'), node('p', `${profile.request.season_type} · ${profile.included_seasons.length} loaded seasons · Latest: ${profile.latest_available ? seasonLabel(profile.latest_available.season) : 'unavailable'}`));

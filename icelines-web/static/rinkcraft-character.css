@@ -58,3 +58,11 @@
 .rn-contrast-values{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}.rn-contrast-values span,.rn-contrast-values b,.rn-contrast-values small{display:block}.rn-contrast-values span{font-size:11px;min-height:30px}.rn-contrast-values b{font-size:16px}.rn-contrast-values small{font-size:11px;margin-top:4px}
 .rn-contrast-limit{font-size:11px;line-height:1.5;margin:14px 0 0}.rn-contrast-rules{font-size:12px;line-height:1.5}.rn-contrast-rules summary{cursor:pointer;color:inherit}
 @media(max-width:760px){.rn-contrast-grid{grid-template-columns:1fr}.rn-contrast-values span{min-height:0}}
+
+.rn-card-comparison{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin-top:14px}.rn-card-comparison label{display:flex;flex-direction:column;gap:5px;flex:1 1 220px;max-width:420px;font-size:12px}.rn-card-comparison select{width:100%;min-width:0;max-width:100%;font-size:13px}.rn-card-comparison>small{flex-basis:100%;font-size:10px;color:var(--rk-muted)}
+.rn-comparison-identities{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0 8px}
+.rn-identity{padding:12px 16px;margin:0;border-top-width:3px;border-radius:8px;box-shadow:none;min-width:0;color:var(--rk-ink)}
+.rn-identity>h4{font:700 20px Georgia,serif;margin:0 0 5px;color:var(--rk-ink)}.rn-identity p{font-size:12px;line-height:1.5;margin:4px 0;color:var(--rk-ink)}
+.rn-identity .rn-identity-class{font:700 19px Georgia,serif;color:var(--rk-accent);margin:5px 0}.rn-identity-class span{font:500 11px system-ui,sans-serif}.rn-identity .rn-identity-secondary{font-size:11px;color:var(--rk-muted)}
+.rn-identity details{font-size:11px;line-height:1.5;overflow-wrap:anywhere;margin:8px 0 0;color:var(--rk-ink)}.rn-identity summary,.rn-identity a{color:var(--rk-accent)}.rn-identity summary{cursor:pointer}.rn-identity details p,.rn-identity details li{font-size:11px;line-height:1.5}.rn-identity-note{font-size:11px;line-height:1.5}
+@media(max-width:650px){.rn-comparison-identities{grid-template-columns:1fr}.rn-card-comparison label{max-width:100%}}

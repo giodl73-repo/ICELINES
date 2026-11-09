@@ -2,6 +2,13 @@
 
 ## IF-RINKCRAFT-NUMBERS-001 (CHG-130)
 
+CHG-139: presentation-only counterpart choices and paired class hypotheses, using
+existing source-year and CharacterSheet selectors. Browser comparison event adds
+optional `right_id`; renderer accepts optional identity metadata. Native numeric
+API/core/WASM payload formats remain unchanged. Optional class-source failures
+now preserve primary numerical profiles; source availability stays UI metadata. Contract:
+`design/specs/rinkcraft-card-comparison.md`.
+
 CHG-138: optional NumericalComparison `contrast`, schema
 `icelines.rinkcraft-contrast-summary.v1`. Shared Rust selects fixed-facet rank gaps,
 coverage and omissions; existing native/WASM comparison transports the projection.

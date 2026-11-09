@@ -79,12 +79,34 @@ struct NumberChoice {
     selected: bool,
 }
 struct ComparisonView {
+    identities: Vec<ComparisonIdentityView>,
+    identity_note: String,
     contrast: Option<ContrastView>,
     style: Option<StyleComparisonView>,
     left: String,
     right: String,
     scope: String,
     rows: Vec<ComparisonViewRow>,
+}
+struct ComparisonIdentityView {
+    name: String,
+    sheet: Option<icelines_core::view_model::rinkcraft_character::CharacterSheet>,
+    unavailable_label: String,
+}
+fn comparison_character_catalog() -> (
+    Option<icelines_core::view_model::rinkcraft_character::CharacterCatalog>,
+    String,
+) {
+    let Some(path) = std::env::var_os("ICELINES_RINKCRAFT_SHEETS") else {
+        return (
+            None,
+            "No documentary class catalog loaded. Statistics do not assign classes.".into(),
+        );
+    };
+    match icelines_fetch::rinkcraft_character::load_character_catalog(std::path::Path::new(&path)) {
+        Ok(c) => (Some(c), "Documentary class hypotheses are selected for this source season. Numerical differences do not establish class fit.".into()),
+        Err(_) => (None, "Documentary class catalog unavailable. The numerical comparison remains available.".into()),
+    }
 }
 struct ContrastView {
     facet_count: usize,
@@ -205,6 +227,7 @@ pub async fn get_numbers(
 ) -> Result<Response, WebError> {
     let view = numerical_catalog(params.season)?;
     let catalog = view.catalog;
+    let (characters, identity_note) = comparison_character_catalog();
     if [params.left, params.right]
         .into_iter()
         .flatten()
@@ -289,6 +312,25 @@ pub async fn get_numbers(
                 })
                 .collect();
             ComparisonView {
+                identities: [
+                    (c.left.player_id, &c.left.name),
+                    (c.right.player_id, &c.right.name),
+                ]
+                .into_iter()
+                .map(|(id, name)| ComparisonIdentityView {
+                    name: name.clone(),
+                    sheet: characters.as_ref().and_then(|catalog| {
+                        catalog.sheet(PlayerId(id), Season(c.season)).ok().flatten()
+                    }),
+                    unavailable_label: if characters.is_some() {
+                        "Unscouted for this source season"
+                    } else {
+                        "Class dossier unavailable"
+                    }
+                    .into(),
+                })
+                .collect(),
+                identity_note: identity_note.clone(),
                 contrast: c.contrast.as_ref().map(|s| ContrastView {
                     facet_count: s.facet_count,
                     ranked_facets: s.ranked_facets,
@@ -619,17 +661,17 @@ async fn profile(
             }
         }
         if let Some(path) = std::env::var_os("ICELINES_RINKCRAFT_SHEETS") {
-            let catalog = icelines_fetch::rinkcraft_character::load_character_catalog(
+            if let Ok(catalog) = icelines_fetch::rinkcraft_character::load_character_catalog(
                 std::path::Path::new(&path),
-            )
-            .map_err(anyhow::Error::msg)?;
-            let season = character_season
-                .or(req.last_season)
-                .or(profile.latest_available.as_ref().map(|s| s.season))
-                .unwrap_or(Season(icelines_core::CURRENT_SEASON));
-            profile.character_sheet = catalog
-                .sheet(req.player_id, season)
-                .map_err(anyhow::Error::msg)?;
+            ) {
+                let season = character_season
+                    .or(req.last_season)
+                    .or(profile.latest_available.as_ref().map(|s| s.season))
+                    .unwrap_or(Season(icelines_core::CURRENT_SEASON));
+                profile.character_sheet = catalog
+                    .sheet(req.player_id, season)
+                    .map_err(anyhow::Error::msg)?;
+            }
         }
         Ok(profile)
     })
@@ -670,6 +712,8 @@ pub async fn get_json(
 #[derive(Template)]
 #[template(path = "rinkcraft.html")]
 struct ProfileTemplate {
+    documentary_catalog_available: bool,
+    comparison_choices: Vec<NumberChoice>,
     history: Option<HistoryView>,
     numerical: Option<EvidenceView>,
     stat_line: Vec<StatCell>,
@@ -1427,7 +1471,24 @@ pub async fn get_html(
             )
         })
         .unwrap_or_else(|| "Statistical snapshot unavailable".into());
+    let comparison_choices = if let Some(n) = &view.numerical_evidence {
+        numerical_catalog(Some(n.season))?
+            .catalog
+            .profiles
+            .into_iter()
+            .filter(|p| p.group == n.group && p.player_id != n.player_id)
+            .map(|p| NumberChoice {
+                id: p.player_id,
+                name: p.name,
+                selected: false,
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
     let template = ProfileTemplate {
+        documentary_catalog_available: comparison_character_catalog().0.is_some(),
+        comparison_choices,
         history: view.numerical_history.as_ref().map(history_view),
         numerical: view.numerical_evidence.as_ref().map(evidence_view),
         stat_line: stat_line(&view, p.season),
