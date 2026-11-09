@@ -251,6 +251,8 @@ pub fn build(
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EvidenceCard {
     #[serde(default)]
+    pub context_evidence: Option<super::rinkcraft_context::ContextEvidence>,
+    #[serde(default)]
     pub feature_context: Vec<super::rinkcraft_attribute_evidence::FeatureContext>,
     #[serde(default)]
     pub style_evidence: Option<super::rinkcraft_style::StyleEvidence>,
@@ -417,6 +419,7 @@ impl NumericalCatalog {
             .map(|(_, key, _)| key.to_string())
             .collect();
         Ok(Some(EvidenceCard {
+            context_evidence: Some(super::rinkcraft_context::build(p)),
             feature_context: super::rinkcraft_attribute_evidence::feature_context(&p.metrics),
             style_evidence: p.style_evidence.clone(),
             schema: "icelines.rinkcraft-evidence-card.v1".into(),

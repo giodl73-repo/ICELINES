@@ -79,6 +79,7 @@ struct NumberChoice {
     selected: bool,
 }
 struct ComparisonView {
+    context: Option<ContextComparisonView>,
     identities: Vec<ComparisonIdentityView>,
     identity_note: String,
     contrast: Option<ContrastView>,
@@ -87,6 +88,138 @@ struct ComparisonView {
     right: String,
     scope: String,
     rows: Vec<ComparisonViewRow>,
+}
+struct ContextView {
+    title: String,
+    note: String,
+    coverage: String,
+    groups: Vec<ContextGroupView>,
+}
+struct ContextGroupView {
+    label: String,
+    note: String,
+    rows: Vec<ContextRowView>,
+}
+struct ContextRowView {
+    key: String,
+    label: String,
+    value: String,
+    rank: String,
+    peers: String,
+    question: String,
+    limit: String,
+    formula: String,
+    components: String,
+    reference: String,
+    state: String,
+}
+struct ContextComparisonView {
+    title: String,
+    note: String,
+    coverage: String,
+    groups: Vec<ContextComparisonGroupView>,
+}
+struct ContextComparisonGroupView {
+    label: String,
+    note: String,
+    rows: Vec<ContextComparisonRowView>,
+}
+struct ContextComparisonRowView {
+    key: String,
+    label: String,
+    left: String,
+    right: String,
+    left_p: String,
+    right_p: String,
+    gap: String,
+    point_gap: String,
+    limit: String,
+}
+fn context_value(m: Option<&icelines_core::view_model::rinkcraft_numbers::Measurement>) -> String {
+    m.map(|m| {
+        format!(
+            "{}{}",
+            measurement_value(m),
+            match m.unit.as_str() {
+                "Per60" => " /60",
+                "Goals" => " goals",
+                _ => "",
+            }
+        )
+    })
+    .unwrap_or_else(|| "Unavailable".into())
+}
+fn context_rank(m: Option<&icelines_core::view_model::rinkcraft_numbers::Measurement>) -> String {
+    m.filter(|m| m.state == "ranked" && m.value.is_some())
+        .and_then(|m| m.percentile)
+        .map(percentile_label)
+        .unwrap_or_else(|| "Unranked".into())
+}
+fn context_view(c: &icelines_core::view_model::rinkcraft_context::ContextEvidence) -> ContextView {
+    ContextView {title:c.title.clone(),note:c.note.clone(),coverage:format!("{}/{} values available · {}/{} ranked. Higher means a larger recorded value, not always better.",c.measured_facets,c.facet_count,c.ranked_facets,c.facet_count),
+        groups:c.groups.iter().map(|g|ContextGroupView {label:g.label.clone(),note:g.note.clone(),rows:g.facets.iter().map(|f| {let m=f.measurement.as_ref();ContextRowView {
+            key:f.key.clone(),label:f.label.clone(),value:context_value(m),rank:context_rank(m),peers:m.map(|m|format!("n={}",m.measured_peers)).unwrap_or_else(||"No reference".into()),
+            question:f.explanation.question.clone(),limit:f.explanation.limit.clone(),formula:m.map(|m|m.formula.clone()).unwrap_or_else(||"Unavailable".into()),
+            components:m.map(|m|format!("{} / {} × {}",m.numerator.map(|v|v.to_string()).unwrap_or_else(||"unavailable".into()),m.denominator.map(|v|v.to_string()).unwrap_or_else(||"unavailable".into()),m.scale)).unwrap_or_else(||"Unavailable".into()),
+            reference:m.map(|m|m.reference_sha256.clone()).unwrap_or_else(||"Unavailable".into()),state:m.map(|m|m.state.clone()).unwrap_or_else(||"missing_measurement".into()),
+        }}).collect()}).collect() }
+}
+fn context_comparison_view(
+    c: &icelines_core::view_model::rinkcraft_numbers::NumericalComparison,
+) -> Option<ContextComparisonView> {
+    let (a, b) = c
+        .left
+        .context_evidence
+        .as_ref()
+        .zip(c.right.context_evidence.as_ref())?;
+    Some(ContextComparisonView {
+        title: a.title.clone(),
+        note: a.note.clone(),
+        coverage: format!(
+            "Left {}/{} ranked · right {}/{} ranked. Raw-value ranks are not inverted or combined.",
+            a.ranked_facets, a.facet_count, b.ranked_facets, b.facet_count
+        ),
+        groups: a
+            .groups
+            .iter()
+            .map(|g| ContextComparisonGroupView {
+                label: g.label.clone(),
+                note: g.note.clone(),
+                rows: g
+                    .facets
+                    .iter()
+                    .map(|f| {
+                        let left = f.measurement.as_ref();
+                        let right = c.right.metrics.iter().find(|m| m.key == f.key);
+                        let row = c.rows.iter().find(|r| r.key == f.key);
+                        let unit = left.or(right).map(|m| m.unit.as_str()).unwrap_or("");
+                        ContextComparisonRowView {
+                            key: f.key.clone(),
+                            label: f.label.clone(),
+                            left: context_value(left),
+                            right: context_value(right),
+                            left_p: context_rank(left),
+                            right_p: context_rank(right),
+                            gap: style_comparison_value(unit, row.and_then(|r| r.difference), true),
+                            point_gap: row
+                                .filter(|_| {
+                                    left.zip(right).is_some_and(|(a, b)| {
+                                        a.state == "ranked"
+                                            && b.state == "ranked"
+                                            && a.value.is_some()
+                                            && b.value.is_some()
+                                    })
+                                })
+                                .and_then(|r| r.percentile_difference)
+                                .map(|v| format!("{v:+.1} pp"))
+                                .unwrap_or_else(|| "—".into()),
+                            limit: f.explanation.limit.clone(),
+                        }
+                    })
+                    .collect(),
+            })
+            .collect(),
+    })
 }
 struct ComparisonIdentityView {
     name: String,
@@ -312,6 +445,7 @@ pub async fn get_numbers(
                 })
                 .collect();
             ComparisonView {
+                context: context_comparison_view(&c),
                 identities: [
                     (c.left.player_id, &c.left.name),
                     (c.right.player_id, &c.right.name),
@@ -736,6 +870,7 @@ struct ProfileTemplate {
     absent_json: String,
 }
 struct EvidenceView {
+    context: Option<ContextView>,
     sources: Vec<icelines_core::view_model::rinkcraft_numbers::Source>,
     season: u32,
     style: Option<StyleView>,
@@ -980,6 +1115,7 @@ fn measurement_value(m: &icelines_core::view_model::rinkcraft_numbers::Measureme
 }
 fn evidence_view(c: &icelines_core::view_model::rinkcraft_numbers::EvidenceCard) -> EvidenceView {
     EvidenceView {
+        context: c.context_evidence.as_ref().map(context_view),
         sources: c.sources.clone(),
         season: c.season,
         style: c.style_evidence.as_ref().map(|s| StyleView {

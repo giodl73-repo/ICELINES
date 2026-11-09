@@ -2,6 +2,13 @@
 
 ## IF-RINKCRAFT-NUMBERS-001 (CHG-130)
 
+CHG-140: optional EvidenceCard `context_evidence`, schema
+`icelines.rinkcraft-context-evidence.v1`; shared fixed source-record groups,
+nullable Measurement slots, explanations and availability/rank counts. Existing
+native/WASM projections carry it; no new operation/input schema. Primary pools
+and statistical definitions are unchanged. Contract:
+`design/specs/rinkcraft-context-evidence.md`.
+
 CHG-139: presentation-only counterpart choices and paired class hypotheses, using
 existing source-year and CharacterSheet selectors. Browser comparison event adds
 optional `right_id`; renderer accepts optional identity metadata. Native numeric

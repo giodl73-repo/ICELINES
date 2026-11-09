@@ -1,5 +1,10 @@
 # Change Control
 
+## CHG-140 — Possession and environment context (2026-11-09)
+
+Expose fixed source-record context on cards and in separate comparison tables. Preserve raw values/ranks, missingness and primary pools; no defensive grade or class inference. Contract: `design/specs/rinkcraft-context-evidence.md`.
+
+
 ## CHG-139 — Explicit card comparisons and dated class context (2026-11-09)
 
 Add required source-scoped card counterpart choices and paired documentary identities selected for the comparison year. Preserve numeric data/API, source rules and missing-class availability. Contract: `design/specs/rinkcraft-card-comparison.md`.

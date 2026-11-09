@@ -1,5 +1,10 @@
 # Work Packages
 
+## WP-RINKCRAFT-16 (CHG-140)
+
+Make possession, penalty and on-ice threat records visible for skaters, plus workload-dependent goalie saving total. Acceptance: `docs/rinkcraft-context-validation-2026-11-09.md`.
+
+
 ## WP-RINKCRAFT-15 (CHG-139)
 
 Connect primary character cards to explicit matched comparisons, retaining dated class evidence and numeric independence. Acceptance: `docs/rinkcraft-card-comparison-validation-2026-11-09.md`.

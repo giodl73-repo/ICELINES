@@ -1,5 +1,10 @@
 # Trace Matrix
 
+## Possession and environment context (CHG-140)
+
+REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> IF-RINKCRAFT-NUMBERS-001 -> optional shared context projection and separate native/WASM rendering -> exact copies, zero/missing/unranked, all-position parity, unchanged primary pools and no-JS/offline/mobile/theme checks. Evidence: `docs/rinkcraft-context-validation-2026-11-09.md`.
+
+
 ## Card comparison workflow (CHG-139)
 
 REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> existing Rinkcraft character/numerical interfaces -> shared-selected candidate year/group and documentary identities, native no-JS form/browser action -> IDs/year, class provenance, fallback/unscouted/optional/stale-read and offline/mobile/theme checks. Evidence: `docs/rinkcraft-card-comparison-validation-2026-11-09.md`.

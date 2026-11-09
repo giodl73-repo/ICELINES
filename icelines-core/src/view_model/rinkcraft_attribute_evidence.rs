@@ -29,6 +29,13 @@ pub fn explanation(key: &str) -> Option<AttributeExplanation> {
         "save-fraction" => ("What share of shots on goal did he save?", &["save-fraction", "gsax-per-60", "goalie-threat-rate"], "Unadjusted saving outcome. Shot quality and team context matter; no goalie technique is identified."),
         "goalie-threat-rate" => ("How much modeled danger did he face per ice time?", &["goalie-threat-rate", "goalie-shot-workload", "gsax-per-60"], "Threat environment, not goalie quality. Higher workload or danger is not a better performance grade."),
         "goalie-shot-workload" => ("How many shots on goal did he face per ice time?", &["goalie-shot-workload", "goalie-threat-rate", "save-fraction"], "Deployment and shot environment; does not measure rebound control, positioning or puck handling."),
+        "takeaways-per-60" => ("How often was he credited with a takeaway per ice time?", &["takeaways-per-60"], "Recorded event frequency; incomplete possession-acquisition coverage, not pressure or retrieval success."),
+        "giveaways-per-60" => ("How often was he credited with a giveaway per ice time?", &["giveaways-per-60"], "Not normalized by touches, possession demand or available outlets. A higher rank does not establish worse puck management."),
+        "penalties-drawn-per-60" => ("How frequently did he draw penalties per ice time?", &["penalties-drawn-per-60"], "Recorded outcome; does not identify the mechanism, opportunities or officiating context."),
+        "penalties-taken-per-60" => ("How frequently did he take penalties per ice time?", &["penalties-taken-per-60"], "Raw frequency is not inverted. Lower is not a complete discipline or individual defensive grade."),
+        "on-ice-xgf-per-60" => ("How much modeled attacking threat did his team generate while he was on ice?", &["on-ice-xgf-per-60"], "Team environment includes teammates, opponents and deployment; not independent creation credit."),
+        "on-ice-xga-per-60" => ("How much modeled threat did his team concede while he was on ice?", &["on-ice-xga-per-60"], "Lower is not proof of individual defense, coverage or assignment compliance. No blame for a goal is identified."),
+        "gsax" => ("How many fewer goals did he concede than this model expected across the source window?", &["gsax"], "Cumulative observed outcome depends on actual workload and the provider model; not goalie technique or persistent talent."),
         _ => return None,
     };
     Some(AttributeExplanation {
