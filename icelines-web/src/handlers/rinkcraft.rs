@@ -638,6 +638,7 @@ struct ProfileTemplate {
     absent_json: String,
 }
 struct EvidenceView {
+    sources: Vec<icelines_core::view_model::rinkcraft_numbers::Source>,
     season: u32,
     style: Option<StyleView>,
     scope: String,
@@ -832,7 +833,18 @@ fn history_view(h: &icelines_core::view_model::rinkcraft_history::HistoryCard) -
         limits: h.limitations.clone(),
     }
 }
+struct SupportView {
+    label: String,
+    value: String,
+    rank: String,
+    formula: String,
+    components: String,
+    reference: String,
+}
 struct FacetView {
+    explanation:
+        Option<icelines_core::view_model::rinkcraft_attribute_evidence::AttributeExplanation>,
+    support: Vec<SupportView>,
     label: String,
     key: String,
     value: String,
@@ -870,6 +882,7 @@ fn measurement_value(m: &icelines_core::view_model::rinkcraft_numbers::Measureme
 }
 fn evidence_view(c: &icelines_core::view_model::rinkcraft_numbers::EvidenceCard) -> EvidenceView {
     EvidenceView {
+        sources: c.sources.clone(),
         season: c.season,
         style: c.style_evidence.as_ref().map(|s| StyleView {
             season: season_label(s.season),
@@ -923,6 +936,45 @@ fn evidence_view(c: &icelines_core::view_model::rinkcraft_numbers::EvidenceCard)
             .facets
             .iter()
             .map(|f| FacetView {
+                explanation: f.explanation.clone(),
+                support: f
+                    .explanation
+                    .as_ref()
+                    .map(|e| {
+                        e.related_keys
+                            .iter()
+                            .filter_map(|key| c.metrics.iter().find(|m| m.key == *key))
+                            .map(|m| SupportView {
+                                label: m.label.clone(),
+                                value: format!(
+                                    "{}{}",
+                                    measurement_value(m),
+                                    match m.unit.as_str() {
+                                        "Per60" => " /60",
+                                        "Goals" => " goals",
+                                        _ => "",
+                                    }
+                                ),
+                                rank: m
+                                    .percentile
+                                    .map(percentile_label)
+                                    .unwrap_or_else(|| "Unranked".into()),
+                                formula: m.formula.clone(),
+                                components: format!(
+                                    "{} / {} × {}",
+                                    m.numerator
+                                        .map(|v| v.to_string())
+                                        .unwrap_or_else(|| "unavailable".into()),
+                                    m.denominator
+                                        .map(|v| v.to_string())
+                                        .unwrap_or_else(|| "unavailable".into()),
+                                    m.scale
+                                ),
+                                reference: m.reference_sha256.clone(),
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_default(),
                 label: f.label.clone(),
                 key: f.measurement.key.clone(),
                 value: format!(
@@ -1039,6 +1091,7 @@ struct StatCell {
     value: String,
 }
 struct FeatureCard {
+    context_note: String,
     name: String,
     detail: String,
     evidence: String,
@@ -1129,41 +1182,99 @@ fn feature_cards(view: &RinkcraftStatProfile, selected: Option<u32>) -> Vec<Feat
         .features
         .iter()
         .map(|f| FeatureCard {
+            context_note: view
+                .numerical_evidence
+                .as_ref()
+                .map(|c| {
+                    let notes = f
+                        .stat_evidence
+                        .iter()
+                        .filter_map(|link| {
+                            c.feature_context
+                                .iter()
+                                .find(|v| v.attribute_key == link.attribute_key)
+                        })
+                        .map(|v| v.note.as_str())
+                        .collect::<Vec<_>>();
+                    if notes.is_empty() {
+                        "Documented method; no matched numerical measure in this snapshot.".into()
+                    } else {
+                        format!(
+                            "{} · {}. {}",
+                            season_label(c.season),
+                            c.situation,
+                            notes.join(" ")
+                        )
+                    }
+                })
+                .unwrap_or_default(),
             name: f.name.clone(),
             detail: f.detail.clone(),
             evidence: format!("{} · {}", f.evidence_type, f.source_ids.join(", ")),
             gaps: f.unmeasured_stats.clone(),
-            stats: f
-                .stat_evidence
-                .iter()
-                .map(|link| {
-                    let attribute = assessment
-                        .and_then(|s| s.attributes.iter().find(|a| a.key == link.attribute_key));
-                    FeatureReadout {
-                        key: link.attribute_key.clone(),
-                        label: attribute
-                            .map(|a| a.label.clone())
-                            .unwrap_or_else(|| link.attribute_key.replace('-', " ")),
-                        value: attribute
-                            .map(|a| attribute_value(&a.unit, a.value))
-                            .unwrap_or_else(|| "—".into()),
-                        percentile: attribute
-                            .and_then(|a| a.percentile)
-                            .map(percentile_label)
-                            .unwrap_or_else(|| "Unranked".into()),
-                        peers: attribute
-                            .map(|a| {
-                                format!(
-                                    "n={}/{}",
-                                    a.measured_peers,
-                                    assessment.map(|s| s.eligible_peers).unwrap_or_default()
-                                )
-                            })
-                            .unwrap_or_else(|| "No reference".into()),
-                        relation: link.relation.label().into(),
-                    }
-                })
-                .collect(),
+            stats: if let Some(c) = &view.numerical_evidence {
+                f.stat_evidence
+                    .iter()
+                    .filter_map(|link| {
+                        c.feature_context
+                            .iter()
+                            .find(|v| v.attribute_key == link.attribute_key)
+                    })
+                    .flat_map(|v| {
+                        v.measurements.iter().map(move |m| FeatureReadout {
+                            key: m.key.clone(),
+                            label: m.label.clone(),
+                            value: format!(
+                                "{}{}",
+                                measurement_value(m),
+                                match m.unit.as_str() {
+                                    "Per60" => " /60",
+                                    "Goals" => " goals",
+                                    _ => "",
+                                }
+                            ),
+                            percentile: m
+                                .percentile
+                                .map(percentile_label)
+                                .unwrap_or_else(|| "Unranked".into()),
+                            peers: format!("n={}/{}", m.measured_peers, c.eligible_peers),
+                            relation: v.relation.clone(),
+                        })
+                    })
+                    .collect()
+            } else {
+                f.stat_evidence
+                    .iter()
+                    .map(|link| {
+                        let attribute = assessment.and_then(|s| {
+                            s.attributes.iter().find(|a| a.key == link.attribute_key)
+                        });
+                        FeatureReadout {
+                            key: link.attribute_key.clone(),
+                            label: attribute
+                                .map(|a| a.label.clone())
+                                .unwrap_or_else(|| link.attribute_key.replace('-', " ")),
+                            value: attribute
+                                .map(|a| attribute_value(&a.unit, a.value))
+                                .unwrap_or_else(|| "—".into()),
+                            percentile: attribute
+                                .and_then(|a| a.percentile)
+                                .map(percentile_label)
+                                .unwrap_or_else(|| "Unranked".into()),
+                            peers: attribute
+                                .map(|a| {
+                                    format!(
+                                        "n={}/{}",
+                                        a.measured_peers,
+                                        assessment.map(|s| s.eligible_peers).unwrap_or_default()
+                                    )
+                                })
+                                .unwrap_or_else(|| "No reference".into()),
+                            relation: link.relation.label().into(),
+                        }
+                    })
+                    .collect()
+            },
         })
         .collect()
 }

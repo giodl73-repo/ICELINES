@@ -25,3 +25,27 @@
 
 .rk-snapshot-note{font-size:12px;color:var(--rk-muted);padding:8px 12px;border-left:3px solid var(--rk-accent)}
 .rk-snapshot-note[data-snapshot-state="older_fallback"],.rk-snapshot-note[data-snapshot-state="unavailable"]{font-weight:700;border-left-width:5px}
+
+/* Primary character attributes precede methods and seasonal history. */
+.rk-sheet>.rn-integrated{border-bottom:1px solid var(--rk-rule);padding:16px 22px}
+.rk-sheet>.rn-integrated .rn-facets{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;align-items:start}
+.rk-sheet>.rn-integrated .rn-facets[data-facet-count="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}
+.rk-sheet>.rn-integrated .rn-leading{margin:5px 0 10px;padding:4px 0 8px}
+.rk-sheet>.rn-integrated .rn-facet{padding:10px 8px}
+.rk-sheet>.rn-integrated .rn-facet>strong{font-size:30px}
+.rn-attribute-evidence{text-align:left;overflow-wrap:anywhere}
+.rn-attribute-evidence>summary{font-size:10px;color:var(--rk-accent);cursor:pointer}
+.rn-attribute-evidence p{font-size:11px;line-height:1.5}
+.rn-support{padding:7px 0;border-bottom:1px solid var(--rk-rule)}
+.rn-support>b,.rn-support>span,.rn-support>small{display:block;font-size:10px;line-height:1.5}
+.rn-support>small{font-size:9px;color:var(--rk-muted);overflow-wrap:anywhere}
+.rn-evidence-limit{border-left:2px solid var(--rk-accent);padding-left:7px}
+.rn-source-rules{overflow-wrap:anywhere}
+.rk-body.rk-has-numbers{grid-template-columns:1.2fr 1fr}
+.rk-feature-context{font-size:11px!important;color:var(--rk-muted);line-height:1.5}
+.rk-snapshot-note{margin:7px 0;padding-top:3px;padding-bottom:3px}
+@media(max-width:1050px){.rk-sheet>.rn-integrated .rn-facets{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.rk-sheet>.rn-integrated .rn-facets,.rk-sheet>.rn-integrated .rn-facets[data-facet-count="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}.rk-body.rk-has-numbers{grid-template-columns:1fr}.rk-sheet>.rn-integrated{padding:14px 18px}}
+
+.rk-sheet>.rn-integrated details{color:var(--rk-ink)}
+.rk-sheet>.rn-integrated summary,.rk-sheet>.rn-integrated details a{color:var(--rk-accent)}

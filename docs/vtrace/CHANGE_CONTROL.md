@@ -1,5 +1,10 @@
 # Change Control
 
+## CHG-137 — Attributes first and inspectable evidence (2026-11-08)
+
+Move six/four fixed facets above methods/history; expose shared attribute explanations and restore declared feature-stat context. No input/value/class changes. Contract: `design/specs/rinkcraft-attribute-explanations.md`.
+
+
 ## CHG-136 — Explicit numerical snapshot/source periods (2026-11-08)
 
 Align primary records with latest supplied player evidence within bounds; label older fallback, forbid fallback on exact requests/comparisons, and expose comparison year. Contract: `design/specs/rinkcraft-snapshot-selection.md`. No source/data/class changes.

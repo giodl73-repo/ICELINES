@@ -1,12 +1,15 @@
 // Display only: Rust selects facets/leaders and computes comparison differences.
 export interface NumericalMeasurement {
+  numerator?:number|null;denominator?:number|null;scale?:number;formula?:string;reference_sha256?:string;
   key:string;label:string;domain:string;unit:string;value:number|null;percentile:number|null;
   measured_peers:number;interpretation:string;state:string;
 }
 export interface NumericalEvidence {
+  feature_context?:{attribute_key:string;relation:string;note:string;measurements:NumericalMeasurement[]}[];
   style_evidence?:StyleEvidence|null;
   season:number;player_id:number;name:string;group:string;situation:string;games:number;minutes:number;
-  eligible_peers:number;facets:{label:string;measurement:NumericalMeasurement}[];leading:string[];
+  eligible_peers:number;facets:{label:string;measurement:NumericalMeasurement;explanation?:{question:string;related_keys:string[];limit:string}|null}[];leading:string[];
+  sources?:{url:string;sha256:string}[];
   metrics:NumericalMeasurement[];source_credit:string;unknowns:string[];
 }
 interface StyleEvidence {
@@ -39,6 +42,7 @@ const node=<K extends keyof HTMLElementTagNameMap>(tag:K,text?:string):HTMLEleme
 const period=(s:number):string=>`${Math.floor(s/10000)}–${String(s%100).padStart(2,'0')}`;
 const rank=(v:number|null):string=>v===null?'Unranked':`P${(Math.round(v*10)/10).toFixed(1)}`;
 const value=(unit:string,v:number|null,signed=false):string=>v===null?'—':`${signed&&v>=0?'+':''}${(v*(unit==='Pct'?100:1)).toFixed(2)}${unit==='Pct'?(signed?' pp':'%'):''}`;
+export const numericalValue=(m:NumericalMeasurement):string=>`${value(m.unit,m.value)}${m.unit==='Per60'?' /60':m.unit==='Goals'?' goals':''}`;
 const styleValue=(unit:string,v:number|null,signed=false):string=>v===null?'—':`${value(unit,v,signed)}${({Per60:' /60',Mph:' mph',PerGame:' /game',MilesPerGame:' mi/game'} as Record<string,string>)[unit]??''}`;
 function renderStyleComparison(c:NumericalComparison):HTMLElement {
   const section=node('section');section.className='rs-comparison';section.id='playing-style-comparison';section.setAttribute('aria-label','Playing style comparison');section.append(node('h3','How their measured styles differ'),node('p','Each row keeps its own situation and denominator. Differences use full precision; percentage shares differ in percentage points.'));
@@ -48,16 +52,18 @@ function renderStyleComparison(c:NumericalComparison):HTMLElement {
   if(s.shared_gaps.length){section.append(node('h4','Still unmeasured for both players'));const gaps=node('div');gaps.className='rs-shared-gaps';for(const g of s.shared_gaps){const details=node('details');details.append(node('summary',g.axis),node('p',g.reason));gaps.append(details);}section.append(gaps);}return section;
 }
 export function renderNumericalPanel(card:NumericalEvidence):HTMLElement {
-  const section=node('section');section.className='rk-panel rn-integrated';section.append(node('h4','Numerical profile'));
-  const scope=node('p',`${period(card.season)} · ${card.situation} · ${card.games} GP · ${card.minutes.toFixed(1)} minutes · ${card.eligible_peers} peers`);scope.className='rk-stat-period';section.append(scope);
+  const section=node('section');section.className='rk-panel rn-integrated';section.append(node('h4','Measured attributes'));
+  const scope=node('p',`${period(card.season)} · ${card.situation} · ${card.games} GP · ${card.minutes.toFixed(1)} minutes · ${card.eligible_peers} peers · MoneyPuck.com`);scope.className='rk-stat-period';section.append(scope);
   const leading=node('p');leading.className='rn-leading';leading.append(node('small','Leading recorded signals'),document.createTextNode(card.leading.map(key=>card.facets.find(f=>f.measurement.key===key)?.label??key).join(' · ')));section.append(leading);
-  const facets=node('div');facets.className='rn-facets';for(const f of card.facets){const m=f.measurement;const tile=node('div');tile.className='rn-facet';tile.setAttribute('data-numerical-key',m.key);tile.title=m.interpretation;
+  const facets=node('div');facets.className='rn-facets';facets.dataset.facetCount=String(card.facets.length);for(const f of card.facets){const m=f.measurement;const tile=node('div');tile.className='rn-facet';tile.setAttribute('data-numerical-key',m.key);tile.title=m.interpretation;
     tile.append(node('span',f.label),node('strong',rank(m.percentile)),node('b',`${value(m.unit,m.value)}${m.unit==='Per60'?' /60':''}`));
-    if(m.percentile!==null){const track=node('i');track.className='rk-mini-track';track.setAttribute('aria-hidden','true');const fill=node('i');fill.style.width=`${m.percentile}%`;track.append(fill);tile.append(track);}tile.append(node('small',`n=${m.measured_peers}`));facets.append(tile);
+    if(m.percentile!==null){const track=node('i');track.className='rk-mini-track';track.setAttribute('aria-hidden','true');const fill=node('i');fill.style.width=`${m.percentile}%`;track.append(fill);tile.append(track);}tile.append(node('small',`n=${m.measured_peers}`));
+    if(f.explanation){const e=f.explanation;const detail=node('details');detail.className='rn-attribute-evidence';detail.append(node('summary',`Evidence for ${f.label}`),node('p',e.question));for(const key of e.related_keys){const r=card.metrics.find(m=>m.key===key);if(!r)continue;const support=node('div');support.className='rn-support';support.append(node('b',r.label),node('span',`${numericalValue(r)} · ${rank(r.percentile)}`),node('small',`${r.formula??'Formula unavailable'} · numerator ${r.numerator??'unavailable'}; denominator ${r.denominator??'unavailable'}; scale ${r.scale??'unavailable'} · Reference SHA256 ${r.reference_sha256??'unavailable'}`));detail.append(support);}const limit=node('p',e.limit);limit.className='rn-evidence-limit';detail.append(limit);tile.append(detail);}
+    facets.append(tile);
   }section.append(facets);
   const note=node('p','Raw-value percentiles, not skill grades. Leading signals are the highest ranks among a fixed involvement/output shortlist.');note.className='rk-footnote';section.append(note);
   const details=node('details');details.append(node('summary',`All ${card.metrics.length} numerical measures`));const table=node('table');table.className='rn-inline-table';const body=node('tbody');for(const m of card.metrics){const row=node('tr');const label=node('td',m.label);label.title=m.interpretation;row.append(label,node('td',value(m.unit,m.value)),node('td',rank(m.percentile)));body.append(row);}table.append(body);details.append(table);section.append(details);
-  const credit=node('p',card.source_credit);credit.className='rk-footnote';section.append(credit);
+  const rules=node('details');rules.className='rn-source-rules';rules.append(node('summary','Peer rules, source files & limits'),node('p','Same season, position group and situation. Skaters: 5-on-5, at least 300 minutes and 10 games. Goalies: all strengths, at least 600 minutes and 5 games. Percentiles are midranks among eligible measured peers, not class probabilities.'),node('p',card.source_credit));for(const src of card.sources??[]){const p=node('p');const a=node('a','Source CSV');a.href=src.url;p.append(a,document.createTextNode(` · SHA256 ${src.sha256}`));rules.append(p);}section.append(rules);
   const compare=node('button','Compare this numerical profile');compare.type='button';compare.onclick=()=>document.dispatchEvent(new CustomEvent('rinkcraft-numerical-compare',{detail:{player_id:card.player_id,season:card.season}}));section.append(compare);return section;
 }
 export function renderNumericalComparison(c:NumericalComparison):HTMLElement {

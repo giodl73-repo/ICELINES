@@ -1,5 +1,10 @@
 # Work Packages
 
+## WP-RINKCRAFT-13 (CHG-137)
+
+Deliver visible differentiation, inspectable per-attribute evidence and contrasting-player review across all positions. Acceptance: `docs/rinkcraft-attributes-first-validation-2026-11-08.md`.
+
+
 ## WP-RINKCRAFT-12 (CHG-136)
 
 Deliver shared selection metadata, bounded/latest/exact semantics, legacy compatibility, explicit seasonal comparisons and native/browser parity. Acceptance: `docs/rinkcraft-snapshot-validation-2026-11-08.md`.

@@ -1,5 +1,10 @@
 # Trace Matrix
 
+## Attribute evidence and primary differentiation (CHG-137)
+
+REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> IF-RINKCRAFT-NUMBERS-001 -> shared explanation/context projection and native/WASM card -> unchanged values, nine contrasting profiles, first-screen placement, legacy/no-JS/offline/mobile. Evidence: `docs/rinkcraft-attributes-first-validation-2026-11-08.md`.
+
+
 ## Explicit source selection (CHG-136)
 
 REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> IF-RINKCRAFT-NUMBERS-001 -> core source selection, native query/HTML and WASM worker/browser consumers -> all-player parity, missing/exact/bounds, legacy and offline/mobile checks. Evidence: `docs/rinkcraft-snapshot-validation-2026-11-08.md`.

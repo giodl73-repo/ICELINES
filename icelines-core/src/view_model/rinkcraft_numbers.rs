@@ -251,6 +251,8 @@ pub fn build(
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EvidenceCard {
     #[serde(default)]
+    pub feature_context: Vec<super::rinkcraft_attribute_evidence::FeatureContext>,
+    #[serde(default)]
     pub style_evidence: Option<super::rinkcraft_style::StyleEvidence>,
     pub schema: String,
     pub season: u32,
@@ -270,6 +272,8 @@ pub struct EvidenceCard {
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EvidenceFacet {
+    #[serde(default)]
+    pub explanation: Option<super::rinkcraft_attribute_evidence::AttributeExplanation>,
     pub label: String,
     pub measurement: Measurement,
 }
@@ -375,6 +379,7 @@ impl NumericalCatalog {
                     .iter()
                     .find(|m| m.key == *key)
                     .map(|m| EvidenceFacet {
+                        explanation: super::rinkcraft_attribute_evidence::explanation(key),
                         label: (*label).into(),
                         measurement: m.clone(),
                     })
@@ -407,6 +412,7 @@ impl NumericalCatalog {
             .map(|(_, key, _)| key.to_string())
             .collect();
         Ok(Some(EvidenceCard {
+            feature_context: super::rinkcraft_attribute_evidence::feature_context(&p.metrics),
             style_evidence: p.style_evidence.clone(),
             schema: "icelines.rinkcraft-evidence-card.v1".into(),
             season: self.season,

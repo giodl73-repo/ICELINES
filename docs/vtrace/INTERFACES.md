@@ -2,6 +2,12 @@
 
 ## IF-RINKCRAFT-NUMBERS-001 (CHG-130)
 
+CHG-137: optional EvidenceFacet `explanation` and default-empty EvidenceCard
+`feature_context`. Shared Rust owns explicit related measures, limitations and
+feature bindings. Existing projection operations carry additive fields; no new
+worker operation or input schema. Contract:
+`design/specs/rinkcraft-attribute-explanations.md`.
+
 CHG-136: optional profile `numerical_snapshot`; stateless WASM `numerical_catalog`
 and `numerical_snapshot` plus matching camelCase worker operations. Native numerical
 JSON/comparison/page accept an optional exact source `season`; default newest
