@@ -1,5 +1,10 @@
 # Trace Matrix
 
+## Hockey styling and actual app delivery (CHG-143)
+
+REQ-WEB-001 / REQ-BROWSER-001 / REQ-PARITY-001 -> unchanged character/numerical contracts -> shared CSS form and existing native/browser wiring -> app-backed 25-player raw-value/capability separation checks, keyboard/no-JS comparison, offline/mobile/theme and Letter checks. Evidence: `docs/rinkcraft-live-sheet-validation-2026-11-09.md`.
+
+
 ## Approved category-form reconciliation (CHG-142)
 
 REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> existing documentary/numerical interfaces -> distinct capability, measured record and assignment categories -> unrated/zero/null/unavailable/goalie tests, fixture disclosure/mobile/Letter checks. Evidence: `docs/rinkcraft-sheet-reconciliation-2026-11-09.md`. Full live-app parity remains separate.

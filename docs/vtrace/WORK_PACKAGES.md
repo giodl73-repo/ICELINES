@@ -1,5 +1,10 @@
 # Work Packages
 
+## WP-RINKCRAFT-19 (CHG-143)
+
+Deliver the approved form in local full native/browser apps, with CSS-only hockey styling. Retain unrated capabilities and complete dossier access. Recheck real player profiles, no-JS/keyboard comparison, offline/mobile/themes and Letter export. Evidence: `docs/rinkcraft-live-sheet-validation-2026-11-09.md`.
+
+
 ## WP-RINKCRAFT-18 (CHG-142)
 
 Compare divergent branches deliberately; retain the approved category mapping and selectively reuse evidence traceability. Acceptance: `docs/rinkcraft-sheet-reconciliation-2026-11-09.md`. CHG-141 / WP-RINKCRAFT-17 remain on the alternative C: implementation.

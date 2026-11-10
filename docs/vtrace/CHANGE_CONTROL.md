@@ -1,5 +1,10 @@
 # Change Control
 
+## CHG-143 — Hockey styling and full-app sheet acceptance (2026-11-09)
+
+Apply CSS-only hockey decoration to the approved capability form: ice palette, rink-line header, decorative rink mark and box hierarchy. Build the actual native app and browser shell using retained authenticated WASM/packages; verify real profiles without changing ratings, data or model definitions. Contract and validation: `docs/rinkcraft-live-sheet-validation-2026-11-09.md`.
+
+
 ## CHG-142 — Reconcile approved Rinkcraft capability form (2026-11-09)
 
 Preserve the isolated F: category form over the alternative C: raw-stat rail. Keep capability ratings unassessed and preserve detailed evidence/statuses. No merge, source/class/model change or invented ability score. Contract: `design/specs/rinkcraft-sheet-reconciliation.md`.
