@@ -133,10 +133,20 @@ def publication_state(policy, gate_records, interval, sensitivity_delta=0):
 
 def markdown_value(v,depth=0):
     if isinstance(v,dict):
-        return '\n'.join(f'**{k.replace("_"," ").capitalize()}:** {markdown_value(x,depth+1)}\n' for k,x in v.items())
+        parts=[]
+        for k,x in v.items():
+            label=k.replace('_',' ').capitalize()
+            if isinstance(x,(dict,list)):
+                parts.append(f'**{label}:**\n\n{markdown_value(x,depth+1)}')
+            else:
+                parts.append(f'**{label}:** {x}')
+        return '\n\n'.join(parts)
     if isinstance(v,list):
-        return '\n'.join(f'- {markdown_value(x,depth+1)}' for x in v)
+        if any(isinstance(x,(dict,list)) for x in v):
+            return '\n\n'.join(markdown_value(x,depth+1) for x in v)
+        return '\n'.join(f'- {x}' for x in v)
     return str(v)
+
 
 def render(v,out,registry_hash,markdown_only=False):
     out=Path(out);out.mkdir(parents=True,exist_ok=True)
@@ -164,7 +174,7 @@ def render(v,out,registry_hash,markdown_only=False):
         sources=''.join(f'<li><a href="{esc(v["sources"][r["id"]]["url"],quote=True)}">{esc(r["id"])}</a>: {esc(r["use"])}</li>' for r in a['sources'])
         sections.append(f'<article id="{a["id"]}"><small>{a["branch"]} · Unvalidated · Unrated</small><h2>{esc(a["name"])}</h2><p>{esc(a["construct"])}</p>{components}<details><summary>Evidence, boundaries and challenges</summary><pre>{esc(json.dumps({k:a[k] for k in ATTRIBUTE_FIELDS if k not in ("construct","components","sources")},indent=2,ensure_ascii=False))}</pre></details><ul>{sources}</ul></article>')
     (out/'README.md').write_text('\n'.join(index)+'\n\n[Shared policy and full source scopes](policy.md)\n',encoding='utf-8')
-    policy={k:v[k] for k in ('scope','observation_policy','evidence_policy','scoring_policy','migration','sources')}
+    policy={k:v[k] for k in ('authority','definition_boundary','scope','observation_policy','evidence_policy','scoring_policy','migration','sources') if k in v}
     (out/'policy.md').write_text('# Shared evidence and scoring policy\n\n'+intro+'\n\n'+markdown_value(policy)+'\n',encoding='utf-8')
     if markdown_only: return
     nav=''.join(f'<a href="#{a["id"]}">{html.escape(a["name"])} ({a["branch"]})</a>' for a in v['attributes'])
