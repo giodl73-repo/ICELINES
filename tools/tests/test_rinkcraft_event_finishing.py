@@ -10,7 +10,7 @@ sys.path.insert(0,str(Path(__file__).parents[1]))
 import rinkcraft_event_finishing as m
 
 def fixture():
- c=dict(schema='icelines.event-finishing-config.v1',protocol='synthetic-only',data_kind='synthetic',input=None,
+ c=dict(schema='icelines.event-finishing-config.v1',protocol='synthetic-only',data_kind='synthetic',evaluation_mode='prospective_metadata',input=None,
   baseline=dict(id='synthetic-model',sha256='a'*64,trained_through='2024-09-01',available_from='2024-09-02',feature_columns=['shot_distance','shot_type'],audit_locator='SYNTHETIC ONLY',immutable=True),
   scope=dict(m.SCOPE,season=20242025),windows=dict(start='2024-10-01',replication_start='2025-01-01',test_start='2025-02-01',end_exclusive='2025-07-01'),
   model=dict(league_prior_sd=2.,player_prior_sd=.5,sensitivity_prior_sd=[.25,1.],minimum_stability_attempts_per_block=2),
@@ -37,6 +37,11 @@ class EventTests(unittest.TestCase):
   for change in [dict(trained_through='2025-01-01'),dict(available_from='2025-01-01'),dict(immutable=False),dict(feature_columns=['outcome']),dict(feature_columns=['shooter_id']),dict(sha256='unknown')]:
    c=copy.deepcopy(self.c);c['baseline'].update(change)
    with self.subTest(change=change),self.assertRaises(ValueError):m.experiment(c,self.e)
+ def test_retrospective_temporal_is_not_prospective_availability(self):
+  self.c['evaluation_mode']='retrospective_temporal';self.c['baseline']['available_from']='2026-11-09';r=m.experiment(self.c,self.e)
+  self.assertFalse(r['baseline_available_by_start']);self.assertFalse(r['prospective_validation_established'])
+  self.c['baseline']['trained_through']='2025-03-01'
+  with self.assertRaises(ValueError):m.experiment(self.c,self.e)
  def test_missing_baseline_and_mixed_version_rejected(self):
   self.c['baseline']=None
   with self.assertRaises(ValueError):m.experiment(self.c,self.e)

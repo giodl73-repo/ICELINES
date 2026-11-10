@@ -11,7 +11,7 @@ node icelines-browser/e2e/rinkcraft-event-finishing.mjs
 ```
 
 The browser check requires the generated report on the existing loopback 8771
-server. With input=null, the CLI emits awaiting_observed_event_data and no metrics;
+server. With observed input=null, the CLI emits awaiting_observed_event_data and no metrics;
 that state is not a successful experiment. Explicit synthetic inputs always emit
 synthetic_demonstration and cannot establish empirical validity.
 
@@ -36,8 +36,10 @@ Adapters must document definitions, completeness, omissions, corrections and rig
 Observed input manifest entries require path, sha256, source_url, accessed,
 adapter_version, rights and coverage_note. Baseline metadata requires id, sha256,
 trained_through, available_from, feature_columns, audit_locator and immutable=true.
-Training must end before the first experiment date, and availability must precede
-or equal that date. Only the explicit pre-shot feature allowlist is accepted.
+Training must end before the first experiment date. Explicit evaluation_mode
+retrospective_temporal permits later artifact availability and reports it;
+prospective_metadata additionally requires availability by the start. Neither
+mode proves prospective validity without a real source/artifact audit. Only the explicit pre-shot feature allowlist is accepted.
 
 These are admission checks on supplied metadata. A hash/date string does not prove
 that a model actually obeyed them; inspect its artifact, training lineage and

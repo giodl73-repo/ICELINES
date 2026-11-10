@@ -27,6 +27,7 @@ def positive_int(value):return isinstance(value,int) and not isinstance(value,bo
 def validate_config(config):
     if config.get('schema')!='icelines.event-finishing-config.v1':raise ValueError('Unknown config schema')
     if config.get('data_kind') not in ('observed','synthetic'):raise ValueError('Explicit data kind required')
+    if config.get('evaluation_mode') not in ('retrospective_temporal','prospective_metadata'):raise ValueError('Explicit retrospective or prospective-metadata mode required')
     w=config['windows'];dates=[day(w[k]) for k in ('start','replication_start','test_start','end_exclusive')]
     if dates!=sorted(set(dates)):raise ValueError('Chronological nonempty windows required')
     season=config['scope'].get('season')
@@ -48,7 +49,9 @@ def validate(config,events):
     baseline=config.get('baseline')
     if not baseline or any(not baseline.get(k) for k in ('id','sha256','trained_through','available_from','feature_columns','audit_locator')):raise ValueError('Audited frozen baseline metadata required')
     if not re.fullmatch('[0-9a-f]{64}',baseline['sha256']) or baseline.get('immutable') is not True:raise ValueError('Immutable baseline hash required')
-    if day(baseline['trained_through'])>=dates[0] or day(baseline['available_from'])>dates[0]:raise ValueError('Baseline training/availability leaks into experiment')
+    if day(baseline['trained_through'])>=dates[0]:raise ValueError('Baseline training leaks into experiment')
+    available_by_start=day(baseline['available_from'])<=dates[0]
+    if config['evaluation_mode']=='prospective_metadata' and not available_by_start:raise ValueError('Baseline unavailable at prospective start')
     if not set(baseline['feature_columns'])<=FEATURES:raise ValueError('Unsupported or outcome/identity-derived baseline features')
     seen=set();games={};positions={};counts=Counter()
     for e in events:
@@ -137,7 +140,7 @@ def experiment(config,events):
     for pid in sorted(set(early_by)&set(rep_by)):
         if min(len(early_by[pid]),len(rep_by[pid]))>=minimum:stable.append({'shooter_id':pid,'early_attempts':len(early_by[pid]),'replication_attempts':len(rep_by[pid]),'early_log_odds_shift':first['player_shifts'][pid],'replication_log_odds_shift':fit_shift(rep_by[pid],first['league_shift'],config['model']['player_prior_sd'])})
     interval=clustered_interval(groups,config) if len(groups)>=2 else None
-    return {'schema':'icelines.event-finishing-result.v1','status':'synthetic_demonstration' if config['data_kind']=='synthetic' else 'exploratory_observed_run','data_kind':config['data_kind'],'event_count':len(events),'observed_event_count':len(events) if config['data_kind']=='observed' else 0,'event_counts':counts,'game_counts':dict(Counter('train' if d<day(w['replication_start']) else 'replication' if d<day(w['test_start']) else 'test' for d in {e['game_id']:day(e['game_date']) for e in events}.values())),'training_model':model,'heldout_metrics':results,'player_MAP_minus_league_log_loss_interval':interval,'interval_scope':'Paired game-clustered evaluation interval conditional on fitted training model and fixed baseline; not a player-ability interval, prospective proof or complete model uncertainty. Negative difference favors player MAP.','heldout_positions':dict(by_position),'calibration_bins':[dict(probability_range=[k/10,(k+1)/10],attempts=v[0],goals=v[1],predicted_goals=v[2]) for k,v in sorted(bins.items())],'prior_sensitivity':sens,'stability_pairs':stable,'unseen_heldout_players':sorted(unseen),'production_grades_released':False,'empirical_validation_established':False,'limits':config.get('limits',[])}
+    return {'schema':'icelines.event-finishing-result.v1','status':'synthetic_demonstration' if config['data_kind']=='synthetic' else 'exploratory_observed_run','data_kind':config['data_kind'],'evaluation_mode':config['evaluation_mode'],'baseline_available_by_start':day(config['baseline']['available_from'])<=day(w['start']),'prospective_validation_established':False,'event_count':len(events),'observed_event_count':len(events) if config['data_kind']=='observed' else 0,'event_counts':counts,'game_counts':dict(Counter('train' if d<day(w['replication_start']) else 'replication' if d<day(w['test_start']) else 'test' for d in {e['game_id']:day(e['game_date']) for e in events}.values())),'training_model':model,'heldout_metrics':results,'player_MAP_minus_league_log_loss_interval':interval,'interval_scope':'Paired game-clustered evaluation interval conditional on fitted training model and fixed baseline; not a player-ability interval, prospective proof or complete model uncertainty. Negative difference favors player MAP.','heldout_positions':dict(by_position),'calibration_bins':[dict(probability_range=[k/10,(k+1)/10],attempts=v[0],goals=v[1],predicted_goals=v[2]) for k,v in sorted(bins.items())],'prior_sensitivity':sens,'stability_pairs':stable,'unseen_heldout_players':sorted(unseen),'production_grades_released':False,'empirical_validation_established':False,'limits':config.get('limits',[])}
 
 def render(result,config):
     esc=html.escape;status=result['status'].replace('_',' ')
@@ -154,6 +157,6 @@ def run(path):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--config',required=True,type=Path);p.add_argument('--output',required=True,type=Path);args=p.parse_args();config,result=run(args.config)
-    result['provenance']={'config_sha256':hashlib.sha256(args.config.read_bytes()).hexdigest(),'input':config.get('input'),'protocol_configuration':{k:config.get(k) for k in ('protocol','baseline','scope','windows','model','bootstrap')},'implementation_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'ice_lines_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=Path(__file__).parent,text=True).strip()}
+    result['provenance']={'config_sha256':hashlib.sha256(args.config.read_bytes()).hexdigest(),'input':config.get('input'),'protocol_configuration':{k:config.get(k) for k in ('protocol','evaluation_mode','baseline','scope','windows','model','bootstrap')},'implementation_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'ice_lines_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=Path(__file__).parent,text=True).strip()}
     args.output.mkdir(parents=True,exist_ok=True);(args.output/'result.json').write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8');(args.output/'index.html').write_text(render(result,config),encoding='utf-8');print(json.dumps({'status':result['status'],'observed_event_count':result.get('observed_event_count'),'production_grades_released':False}))
 if __name__=='__main__':main()
