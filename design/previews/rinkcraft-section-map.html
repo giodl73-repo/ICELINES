@@ -16,7 +16,7 @@
 </style>
 </head>
 <body>
-<header class="toolbar"><h1>D&amp;D on the left. Rinkcraft on the right.</h1><p>Select a section to highlight the proposed layout match on both sheets.</p>
+<header class="toolbar"><h1>D&amp;D on the left. Rinkcraft on the right.</h1><p>Select a section to highlight its current location. <a href="proposal.html" style="color:#ffe09c">Read the proposed player model and full section mapping →</a></p>
 <nav class="controls" aria-label="Section mapping">
 <button type="button" data-map="identity" aria-pressed="false">1 · Identity</button>
 <button type="button" data-map="signals" aria-pressed="true">2 · Six signals</button>
@@ -45,8 +45,8 @@
 const frame=document.querySelector('iframe');
 const mappings={
  identity:{title:'1 · Identity → player, position, class, specialty',note:'A compact header across the top. Position, class and specialty keep separate fields.',selectors:'.rk-front-header,.rk-front-identity'},
- signals:{title:'2 · Six attributes → six measured signals',note:'Six individual boxes stacked vertically at the left. Each box keeps its measurement name, raw value, and percentile in the smaller capsule.',selectors:'.rk-front-measures'},
- methods:{title:'3 · Skills and actions → Methods',note:'Short, memorable method names in their own box. The detailed evidence remains below the form.',selectors:'.rk-front-methods'},
+ signals:{title:'2 · Proposed attribute column',note:'The current example still shows raw signals here. The full proposal moves these into Measured Record and reserves the left column for capability ratings.',selectors:'.rk-front-measures'},
+ methods:{title:'3 · Proposed skills and methods split',note:'Skills describe specific hockey tasks. Methods describe how those tasks are attempted. Saving throws map separately to task performance under pressure; see the full proposal.',selectors:'.rk-front-methods'},
  traits:{title:'4 · Features and character → Traits, Role, Open Questions',note:'Separate adjacent boxes for documented traits, the contribution of the class, and unresolved questions.',selectors:'.rk-front-traits,.rk-front-role,.rk-front-questions'},
  record:{title:'5 · Supporting record → sources and dates',note:'A proposed layout correspondence: our supporting record shows source count, open-question count, evidence date and assessment date.',selectors:'.rk-front-coverage'},
  clear:{title:'Compare the two forms',note:'Choose a numbered section above to map it across the two pages.',selectors:''}
