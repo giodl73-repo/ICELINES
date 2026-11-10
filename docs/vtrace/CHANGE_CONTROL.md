@@ -1,5 +1,10 @@
 # Change Control
 
+## CHG-144 — Experimental capability component audit (2026-11-09)
+
+Add a local research-only Gamma-Poisson finishing prototype, full-source coverage audit, source-sealed inputs, uncertainty and retrospective conditional checks. No main capability, class, production schema or app change. Contract/evidence: `docs/rinkcraft-capability-pilot-2026-11-09.md`.
+
+
 ## CHG-143 — Hockey styling and full-app sheet acceptance (2026-11-09)
 
 Apply CSS-only hockey decoration to the approved capability form: ice palette, rink-line header, decorative rink mark and box hierarchy. Build the actual native app and browser shell using retained authenticated WASM/packages; verify real profiles without changing ratings, data or model definitions. Contract and validation: `docs/rinkcraft-live-sheet-validation-2026-11-09.md`.

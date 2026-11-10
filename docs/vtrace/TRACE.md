@@ -1,5 +1,10 @@
 # Trace Matrix
 
+## Capability-component research prototype (CHG-144)
+
+Owner capability-form objective -> separate experimental config/JSON contract -> source-sealed CLI estimate, audit and report -> synthetic provenance/temporal/uncertainty checks plus an actual full-league retrospective conditional run. Evidence: `docs/rinkcraft-capability-pilot-2026-11-09.md`. No production interface or headline grade released.
+
+
 ## Hockey styling and actual app delivery (CHG-143)
 
 REQ-WEB-001 / REQ-BROWSER-001 / REQ-PARITY-001 -> unchanged character/numerical contracts -> shared CSS form and existing native/browser wiring -> app-backed 25-player raw-value/capability separation checks, keyboard/no-JS comparison, offline/mobile/theme and Letter checks. Evidence: `docs/rinkcraft-live-sheet-validation-2026-11-09.md`.

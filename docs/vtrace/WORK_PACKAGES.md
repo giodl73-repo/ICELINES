@@ -1,5 +1,10 @@
 # Work Packages
 
+## WP-RINKCRAFT-20 (CHG-144)
+
+Audit available skater/goalie capability evidence and execute a full-league conditional finishing pilot under authored research rules. Preserve missingness, scope, prospective-vintage blocks and unreleased headline ratings. Evidence: `docs/rinkcraft-capability-pilot-2026-11-09.md`.
+
+
 ## WP-RINKCRAFT-19 (CHG-143)
 
 Deliver the approved form in local full native/browser apps, with CSS-only hockey styling. Retain unrated capabilities and complete dossier access. Recheck real player profiles, no-JS/keyboard comparison, offline/mobile/themes and Letter export. Evidence: `docs/rinkcraft-live-sheet-validation-2026-11-09.md`.
