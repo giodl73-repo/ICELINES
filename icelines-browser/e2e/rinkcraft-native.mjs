@@ -15,7 +15,7 @@ try {
     const response=await page.goto(`${base}/player/${id}/rinkcraft${query}`);
     expect(response.status()).toBe(200);
     await expect(page.getByRole('heading',{level:1})).not.toBeEmpty();
-    await expect(page.locator('.rk-class-name').first()).toBeVisible();
+    await expect(page.locator('.rk-front-identity dd').first()).toBeVisible();
     expect(await page.locator('#trait-evolution').evaluate(e=>e.open)).toBe(false);
     expect(await page.locator('svg.rc-chart:visible').count()).toBe(0);
     expect(await page.locator('.rc-family').count()).toBe(6);
@@ -53,7 +53,7 @@ try {
   const past=await context.request.get(`${base}/api/v1/player/8478048/rinkcraft?season=20232024`);expect((await past.json()).data.character_sheet.secondary).toEqual([]);
   await page.goto(`${base}/player/8479323/rinkcraft#rc-attributes-title`);
   expect(await page.locator('#trait-evolution').evaluate(e=>e.open)).toBe(false);
-  await expect(page.locator('.rk-class-name')).toBeVisible();
+  await expect(page.locator('.rk-front-identity dd').first()).toBeVisible();
   expect(failures).toEqual([]);
   await writeFile(new URL('results.json',output),JSON.stringify({base,no_js:true,cases:results},null,2));
   console.log(JSON.stringify({pass:true,no_js:true,cases:results,mobile_width:390}));

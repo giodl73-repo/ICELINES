@@ -24,7 +24,7 @@ try {
  await page.goto('http://127.0.0.1:8765/player/8478402/rinkcraft?season=20242025');await expect(page.locator('.rs-measure')).toHaveCount(5);
  await expect(page.locator('[data-style-key="max-skating-speed"]')).toContainText('23.97 mph');
  await expect(page.locator('[data-style-key="speed-bursts-per-game"]')).toContainText('6.60 /game');
- await page.locator('.rs-style').screenshot({path:new URL('native-mcdavid-style.png',output).pathname.replace(/^\/([A-Z]:)/,'$1')});
+ await page.locator('.rk-evidence > summary').click();await page.locator('.rs-style').screenshot({path:new URL('native-mcdavid-style.png',output).pathname.replace(/^\/([A-Z]:)/,'$1')});
  await page.setViewportSize({width:390,height:844});expect(await page.locator('body').evaluate(e=>e.scrollWidth<=innerWidth)).toBe(true);
  await page.goto('http://127.0.0.1:8765/player/8476945/rinkcraft?season=20242025');await expect(page.locator('.rs-measure')).toHaveCount(0);await expect(page.locator('.rs-style')).toContainText('Depth & movement');
  const web=await browser.newContext();const app=await web.newPage();await app.goto('http://127.0.0.1:8766');
@@ -33,7 +33,7 @@ try {
  await app.locator('#data-library').evaluate(e=>e.open=true);await app.locator('#catalog').selectOption('20242025-regular');await app.locator('#load').click();await expect(app.locator('#context')).toHaveText('20242025 · regular');
  await app.locator('#rinkcraft-atlas').evaluate(e=>e.open=true);await app.getByRole('button',{name:/Connor McDavid · Pathfinder/}).click();await expect(app.locator('#player-dialog .rs-measure')).toHaveCount(5);
  await web.setOffline(true);await expect(app.locator('#player-dialog .rs-style')).toContainText('Unmeasured');
- await app.locator('#player-dialog .rs-style').scrollIntoViewIfNeeded();await app.screenshot({path:new URL('wasm-mcdavid-style.png',output).pathname.replace(/^\/([A-Z]:)/,'$1')});
+ await app.locator('#player-dialog .rk-evidence > summary').click();await app.locator('#player-dialog .rs-style').scrollIntoViewIfNeeded();await app.screenshot({path:new URL('wasm-mcdavid-style.png',output).pathname.replace(/^\/([A-Z]:)/,'$1')});
  await app.setViewportSize({width:390,height:844});expect(await app.locator('#player-dialog').evaluate(e=>e.scrollWidth<=e.clientWidth)).toBe(true);
  await writeFile(new URL('results.json',output),JSON.stringify({pass:true,players:25,skaters:22,goalies:3,tracking_players:1,style_readouts:47,original_measurements_unchanged:345,exact_native_wasm_cards:25,no_js:true,offline:true,mobile_width:390},null,2));
  console.log('Style: 25 exact native/WASM cards, 47 readouts, 345 unchanged measurements, one tracking pilot, goalie gaps, no-JS/offline/mobile passed.');
