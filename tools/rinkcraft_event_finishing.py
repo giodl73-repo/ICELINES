@@ -52,6 +52,8 @@ def validate(config,events):
     if not set(baseline['feature_columns'])<=FEATURES:raise ValueError('Unsupported or outcome/identity-derived baseline features')
     seen=set();games={};positions={};counts=Counter()
     for e in events:
+        required={'game_id','event_id','game_date','shooter_id','goalie_id','position_group','outcome','baseline_id','baseline_probability',*SCOPE,'season'}
+        if required-set(e):raise ValueError('Missing required event fields: '+str(sorted(required-set(e))))
         gid=e['game_id'];eid=e['event_id'];when=day(e['game_date']);key=(gid,eid)
         if not all(positive_int(e[k]) for k in ('game_id','event_id','shooter_id','goalie_id')):raise ValueError('Positive actor/game/event IDs required')
         if key in seen:raise ValueError('Duplicate game-event; replay cannot add evidence')

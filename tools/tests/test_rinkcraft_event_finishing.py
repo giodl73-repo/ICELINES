@@ -77,6 +77,13 @@ class EventTests(unittest.TestCase):
    p=Path(d)/'config.json';p.write_text(json.dumps(self.c));_,r=m.run(p);self.assertEqual(r['status'],'awaiting_synthetic_event_data');self.assertIsNone(r['heldout_metrics'])
    self.c['schema']='wrong';p.write_text(json.dumps(self.c))
    with self.assertRaises(ValueError):m.run(p)
+ def test_missing_fields_and_observed_provenance_gate(self):
+  self.e[0].pop('shooter_id')
+  with self.assertRaises(ValueError):m.experiment(self.c,self.e)
+  self.c,self.e=fixture();self.c['data_kind']='observed'
+  with tempfile.TemporaryDirectory() as d:
+   root=Path(d);data=root/'events.jsonl';data.write_text('\n'.join(json.dumps(e) for e in self.e));self.c['input']={'path':'events.jsonl','sha256':hashlib.sha256(data.read_bytes()).hexdigest()};p=root/'config.json';p.write_text(json.dumps(self.c))
+   with self.assertRaises(ValueError):m.run(p)
  def test_sealed_input_mutation_and_safe_report(self):
   with tempfile.TemporaryDirectory() as d:
    root=Path(d);data=root/'events.jsonl';data.write_text('\n'.join(json.dumps(e) for e in self.e),encoding='utf-8');self.c['input']={'path':'events.jsonl','sha256':hashlib.sha256(data.read_bytes()).hexdigest()};config=root/'config.json';config.write_text(json.dumps(self.c));_,r=m.run(config);self.assertEqual(r['status'],'synthetic_demonstration');data.write_text('modified')
