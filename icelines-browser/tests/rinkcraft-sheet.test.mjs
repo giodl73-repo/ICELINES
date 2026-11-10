@@ -47,6 +47,7 @@ test('front-sheet signals retain zero, missing values and unranked measurements'
   assert.match(front.textContent,/0\.00.*P0\.0/);
   assert.match(front.textContent,/Missing.*—.*Unranked/);
   assert.equal(all(front).filter(n=>n.dataset.numericalKey).length,2);
+  assert.match(classed(front,'rk-front-attributes')[0].textContent,/Tracking.*Positioning.*Movement.*Rebounds.*Recovery.*Puck Play/);
 });
 
 test('missing dossiers leave source and question coverage unknown', () => {
@@ -77,4 +78,12 @@ test('goalie capability and task fields use the goalie branch', () => {
   assert.deepEqual(all(rail).filter(n=>n.dataset.capabilityIndex!==undefined).map(s=>s.children[0].textContent),['Tracking','Positioning','Movement','Rebounds','Recovery','Puck Play']);
   assert.match(classed(profile,'rk-front-skills')[0].textContent,/Rebound Direction/);
   assert.doesNotMatch(rail.textContent,/Shooting|Defending/);
+});
+
+
+test('unavailable catalog is distinct from an unscouted player on the front', () => {
+  const profile=renderCharacterCard('Test',undefined,undefined,undefined,undefined,undefined,undefined,undefined,false);
+  const front=classed(profile,'rk-front')[0];
+  assert.match(front.textContent,/Class dossier unavailable/);
+  assert.doesNotMatch(front.textContent,/Unscouted|No supported class dossier/);
 });

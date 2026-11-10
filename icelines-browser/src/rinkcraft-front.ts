@@ -52,7 +52,7 @@ export function renderCharacterFront(
   const positionField=node('div');positionField.className='rk-front-position';
   positionField.append(node('small','Position'),node('strong',position));header.append(identity,positionField);
   const fields=node('dl');fields.className='rk-front-identity';
-  fields.append(field('Class',sheet?.primary.name??(catalogAvailable===false?'Unavailable':'Unscouted')),
+  fields.append(field('Class',sheet?.primary.name??(catalogAvailable===false?'Class dossier unavailable':'Unscouted')),
     field('Specialty',sheet?.specialty??'Unknown'),field('Secondary',sheet?.secondary.map(c=>c.name).join(' / ')||'—'));
 
   const development=field('Development','Undocumented');development.className+=' rk-development-field';
@@ -126,6 +126,6 @@ export function renderCharacterFront(
     field('Evidence Through',sheet?.evidence_through??'Unknown'),field('Assessed',sheet?.assessed??'Unknown'));
   front.append(sources);
   if(snapshot){const note=node('p',snapshot.note);note.className='rk-front-snapshot';note.dataset.snapshotState=snapshot.state;front.append(note);}
-  const footer=node('footer',sheet?'Provisional documentary class · capability ratings unassessed · evidence below':'No supported class dossier · statistics do not assign a class');
+  const footer=node('footer',sheet?'Provisional documentary class · capability ratings unassessed · evidence below':catalogAvailable===false?'Class dossier unavailable · statistics do not assign a class':'No supported class dossier · statistics do not assign a class');
   footer.className='rk-front-footer';front.append(footer);return front;
 }

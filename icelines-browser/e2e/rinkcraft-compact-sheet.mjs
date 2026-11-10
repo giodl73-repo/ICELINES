@@ -22,10 +22,13 @@ const errors=[];page.on('pageerror',e=>errors.push(String(e)));
 const results=[];
 try{
  await page.goto('http://sheet.test/');
- for(const [label,id,query] of [['defense',8479323,''],['forward',8481789,''],['goalie',8478048,''],['unscouted',8479323,'?season=20202021']]){
-  const profile=fixtures?fixtures[label]:(await (await fetch(`${base}/api/v1/player/${id}/rinkcraft${query}`)).json()).data;
-  await page.evaluate(async p=>{const {renderCharacterCard}=await import('/src/rinkcraft-character.js');document.querySelector('main').replaceChildren(renderCharacterCard(p.player_name,p.character_sheet??undefined,p.attribute_seasons.at(-1),p.latest_available,p.numerical_evidence??undefined,p.numerical_history??undefined,p.numerical_snapshot??undefined,[],true));},profile);
+ for(const [label,id,query] of [['defense',8479323,''],['forward',8481789,''],['goalie',8478048,''],['unscouted',8479323,'?season=20202021'],['unavailable',8479323,''],['goalie-source-only',8478048,'']]){
+  let profile=fixtures?structuredClone(fixtures[label==='unavailable'?'unscouted':label==='goalie-source-only'?'goalie':label]):(await (await fetch(`${base}/api/v1/player/${id}/rinkcraft${query}`)).json()).data;
+  if(label==='unavailable')profile.character_sheet=undefined;if(label==='goalie-source-only'){profile.latest_available=null;profile.attribute_seasons=[];}
+  await page.evaluate(async ({p,available})=>{const {renderCharacterCard}=await import('/src/rinkcraft-character.js');document.querySelector('main').replaceChildren(renderCharacterCard(p.player_name,p.character_sheet??undefined,p.attribute_seasons.at(-1),p.latest_available,p.numerical_evidence??undefined,p.numerical_history??undefined,p.numerical_snapshot??undefined,[],available));},{p:profile,available:label!=='unavailable'});
   await expect(page.locator('.rk-front')).toBeVisible();
+  if(label==='unavailable'){await expect(page.locator('.rk-front')).toContainText('Class dossier unavailable');await expect(page.locator('.rk-front')).not.toContainText('Unscouted');}
+  if(label==='goalie-source-only')await expect(page.locator('.rk-front-attributes dt')).toHaveText(['Tracking','Positioning','Movement','Rebounds','Recovery','Puck Play']);
   expect(await page.locator('.rk-evidence').evaluate(e=>e.open)).toBe(false);
   const box=await page.locator('.rk-front').boundingBox();expect(box.width).toBeLessThanOrEqual(816);
   expect(await page.locator('.rk-front .rk-field[data-numerical-key]').count()).toBe(profile.numerical_evidence?.facets.length??0);

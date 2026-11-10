@@ -109,3 +109,9 @@ Validation for this version:
   was not rerun against the unchanged legacy servers.
 - The local preview remains loopback-only on port 8771. No hosted deployment or
   main merge was performed.
+
+## Handoff reconciliation
+
+The approved category form is retained over the divergent C: compact rail.
+See [reconciliation results](rinkcraft-sheet-reconciliation-2026-11-09.md) for
+selective integration, new status/source-only goalie cases and precise limits.

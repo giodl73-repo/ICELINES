@@ -1,5 +1,10 @@
 # Work Packages
 
+## WP-RINKCRAFT-18 (CHG-142)
+
+Compare divergent branches deliberately; retain the approved category mapping and selectively reuse evidence traceability. Acceptance: `docs/rinkcraft-sheet-reconciliation-2026-11-09.md`. CHG-141 / WP-RINKCRAFT-17 remain on the alternative C: implementation.
+
+
 ## WP-RINKCRAFT-16 (CHG-140)
 
 Make possession, penalty and on-ice threat records visible for skaters, plus workload-dependent goalie saving total. Acceptance: `docs/rinkcraft-context-validation-2026-11-09.md`.

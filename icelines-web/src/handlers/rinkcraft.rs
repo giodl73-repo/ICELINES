@@ -846,6 +846,7 @@ pub async fn get_json(
 #[derive(Template)]
 #[template(path = "rinkcraft.html")]
 struct ProfileTemplate {
+    front_position: String,
     documentary_catalog_available: bool,
     comparison_choices: Vec<NumberChoice>,
     history: Option<HistoryView>,
@@ -1623,6 +1624,10 @@ pub async fn get_html(
         Vec::new()
     };
     let template = ProfileTemplate {
+        front_position: view.latest_available.as_ref()
+            .map(|s| s.position.abbreviation().to_owned())
+            .or_else(|| view.numerical_evidence.as_ref().map(|n| n.group.clone()))
+            .unwrap_or_else(|| "Unknown".into()),
         documentary_catalog_available: comparison_character_catalog().0.is_some(),
         comparison_choices,
         history: view.numerical_history.as_ref().map(history_view),

@@ -1,5 +1,10 @@
 # Trace Matrix
 
+## Approved category-form reconciliation (CHG-142)
+
+REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> existing documentary/numerical interfaces -> distinct capability, measured record and assignment categories -> unrated/zero/null/unavailable/goalie tests, fixture disclosure/mobile/Letter checks. Evidence: `docs/rinkcraft-sheet-reconciliation-2026-11-09.md`. Full live-app parity remains separate.
+
+
 ## Possession and environment context (CHG-140)
 
 REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> IF-RINKCRAFT-NUMBERS-001 -> optional shared context projection and separate native/WASM rendering -> exact copies, zero/missing/unranked, all-position parity, unchanged primary pools and no-JS/offline/mobile/theme checks. Evidence: `docs/rinkcraft-context-validation-2026-11-09.md`.

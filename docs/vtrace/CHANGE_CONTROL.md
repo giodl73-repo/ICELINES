@@ -1,5 +1,10 @@
 # Change Control
 
+## CHG-142 — Reconcile approved Rinkcraft capability form (2026-11-09)
+
+Preserve the isolated F: category form over the alternative C: raw-stat rail. Keep capability ratings unassessed and preserve detailed evidence/statuses. No merge, source/class/model change or invented ability score. Contract: `design/specs/rinkcraft-sheet-reconciliation.md`.
+
+
 ## CHG-140 — Possession and environment context (2026-11-09)
 
 Expose fixed source-record context on cards and in separate comparison tables. Preserve raw values/ranks, missingness and primary pools; no defensive grade or class inference. Contract: `design/specs/rinkcraft-context-evidence.md`.
