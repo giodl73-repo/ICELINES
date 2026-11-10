@@ -41,3 +41,32 @@ Local artifacts are under `target/compact-sheet/` in the isolated F: worktree;
 they are not repository payloads. The pre-existing preview servers were read
 for data only; they were not restarted or replaced. No hosted build,
 publication, main merge or desktop control was performed.
+
+
+## Attribute-column revision
+
+The six measured signals now form a single vertical column at the left of the
+main form. Their raw values remain prominent; percentiles sit in smaller framed
+capsules. Four neighboring boxes show Methods, Traits, Role and Open Questions.
+Goalies retain their four measured signals; the legacy seven-attribute fallback
+retains all seven. No fabricated signals fill missing slots.
+
+`design/previews/rinkcraft-section-map.html` is the local side-by-side comparison
+shell. Copy it to `target/compact-sheet/comparison.html` beside `defense.html`
+and a rendered `dnd-reference-page1.png`. The reference is page 1 of Wizards of
+the Coast's official 2014 character-sheet PDF; reference bytes remain outside
+Git. Six keyboard-accessible controls highlight the proposed matching sections
+on both pages. Supporting-record correspondence is explicitly a layout proposal.
+
+The original native data server was unavailable during this revision. Local
+fixtures were projected by the existing shared WASM engine from the existing
+catalogs, with a deliberately absent dossier variant for missing-data coverage.
+The focused layout acceptance also accepts an explicit `ICELINES_PROFILE_FIXTURES`
+JSON path instead of using the live API. TypeScript, five focused tests, native
+Askama compilation and the revised stacked-column/mobile/print checks passed.
+Four print exports remain one Letter page each. The comparison check verified
+that the reference image loads, all six controls update both panes, the six
+signals stack without overlap, and the pair stays within a horizontally
+scrollable workspace on a narrow screen. Screenshots were inspected locally.
+Replay it with `node icelines-browser/e2e/rinkcraft-section-map.mjs` after serving
+the prepared comparison directory (default loopback port 8771).

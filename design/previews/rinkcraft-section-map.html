@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>D&amp;D → Rinkcraft · section map</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#e8edee;color:#20313b;font:14px/1.45 system-ui,sans-serif}
+.toolbar{padding:22px 28px;background:#182b35;color:#fff}.toolbar h1{font-size:22px;margin:0 0 5px}.toolbar p{margin:0;color:#c7d7de}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.controls button{padding:9px 13px;border:1px solid #8298a3;background:transparent;color:white;border-radius:5px;cursor:pointer;font:650 13px system-ui;min-height:40px}.controls button[aria-pressed=true]{background:#ffe09c;color:#20313b;border-color:#ffe09c}.controls button:focus-visible{outline:3px solid #63c9ff;outline-offset:3px}
+.workspace{padding:22px;max-width:1760px;margin:auto}.pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}.panel{min-width:0}.panel h2{font-size:16px;margin:0 0 10px}.panel h2 span{font-size:12px;font-weight:450;color:#506571;margin-left:10px}
+.reference{position:relative;background:white;box-shadow:0 5px 24px #20313b19}.reference img{display:block;width:100%;height:auto}.region{display:none;position:absolute;border:3px solid #bd7800;background:#ffd16a26;pointer-events:none}.region.active{display:block}.region b{position:absolute;left:-3px;top:-23px;padding:2px 7px;background:#ffe09c;border:1px solid #bd7800;font-size:11px;white-space:nowrap}
+.live{position:relative;width:100%;overflow:hidden}iframe{display:block;width:816px;height:1160px;border:0;transform-origin:top left;background:#e8edee}
+.mapping{padding:16px 18px;margin:18px 0 0;background:white;border:1px solid #becace;border-radius:5px;min-height:80px}.mapping strong{display:block;margin-bottom:5px}.mapping p{margin:0}.source{margin:18px 0;color:#506571;font-size:12px}a{color:#1c5a77}
+@media(max-width:760px){.workspace{overflow-x:auto;padding:14px}.pair{min-width:950px;gap:18px}.toolbar{padding:18px}.panel h2 span{display:block;margin:2px 0}.source{max-width:95vw}}
+</style>
+</head>
+<body>
+<header class="toolbar"><h1>D&amp;D on the left. Rinkcraft on the right.</h1><p>Select a section to highlight the proposed layout match on both sheets.</p>
+<nav class="controls" aria-label="Section mapping">
+<button type="button" data-map="identity" aria-pressed="false">1 · Identity</button>
+<button type="button" data-map="signals" aria-pressed="true">2 · Six signals</button>
+<button type="button" data-map="methods" aria-pressed="false">3 · Methods</button>
+<button type="button" data-map="traits" aria-pressed="false">4 · Traits &amp; role</button>
+<button type="button" data-map="record" aria-pressed="false">5 · Record keeping</button>
+<button type="button" data-map="clear" aria-pressed="false">Clear highlights</button>
+</nav></header>
+<main class="workspace"><div class="pair">
+<section class="panel"><h2>D&amp;D reference <span>Original core sheet · page 1</span></h2>
+<div class="reference"><img src="dnd-reference-page1.png" alt="Original Dungeons and Dragons fifth edition character sheet, with its six attributes in a vertical column on the left.">
+<div class="region" data-region="identity" style="left:4.8%;top:5.2%;width:91%;height:9.3%"><b>1 · Identity</b></div>
+<div class="region" data-region="signals" style="left:4.8%;top:18%;width:10.1%;height:55%"><b>2 · Six attributes</b></div>
+<div class="region" data-region="methods" style="left:15.6%;top:36%;width:18.1%;height:37.1%"><b>3 · Skills</b></div>
+<div class="region" data-region="methods" style="left:35%;top:47.7%;width:30%;height:25.8%"><b>3 · Actions</b></div>
+<div class="region" data-region="traits" style="left:66.2%;top:17%;width:29.6%;height:30%"><b>4 · Character</b></div>
+<div class="region" data-region="traits" style="left:66.2%;top:47.6%;width:29.6%;height:49%"><b>4 · Features</b></div>
+<div class="region" data-region="record" style="left:5.2%;top:78.7%;width:28%;height:17.8%"><b>5 · Supporting record</b></div>
+</div></section>
+<section class="panel"><h2>Our Rinkcraft profile <span>Current design · six signals in one column</span></h2><div class="live"><iframe src="defense.html?layout=columns" title="Current Rinkcraft player form"></iframe></div></section>
+</div>
+<aside class="mapping" aria-live="polite"><strong id="map-title"></strong><p id="map-note"></p></aside>
+<p class="source">Reference: <a href="https://media.wizards.com/2022/dnd/downloads/DnD_5E_CharacterSheet_FormFillable.pdf#page=1" target="_blank" rel="noopener">Wizards of the Coast’s original character sheet</a>. <a href="defense.html" target="_blank" rel="noopener">Open our profile at full size</a>.</p>
+</main>
+<script>
+const frame=document.querySelector('iframe');
+const mappings={
+ identity:{title:'1 · Identity → player, position, class, specialty',note:'A compact header across the top. Position, class and specialty keep separate fields.',selectors:'.rk-front-header,.rk-front-identity'},
+ signals:{title:'2 · Six attributes → six measured signals',note:'Six individual boxes stacked vertically at the left. Each box keeps its measurement name, raw value, and percentile in the smaller capsule.',selectors:'.rk-front-measures'},
+ methods:{title:'3 · Skills and actions → Methods',note:'Short, memorable method names in their own box. The detailed evidence remains below the form.',selectors:'.rk-front-methods'},
+ traits:{title:'4 · Features and character → Traits, Role, Open Questions',note:'Separate adjacent boxes for documented traits, the contribution of the class, and unresolved questions.',selectors:'.rk-front-traits,.rk-front-role,.rk-front-questions'},
+ record:{title:'5 · Supporting record → sources and dates',note:'A proposed layout correspondence: our supporting record shows source count, open-question count, evidence date and assessment date.',selectors:'.rk-front-coverage'},
+ clear:{title:'Compare the two forms',note:'Choose a numbered section above to map it across the two pages.',selectors:''}
+};
+let selected='signals';
+function select(key){selected=key;const m=mappings[key];document.querySelector('#map-title').textContent=m.title;document.querySelector('#map-note').textContent=m.note;document.querySelectorAll('[data-map]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.map===key)));document.querySelectorAll('[data-region]').forEach(e=>e.classList.toggle('active',e.dataset.region===key));const doc=frame.contentDocument;if(doc?.readyState==='complete'){doc.querySelectorAll('.rk-map-selected').forEach(e=>e.classList.remove('rk-map-selected'));if(m.selectors)doc.querySelectorAll(m.selectors).forEach(e=>e.classList.add('rk-map-selected'));}}
+function size(){const width=frame.parentElement.clientWidth;const scale=width/816;frame.style.transform=`scale(${scale})`;const height=Math.max(1160,frame.contentDocument?.body?.scrollHeight??1160);frame.style.height=`${height}px`;frame.parentElement.style.height=`${height*scale}px`;}
+frame.addEventListener('load',()=>{const style=frame.contentDocument.createElement('style');style.textContent='.rk-map-selected{outline:3px solid #bd7800!important;outline-offset:4px;background-color:#fff3d5!important}body{margin:0}';frame.contentDocument.head.append(style);size();select(selected);});
+document.querySelectorAll('[data-map]').forEach(b=>b.addEventListener('click',()=>select(b.dataset.map)));
+new ResizeObserver(size).observe(frame.parentElement);select(selected);
+</script>
+</body>
+</html>

@@ -87,3 +87,23 @@
 
 .rk-front section{margin:0}.rk-front-header{position:static;z-index:auto;flex-wrap:nowrap;background:transparent;color:inherit;padding:0 0 20px;margin:0}
 @media print{body:has(.rk-front) :has(.rk-front){display:block!important;position:static!important;transform:none!important;max-height:none!important;height:auto!important;overflow:visible!important;margin:0!important;padding:0!important;border:0!important;width:auto!important;max-width:none!important;background:transparent!important}.rk-front{display:flex!important}.rk-front-header{display:flex!important}.rk-front::backdrop,dialog::backdrop{display:none!important}}
+
+/* Attribute rail and adjacent form columns. */
+.rk-front-columns{display:grid;grid-template-columns:minmax(0,.65fr) minmax(0,1.35fr);gap:18px;flex:1}
+.rk-front-columns .rk-front-values{grid-template-columns:minmax(0,1fr);gap:9px}
+.rk-front-columns .rk-front-values .rk-field{position:relative;border:1.5px solid var(--sheet-ink);border-radius:10px;padding:9px 9px 8px;background:#fff8}
+.rk-front-columns .rk-front-values dt{min-height:0;font-size:9px;letter-spacing:.04em}
+.rk-front-columns .rk-front-values dd{font-size:25px;margin:4px 0 6px;line-height:1.1}
+.rk-front-columns .rk-front-values small{display:table;margin:0 auto;padding:3px 9px;border:1px solid var(--sheet-line);border-radius:16px;background:var(--rk-paper,#fbfbf7);font-size:9px;text-transform:none}
+.rk-front-columns .rk-front-lists{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:1fr 1fr;gap:12px;align-self:stretch}
+.rk-front-columns .rk-front-lists section{border:1.5px solid var(--sheet-ink);border-radius:7px;padding:12px}
+.rk-front-columns .rk-front-lists h2,.rk-front-columns .rk-front-lists h4{padding-bottom:9px;border-bottom:1px solid var(--sheet-line);margin-bottom:4px}
+.rk-front-columns .rk-front-lists li{font-size:13px;padding:8px 0}
+.rk-front-columns .rk-front-lists p,.rk-front-columns .rk-front-questions li{font-size:12px;line-height:1.5;font-weight:450;color:var(--sheet-ink)}
+.rk-front-columns .rk-front-measures>p:last-child{font-size:9px;line-height:1.45}
+@media(max-width:540px){.rk-front-columns{grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:10px}.rk-front-columns .rk-front-lists{grid-template-columns:1fr;grid-template-rows:auto;gap:10px}.rk-front-columns .rk-front-lists section{padding:10px}.rk-front-columns .rk-front-values dd{font-size:21px}.rk-front-columns .rk-front-values small{font-size:8px;padding:3px 5px}.rk-front-columns .rk-front-values dt{font-size:8px}.rk-front-columns .rk-front-lists li{font-size:12px}}
+@media print{.rk-front-columns{gap:14px}.rk-front-columns .rk-front-values{gap:6px}.rk-front-columns .rk-front-values .rk-field{padding:6px}.rk-front-columns .rk-front-values dd{font-size:22px;margin:3px 0 4px}.rk-front-columns .rk-front-values small{font-size:8px;padding:2px 8px}.rk-front-columns .rk-front-lists section{padding:10px}}
+
+@media print{.rk-front-columns .rk-front-values{gap:4px}.rk-front-columns .rk-front-values .rk-field{padding:4px}.rk-front-columns .rk-front-values dd{font-size:19px;margin:2px 0 3px}.rk-front-columns .rk-front-values small{font-size:7px;padding:2px 7px}}
+
+@media screen{.rk-front{gap:15px}.rk-front-columns .rk-front-values{gap:6px}.rk-front-columns .rk-front-values .rk-field{padding:6px}.rk-front-columns .rk-front-values dd{font-size:22px;margin:3px 0 4px}}

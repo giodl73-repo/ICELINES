@@ -6,6 +6,7 @@ import {fileURLToPath} from 'node:url';
 import {mkdir} from 'node:fs/promises';
 const root=fileURLToPath(new URL('../../',import.meta.url));
 const base=process.env.ICELINES_TEST_URL??'http://127.0.0.1:8765';
+const fixtures=process.env.ICELINES_PROFILE_FIXTURES?JSON.parse(await readFile(process.env.ICELINES_PROFILE_FIXTURES,'utf8')):undefined;
 await mkdir(resolve(root,'target/compact-sheet'),{recursive:true});
 const browser=await chromium.launch({channel:'msedge',headless:true});
 const page=await browser.newPage({viewport:{width:1280,height:1100}});
@@ -20,12 +21,16 @@ const results=[];
 try{
  await page.goto('http://sheet.test/');
  for(const [label,id,query] of [['defense',8479323,''],['forward',8481789,''],['goalie',8478048,''],['unscouted',8479323,'?season=20202021']]){
-  const profile=(await (await fetch(`${base}/api/v1/player/${id}/rinkcraft${query}`)).json()).data;
+  const profile=fixtures?fixtures[label]:(await (await fetch(`${base}/api/v1/player/${id}/rinkcraft${query}`)).json()).data;
   await page.evaluate(async p=>{const {renderCharacterCard}=await import('/src/rinkcraft-character.js');document.querySelector('main').replaceChildren(renderCharacterCard(p.player_name,p.character_sheet??undefined,p.attribute_seasons.at(-1),p.latest_available,p.numerical_evidence??undefined,p.numerical_history??undefined,p.numerical_snapshot??undefined,[],true));},profile);
   await expect(page.locator('.rk-front')).toBeVisible();
   expect(await page.locator('.rk-evidence').evaluate(e=>e.open)).toBe(false);
   const box=await page.locator('.rk-front').boundingBox();expect(box.width).toBeLessThanOrEqual(816);
   expect(await page.locator('.rk-front .rk-field[data-numerical-key]').count()).toBe(profile.numerical_evidence?.facets.length??0);
+  const tiles=await page.locator('.rk-front-values .rk-field').all();
+  const boxes=await Promise.all(tiles.map(t=>t.boundingBox()));
+  expect(new Set(boxes.map(b=>Math.round(b.x))).size).toBe(1);
+  for(let i=1;i<boxes.length;i++)expect(boxes[i].y).toBeGreaterThanOrEqual(boxes[i-1].y+boxes[i-1].height);
   await page.locator('.rk-evidence > summary').click();await expect(page.locator('.rk-sheet')).toBeVisible();await page.locator('.rk-evidence > summary').click();
   await page.screenshot({path:resolve(root,`target/compact-sheet/${label}.png`),fullPage:true});
   const html=await page.locator('.rk-profile').evaluate(e=>e.outerHTML);
