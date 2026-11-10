@@ -70,3 +70,42 @@ signals stack without overlap, and the pair stays within a horizontally
 scrollable workspace on a narrow screen. Screenshots were inspected locally.
 Replay it with `node icelines-browser/e2e/rinkcraft-section-map.mjs` after serving
 the prepared comparison directory (default loopback port 8771).
+
+
+## Applied category form
+
+The accepted mapping is implemented with Rinkcraft headings and the reference's
+column structure: capability rail and task column at left; response details,
+counters, methods, measured record and deployment in the center; tendencies,
+duties, links, limitations, distinctive features and questions at right.
+Development and experience retain their own header fields. Missing assessments
+and documentary fields are explicit; no new numeric abilities are fabricated.
+Skaters and goalies each have their own six capability labels and task branch.
+The browser front renderer is isolated in `rinkcraft-front.ts`; the legacy full
+evidence renderer remains intact inside its disclosure. The stylesheet's earlier
+layout overrides were replaced with one coherent compact-form block.
+
+Validation for this version:
+
+- TypeScript compilation and seven focused browser tests passed. New checks
+  prevent statistical values from populating capability fields, preserve zero
+  versus missing records, keep class purposes out of coaching assignments and
+  unknowns out of limitations, and verify the goalie branch.
+- Native Askama compilation passed with `cargo check -p icelines-web --locked`.
+  No Rust data-processing code changed.
+- Four profiles passed desktop, 390-pixel mobile, nonoverlapping attribute rail,
+  closed/open evidence and one-page print checks on each of the native-style
+  and browser-dialog surfaces. pypdf independently verified all eight Letter
+  PDFs and the presence of both Attributes and Measured Record in each.
+- Set `ICELINES_SHEET_SURFACE=browser` for the dialog surface in the focused
+  layout acceptance. Its explicit fixture option uses the retained shared-WASM
+  projections when the native API is unavailable.
+- The comparison's seven controls passed: identity, attributes, tasks/pressure,
+  methods, playing profile, supporting record and clear. All corresponding
+  highlights update together without errors. The full mapping proposal remains
+  linked from the comparison toolbar.
+- The older WASM acceptance now targets its direct history disclosure rather
+  than a hidden nested one; syntax checked, full live native/WASM acceptance
+  was not rerun against the unchanged legacy servers.
+- The local preview remains loopback-only on port 8771. No hosted deployment or
+  main merge was performed.

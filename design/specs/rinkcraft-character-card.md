@@ -65,3 +65,29 @@ from activity, outcome or deployment context. Missing measurements stay visible.
 No UI recomputes ranks or infers class membership. Raw season lines preserve nulls
 and percentage scales. Day/year publication precision is retained; research owns
 the conservative season cutoff for year-only sources. All classes remain provisional.
+
+
+## Rinkcraft category form — 2026-11-09
+
+Owner accepted the semantic section mapping, using Rinkcraft headings throughout
+the player form. The front sheet now separates six capability attributes from
+Under Pressure, Task Skills and Signature Methods. Playing Tendencies, Assigned
+Role, Unit Links, Known Limitations, Distinctive Features and Open Questions are
+separate right-column boxes. Supporting boxes retain Read & React, Threat Denial,
+Response Timing, Skating/Movement Detail, Role Coverage, Deployment, Record
+Counters and Measured Record. Identity retains class, specialty, secondary class,
+development and experience; provenance remains below the form.
+
+Skater capability labels are Skating, Handling, Passing, Shooting, Reading and
+Defending. Goalies use Tracking, Positioning, Movement, Rebounds, Recovery and
+Puck Play. The intended display is 1–20; every capability is currently Unrated.
+No scoring rubric, numerical assessment contract, derived modifier or 20+ tier
+is introduced by this presentation change. Statistical percentile bands do not
+populate these fields. Unsupported tasks and response measures stay Unassessed;
+unsupported biography, duties and relationships stay Undocumented.
+
+The primary class purpose does not establish an Assigned Role. Unknowns do not
+populate Known Limitations. The class, methods and tendencies still come from
+the dated documentary selector. Raw numerical values and percentiles are retained
+in Measured Record; the complete source-linked dossier remains expandable.
+Native Askama and browser rendering share the stylesheet and category semantics.

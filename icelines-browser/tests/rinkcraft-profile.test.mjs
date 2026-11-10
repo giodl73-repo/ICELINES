@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { profileValue, renderRinkcraftProfile } from '../dist/src/rinkcraft-profile.js';
 class Node {
-  children = []; attributes = {}; value = ''; checked = false;
+  children = []; attributes = {}; dataset = {}; style = {}; value = ''; checked = false;
   constructor(tag) { this.tag = tag; }
   append(...nodes) { this.children.push(...nodes); }
   replaceChildren(...nodes) { this.children = nodes; }

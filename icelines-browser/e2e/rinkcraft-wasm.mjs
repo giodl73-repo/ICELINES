@@ -30,9 +30,9 @@ try {
   await page.getByRole('button',{name:'Adam Fox',exact:true}).click();
   const profile=page.locator('#rinkcraft-profile');await expect(profile).toBeVisible();
   await expect(profile.locator('.rk-class-name')).toHaveText(expected.character_sheet.primary.name);
-  expect(await profile.locator('.rk-history').first().evaluate(e=>e.open)).toBe(false);
+  expect(await profile.locator(':scope > .rk-history').first().evaluate(e=>e.open)).toBe(false);
   await page.screenshot({path:new URL('fox-character.png',output).pathname.replace(/^\/([A-Z]:)/,'$1')});
-  await profile.locator('.rk-history > summary').first().click();
+  await profile.locator(':scope > .rk-history > summary').first().click();
   await expect(profile).toContainText('2 loaded seasons');
   expect(await profile.locator('.rinkcraft-families > details').count()).toBe(6);
   const assessment=expected.attribute_seasons.at(-1);expect(assessment.attributes).toHaveLength(7);

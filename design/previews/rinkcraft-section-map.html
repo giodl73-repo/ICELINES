@@ -19,10 +19,11 @@
 <header class="toolbar"><h1>D&amp;D on the left. Rinkcraft on the right.</h1><p>Select a section to highlight its current location. <a href="proposal.html" style="color:#ffe09c">Read the proposed player model and full section mapping →</a></p>
 <nav class="controls" aria-label="Section mapping">
 <button type="button" data-map="identity" aria-pressed="false">1 · Identity</button>
-<button type="button" data-map="signals" aria-pressed="true">2 · Six signals</button>
-<button type="button" data-map="methods" aria-pressed="false">3 · Methods</button>
-<button type="button" data-map="traits" aria-pressed="false">4 · Traits &amp; role</button>
-<button type="button" data-map="record" aria-pressed="false">5 · Record keeping</button>
+<button type="button" data-map="signals" aria-pressed="true">2 · Attributes</button>
+<button type="button" data-map="tasks" aria-pressed="false">3 · Tasks &amp; Pressure</button>
+<button type="button" data-map="methods" aria-pressed="false">4 · Signature Methods</button>
+<button type="button" data-map="traits" aria-pressed="false">5 · Profile</button>
+<button type="button" data-map="record" aria-pressed="false">6 · Supporting Record</button>
 <button type="button" data-map="clear" aria-pressed="false">Clear highlights</button>
 </nav></header>
 <main class="workspace"><div class="pair">
@@ -30,13 +31,14 @@
 <div class="reference"><img src="dnd-reference-page1.png" alt="Original Dungeons and Dragons fifth edition character sheet, with its six attributes in a vertical column on the left.">
 <div class="region" data-region="identity" style="left:4.8%;top:5.2%;width:91%;height:9.3%"><b>1 · Identity</b></div>
 <div class="region" data-region="signals" style="left:4.8%;top:18%;width:10.1%;height:55%"><b>2 · Six attributes</b></div>
-<div class="region" data-region="methods" style="left:15.6%;top:36%;width:18.1%;height:37.1%"><b>3 · Skills</b></div>
-<div class="region" data-region="methods" style="left:35%;top:47.7%;width:30%;height:25.8%"><b>3 · Actions</b></div>
-<div class="region" data-region="traits" style="left:66.2%;top:17%;width:29.6%;height:30%"><b>4 · Character</b></div>
-<div class="region" data-region="traits" style="left:66.2%;top:47.6%;width:29.6%;height:49%"><b>4 · Features</b></div>
-<div class="region" data-region="record" style="left:5.2%;top:78.7%;width:28%;height:17.8%"><b>5 · Supporting record</b></div>
+<div class="region" data-region="tasks" style="left:15.6%;top:25.2%;width:18.1%;height:12.7%"><b>3 · Pressure response</b></div>
+<div class="region" data-region="tasks" style="left:15.6%;top:38.4%;width:18.1%;height:35.1%"><b>3 · Task skills</b></div>
+<div class="region" data-region="methods" style="left:35%;top:47.7%;width:30%;height:25.8%"><b>4 · Methods</b></div>
+<div class="region" data-region="traits" style="left:66.2%;top:17%;width:29.6%;height:30%"><b>5 · Profile</b></div>
+<div class="region" data-region="traits" style="left:66.2%;top:47.6%;width:29.6%;height:49%"><b>5 · Features</b></div>
+<div class="region" data-region="record" style="left:5.2%;top:78.7%;width:28%;height:17.8%"><b>6 · Supporting record</b></div>
 </div></section>
-<section class="panel"><h2>Our Rinkcraft profile <span>Current design · six signals in one column</span></h2><div class="live"><iframe src="defense.html?layout=columns" title="Current Rinkcraft player form"></iframe></div></section>
+<section class="panel"><h2>Our Rinkcraft profile <span>Current design · Rinkcraft categories · capability attributes on the left</span></h2><div class="live"><iframe src="defense.html?layout=rinkcraft-v2" title="Current Rinkcraft player form"></iframe></div></section>
 </div>
 <aside class="mapping" aria-live="polite"><strong id="map-title"></strong><p id="map-note"></p></aside>
 <p class="source">Reference: <a href="https://media.wizards.com/2022/dnd/downloads/DnD_5E_CharacterSheet_FormFillable.pdf#page=1" target="_blank" rel="noopener">Wizards of the Coast’s original character sheet</a>. <a href="defense.html" target="_blank" rel="noopener">Open our profile at full size</a>.</p>
@@ -44,11 +46,12 @@
 <script>
 const frame=document.querySelector('iframe');
 const mappings={
- identity:{title:'1 · Identity → player, position, class, specialty',note:'A compact header across the top. Position, class and specialty keep separate fields.',selectors:'.rk-front-header,.rk-front-identity'},
- signals:{title:'2 · Proposed attribute column',note:'The current example still shows raw signals here. The full proposal moves these into Measured Record and reserves the left column for capability ratings.',selectors:'.rk-front-measures'},
- methods:{title:'3 · Proposed skills and methods split',note:'Skills describe specific hockey tasks. Methods describe how those tasks are attempted. Saving throws map separately to task performance under pressure; see the full proposal.',selectors:'.rk-front-methods'},
- traits:{title:'4 · Features and character → Traits, Role, Open Questions',note:'Separate adjacent boxes for documented traits, the contribution of the class, and unresolved questions.',selectors:'.rk-front-traits,.rk-front-role,.rk-front-questions'},
- record:{title:'5 · Supporting record → sources and dates',note:'A proposed layout correspondence: our supporting record shows source count, open-question count, evidence date and assessment date.',selectors:'.rk-front-coverage'},
+ identity:{title:'1 · Player identity and class',note:'Player, position, class, specialty, development and experience stay separate.',selectors:'.rk-front-header,.rk-front-identity'},
+ signals:{title:'2 · Capability attributes',note:'Six hockey capability fields on the left. Their intended scale is 1–20; unassessed capabilities remain unrated. Raw statistics live in Measured Record.',selectors:'.rk-front-attributes'},
+ tasks:{title:'3 · Task Skills and Under Pressure',note:'Task Skills name specific hockey tasks. Under Pressure assesses responses to a named threat. Read & React holds anticipation detail. These are separate from methods.',selectors:'.rk-front-pressure,.rk-front-skills,.rk-front-reading'},
+ methods:{title:'4 · Signature Methods',note:'Short names describe how a task is attempted: Disguise, Delay, Drag Release. The source-linked documentary descriptions remain available below the sheet.',selectors:'.rk-front-methods'},
+ traits:{title:'5 · Playing profile',note:'Playing Tendencies, Assigned Role, Unit Links, Known Limitations and Distinctive Features have separate boxes. Unknown evidence stays in Open Questions rather than becoming a weakness.',selectors:'.rk-front-traits,.rk-front-role,.rk-front-links,.rk-front-limitations,.rk-front-distinctive,.rk-front-questions'},
+ record:{title:'6 · Supporting record and deployment',note:'Role Coverage and Deployment describe context. Record Counters and Measured Record retain statistics as evidence, separately from capability ratings. The footer retains source and assessment dates.',selectors:'.rk-front-role-coverage,.rk-front-deployment,.rk-front-counters,.rk-front-record,.rk-front-coverage'},
  clear:{title:'Compare the two forms',note:'Choose a numbered section above to map it across the two pages.',selectors:''}
 };
 let selected='signals';

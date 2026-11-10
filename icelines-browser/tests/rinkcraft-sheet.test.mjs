@@ -54,6 +54,27 @@ test('missing dossiers leave source and question coverage unknown', () => {
   const front=classed(profile,'rk-front')[0];
   assert.match(front.textContent,/Unscouted/);
   assert.match(front.textContent,/Sources Unknown/);
-  assert.match(front.textContent,/Open questions Unknown/);
+  assert.match(front.textContent,/Open Questions Unknown/);
   assert.match(front.textContent,/statistics do not assign a class/);
+});
+
+
+test('capabilities stay unrated while statistics remain in Measured Record', () => {
+  const profile=renderCharacterCard('Test skater',sheet);
+  const rail=classed(profile,'rk-front-attributes')[0];
+  const scores=all(rail).filter(n=>n.dataset.capabilityIndex!==undefined);
+  assert.equal(scores.length,6);
+  assert.deepEqual(scores.map(s=>s.children[0].textContent),['Skating','Handling','Passing','Shooting','Reading','Defending']);
+  assert.ok(scores.every(s=>s.children[1].textContent==='—'&&s.dataset.ratingState==='unassessed'));
+  assert.equal(classed(profile,'rk-front-role')[0].textContent.includes(sheet.primary.purpose),false);
+  assert.equal(classed(profile,'rk-front-limitations')[0].textContent.includes(sheet.unknowns[0]),false);
+  assert.match(classed(profile,'rk-front-questions')[0].textContent,/Technique is not measured/);
+});
+
+test('goalie capability and task fields use the goalie branch', () => {
+  const profile=renderCharacterCard('Test goalie',sheet,undefined,{position:'Goalie',games:20,metrics:[]});
+  const rail=classed(profile,'rk-front-attributes')[0];
+  assert.deepEqual(all(rail).filter(n=>n.dataset.capabilityIndex!==undefined).map(s=>s.children[0].textContent),['Tracking','Positioning','Movement','Rebounds','Recovery','Puck Play']);
+  assert.match(classed(profile,'rk-front-skills')[0].textContent,/Rebound Direction/);
+  assert.doesNotMatch(rail.textContent,/Shooting|Defending/);
 });

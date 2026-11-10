@@ -1,4 +1,5 @@
 // Documentary identity is supplied by the shared Rust catalog selector, never bands.
+import {renderCharacterFront} from './rinkcraft-front.js';
 import type {AttributeSeason} from './rinkcraft-attributes.js';
 import {attributeValue} from './rinkcraft-attributes.js';
 import {renderNumericalPanel,renderStyleEvidence,numericalValue} from './rinkcraft-numbers.js';
@@ -38,32 +39,12 @@ function renderDetailedCharacterCard(name:string,sheet:CharacterSheet|undefined,
 }
 
 
-// A print-sized overview; the complete evidence surface remains below the sheet.
+// A compact Rinkcraft profile, with full evidence retained in its disclosure.
 export function renderCharacterCard(...args:Parameters<typeof renderDetailedCharacterCard>):HTMLElement {
   const [name,sheet,assessment,record,numerical,,snapshot,,available]=args;
   const profile=node('article');profile.className='rk-profile';
-  const front=node('section');front.className='rk-front';front.setAttribute('aria-label',`${name} compact player sheet`);
-  const header=node('header');header.className='rk-front-header';
-  const identity=node('div');identity.append(node('small','ICELINES / RINKCRAFT'),node('h3',name));
-  const position=node('div');position.className='rk-front-position';position.append(node('small','POSITION'),node('strong',record?.position??assessment?.group??numerical?.group??'Unknown'));
-  header.append(identity,position);front.append(header);
-  const field=(label:string,value:string):HTMLElement=>{const cell=node('div');cell.className='rk-field';cell.append(node('dt',label),node('dd',value));return cell;};
-  const identityFields=node('dl');identityFields.className='rk-front-identity';
-  identityFields.append(field('Class',sheet?.primary.name??(available===false?'Unavailable':'Unscouted')),field('Specialty',sheet?.specialty??'Unknown'),field('Secondary',sheet?.secondary.map(c=>c.name).join(' / ')||'—'));
-  front.append(identityFields);
-  const season=numerical?.season??assessment?.season;const scope=node('p',numerical?`${Math.floor(numerical.season/10000)}–${String(numerical.season%100).padStart(2,'0')} · ${numerical.situation} · ${numerical.group} · ${numerical.games} GP`:season?`${Math.floor(season/10000)}–${String(season%100).padStart(2,'0')} · all strengths`:'No statistical snapshot');scope.className='rk-front-scope';
-  const measures=node('section');measures.className='rk-front-measures';measures.append(node('h4','Measured signals'),scope);
-  const grid=node('dl');grid.className='rk-front-values';
-  if(numerical){for(const f of numerical.facets){const cell=field(f.label,numericalValue(f.measurement));cell.dataset.numericalKey=f.measurement.key;cell.append(node('small',f.measurement.percentile==null?'Unranked':`P${f.measurement.percentile.toFixed(1)} · n=${f.measurement.measured_peers}`));grid.append(cell);}}
-  else if(assessment){for(const a of assessment.attributes){const cell=field(a.label,attributeValue(a));cell.append(node('small',a.percentile==null?'Unranked':`P${a.percentile.toFixed(1)} · n=${a.measured_peers}`));grid.append(cell);}}
-  else grid.append(field('Coverage','Unavailable'));
-  measures.append(grid,node('p','P = raw-value percentile. Same-season position peers; not skill grades.'));const columns=node('div');columns.className='rk-front-columns';columns.append(measures);front.append(columns);
-  const lists=node('div');lists.className='rk-front-lists';
-  for(const [label,items] of [['Methods',sheet?.features??[]],['Traits',sheet?.traits??[]]] as const){const section=node('section');section.className=`rk-front-${label.toLowerCase()}`;section.append(node('h4',label));const list=node('ul');for(const f of items){const item=node('li',f.name);list.append(item);}if(!items.length)list.append(node('li','Undocumented'));section.append(list);lists.append(section);}
-  const role=node('section');role.className='rk-front-role';role.append(node('h4','Role'),node('p',sheet?.primary.purpose??'Undocumented'));lists.append(role);
-  const questions=node('section');questions.className='rk-front-questions';questions.append(node('h4','Open questions'));const questionList=node('ul');for(const question of sheet?.unknowns??[])questionList.append(node('li',question));if(!sheet)questionList.append(node('li','Unknown'));else if(!sheet.unknowns.length)questionList.append(node('li','None recorded'));questions.append(questionList);lists.append(questions);columns.append(lists);
-  const coverage=node('dl');coverage.className='rk-front-coverage';coverage.append(field('Sources',sheet?String(sheet.sources.length):'Unknown'),field('Open questions',sheet?String(sheet.unknowns.length):'Unknown'),field('Evidence through',sheet?.evidence_through??'Unknown'),field('Assessed',sheet?.assessed??'Unknown'));front.append(coverage);
-  if(snapshot){const note=node('p',snapshot.note);note.className='rk-front-snapshot';note.dataset.snapshotState=snapshot.state;front.append(note);}
-  const footer=node('footer',sheet?'Provisional documentary class · full evidence below':'No supported class dossier · statistics do not assign a class');footer.className='rk-front-footer';front.append(footer);profile.append(front);
-  const evidence=node('details');evidence.className='rk-evidence';evidence.append(node('summary','Dossier, measures & history'),renderDetailedCharacterCard(...args));profile.append(evidence);return profile;
+  profile.append(renderCharacterFront(name,sheet,assessment,record,numerical,snapshot,available));
+  const evidence=node('details');evidence.className='rk-evidence';
+  evidence.append(node('summary','Dossier, measures & history'),renderDetailedCharacterCard(...args));
+  profile.append(evidence);return profile;
 }
