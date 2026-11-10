@@ -1,0 +1,15 @@
+import {chromium,expect} from '@playwright/test';
+import {readFile,writeFile} from 'node:fs/promises';
+const data=JSON.parse(await readFile('target/compact-sheet/readiness/readiness.json','utf8'));
+const b=await chromium.launch({channel:'msedge',headless:true});const p=await b.newPage({viewport:{width:1440,height:1000}});const errors=[];p.on('pageerror',e=>errors.push(String(e)));
+try{
+ await p.goto('http://127.0.0.1:8771/readiness/index.html');await expect(p.locator('#player option')).toHaveCount(31);await expect(p.locator('#season option')).toHaveCount(3);
+ for(const profile of data.profiles){await p.locator('#player').selectOption(String(profile.player_id));for(const window of profile.windows){await p.locator('#season').selectOption(String(window.season));await expect(p.locator('article')).toHaveCount(6);await expect(p.locator('.facet')).toHaveCount(profile.position==='G'?18:23);expect(await p.locator('article strong').filter({hasText:/^Unrated$/}).count()).toBe(6)}}
+ await p.locator('#player').selectOption('8478402');await p.locator('#season').selectOption('20252026');await expect(p.locator('[data-facet="SKA-SPEED"] summary')).toContainText('Not collected');await expect(p.locator('[data-facet="SHO-FINISH"] summary')).toContainText('Experimental partial estimate');
+ await p.locator('#season').selectOption('20242025');await expect(p.locator('[data-facet="SKA-SPEED"] summary')).toContainText('Historical raw measurement');await p.locator('[data-facet="SKA-SPEED"] summary').click();await expect(p.locator('[data-facet="SKA-SPEED"] pre')).toContainText('23.969');
+ await p.locator('[data-attribute="CAP-SHOOTING"] > details > summary').first().click();expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await p.screenshot({path:'target/compact-sheet/readiness/desktop.png'});
+ const missing=data.profiles.find(x=>x.windows.some(w=>!w.source_row_present));if(missing){const w=missing.windows.find(w=>!w.source_row_present);await p.locator('#player').selectOption(String(missing.player_id));await p.locator('#season').selectOption(String(w.season));await expect(p.locator('#scope')).toContainText('No source row')}
+ const goalie=data.profiles.find(x=>x.position==='G');await p.locator('#player').selectOption(String(goalie.player_id));await p.locator('#season').selectOption('20252026');await p.locator('[data-attribute="CAP-G-REBOUNDS"] > details > summary').first().click();await expect(p.locator('[data-attribute="CAP-G-REBOUNDS"]')).toContainText('Source scope: all');
+ await p.setViewportSize({width:390,height:844});expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await p.screenshot({path:'target/compact-sheet/readiness/mobile.png'});expect(errors).toEqual([]);
+ await writeFile('target/compact-sheet/readiness/browser-check.json',JSON.stringify({pass:true,players:31,windows:93,facetCounts:{skater:23,goalie:18},historicalIsolation:true,missingNotZero:true,viewports:[1440,390],errors},null,2));console.log('31 players / 93 windows, historical isolation, missing values, goalie scope, desktop/mobile passed.');
+}finally{await b.close()}
