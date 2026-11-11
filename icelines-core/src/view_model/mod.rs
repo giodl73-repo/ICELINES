@@ -2338,3 +2338,4 @@ pub mod rinkcraft_game;
 pub mod rinkcraft_contest;
 pub mod rinkcraft_possession;
 pub mod rinkcraft_plan_compare;
+pub mod rinkcraft_plan_experiment;
