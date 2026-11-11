@@ -2333,3 +2333,5 @@ mod tests {
         assert_eq!(json["home_top_skaters"][0]["points"], 3);
     }
 }
+
+pub mod rinkcraft_game;

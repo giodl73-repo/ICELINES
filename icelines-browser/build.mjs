@@ -18,6 +18,8 @@ if (result.status !== 0) process.exit(result.status ?? 1);
 await mkdir(new URL('./dist/', import.meta.url), { recursive: true });
 for (const name of ['index.html', 'style.css']) await cp(new URL(name, import.meta.url), new URL('dist/' + name, import.meta.url));
 await cp(new URL('../icelines-web/static/rinkcraft-character.css',import.meta.url),new URL('dist/rinkcraft-character.css',import.meta.url));
+await cp(new URL('../icelines-web/static/rinkcraft-game.js',import.meta.url),new URL('dist/rinkcraft-game.js',import.meta.url));
+try {await cp(new URL('public/rinkcraft-game-rules.json',import.meta.url),new URL('dist/rinkcraft-game-rules.json',import.meta.url));}catch(error){if(error.code!=='ENOENT')throw error;}
 try {await cp(new URL('public/rinkcraft-characters.json',import.meta.url),new URL('dist/rinkcraft-characters.json',import.meta.url));}catch(error){if(error.code!=='ENOENT')throw error;}
 try {await cp(new URL('public/rinkcraft-numbers.json',import.meta.url),new URL('dist/rinkcraft-numbers.json',import.meta.url));}catch(error){if(error.code!=='ENOENT')throw error;}
 try {await cp(new URL('public/rinkcraft-history.json',import.meta.url),new URL('dist/rinkcraft-history.json',import.meta.url));}catch(error){if(error.code!=='ENOENT')throw error;}

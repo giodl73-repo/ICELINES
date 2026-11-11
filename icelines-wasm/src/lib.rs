@@ -358,6 +358,12 @@ impl BrowserEngine {
         let comparison = c.compare(left, right).map_err(|e| JsValue::from_str(&e))?;
         serde_json::to_string(&comparison).map_err(|e| JsValue::from_str(&e.to_string()))
     }
+    pub fn game_character(&self, rules: &str, request: &str) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_game::build_from_json(rules, request).map_err(|e| JsValue::from_str(&e))
+    }
+    pub fn import_game_character(&self, rules: &str, character: &str) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_game::import_from_json(rules, character).map_err(|e| JsValue::from_str(&e))
+    }
     pub fn character_sheet(
         &self,
         catalog: &str,

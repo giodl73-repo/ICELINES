@@ -1735,3 +1735,37 @@ mod tests {
         assert_eq!(format_metric(&m), "—");
     }
 }
+
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GameBuildPayload { rules: serde_json::Value, request: serde_json::Value }
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GameImportPayload { rules: serde_json::Value, character: serde_json::Value }
+fn game_response(value: Result<String, String>) -> Result<Response, WebError> {
+    let raw = value.map_err(|message| WebError::BadParam { param: "game_character".into(), message, hint: Some("Game builds are fictional; use the supplied versioned rules.".into()) })?;
+    let parsed: serde_json::Value = serde_json::from_str(&raw).map_err(|e| WebError::Internal(e.into()))?;
+    Ok(crate::api::json_data_meta("rinkcraft-game-character", parsed, serde_json::json!({"profile_kind":"fictional_game_character","nhl_assessment":false})))
+}
+pub async fn post_game_character(axum::Json(payload): axum::Json<GameBuildPayload>) -> Result<Response, WebError> {
+    game_response(icelines_core::view_model::rinkcraft_game::build_from_json(&payload.rules.to_string(), &payload.request.to_string()))
+}
+pub async fn post_import_game_character(axum::Json(payload): axum::Json<GameImportPayload>) -> Result<Response, WebError> {
+    game_response(icelines_core::view_model::rinkcraft_game::import_from_json(&payload.rules.to_string(), &payload.character.to_string()))
+}
+
+#[derive(Template)]
+#[template(path = "rinkcraft_game.html")]
+struct GamePageTemplate { active_label: String }
+pub async fn get_game_page() -> Result<Html<String>, WebError> {
+    GamePageTemplate { active_label: "Game character creation".into() }.render().map(Html).map_err(|e| WebError::Internal(e.into()))
+}
+pub async fn get_game_rules() -> Result<Response, WebError> {
+    let path = std::env::var_os("ICELINES_RINKCRAFT_GAME_RULES").ok_or_else(|| WebError::NotFound { what: "Game rules not configured".into(), hint: Some("Configure the explicit Rinkcraft playtest rules file.".into()) })?;
+    let metadata = std::fs::metadata(&path).map_err(|e| WebError::Internal(e.into()))?;
+    if metadata.len() > 64 * 1024 { return Err(WebError::BadParam { param: "game_rules".into(), message: "Game rules exceed 64 KiB".into(), hint: None }); }
+    let raw = std::fs::read_to_string(path).map_err(|e| WebError::Internal(e.into()))?;
+    let rules: icelines_core::view_model::rinkcraft_game::GameRules = serde_json::from_str(&raw).map_err(|e| WebError::BadParam { param: "game_rules".into(), message: e.to_string(), hint: None })?;
+    rules.validate().map_err(|message| WebError::BadParam { param: "game_rules".into(), message, hint: None })?;
+    Ok(crate::api::json_data_meta("rinkcraft-game-rules", rules, serde_json::json!({"game_only":true})))
+}

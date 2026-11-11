@@ -1,11 +1,11 @@
 {% let goalie_attributes = ["Tracking", "Positioning", "Movement", "Rebounds", "Recovery", "Puck Play"] %}
 {% let goalie_skills = ["Set Depth", "Track Traffic", "Save Selection", "Rebound Direction", "Puck Exchange"] %}
 {% let goalie_pressure = ["Screened Shot", "Rebound Threat", "Lateral Rush"] %}
-<section class="rk-front" data-layout="rinkcraft-profile-v2" aria-label="{{ profile.player_name }} compact player sheet">
+<section class="rk-front" data-profile-kind="nhl_evidence" data-class="{% match profile.character_sheet %}{% when Some with (c) %}{{ c.primary.id }}{% when None %}unscouted{% endmatch %}" data-layout="rinkcraft-profile-v2" aria-label="{{ profile.player_name }} compact player sheet">
 <header class="rk-front-header"><div><small>ICELINES / RINKCRAFT</small><h1>{{ profile.player_name }}</h1></div><div class="rk-front-position"><small>Position</small><strong>{{ front_position }}</strong></div></header>
 <dl class="rk-front-identity">
 {% match profile.character_sheet %}{% when Some with (c) %}
-<div class="rk-field"><dt>Class</dt><dd>{{ c.primary.name }}</dd></div><div class="rk-field"><dt>Specialty</dt><dd>{{ c.specialty }}</dd></div><div class="rk-field"><dt>Secondary</dt><dd>{% if c.secondary.is_empty() %}—{% else %}{% for other in c.secondary %}{{ other.name }}{% if !loop.last %} / {% endif %}{% endfor %}{% endif %}</dd></div>
+<div class="rk-field rk-class-field"><dt>Class</dt><dd>{{ c.primary.name }}</dd><span class="rk-class-emblem" aria-hidden="true">{{ c.primary.name }}</span><small class="rk-class-note">{{ c.primary.analogy }} · {{ c.primary.purpose }}</small></div><div class="rk-field"><dt>Specialty</dt><dd>{{ c.specialty }}</dd></div><div class="rk-field"><dt>Secondary</dt><dd>{% if c.secondary.is_empty() %}—{% else %}{% for other in c.secondary %}{{ other.name }}{% if !loop.last %} / {% endif %}{% endfor %}{% endif %}</dd></div>
 {% when None %}<div class="rk-field"><dt>Class</dt><dd>{% if documentary_catalog_available %}Unscouted{% else %}Class dossier unavailable{% endif %}</dd></div><div class="rk-field"><dt>Specialty</dt><dd>Unknown</dd></div><div class="rk-field"><dt>Secondary</dt><dd>—</dd></div>{% endmatch %}
 <div class="rk-field rk-development-field"><dt>Development</dt><dd>Undocumented</dd></div><div class="rk-field"><dt>Experience</dt><dd>Undocumented</dd></div>
 </dl>

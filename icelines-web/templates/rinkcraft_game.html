@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Rinkcraft game character studio{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="/static/rinkcraft-character.css?v=profile-studio-1">{% endblock %}
+{% block content %}
+<nav class="action-row"><a href="/rinkcraft">NHL player dossiers</a><strong>Game character studio</strong></nav>
+<noscript><p>Character creation requires JavaScript. NHL player dossiers remain available from the link above.</p></noscript>
+<div id="rinkcraft-game-root"></div>
+<script type="module">
+import {mountGameStudio} from '/static/rinkcraft-game.js';
+async function json(url,options){const response=await fetch(url,options);const value=await response.json();if(!response.ok)throw Error(value.error?.message??'Game request failed');return value.data}
+const params=new URLSearchParams(location.search);let inspiration=null;
+if(params.has('player_id')){try{const p=await json('/api/v1/player/'+encodeURIComponent(params.get('player_id'))+'/rinkcraft');const c=p.character_sheet;if(c)inspiration={player_id:c.player_id,player_name:p.player_name,evidence_season:c.as_of_season,documentary_catalog_sha256:c.catalog_sha256,position:p.latest_available?.position??p.numerical_evidence?.group,class_id:c.primary.id}}catch{}}
+await mountGameStudio(document.getElementById('rinkcraft-game-root'),{
+ inspiration,loadRules:()=>json('/api/v1/rinkcraft/game-rules'),
+ build:(rules,request)=>json('/api/v1/rinkcraft/game-character',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rules,request})}),
+ importCharacter:(rules,character)=>json('/api/v1/rinkcraft/game-character/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rules,character})})
+});
+</script>
+{% endblock %}

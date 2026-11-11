@@ -37,7 +37,9 @@
 <div class="actions"><button id="schedule-save" disabled>Save schedule locally</button><button id="schedule-remove" disabled>Remove saved schedule</button><button id="schedule-unload" disabled>Unload schedule from memory</button><button id="schedule-export" disabled>Export schedule package</button><label class="file-button">Import schedule package<input id="schedule-import" type="file" accept=".json,application/json"></label><label><input id="schedule-keep-updated" type="checkbox" disabled> Keep refreshed schedule saved locally</label></div>
 <details><summary>Saved schedules <span id="schedule-count"></span></summary><p id="schedule-storage-status" role="status" aria-live="polite">Checking schedule storage…</p><button id="schedule-retry-storage">Retry schedule storage</button><ul id="schedule-library"></ul></details>
 <p id="schedule-scroll-help" class="table-help">Scroll horizontally to see all columns. With this table area focused, use the left and right arrow keys.</p><div class="table-scroll" role="region" aria-label="Scores and schedule table" aria-describedby="schedule-scroll-help" tabindex="0"><table aria-labelledby="schedule-title"><thead><tr><th scope="col">Date</th><th scope="col">Away</th><th scope="col">Score</th><th scope="col">Home</th><th scope="col">Start (UTC)</th><th scope="col">State</th><th scope="col">Series</th></tr></thead><tbody id="schedule-rows"></tbody></table></div>
-</section></main>
+</section>
+<details id="rinkcraft-game-studio"><summary>Create a Rinkcraft game character</summary><div id="rinkcraft-game-root"></div></details>
+</main>
 <dialog id="player-dialog" aria-labelledby="player-name"><button id="close-player" autofocus>Close</button><h2 id="player-name"></h2><div id="player-body"></div></dialog>
 <noscript>This workbench needs JavaScript and WebAssembly. <a href="https://github.com/giodl73-repo/ICELINES/releases">Download native IceLines</a>.</noscript>
 <script type="module" src="./src/main.js"></script></body></html>

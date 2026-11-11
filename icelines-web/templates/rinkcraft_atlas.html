@@ -3,6 +3,7 @@
 {% block head_extra %}<link rel="stylesheet" href="/static/rinkcraft-character.css">{% endblock %}
 {% block content %}
 <h1>{{ title }}</h1><p>{{ notes }}</p>
+<p><a href="/rinkcraft/game">Create a game character →</a></p>
 <p><a href="/rinkcraft/numbers">Open numerical assessments →</a></p>
 <p>Class identity comes from dated accounts. Open a card for season statistics, peer percentiles, feature evidence and unresolved measurements. These are provisional interpretations.</p>
 <div class="rk-atlas">{% for c in cards %}<article class="rk-sheet rk-{{ c.class_id }} rk-atlas-card" data-player-id="{{ c.id }}">

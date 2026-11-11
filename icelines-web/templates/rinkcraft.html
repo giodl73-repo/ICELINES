@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ profile.player_name }} · Rinkcraft profile{% endblock %}
 {% block head_extra %}
-<link rel="stylesheet" href="/static/rinkcraft-character.css">
+<link rel="stylesheet" href="/static/rinkcraft-character.css?v=profile-studio-1">
 <style>
 .rc-header{border-left:4px solid #46c7bb;padding:12px 24px;margin:24px 0}.rc-header h1{margin:4px 0}.rc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}.rc-family{padding:16px;border:1px solid #456078;border-radius:10px}.rc-family h3{margin-top:0}.rc-controls{display:flex;gap:16px;flex-wrap:wrap;align-items:end;margin:24px 0}.rc-controls label{display:flex;flex-direction:column;gap:6px}.rc-controls input{max-width:140px}.rc-scroll{overflow:auto}.rc-number{font-variant-numeric:tabular-nums;white-space:nowrap}.rc-note{color:var(--ice-muted,#647386)}.rc-facts{display:flex;gap:28px;flex-wrap:wrap}.rc-facts strong{display:block;font-size:1.3rem}details{margin:8px 0}summary{cursor:pointer}
 </style>
@@ -10,7 +10,7 @@
 </style>
 {% endblock %}
 {% block content %}
-<nav class="action-row" aria-label="Profile navigation"><a href="/rinkcraft/numbers">Numerical assessments</a><a href="/rinkcraft">← Player atlas</a><a href="/player/{{ id }}">← Player overview</a><a href="/api/v1/player/{{ id }}/rinkcraft?type={{ season_type }}&amp;first_season={{ first }}&amp;last_season={{ last }}">Profile JSON</a><a href="/player/8481789/rinkcraft">Kartye</a><a href="/player/8479323/rinkcraft">Fox</a><a href="/player/8478048/rinkcraft">Shesterkin</a></nav>
+<nav class="action-row" aria-label="Profile navigation"><a href="/rinkcraft/game?player_id={{ id }}">Create inspired game character</a><a href="/rinkcraft/numbers">Numerical assessments</a><a href="/rinkcraft">← Player atlas</a><a href="/player/{{ id }}">← Player overview</a><a href="/api/v1/player/{{ id }}/rinkcraft?type={{ season_type }}&amp;first_season={{ first }}&amp;last_season={{ last }}">Profile JSON</a><a href="/player/8481789/rinkcraft">Kartye</a><a href="/player/8479323/rinkcraft">Fox</a><a href="/player/8478048/rinkcraft">Shesterkin</a></nav>
 {% include "rinkcraft_compact_sheet.html" %}
 <details class="rk-evidence"><summary>Dossier, measures &amp; history</summary>
 {% match profile.character_sheet %}{% when Some with (c) %}

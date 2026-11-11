@@ -70,6 +70,10 @@ pub use state::WebState;
 pub fn router(state: WebState) -> Router {
     Router::new()
         .route("/rinkcraft", get(handlers::rinkcraft::get_atlas))
+        .route("/rinkcraft/game", get(handlers::rinkcraft::get_game_page))
+        .route("/api/v1/rinkcraft/game-rules", get(handlers::rinkcraft::get_game_rules))
+        .route("/api/v1/rinkcraft/game-character", post(handlers::rinkcraft::post_game_character).layer(axum::extract::DefaultBodyLimit::max(128 * 1024)))
+        .route("/api/v1/rinkcraft/game-character/import", post(handlers::rinkcraft::post_import_game_character).layer(axum::extract::DefaultBodyLimit::max(128 * 1024)))
         .route("/rinkcraft/numbers", get(handlers::rinkcraft::get_numbers))
         .route(
             "/api/v1/rinkcraft/numbers/compare",

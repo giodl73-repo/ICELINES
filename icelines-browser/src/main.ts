@@ -1,3 +1,5 @@
+import {mountBrowserGameStudio} from './rinkcraft-game.js';
+import type {GameInspiration} from './rinkcraft-game.js';
 import { teamSeasonFilter, playerTeamCodes } from './team-focus.js';
 import { ViewportTable } from './viewport-table.js';
 import { PlayerComparison, renderComparison } from './comparison.js';
@@ -95,12 +97,20 @@ void (async()=>{
 })().catch(error=>{element('rinkcraft-numeric-result').textContent=String(error);});
 void readCharacterCatalog().then(raw => {
   if (!raw) { element('rinkcraft-atlas-notes').textContent='No documentary class catalog loaded. Numerical comparisons remain available.'; return; }
-  const c = raw as {showcase_notes?:string;classes:{id:string;name:string}[];assessments:{featured?:boolean;player_id:number;player_name:string;primary:{class_id:string};specialty:string}[]};
+  const c = raw as {showcase_notes?:string;classes:{id:string;name:string}[];assessments:{featured?:boolean;player_id:number;player_name:string;primary:{class_id:string};specialty:string;summary:string;assessed:string}[]};
   element('rinkcraft-atlas-notes').textContent = c.showcase_notes ?? 'Source-linked documentary pilot.';
   const container = element('rinkcraft-atlas-cards');
   for (const a of [...c.assessments].sort((a,b)=>Number(!!b.featured)-Number(!!a.featured)||a.player_name.localeCompare(b.player_name))) {
     const button = document.createElement('button');button.type='button';button.className=`rk-sheet rk-${a.primary.class_id} rk-atlas-card`;
-    button.textContent=`${a.player_name} · ${c.classes.find(c=>c.id===a.primary.class_id)?.name??'Unscouted'} · ${a.specialty}`;
+    button.setAttribute('aria-label',`${a.player_name} · ${c.classes.find(c=>c.id===a.primary.class_id)?.name??'Unscouted'} · ${a.specialty}`);
+    button.dataset.playerId=String(a.player_id);button.dataset.class=a.primary.class_id;
+    const label=document.createElement('small');label.textContent=`${a.featured?'Showcase':'Additional pilot'} · assessed ${a.assessed}`;
+    const name=document.createElement('strong');name.className='rk-atlas-name';name.textContent=a.player_name;
+    const identity=document.createElement('span');identity.className='rk-atlas-class';identity.textContent=c.classes.find(c=>c.id===a.primary.class_id)?.name??'Unscouted';
+    const specialty=document.createElement('span');specialty.className='rk-atlas-specialty';specialty.textContent=a.specialty;
+    const description=document.createElement('span');description.className='rk-atlas-summary';description.textContent=a.summary;
+    const action=document.createElement('span');action.className='rk-atlas-action';action.textContent='Open character sheet →';
+    button.append(label,name,identity,specialty,description,action);
     button.onclick=()=>{void perform(async()=>{
       if(!result)throw new Error('Load a season package first.');
       const snapshot=result;const generation=engine.generation;
@@ -168,6 +178,13 @@ const engine = EngineClient.deferred(message => {
   status(message, true); updateState();
   if (!recovering) void recoverEngine();
 });
+let gameStudio:ReturnType<typeof mountBrowserGameStudio>|undefined;
+async function openGameStudio(inspiration?:GameInspiration):Promise<void>{
+  const details=element<HTMLDetailsElement>('rinkcraft-game-studio');details.open=true;
+  try{gameStudio??=mountBrowserGameStudio(element('rinkcraft-game-root'),engine);const studio=await gameStudio;if(inspiration)await studio.setInspiration(inspiration);details.scrollIntoView({block:'start'});}
+  catch(error){gameStudio=undefined;status('Game studio could not open. '+String(error),true);}
+}
+element('rinkcraft-game-studio').addEventListener('toggle',()=>{if(element<HTMLDetailsElement>('rinkcraft-game-studio').open)void openGameStudio();});
 async function recoverEngine(): Promise<void> {
   if (recovering) return;
   recovering = true; engineUnavailable = true;
@@ -349,6 +366,8 @@ async function player(row: PlayerRow): Promise<void> {
     view.onclick = () => { element<HTMLDialogElement>('player-dialog').close(); element(comparison.players.length ? 'comparison-title' : 'analysis').focus(); };
     actions.append(view);
   }
+  const gameButton=document.createElement('button');gameButton.type='button';gameButton.textContent='Create inspired game character';
+  gameButton.onclick=()=>{element<HTMLDialogElement>('player-dialog').close();void openGameStudio({player_id:row.player_id,player_name:row.name,position:row.position,class_id:profile.character_sheet?.primary.id,evidence_season:profile.character_sheet?.as_of_season??snapshot.season,documentary_catalog_sha256:profile.character_sheet?.catalog_sha256??null});};actions.append(gameButton);
   const teams = document.createElement('div'); teams.className = 'actions';
   for (const team of playerTeamCodes(row.team)) {
     const button = document.createElement('button'); button.type = 'button'; button.textContent = `Explore ${team} season players`;

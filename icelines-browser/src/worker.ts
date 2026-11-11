@@ -4,6 +4,8 @@ interface Engine {
   load_package(bytes: Uint8Array): string; package_metadata(): string; query(request: string): string;
   player_detail(id: number): string; current_season(): number; free(): void;
   rinkcraft_profile(request: string): string;
+  game_character(rules:string,request:string):string;
+  import_game_character(rules:string,character:string):string;
   character_sheet(catalog:string,playerId:number,season:number):string;
   numerical_catalog(source:string,season?:number):string;
   numerical_snapshot(source:string,playerId:number,first?:number,last?:number,exact?:number):string;
@@ -51,6 +53,8 @@ self.onmessage = (event: MessageEvent<EngineRequest>) => {
         case 'query': response.value = JSON.parse(engine.query(JSON.stringify(request.payload as QueryRequest))); break;
         case 'detail': response.value = JSON.parse(engine.player_detail(Number(request.payload))); break;
         case 'rinkcraftProfile': response.value = JSON.parse(engine.rinkcraft_profile(JSON.stringify(request.payload))); break;
+        case 'gameCharacter': {const p=request.payload as {rules:unknown;request:unknown};response.value=JSON.parse(engine.game_character(JSON.stringify(p.rules),JSON.stringify(p.request)));break;}
+        case 'importGameCharacter': {const p=request.payload as {rules:unknown;character:unknown};response.value=JSON.parse(engine.import_game_character(JSON.stringify(p.rules),JSON.stringify(p.character)));break;}
         case 'characterSheet': {const p=request.payload as {catalog:unknown;player_id:number;season:number};response.value=JSON.parse(engine.character_sheet(JSON.stringify(p.catalog),p.player_id,p.season));break;}
         case 'numericalCatalog': {const p=request.payload as {source:unknown;season?:number};response.value=JSON.parse(engine.numerical_catalog(JSON.stringify(p.source),p.season));break;}
         case 'numericalSnapshot': {const p=request.payload as {source:unknown;player_id:number;first?:number;last?:number;exact?:number};response.value=JSON.parse(engine.numerical_snapshot(JSON.stringify(p.source),p.player_id,p.first,p.last,p.exact));break;}

@@ -45,7 +45,7 @@ export function renderCharacterFront(
 ):HTMLElement {
   const position=record?.position??numerical?.group??assessment?.group??'Unknown';
   const goalie=['Goalie','Goalies','G'].includes(position);
-  const front=node('section');front.className='rk-front';front.dataset.layout='rinkcraft-profile-v2';
+  const front=node('section');front.className='rk-front';front.dataset.layout='rinkcraft-profile-v2';front.dataset.class=sheet?.primary.id??'unscouted';front.dataset.profileKind='nhl_evidence';
   front.setAttribute('aria-label',`${name} compact player sheet`);
   const header=node('header');header.className='rk-front-header';
   const identity=node('div');identity.append(node('small','ICELINES / RINKCRAFT'),node('h3',name));
@@ -55,6 +55,8 @@ export function renderCharacterFront(
   fields.append(field('Class',sheet?.primary.name??(catalogAvailable===false?'Class dossier unavailable':'Unscouted')),
     field('Specialty',sheet?.specialty??'Unknown'),field('Secondary',sheet?.secondary.map(c=>c.name).join(' / ')||'—'));
 
+  const classCell=fields.children[0];classCell.className+=' rk-class-field';
+  if(sheet){const emblem=node('span',sheet.primary.name.slice(0,2).toUpperCase());emblem.className='rk-class-emblem';emblem.setAttribute('aria-hidden','true');classCell.append(emblem);const identityNote=node('small',`${sheet.primary.analogy} · ${sheet.primary.purpose}`);identityNote.className='rk-class-note';classCell.append(identityNote);}
   const development=field('Development','Undocumented');development.className+=' rk-development-field';
   fields.append(development,field('Experience','Undocumented'));
   const season=numerical?.season??assessment?.season;
