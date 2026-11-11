@@ -73,6 +73,8 @@ pub fn router(state: WebState) -> Router {
         .route("/rinkcraft/game", get(handlers::rinkcraft::get_game_page))
         .route("/api/v1/rinkcraft/game-rules", get(handlers::rinkcraft::get_game_rules))
         .route("/api/v1/rinkcraft/possession-rules", get(handlers::rinkcraft::get_possession_rules))
+        .route("/api/v1/rinkcraft/possession/export", post(handlers::rinkcraft::post_export_possession).layer(axum::extract::DefaultBodyLimit::max(128 * 1024)))
+        .route("/api/v1/rinkcraft/possession/import", post(handlers::rinkcraft::post_import_possession).layer(axum::extract::DefaultBodyLimit::max(300 * 1024)))
         .route("/api/v1/rinkcraft/possession", post(handlers::rinkcraft::post_possession).layer(axum::extract::DefaultBodyLimit::max(128 * 1024)))
         .route("/api/v1/rinkcraft/game-character", post(handlers::rinkcraft::post_game_character).layer(axum::extract::DefaultBodyLimit::max(128 * 1024)))
         .route("/api/v1/rinkcraft/game-character/import", post(handlers::rinkcraft::post_import_game_character).layer(axum::extract::DefaultBodyLimit::max(128 * 1024)))

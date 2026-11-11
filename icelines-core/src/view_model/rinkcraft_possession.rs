@@ -334,6 +334,64 @@ pub fn from_json(char_rules: &str, rules: &str, request: &str) -> Result<String,
     serde_json::to_string(&replay(&c, &r, q)?).map_err(|e| e.to_string())
 }
 
+/// A self-contained, internally verifiable saved scene. This is not an author signature.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReplayFile {
+    pub schema: String,
+    pub character_rules: GameRules,
+    pub rules: Rules,
+    pub request: Request,
+    pub session: serde_json::Value,
+}
+pub const MAX_REPLAY_BYTES: usize = 256 * 1024;
+
+pub fn export_replay_from_json(
+    character_rules: &str,
+    rules: &str,
+    request: &str,
+) -> Result<String, String> {
+    let session = serde_json::from_str(&from_json(character_rules, rules, request)?)
+        .map_err(|e| e.to_string())?;
+    let file = ReplayFile {
+        schema: "rinkcraft.possession-replay.v1".into(),
+        character_rules: serde_json::from_str(character_rules).map_err(|e| e.to_string())?,
+        rules: serde_json::from_str(rules).map_err(|e| e.to_string())?,
+        request: serde_json::from_str(request).map_err(|e| e.to_string())?,
+        session,
+    };
+    let raw = serde_json::to_string(&file).map_err(|e| e.to_string())?;
+    if raw.len() > MAX_REPLAY_BYTES {
+        return Err("Replay exceeds 256 KiB".into());
+    }
+    Ok(raw)
+}
+
+pub fn import_replay(raw: &str) -> Result<ReplayFile, String> {
+    if raw.len() > MAX_REPLAY_BYTES {
+        return Err("Replay exceeds 256 KiB".into());
+    }
+    let file: ReplayFile = serde_json::from_str(raw).map_err(|e| e.to_string())?;
+    if file.schema != "rinkcraft.possession-replay.v1" {
+        return Err("Unsupported possession replay schema".into());
+    }
+    let expected: serde_json::Value = serde_json::from_str(&from_json(
+        &serde_json::to_string(&file.character_rules).map_err(|e| e.to_string())?,
+        &serde_json::to_string(&file.rules).map_err(|e| e.to_string())?,
+        &serde_json::to_string(&file.request).map_err(|e| e.to_string())?,
+    )?)
+    .map_err(|e| e.to_string())?;
+    if file.session != expected {
+        return Err(
+            "Replay does not match its character, rules, dice, actions or computed state".into(),
+        );
+    }
+    Ok(file)
+}
+pub fn import_replay_from_json(raw: &str) -> Result<String, String> {
+    serde_json::to_string(&import_replay(raw)?).map_err(|e| e.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -467,6 +525,93 @@ mod tests {
             }
         }
         assert!(found);
+    }
+    fn saved_replay(goalie: bool, steps: usize) -> String {
+        let (c, r, mut q) = fixture(goalie);
+        for _ in 0..steps {
+            let s = replay(&c, &r, q.clone()).unwrap();
+            if let Some(a) = s.legal_actions.first() {
+                q.actions.push(*a)
+            } else {
+                break;
+            }
+        }
+        export_replay_from_json(
+            &serde_json::to_string(&c).unwrap(),
+            &serde_json::to_string(&r).unwrap(),
+            &serde_json::to_string(&q).unwrap(),
+        )
+        .unwrap()
+    }
+    #[test]
+    fn replay_import_accepts_current_exports_at_initial_intermediate_and_terminal_states() {
+        for goalie in [false, true] {
+            for steps in [0, 1, 16] {
+                let raw = saved_replay(goalie, steps);
+                assert_eq!(import_replay_from_json(&raw).unwrap(), raw);
+                let saved = import_replay(&raw).unwrap();
+                assert_eq!(
+                    saved.request.hero.branch,
+                    if goalie {
+                        Branch::Goalie
+                    } else {
+                        Branch::Skater
+                    }
+                );
+            }
+        }
+    }
+    #[test]
+    fn replay_import_recomputes_dice_state_participants_rules_hash_and_legal_actions() {
+        let original: serde_json::Value = serde_json::from_str(&saved_replay(false, 1)).unwrap();
+        let mut cases = Vec::new();
+        let mut x = original.clone();
+        x["session"]["state"]["control"] = serde_json::json!("away:G");
+        cases.push(x);
+        let mut x = original.clone();
+        x["session"]["events"][0]["resolution"]["actor_die"] = serde_json::json!(0);
+        cases.push(x);
+        let mut x = original.clone();
+        x["session"]["participants"][0]["character"]["capabilities"][0]["score"] =
+            serde_json::json!(0);
+        cases.push(x);
+        let mut x = original.clone();
+        x["session"]["rules_sha256"] = serde_json::json!("bad");
+        cases.push(x);
+        let mut x = original.clone();
+        x["session"]["legal_actions"] = serde_json::json!(["pass"]);
+        cases.push(x);
+        let mut x = original;
+        x["session"]["nhl_verified"] = serde_json::json!(true);
+        cases.push(x);
+        for x in cases {
+            assert!(import_replay_from_json(&x.to_string()).is_err());
+        }
+    }
+    #[test]
+    fn replay_import_rejects_invalid_characters_histories_versions_schemas_and_sizes() {
+        let original: serde_json::Value = serde_json::from_str(&saved_replay(false, 1)).unwrap();
+        let mut cases = Vec::new();
+        let mut x = original.clone();
+        x["request"]["hero"]["capabilities"][0]["score"] = serde_json::json!(0);
+        cases.push(x);
+        let mut x = original.clone();
+        x["request"]["actions"] = serde_json::json!(["pass"]);
+        cases.push(x);
+        let mut x = original.clone();
+        x["rules"]["version"] = serde_json::json!("future");
+        cases.push(x);
+        let mut x = original.clone();
+        x["schema"] = serde_json::json!("rinkcraft.character-catalog.v1");
+        cases.push(x);
+        let mut x = original;
+        x["unknown"] = serde_json::json!(true);
+        cases.push(x);
+        for x in cases {
+            assert!(import_replay_from_json(&x.to_string()).is_err());
+        }
+        assert!(import_replay_from_json(&"x".repeat(MAX_REPLAY_BYTES + 1)).is_err());
+        assert!(import_replay_from_json("{}").is_err());
     }
     #[test]
     fn terminal_windows_bounds_and_unknown_state_are_rejected() {

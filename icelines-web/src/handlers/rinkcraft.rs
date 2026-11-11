@@ -1787,3 +1787,18 @@ pub async fn get_possession_rules() -> Result<Response, WebError> {
     rules.validate().map_err(|message|WebError::BadParam {param:"possession_rules".into(),message,hint:None})?;
     Ok(crate::api::json_data_meta("rinkcraft-possession-rules",rules,serde_json::json!({"fictional":true})))
 }
+
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PossessionReplayPayload { replay: serde_json::Value }
+fn possession_replay_response(result: Result<String,String>) -> Result<Response,WebError> {
+    let raw=result.map_err(|message|WebError::BadParam{param:"possession_replay".into(),message,hint:None})?;
+    let value:serde_json::Value=serde_json::from_str(&raw).map_err(|e|WebError::Internal(e.into()))?;
+    Ok(crate::api::json_data_meta("rinkcraft-possession-replay",value,serde_json::json!({"fictional":true,"validation":"recomputed_internal_consistency"})))
+}
+pub async fn post_export_possession(axum::Json(p):axum::Json<PossessionPayload>) -> Result<Response,WebError> {
+    possession_replay_response(icelines_core::view_model::rinkcraft_possession::export_replay_from_json(&p.character_rules.to_string(),&p.rules.to_string(),&p.request.to_string()))
+}
+pub async fn post_import_possession(axum::Json(p):axum::Json<PossessionReplayPayload>) -> Result<Response,WebError> {
+    possession_replay_response(icelines_core::view_model::rinkcraft_possession::import_replay_from_json(&p.replay.to_string()))
+}
