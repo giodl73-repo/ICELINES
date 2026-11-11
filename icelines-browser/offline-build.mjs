@@ -3,8 +3,9 @@ import { createHash } from 'node:crypto';
 import { gzipSync } from 'node:zlib';
 
 export async function buildOfflineShell(root) {
-  const files = ['index.html', 'style.css', 'rinkcraft-character.css','rinkcraft-game.js','catalog.json'];
+  const files = ['index.html', 'style.css', 'rinkcraft-character.css','rinkcraft-game.js','rinkcraft-possession.js','catalog.json'];
   try {await readFile(new URL('dist/rinkcraft-game-rules.json',root));files.push('rinkcraft-game-rules.json');}catch(error){if(error.code!=='ENOENT')throw error;}
+  try {await readFile(new URL('dist/rinkcraft-possession-rules.json',root));files.push('rinkcraft-possession-rules.json');}catch(error){if(error.code!=='ENOENT')throw error;}
   try {await readFile(new URL('dist/rinkcraft-characters.json',root));files.push('rinkcraft-characters.json');}catch(error){if(error.code!=='ENOENT')throw error;}
   try {await readFile(new URL('dist/rinkcraft-numbers.json',root));files.push('rinkcraft-numbers.json');}catch(error){if(error.code!=='ENOENT')throw error;}
   try {await readFile(new URL('dist/rinkcraft-history.json',root));files.push('rinkcraft-history.json');}catch(error){if(error.code!=='ENOENT')throw error;}

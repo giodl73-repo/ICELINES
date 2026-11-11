@@ -1,0 +1,34 @@
+// Real native/WASM possession acceptance. Requires owned servers 8772 and 8773.
+import {chromium,expect} from '@playwright/test';import {readFile,writeFile,mkdir} from 'node:fs/promises';
+const out='target/possession-check';await mkdir(out,{recursive:true});
+const cr=JSON.parse(await readFile('icelines-browser/public/rinkcraft-game-rules.json','utf8')),rules=JSON.parse(await readFile('icelines-browser/public/rinkcraft-possession-rules.json','utf8'));
+const {BrowserEngine,initSync}=await import('../public/pkg/icelines_wasm.js');initSync({module:await readFile('icelines-browser/public/pkg/icelines_wasm_bg.wasm')});const engine=new BrowserEngine();
+const wasm=q=>JSON.parse(engine.possession_session(JSON.stringify(cr),JSON.stringify(rules),JSON.stringify(q)));
+const api=async q=>{const r=await fetch('http://127.0.0.1:8772/api/v1/rinkcraft/possession',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({character_rules:cr,rules,request:q})});return {status:r.status,data:(await r.json()).data}};
+const hero=(t,position=t.branch==='goalie'?'G':'F')=>JSON.parse(engine.game_character(JSON.stringify(cr),JSON.stringify({template_id:t.id,name:'New Rinkcraft player',position,scores:{kind:'standard_array'},inspiration:null})));
+let parity=0;for(const t of cr.templates){const q={hero:hero(t),seed:42,commit_support:false,actions:['outlet']};expect((await api(q)).data).toEqual(wasm(q));parity++;}
+const base={hero:hero(cr.templates[0]),seed:0,commit_support:false,actions:[]};const invalid={...base,actions:['pass']};expect((await api(invalid)).status).toBe(400);expect(()=>wasm(invalid)).toThrow();
+let complete,counter;
+for(let seed=0;seed<2000&&(!complete||!counter);seed++){
+ const q={...base,seed,actions:[]};let s=wasm(q);while(s.legal_actions.length){q.actions.push(s.legal_actions[0]);s=wasm(q)}if(s.state.phase==='complete'&&!complete)complete={q:structuredClone(q),s};
+ const path={...base,seed,actions:['outlet','recover','counter']};try{const a=wasm(path),b=wasm({...path,commit_support:true});if(!counter&&a.state.phase==='counter_stopped'&&b.state.phase==='counter_advanced')counter={q:path,hold:a,commit:b}}catch{}
+}
+expect(complete).toBeTruthy();expect(counter).toBeTruthy();const defender={...complete.q,hero:hero(cr.templates[0],'D')};const defenseSession=wasm(defender);expect(defenseSession.hero_slot).toBe('home:D1');expect(defenseSession.events[1].actor).toBe('home:D1');expect((await api(defender)).data).toEqual(defenseSession);expect((await api({...complete.q,actions:[...complete.q.actions,'outlet']})).status).toBe(400);expect(counter.hold.events[2].contest.opposition_adjustment).toBe(2);expect(counter.commit.events[2].contest.opposition_adjustment).toBe(0);
+for(const q of [complete.q,counter.q,{...counter.q,commit_support:true}])expect((await api(q)).data).toEqual(wasm(q));
+const old=(await(await fetch('http://127.0.0.1:8772/api/v1/player/8479323/rinkcraft')).json()).data;
+const b=await chromium.launch({channel:'msedge',headless:true}),errors=[];
+try{for(const surface of ['native','browser']){
+ const p=await b.newPage({viewport:{width:1440,height:1100},acceptDownloads:true});p.on('pageerror',e=>errors.push(String(e)));await p.goto(surface==='native'?'http://127.0.0.1:8772/rinkcraft/game':'http://127.0.0.1:8773/');if(surface==='browser')await p.locator('#rinkcraft-game-studio > summary').click();const root=p.locator('#rinkcraft-game-root');await expect(root.locator('.rk-game-profile')).toBeVisible();await root.getByRole('button',{name:'Try a possession',exact:true}).click();const panel=root.locator('.rk-possession'),output=panel.locator('.rk-possession-result');await expect(panel.getByRole('button',{name:'Roll outlet',exact:true})).toBeEnabled();await expect(panel.locator('.rk-possession-units li')).toHaveCount(12);await expect(panel.getByRole('button',{name:'Roll pass',exact:true})).toBeDisabled();
+ async function play(q,plan){await panel.getByLabel('Possession seed',{exact:true}).fill(String(q.seed));await panel.getByLabel('Support plan',{exact:true}).selectOption(plan);await panel.getByRole('button',{name:'Start possession',exact:true}).click();await expect(output).toHaveAttribute('aria-busy','false');await expect(panel.locator('.rk-possession-log > li')).toHaveCount(0);for(const [i,a]of q.actions.entries()){await panel.getByRole('button',{name:'Roll '+a,exact:true}).click();await expect(output).toHaveAttribute('aria-busy','false');await expect(panel.locator('.rk-possession-log > li')).toHaveCount(i+1)}}
+ await play(complete.q,'hold');await expect(panel.locator('.rk-possession-state')).toContainText('Phase: complete');await expect(panel.locator('.rk-possession-log')).toContainText('no shot or goal');
+ await play(counter.q,'hold');await expect(panel.locator('.rk-possession-state')).toContainText('home:F3');const holdText=await panel.locator('.rk-possession-log li').last().innerText();await play(counter.q,'commit');await expect(panel.locator('.rk-possession-state')).toContainText('VACATED');expect(await panel.locator('.rk-possession-log li').last().innerText()).not.toBe(holdText);
+ const event=p.waitForEvent('download');await panel.getByRole('button',{name:'Download possession replay'}).click();const d=await event;const file=out+'/'+surface+'-replay.json';await d.saveAs(file);const saved=JSON.parse(await readFile(file,'utf8'));expect(saved.session).toEqual(wasm(saved.request));expect(saved.session).toEqual(counter.commit);
+ await panel.screenshot({path:out+'/'+surface+'-desktop.png'});await p.setViewportSize({width:390,height:844});expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await panel.screenshot({path:out+'/'+surface+'-mobile.png'});
+ // The encounter panel stays outside the printable character sheet.
+ const pdf=await p.pdf({path:out+'/'+surface+'-character.pdf',preferCSSPageSize:true});expect(pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)?.length).toBe(1);
+ if(surface==='browser'){await p.context().setOffline(true);await play(complete.q,'hold');await expect(panel.locator('.rk-possession-state')).toContainText('Phase: complete');}
+ await p.close();console.log(surface+' possession UI passed');
+ }
+ expect(errors).toEqual([]);expect((await(await fetch('http://127.0.0.1:8772/api/v1/player/8479323/rinkcraft')).json()).data).toEqual(old);
+ await writeFile(out+'/results.json',JSON.stringify({pass:true,templateParity:parity,sequenceParity:4,defenseHero:true,terminalActionRejected:true,illegalPassRejected:true,units:12,seedReplay:true,supportCoverCost:true,coverChangesCounterOutcome:true,completeSeed:complete.q.seed,counterSeed:counter.q.seed,characterPrint:'one page',mobile:390,browserOffline:true,nhlUnchanged:true,errors},null,2));console.log('Possession legality, recovery/counter, exact parity, seed replay, support/cover, export, mobile, offline and character printing passed.');
+}finally{engine.free();await b.close()}

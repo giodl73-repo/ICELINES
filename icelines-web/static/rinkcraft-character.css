@@ -262,3 +262,11 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
  body:not(:has(#rinkcraft-game-studio[open])) #rinkcraft-game-studio,
  body:not(:has(#rinkcraft-game-studio[open])) #rinkcraft-game-studio .rk-front{display:none!important}
 }
+
+/* Possession lab is outside the printable character sheet. */
+.rk-possession{margin:24px 0;border:1px solid #647b8b;background:#f5f9fc;color:#173247;padding:18px;scroll-margin-top:100px}
+.rk-possession summary{color:#173247;font-size:17px;cursor:pointer}.rk-possession h3,.rk-possession h4,.rk-possession p,.rk-possession label{color:#173247}.rk-possession h3{font-size:23px;margin:20px 0 8px}.rk-possession p{font-size:13px;line-height:1.5}
+.rk-possession-controls,.rk-possession-actions,.rk-possession-state{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0;align-items:end}.rk-possession-controls label{display:flex;flex-direction:column;gap:6px;font-size:13px;min-width:0}.rk-possession input,.rk-possession select,.rk-possession button{font:14px system-ui;color:#173247;background:white;border:1px solid #70889a;border-radius:4px;padding:10px;min-height:44px;max-width:100%}.rk-possession button{cursor:pointer}.rk-possession button:disabled{opacity:.5;cursor:default}
+.rk-possession-state{background:#e7eef5;padding:12px;align-items:center}.rk-possession-state span{font-size:13px}.rk-possession-units{display:grid;grid-template-columns:1fr 1fr;gap:16px}.rk-possession-units section{margin:0;min-width:0}.rk-possession-units ul{list-style:none;margin:0;padding:0}.rk-possession-units li{padding:9px;border-bottom:1px solid #ccd9e3;display:flex;flex-direction:column;gap:3px;font-size:12px}.rk-possession-units li[data-puck]{background:#fff0cc;border-left:3px solid #a56d12}.rk-possession-units small{color:#40596d}.rk-possession-log{padding-left:24px}.rk-possession-log li{padding:12px 0;border-bottom:1px solid #b8cbd8}.rk-possession-log h4{margin:0}.rk-possession-log code{white-space:normal;overflow-wrap:anywhere;font-size:13px}.rk-possession-log small{font-size:12px;color:#40596d}
+@media(max-width:650px){.rk-possession{padding:12px}.rk-possession-units{grid-template-columns:1fr}.rk-possession-controls>label{flex:1 1 100%}.rk-possession-controls>button{flex:1 1 40%}.rk-possession select{width:100%}}
+@media print{.rk-possession{display:none!important}}

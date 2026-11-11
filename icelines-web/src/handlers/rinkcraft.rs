@@ -1769,3 +1769,21 @@ pub async fn get_game_rules() -> Result<Response, WebError> {
     rules.validate().map_err(|message| WebError::BadParam { param: "game_rules".into(), message, hint: None })?;
     Ok(crate::api::json_data_meta("rinkcraft-game-rules", rules, serde_json::json!({"game_only":true})))
 }
+
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PossessionPayload { character_rules: serde_json::Value, rules: serde_json::Value, request: serde_json::Value }
+pub async fn post_possession(axum::Json(p): axum::Json<PossessionPayload>) -> Result<Response, WebError> {
+    let raw=icelines_core::view_model::rinkcraft_possession::from_json(&p.character_rules.to_string(),&p.rules.to_string(),&p.request.to_string()).map_err(|message|WebError::BadParam {param:"possession".into(),message,hint:None})?;
+    let result:serde_json::Value=serde_json::from_str(&raw).map_err(|e|WebError::Internal(e.into()))?;
+    Ok(crate::api::json_data_meta("rinkcraft-possession",result,serde_json::json!({"fictional":true,"nhl_probability":false})))
+}
+pub async fn get_possession_rules() -> Result<Response, WebError> {
+    let path=std::env::var_os("ICELINES_RINKCRAFT_ENCOUNTER_RULES").ok_or_else(||WebError::NotFound {what:"Possession playtest rules not configured".into(),hint:None})?;
+    if std::fs::metadata(&path).map_err(|e|WebError::Internal(e.into()))?.len()>8192 {return Err(WebError::BadParam {param:"possession_rules".into(),message:"Rules exceed 8 KiB".into(),hint:None});}
+    let raw=std::fs::read_to_string(path).map_err(|e|WebError::Internal(e.into()))?;
+    if raw.len()>8192 {return Err(WebError::BadParam {param:"possession_rules".into(),message:"Rules exceed 8 KiB".into(),hint:None});}
+    let rules:icelines_core::view_model::rinkcraft_possession::Rules=serde_json::from_str(&raw).map_err(|e|WebError::BadParam {param:"possession_rules".into(),message:e.to_string(),hint:None})?;
+    rules.validate().map_err(|message|WebError::BadParam {param:"possession_rules".into(),message,hint:None})?;
+    Ok(crate::api::json_data_meta("rinkcraft-possession-rules",rules,serde_json::json!({"fictional":true})))
+}

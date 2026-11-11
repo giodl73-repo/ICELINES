@@ -44,7 +44,7 @@ export interface ScheduledGame {
   home_score: number | null; game_state: string | null; last_period: string | null;
   series_game: string | null; away_wins: number | null; home_wins: number | null;
 }
-export type Operation = 'load' | 'query' | 'detail' | 'rinkcraftProfile' | 'characterSheet' | 'gameCharacter' | 'importGameCharacter' | 'numericalHistory' | 'numericalCatalog' | 'numericalSnapshot' | 'numericalEvidence' | 'numericalComparison' | 'currentSeason' | 'unload' | 'importArchive' | 'schedule' | 'selectResident' | 'residentRevisions';
+export type Operation = 'load' | 'query' | 'detail' | 'rinkcraftProfile' | 'characterSheet' | 'gameCharacter' | 'possessionSession' | 'importGameCharacter' | 'numericalHistory' | 'numericalCatalog' | 'numericalSnapshot' | 'numericalEvidence' | 'numericalComparison' | 'currentSeason' | 'unload' | 'importArchive' | 'schedule' | 'selectResident' | 'residentRevisions';
 export interface EngineRequest {
   schema_version: 1; request_id: number; context_generation: number;
   operation: Operation; payload: unknown;

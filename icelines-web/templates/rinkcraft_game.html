@@ -11,6 +11,8 @@ async function json(url,options){const response=await fetch(url,options);const v
 const params=new URLSearchParams(location.search);let inspiration=null;
 if(params.has('player_id')){try{const p=await json('/api/v1/player/'+encodeURIComponent(params.get('player_id'))+'/rinkcraft');const c=p.character_sheet;if(c)inspiration={player_id:c.player_id,player_name:p.player_name,evidence_season:c.as_of_season,documentary_catalog_sha256:c.catalog_sha256,position:p.latest_available?.position??p.numerical_evidence?.group,class_id:c.primary.id}}catch{}}
 await mountGameStudio(document.getElementById('rinkcraft-game-root'),{
+ loadPossessionRules:()=>json('/api/v1/rinkcraft/possession-rules'),
+ possession:(character_rules,rules,request)=>json('/api/v1/rinkcraft/possession',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({character_rules,rules,request})}),
  inspiration,loadRules:()=>json('/api/v1/rinkcraft/game-rules'),
  build:(rules,request)=>json('/api/v1/rinkcraft/game-character',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rules,request})}),
  importCharacter:(rules,character)=>json('/api/v1/rinkcraft/game-character/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rules,character})})

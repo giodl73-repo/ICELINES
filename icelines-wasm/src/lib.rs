@@ -361,6 +361,9 @@ impl BrowserEngine {
     pub fn game_character(&self, rules: &str, request: &str) -> Result<String, JsValue> {
         icelines_core::view_model::rinkcraft_game::build_from_json(rules, request).map_err(|e| JsValue::from_str(&e))
     }
+    pub fn possession_session(&self, character_rules: &str, rules: &str, request: &str) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_possession::from_json(character_rules, rules, request).map_err(|e| JsValue::from_str(&e))
+    }
     pub fn import_game_character(&self, rules: &str, character: &str) -> Result<String, JsValue> {
         icelines_core::view_model::rinkcraft_game::import_from_json(rules, character).map_err(|e| JsValue::from_str(&e))
     }
