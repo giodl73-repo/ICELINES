@@ -2335,3 +2335,4 @@ mod tests {
 }
 
 pub mod rinkcraft_game;
+pub mod rinkcraft_contest;
