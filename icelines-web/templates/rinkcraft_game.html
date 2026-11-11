@@ -14,6 +14,8 @@ await mountGameStudio(document.getElementById('rinkcraft-game-root'),{
  loadPossessionRules:()=>json('/api/v1/rinkcraft/possession-rules'),
  exportPossession:(character_rules,rules,request)=>json('/api/v1/rinkcraft/possession/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({character_rules,rules,request})}),
  importPossession:replay=>json('/api/v1/rinkcraft/possession/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({replay})}),
+ inspectPossession:(replay,step)=>json('/api/v1/rinkcraft/possession/inspect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({replay,step})}),
+ branchPossession:(replay,fork)=>json('/api/v1/rinkcraft/possession/branch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({replay,fork})}),
  possession:(character_rules,rules,request)=>json('/api/v1/rinkcraft/possession',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({character_rules,rules,request})}),
  inspiration,loadRules:()=>json('/api/v1/rinkcraft/game-rules'),
  build:(rules,request)=>json('/api/v1/rinkcraft/game-character',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rules,request})}),

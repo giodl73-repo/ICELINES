@@ -1802,3 +1802,16 @@ pub async fn post_export_possession(axum::Json(p):axum::Json<PossessionPayload>)
 pub async fn post_import_possession(axum::Json(p):axum::Json<PossessionReplayPayload>) -> Result<Response,WebError> {
     possession_replay_response(icelines_core::view_model::rinkcraft_possession::import_replay_from_json(&p.replay.to_string()))
 }
+
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PossessionInspectPayload { replay:serde_json::Value,step:usize }
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PossessionBranchPayload { replay:serde_json::Value,fork:serde_json::Value }
+pub async fn post_inspect_possession(axum::Json(p):axum::Json<PossessionInspectPayload>)->Result<Response,WebError> {
+    possession_replay_response(icelines_core::view_model::rinkcraft_possession::inspect_replay_from_json(&p.replay.to_string(),p.step))
+}
+pub async fn post_branch_possession(axum::Json(p):axum::Json<PossessionBranchPayload>)->Result<Response,WebError> {
+    possession_replay_response(icelines_core::view_model::rinkcraft_possession::branch_replay_from_json(&p.replay.to_string(),&p.fork.to_string()))
+}

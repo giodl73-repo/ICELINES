@@ -392,6 +392,102 @@ pub fn import_replay_from_json(raw: &str) -> Result<String, String> {
     serde_json::to_string(&import_replay(raw)?).map_err(|e| e.to_string())
 }
 
+#[derive(Clone, Debug, Serialize)]
+pub struct Inspection {
+    pub schema: String,
+    pub parent_replay_sha256: String,
+    pub step: usize,
+    pub total_steps: usize,
+    pub can_branch: bool,
+    pub support_change_allowed: bool,
+    pub view: Session,
+}
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ForkRequest {
+    pub step: usize,
+    pub commit_support: Option<bool>,
+}
+#[derive(Clone, Debug, Serialize)]
+pub struct BranchRecord {
+    pub schema: String,
+    pub parent_replay_sha256: String,
+    pub selected_step: usize,
+    pub discarded_actions: Vec<Action>,
+    pub support_changed: bool,
+    pub replay: ReplayFile,
+}
+fn replay_fingerprint(file: &ReplayFile) -> Result<String, String> {
+    Ok(format!(
+        "{:x}",
+        Sha256::digest(serde_json::to_vec(file).map_err(|e| e.to_string())?)
+    ))
+}
+fn prefix_request(file: &ReplayFile, step: usize) -> Result<Request, String> {
+    if step > file.request.actions.len() {
+        return Err("Review step is outside the recorded history".into());
+    }
+    let mut request = file.request.clone();
+    request.actions.truncate(step);
+    Ok(request)
+}
+pub fn inspect_replay(raw: &str, step: usize) -> Result<Inspection, String> {
+    let file = import_replay(raw)?;
+    let request = prefix_request(&file, step)?;
+    let view = replay(&file.character_rules, &file.rules, request)?;
+    Ok(Inspection {
+        schema: "icelines.possession-inspection.v1".into(),
+        parent_replay_sha256: replay_fingerprint(&file)?,
+        step,
+        total_steps: file.request.actions.len(),
+        can_branch: !view.legal_actions.is_empty(),
+        support_change_allowed: step == 0,
+        view,
+    })
+}
+pub fn inspect_replay_from_json(raw: &str, step: usize) -> Result<String, String> {
+    serde_json::to_string(&inspect_replay(raw, step)?).map_err(|e| e.to_string())
+}
+pub fn branch_replay(raw: &str, fork: ForkRequest) -> Result<BranchRecord, String> {
+    let file = import_replay(raw)?;
+    let mut request = prefix_request(&file, fork.step)?;
+    let support_changed = fork
+        .commit_support
+        .is_some_and(|value| value != request.commit_support);
+    if support_changed && fork.step != 0 {
+        return Err(
+            "Support is committed before the first roll; branch at step 0 to change it".into(),
+        );
+    }
+    if let Some(value) = fork.commit_support {
+        request.commit_support = value;
+    }
+    let session = replay(&file.character_rules, &file.rules, request.clone())?;
+    if session.legal_actions.is_empty() {
+        return Err("The selected moment has no legal continuation; choose an earlier step".into());
+    }
+    let child = export_replay_from_json(
+        &serde_json::to_string(&file.character_rules).map_err(|e| e.to_string())?,
+        &serde_json::to_string(&file.rules).map_err(|e| e.to_string())?,
+        &serde_json::to_string(&request).map_err(|e| e.to_string())?,
+    )?;
+    Ok(BranchRecord {
+        schema: "rinkcraft.possession-branch.v1".into(),
+        parent_replay_sha256: replay_fingerprint(&file)?,
+        selected_step: fork.step,
+        discarded_actions: file.request.actions[fork.step..].to_vec(),
+        support_changed,
+        replay: import_replay(&child)?,
+    })
+}
+pub fn branch_replay_from_json(raw: &str, fork: &str) -> Result<String, String> {
+    if fork.len() > 1024 {
+        return Err("Branch request exceeds 1 KiB".into());
+    }
+    let fork: ForkRequest = serde_json::from_str(fork).map_err(|e| e.to_string())?;
+    serde_json::to_string(&branch_replay(raw, fork)?).map_err(|e| e.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -612,6 +708,120 @@ mod tests {
         }
         assert!(import_replay_from_json(&"x".repeat(MAX_REPLAY_BYTES + 1)).is_err());
         assert!(import_replay_from_json("{}").is_err());
+    }
+    #[test]
+    fn inspection_reconstructs_every_prefix_and_keeps_parent_unchanged() {
+        let raw = saved_replay(false, 16);
+        let file = import_replay(&raw).unwrap();
+        for step in 0..=file.request.actions.len() {
+            let snapshot = inspect_replay(&raw, step).unwrap();
+            let mut q = file.request.clone();
+            q.actions.truncate(step);
+            assert_eq!(
+                serde_json::to_value(snapshot.view).unwrap(),
+                serde_json::to_value(replay(&file.character_rules, &file.rules, q).unwrap())
+                    .unwrap()
+            );
+            assert_eq!(snapshot.support_change_allowed, step == 0);
+            assert_eq!(snapshot.total_steps, file.request.actions.len());
+        }
+        assert_eq!(import_replay_from_json(&raw).unwrap(), raw);
+        assert!(inspect_replay(&raw, file.request.actions.len() + 1).is_err());
+        let mut corrupt: serde_json::Value = serde_json::from_str(&raw).unwrap();
+        corrupt["session"]["seed"] = serde_json::json!(u32::MAX);
+        assert!(inspect_replay(&corrupt.to_string(), 0).is_err());
+    }
+    #[test]
+    fn branches_retain_seed_and_verified_history_and_have_content_based_parent_ids() {
+        let raw = saved_replay(true, 16);
+        let parent = import_replay(&raw).unwrap();
+        let branch = branch_replay(
+            &raw,
+            ForkRequest {
+                step: 0,
+                commit_support: Some(true),
+            },
+        )
+        .unwrap();
+        assert_eq!(branch.replay.request.seed, parent.request.seed);
+        assert!(branch.replay.request.commit_support);
+        assert!(branch.support_changed);
+        assert!(branch.replay.request.actions.is_empty());
+        assert_eq!(branch.discarded_actions, parent.request.actions);
+        assert_eq!(branch.replay.request.hero.branch, Branch::Goalie);
+        assert_eq!(
+            branch.replay.session["state"]["cover_owner"],
+            serde_json::Value::Null
+        );
+        let pretty = serde_json::to_string_pretty(&parent).unwrap();
+        assert_eq!(
+            inspect_replay(&pretty, 0).unwrap().parent_replay_sha256,
+            branch.parent_replay_sha256
+        );
+        assert_eq!(import_replay_from_json(&raw).unwrap(), raw);
+        let same = branch_replay(
+            &raw,
+            ForkRequest {
+                step: 0,
+                commit_support: None,
+            },
+        )
+        .unwrap();
+        assert!(!same.support_changed);
+    }
+    #[test]
+    fn later_branch_retains_prefix_and_continues_with_the_same_next_dice() {
+        let (c, r, mut q) = fixture(false);
+        q.seed = 7;
+        q.actions = vec![Action::Outlet];
+        let next = replay(&c, &r, q.clone()).unwrap().legal_actions[0];
+        q.actions.push(next);
+        let raw = export_replay_from_json(
+            &serde_json::to_string(&c).unwrap(),
+            &serde_json::to_string(&r).unwrap(),
+            &serde_json::to_string(&q).unwrap(),
+        )
+        .unwrap();
+        let b = branch_replay(
+            &raw,
+            ForkRequest {
+                step: 1,
+                commit_support: None,
+            },
+        )
+        .unwrap();
+        assert_eq!(b.replay.request.actions, vec![Action::Outlet]);
+        assert_eq!(b.discarded_actions, vec![next]);
+        let mut continued = b.replay.request;
+        continued.actions.push(next);
+        assert_eq!(
+            serde_json::to_value(replay(&c, &r, continued).unwrap()).unwrap(),
+            import_replay(&raw).unwrap().session
+        );
+    }
+    #[test]
+    fn branching_rejects_retroactive_support_terminal_steps_and_unknown_requests() {
+        let raw = saved_replay(false, 16);
+        let file = import_replay(&raw).unwrap();
+        assert!(!file.request.actions.is_empty());
+        assert!(branch_replay(
+            &raw,
+            ForkRequest {
+                step: 1,
+                commit_support: Some(true)
+            }
+        )
+        .is_err());
+        assert!(branch_replay(
+            &raw,
+            ForkRequest {
+                step: file.request.actions.len(),
+                commit_support: None
+            }
+        )
+        .is_err());
+        assert!(branch_replay_from_json(&raw, r#"{"step":0,"seed":999}"#).is_err());
+        assert!(branch_replay_from_json(&raw, &"x".repeat(1025)).is_err());
     }
     #[test]
     fn terminal_windows_bounds_and_unknown_state_are_rejected() {

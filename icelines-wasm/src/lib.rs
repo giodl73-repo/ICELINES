@@ -370,6 +370,13 @@ impl BrowserEngine {
     pub fn import_possession_replay(&self, replay: &str) -> Result<String, JsValue> {
         icelines_core::view_model::rinkcraft_possession::import_replay_from_json(replay).map_err(|e|JsValue::from_str(&e))
     }
+    pub fn inspect_possession_replay(&self, replay: &str, step: f64) -> Result<String, JsValue> {
+        if !step.is_finite() || step.fract()!=0.0 || !(0.0..=16.0).contains(&step) {return Err(JsValue::from_str("Review step must be an integer from 0 to 16"));}
+        icelines_core::view_model::rinkcraft_possession::inspect_replay_from_json(replay,step as usize).map_err(|e|JsValue::from_str(&e))
+    }
+    pub fn branch_possession_replay(&self, replay: &str, fork: &str) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_possession::branch_replay_from_json(replay,fork).map_err(|e|JsValue::from_str(&e))
+    }
     pub fn import_game_character(&self, rules: &str, character: &str) -> Result<String, JsValue> {
         icelines_core::view_model::rinkcraft_game::import_from_json(rules, character).map_err(|e| JsValue::from_str(&e))
     }
