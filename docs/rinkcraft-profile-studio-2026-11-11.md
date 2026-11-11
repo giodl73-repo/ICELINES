@@ -60,5 +60,8 @@ tests; exact native/WASM parity for ten game templates; creation/seed/manual/
 export/import/tamper/mobile/print and missing-rules recovery; 26 native and browser
 NHL sheets across seven classes; F/D/G inspired builds; real NHL JSON unchanged;
 six compact-sheet fallback/Letter cases; full browser-distribution verification.
+The existing 25-player app audit additionally passed exact native/WASM numerical
+cards and displayed values, no-JS keyboard/native comparisons, offline/mobile
+browser comparison and all three appearance themes.
 The study in Rinkcraft owns the final requirement audit and source/build lineage.
 No hosted CI, release, merge or push is implied.
