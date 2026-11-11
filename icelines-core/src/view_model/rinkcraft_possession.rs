@@ -204,6 +204,36 @@ pub fn replay(char_rules: &GameRules, rules: &Rules, request: Request) -> Result
             });
         }
     }
+    let bindings = SceneBindings {
+        carrier: carrier.into(),
+        receiver: "home:F2".into(),
+        cover: "home:F3".into(),
+        pressure: "away:F1".into(),
+        gap: "away:D1".into(),
+        interceptor: "away:F2".into(),
+        counter_defender: "home:D2".into(),
+    };
+    resolve_scene(rules, &request, hero_slot, participants, &bindings)
+}
+
+/// Internal task bindings; v1 passes its frozen fixture, unit scenes pass validated assignments.
+pub(crate) struct SceneBindings {
+    pub carrier: String,
+    pub receiver: String,
+    pub cover: String,
+    pub pressure: String,
+    pub gap: String,
+    pub interceptor: String,
+    pub counter_defender: String,
+}
+pub(crate) fn resolve_scene(
+    rules: &Rules,
+    request: &Request,
+    hero_slot: String,
+    mut participants: Vec<Participant>,
+    bindings: &SceneBindings,
+) -> Result<Session, String> {
+    let carrier = bindings.carrier.as_str();
     let mut state = State {
         phase: Phase::GoalieControl,
         control: Some("home:G".into()),
@@ -211,7 +241,7 @@ pub fn replay(char_rules: &GameRules, rules: &Rules, request: Request) -> Result
         cover_owner: if request.commit_support {
             None
         } else {
-            Some("home:F3".into())
+            Some(bindings.cover.clone())
         },
     };
     let mut rng = u64::from(request.seed);
@@ -225,21 +255,26 @@ pub fn replay(char_rules: &GameRules, rules: &Rules, request: Request) -> Result
         }
         let before = state.clone();
         let (actor, opposition, ai, oi) = match action {
-            Action::Outlet => ("home:G".to_string(), "away:F1", 5, 4),
+            Action::Outlet => ("home:G".to_string(), bindings.pressure.as_str(), 5, 4),
             Action::Carry => (
                 state.control.clone().ok_or("Carry requires control")?,
-                "away:D1",
+                bindings.gap.as_str(),
                 0,
                 5,
             ),
             Action::Pass => (
                 state.control.clone().ok_or("Pass requires control")?,
-                "away:F2",
+                bindings.interceptor.as_str(),
                 2,
                 4,
             ),
-            Action::Recover => (carrier.into(), "away:F1", 4, 1),
-            Action::Counter => ("away:F1".into(), "home:D2", 0, 5),
+            Action::Recover => (carrier.into(), bindings.pressure.as_str(), 4, 1),
+            Action::Counter => (
+                bindings.pressure.clone(),
+                bindings.counter_defender.as_str(),
+                0,
+                5,
+            ),
         };
         let a = &participants
             .iter()
@@ -278,12 +313,12 @@ pub fn replay(char_rules: &GameRules, rules: &Rules, request: Request) -> Result
             Outcome::ActorWins=>match action {
                 Action::Outlet=>{state.phase=Phase::Breakout;state.control=Some(carrier.into());"Goalie outlet reaches the carrier. This is possession, not a scoring chance."},
                 Action::Carry=>{state.phase=Phase::Advanced;"Carrier advances; the middle passing opportunity opens."},
-                Action::Pass=>{state.phase=Phase::Complete;state.control=Some("home:F2".into());"Receiver controls the pass. Possession sequence complete; no shot or goal is awarded."},
+                Action::Pass=>{state.phase=Phase::Complete;state.control=Some(bindings.receiver.clone());"Receiver controls the pass. Possession sequence complete; no shot or goal is awarded."},
                 Action::Recover=>{state.phase=Phase::Breakout;state.control=Some(carrier.into());state.loose=false;"Home recovers the loose puck, creating a new breakout opportunity."},
                 Action::Counter=>{state.phase=Phase::CounterAdvanced;"Away advances the counter. The scene ends without a shot or goal."},
             },
             Outcome::OppositionWins=>match action {
-                Action::Recover=>{state.phase=Phase::Counter;state.control=Some("away:F1".into());state.loose=false;"Away wins recovery and gains control. High cover will affect the counter defense."},
+                Action::Recover=>{state.phase=Phase::Counter;state.control=Some(bindings.pressure.clone());state.loose=false;"Away wins recovery and gains control. High cover will affect the counter defense."},
                 Action::Counter=>{state.phase=Phase::CounterStopped;state.control=None;state.loose=true;"Home disrupts the counter into a loose puck. No automatic home possession or goal."},
                 _=>{state.phase=Phase::Loose;state.control=None;state.loose=true;"The attempted action breaks down into a loose puck; a lost roll is not an automatic turnover."},
             },
