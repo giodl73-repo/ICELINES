@@ -10,6 +10,7 @@ interface Engine {
   import_possession_replay(replay:string):string;
   inspect_possession_replay(replay:string,step:number):string;
   branch_possession_replay(replay:string,fork:string):string;
+  compare_possession_plans(replay:string):string;
   import_game_character(rules:string,character:string):string;
   character_sheet(catalog:string,playerId:number,season:number):string;
   numerical_catalog(source:string,season?:number):string;
@@ -64,6 +65,7 @@ self.onmessage = (event: MessageEvent<EngineRequest>) => {
         case 'importPossessionReplay': {const p=request.payload as {replay:unknown};response.value=JSON.parse(engine.import_possession_replay(JSON.stringify(p.replay)));break;}
         case 'inspectPossessionReplay': {const p=request.payload as {replay:unknown;step:number};response.value=JSON.parse(engine.inspect_possession_replay(JSON.stringify(p.replay),p.step));break;}
         case 'branchPossessionReplay': {const p=request.payload as {replay:unknown;fork:unknown};response.value=JSON.parse(engine.branch_possession_replay(JSON.stringify(p.replay),JSON.stringify(p.fork)));break;}
+        case 'comparePossessionPlans': {const p=request.payload as {replay:unknown};response.value=JSON.parse(engine.compare_possession_plans(JSON.stringify(p.replay)));break;}
         case 'importGameCharacter': {const p=request.payload as {rules:unknown;character:unknown};response.value=JSON.parse(engine.import_game_character(JSON.stringify(p.rules),JSON.stringify(p.character)));break;}
         case 'characterSheet': {const p=request.payload as {catalog:unknown;player_id:number;season:number};response.value=JSON.parse(engine.character_sheet(JSON.stringify(p.catalog),p.player_id,p.season));break;}
         case 'numericalCatalog': {const p=request.payload as {source:unknown;season?:number};response.value=JSON.parse(engine.numerical_catalog(JSON.stringify(p.source),p.season));break;}

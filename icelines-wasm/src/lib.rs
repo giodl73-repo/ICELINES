@@ -377,6 +377,9 @@ impl BrowserEngine {
     pub fn branch_possession_replay(&self, replay: &str, fork: &str) -> Result<String, JsValue> {
         icelines_core::view_model::rinkcraft_possession::branch_replay_from_json(replay,fork).map_err(|e|JsValue::from_str(&e))
     }
+    pub fn compare_possession_plans(&self, replay: &str) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_plan_compare::compare_replay_from_json(replay).map_err(|e|JsValue::from_str(&e))
+    }
     pub fn import_game_character(&self, rules: &str, character: &str) -> Result<String, JsValue> {
         icelines_core::view_model::rinkcraft_game::import_from_json(rules, character).map_err(|e| JsValue::from_str(&e))
     }

@@ -274,3 +274,13 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 .rk-replay-timeline{display:flex;flex-wrap:wrap;gap:10px;align-items:end;border:1px solid #7894a9;border-left:4px solid #315f83;padding:12px;margin:16px 0;background:#eaf1f7}
 .rk-replay-timeline h4,.rk-replay-timeline p{flex:1 1 100%;margin:0}.rk-replay-timeline label{display:flex;flex-direction:column;gap:6px;flex:1 1 200px;min-width:0}
 .rk-replay-timeline select{width:100%}.rk-branch-record{padding:12px;margin:12px 0;background:#fff3d9;border:1px solid #ab8335;overflow-wrap:anywhere}.rk-branch-record h4{margin:0 0 8px}.rk-branch-record code{font-size:12px}.rk-branch-record button{margin:8px 8px 0 0}
+
+/* Read-only paired plan results. Values and divergence flags come from Rust. */
+.rk-plan-comparison{margin:1rem 0;padding:1rem;border:2px solid var(--rk-ink,#253b4a);border-radius:.5rem;background:var(--rk-paper,#f5f7f8)}
+.rk-plan-comparison h4,.rk-plan-comparison h5{margin:.25rem 0 .5rem}
+.rk-plan-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+.rk-plan-columns>section{min-width:0;padding:.65rem;border:1px solid #9babb5;border-radius:.3rem}
+.rk-plan-comparison code{display:block;white-space:normal;overflow-wrap:anywhere}
+.rk-plan-steps{padding-left:1.3rem}.rk-plan-steps>li{margin:.8rem 0}
+.rk-plan-comparison button{margin-top:.75rem}
+@media(max-width:600px){.rk-plan-columns{grid-template-columns:1fr}.rk-plan-comparison{padding:.65rem}}

@@ -417,7 +417,7 @@ pub struct BranchRecord {
     pub support_changed: bool,
     pub replay: ReplayFile,
 }
-fn replay_fingerprint(file: &ReplayFile) -> Result<String, String> {
+pub(crate) fn replay_fingerprint(file: &ReplayFile) -> Result<String, String> {
     Ok(format!(
         "{:x}",
         Sha256::digest(serde_json::to_vec(file).map_err(|e| e.to_string())?)

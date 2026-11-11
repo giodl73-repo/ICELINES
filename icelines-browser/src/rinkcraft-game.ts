@@ -1,7 +1,7 @@
 import type {EngineClient} from './engine-client.js';
 export interface GameInspiration {player_id:number;player_name:string;evidence_season:number;documentary_catalog_sha256?:string|null;position?:string;class_id?:string;}
 interface GameController {setInspiration(value:GameInspiration):Promise<void>;destroy():void;}
-interface GameModule {mountGameStudio(root:HTMLElement,options:{inspiration?:GameInspiration;loadRules():Promise<unknown>;build(rules:unknown,request:unknown):Promise<unknown>;loadPossessionRules():Promise<unknown>;possession(characterRules:unknown,rules:unknown,request:unknown):Promise<unknown>;exportPossession(characterRules:unknown,rules:unknown,request:unknown):Promise<unknown>;importPossession(replay:unknown):Promise<unknown>;inspectPossession(replay:unknown,step:number):Promise<unknown>;branchPossession(replay:unknown,fork:unknown):Promise<unknown>;importCharacter(rules:unknown,character:unknown):Promise<unknown>}):Promise<GameController>;}
+interface GameModule {mountGameStudio(root:HTMLElement,options:{inspiration?:GameInspiration;loadRules():Promise<unknown>;build(rules:unknown,request:unknown):Promise<unknown>;loadPossessionRules():Promise<unknown>;possession(characterRules:unknown,rules:unknown,request:unknown):Promise<unknown>;exportPossession(characterRules:unknown,rules:unknown,request:unknown):Promise<unknown>;importPossession(replay:unknown):Promise<unknown>;inspectPossession(replay:unknown,step:number):Promise<unknown>;branchPossession(replay:unknown,fork:unknown):Promise<unknown>;comparePossession(replay:unknown):Promise<unknown>;importCharacter(rules:unknown,character:unknown):Promise<unknown>}):Promise<GameController>;}
 export async function mountBrowserGameStudio(root:HTMLElement,engine:EngineClient,inspiration?:GameInspiration):Promise<GameController>{
  const module=await import(new URL('../rinkcraft-game.js',import.meta.url).href) as GameModule;
  return module.mountGameStudio(root,{
@@ -13,6 +13,7 @@ export async function mountBrowserGameStudio(root:HTMLElement,engine:EngineClien
   importPossession:replay=>engine.request('importPossessionReplay',{replay}),
   inspectPossession:(replay,step)=>engine.request('inspectPossessionReplay',{replay,step}),
   branchPossession:(replay,fork)=>engine.request('branchPossessionReplay',{replay,fork}),
+  comparePossession:(replay)=>engine.request('comparePossessionPlans',{replay}),
   build:(rules,request)=>engine.request('gameCharacter',{rules,request}),
   importCharacter:(rules,character)=>engine.request('importGameCharacter',{rules,character}),
  });
