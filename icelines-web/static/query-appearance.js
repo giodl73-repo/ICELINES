@@ -1,7 +1,7 @@
 // Native query reports use the workbench's palette and saved appearance key.
 (function () {
     'use strict';
-    const themes = ['night-game', 'fresh-ice', 'hockey-club'];
+    const themes = ['night-game', 'fresh-ice', 'hockey-club', 'nhl'];
     const densities = ['compact', 'comfortable'];
     const themeKey = 'icelines.appearance.v1';
     const densityKey = 'icelines.query-density.v1';
