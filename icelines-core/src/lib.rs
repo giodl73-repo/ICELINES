@@ -9,6 +9,7 @@ pub mod analytics_cache;
 pub mod career_history;
 pub mod contract;
 pub mod cross_team;
+pub mod date_range;
 pub mod depth_chart;
 pub mod entity;
 pub mod error;

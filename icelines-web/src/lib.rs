@@ -40,6 +40,8 @@ pub mod card_store;
 pub mod config;
 pub mod dashboard_command;
 pub mod error;
+pub mod query_bio;
+pub mod query_report;
 pub mod state;
 pub mod static_assets;
 pub mod templates;
@@ -77,7 +79,18 @@ pub fn router(state: WebState) -> Router {
         )
         .route("/static/:asset", get(static_assets::serve_static))
         // Real handlers — replace coming-soon stubs as each lands.
-        .route("/leaders", get(handlers::leaders::get_leaders))
+        .route(
+            "/leaders",
+            get(handlers::leaders::get_leaders).post(handlers::date_range::refresh),
+        )
+        .route(
+            "/leaders/date-range",
+            get(handlers::date_range::legacy_redirect).post(handlers::date_range::refresh),
+        )
+        .route(
+            "/api/v1/leaders/date-range",
+            get(handlers::date_range::get_export),
+        )
         // JSON API — King.2.4. /api/v1/leaders is the JSON twin of
         // /leaders. Same query params; envelope shape per spec.
         .route("/api/v1/leaders", get(handlers::leaders::get_leaders_json))
@@ -703,6 +716,7 @@ pub fn router(state: WebState) -> Router {
 
 mod handlers {
     pub mod behavior_rankings;
+    pub mod date_range;
     // QueryA — bio filter primitives moved to the icelines-query
     // crate so the CLI can share them. The web handlers reach in via
     // `super::extract_bio` / `super::BioConstraints`; the CLI's

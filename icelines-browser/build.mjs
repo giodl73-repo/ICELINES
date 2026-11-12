@@ -17,6 +17,7 @@ const result = spawnSync(process.execPath, ['node_modules/typescript/bin/tsc'], 
 if (result.status !== 0) process.exit(result.status ?? 1);
 await mkdir(new URL('./dist/', import.meta.url), { recursive: true });
 for (const name of ['index.html', 'style.css']) await cp(new URL(name, import.meta.url), new URL('dist/' + name, import.meta.url));
+await cp(new URL('../icelines-web/static/appearance.css',import.meta.url),new URL('dist/appearance.css',import.meta.url));
 await cp(new URL('public/pkg/', import.meta.url), new URL('dist/pkg/', import.meta.url), { recursive: true });
 const catalog = JSON.parse(await readFile(new URL('public/catalog.json', import.meta.url), 'utf8'));
 const headers = {};

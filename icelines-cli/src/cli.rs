@@ -10403,7 +10403,43 @@ pub enum SnapshotSubcommand {
 // ── Phase 5 query subcommands ─────────────────────────────────────────────────
 
 #[derive(Debug, Subcommand)]
+// Clap parses these flag bags once; boxing individual options obscures their
+// command-line types without reducing a resident application data structure.
+#[allow(clippy::large_enum_variant)]
 pub enum QuerySubcommand {
+    /// Team scoring between inclusive NHL game dates, including cross-season windows.
+    #[command(hide = true)]
+    DateRange {
+        #[arg(long = "then", value_delimiter = ',')]
+        then_by: Vec<String>,
+        #[arg(long)]
+        team: String,
+        #[arg(long)]
+        date_from: chrono::NaiveDate,
+        #[arg(long)]
+        date_to: chrono::NaiveDate,
+        #[arg(long = "type", default_value = "regular")]
+        season_type: QuerySeasonType,
+        /// Position group; F includes centers and both wings.
+        #[arg(long, value_parser = ["F", "C", "LW", "RW", "D"])]
+        pos: Option<String>,
+        /// Membership in the official current roster captured at refresh time.
+        #[arg(long, default_value = "all", value_parser = ["all", "current", "former"])]
+        roster: String,
+        #[arg(long, default_value = "points", value_parser = ["points", "ev-points", "ppg", "ev-ppg", "name", "position", "games", "goals", "assists", "pp-points", "sh-points", "points-rank", "ev-rank"])]
+        sort: String,
+        #[arg(long, default_value = "desc", value_parser = ["asc", "desc"])]
+        order: String,
+        /// Acquire and validate official per-game scoring and schedule coverage.
+        #[arg(long)]
+        refresh: bool,
+        #[arg(long, conflicts_with = "csv")]
+        json: bool,
+        #[arg(long)]
+        csv: bool,
+        #[arg(long)]
+        out: Option<std::path::PathBuf>,
+    },
     /// Ranked leaderboard — filter by any combination of demographics and stats.
     #[command(long_about = r#"
 icelines query leaders — top-N players by any of 30+ sort metrics.
@@ -10451,6 +10487,21 @@ OUTPUT
   --json / --csv to stdout, or --out PATH to a file.
 "#)]
     Leaders {
+        /// Inclusive NHL game dates; both bounds are required.
+        #[arg(long, requires = "date_to", conflicts_with_all = ["week", "month", "playoff", "season", "seasons"])]
+        date_from: Option<chrono::NaiveDate>,
+        #[arg(long, requires = "date_from")]
+        date_to: Option<chrono::NaiveDate>,
+        /// Refresh date-window evidence (including current roster when selected).
+        #[arg(long)]
+        refresh: bool,
+        #[arg(long, default_value = "all", value_parser = ["all", "current", "former"])]
+        roster: String,
+        #[arg(long, default_value = "desc", value_parser = ["asc", "desc"])]
+        order: String,
+        /// Additional sort priorities, e.g. --then ev-ppg:desc.
+        #[arg(long = "then", value_delimiter = ',')]
+        then_by: Vec<String>,
         /// Position filter: C, LW, RW, D, F (all forwards), G
         #[arg(long)]
         pos: Option<String>,

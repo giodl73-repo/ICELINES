@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}IceStats — Leaderboards{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="/static/appearance.css">
+<link rel="stylesheet" href="/static/date-range.css?v=table-context-2">
+<script src="/static/query-appearance.js?v=shared-query-2"></script>
+{% endblock %}
+{% block content %}
+{% let report = self.report() %}
+<div class="range-appearance" aria-label="Report appearance">
+<label>Appearance<select id="appearance"><option value="night-game">Night Game</option><option value="fresh-ice">Fresh Ice</option><option value="hockey-club">Hockey Club</option></select></label>
+<label>Table spacing<select id="density"><option value="compact">Compact</option><option value="comfortable">Comfortable</option></select></label>
+<span id="appearance-status" class="appearance-status" role="status" aria-live="polite"></span>
+</div>
+<h1 aria-label="Player leaderboards">IceStats — Leaderboards</h1>
+{% include "query_controls.html" %}
+{% block query_notices %}{% endblock %}
+{% if !report.json_href.is_empty() %}<div class="range-tools"><a href="{{ report.csv_href }}">Download CSV</a><a href="{{ report.json_href }}">Query JSON &amp; sources</a><button type="button" onclick="window.print()">Print / save PDF</button></div>{% endif %}
+<p id="query-sort-help" class="range-note">Click a column for a single sort. Shift-click (or Shift+Enter) adds a numbered sort priority or reverses its direction. Rates use full precision. All statistics stay visible.</p>
+{% include "query_table.html" %}
+{% block query_after_table %}{% endblock %}
+{% endblock %}

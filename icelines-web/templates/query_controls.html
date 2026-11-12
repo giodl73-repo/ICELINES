@@ -1,0 +1,8 @@
+<form class="range-form" id="query-controls" method="get" action="/leaders">
+{% for field in report.fields %}<label>{{ field.label }}
+{% if field.kind == "select" %}<select name="{{ field.name }}">{% for option in field.options %}<option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{ option.label }}</option>{% endfor %}</select>
+{% else %}<input name="{{ field.name }}" type="{{ field.kind }}" value="{{ field.value }}">{% endif %}</label>{% endfor %}
+{% for field in report.hidden %}<input type="hidden" name="{{ field.0 }}" value="{{ field.1 }}">{% endfor %}
+<button type="submit">Run query</button>
+<button type="submit" formmethod="post" {% if !report.refresh %}disabled{% endif %}>Refresh data &amp; run</button>
+</form>

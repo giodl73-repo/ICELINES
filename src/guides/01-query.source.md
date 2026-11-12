@@ -1,7 +1,77 @@
 # The Query Engine
 
-`icelines query` is the most powerful command in IceLines. Three modes:
-**leaders** (ranked leaderboard), **player** (deep profile), **compare** (head-to-head or similarity).
+## Date-range team scoring
+
+Use `query leaders` for inclusive NHL game-date windows, including windows
+that cross seasons. It counts only scoring earned for the requested team;
+players who later left that team remain in the result. Regular-season and
+playoff games are queried separately.
+
+```powershell
+icelines query leaders --team BOS --date-from 2026-03-01 --date-to 2026-11-11 --refresh
+icelines query leaders --team BOS --date-from 2026-03-01 --date-to 2026-11-11 --sort ev-points --json --out scoring.json
+icelines serve
+```
+
+Open **IceStats → Query a date range**, or `/leaders`. Choose a team,
+start date, end date, and points/EV-points sort, then **Refresh data & run**.
+**Run cached query** replays the exact saved window without network access.
+The web view includes all skaters, points and EV ranks (ties share ranks), CSV,
+JSON with source URLs/digests, and print/save-PDF styling. A bookmark preserves
+the query; optional `highlight=<NHL-player-ID>` emphasizes a player. The JSON
+and CSV endpoint is `/api/v1/leaders` with the same query parameters
+and optional `format=csv`.
+
+Date-range reports share the browser workbench's **Night Game**, **Fresh Ice**,
+and **Hockey Club** palettes. Appearance preferences are stored per browser origin. The report
+also has compact/comfortable table spacing; themes and spacing survive query form
+submission and can be preserved with `theme=` and `density=` URL parameters.
+
+Use `--pos F` (or C/LW/RW/D) to filter positions. F includes centers and both
+wings; NHL L/R codes match LW/RW. Use `--roster all` (default), `current`, or
+`former` to include everyone who appeared, only players on the captured current
+roster, or only players outside it. In the web form these are **All players who
+appeared**, **Current roster only**, and **Not on current roster**. Membership
+is as of the separately displayed roster capture time, not the historical
+window's end date. Outside-current-roster players include departures and
+assignments; this is not a contract-ownership or organization-wide filter.
+Refresh captures roster evidence when a membership filter is selected. Cached
+membership queries require that evidence and fail visibly if it is absent.
+JSON exports include its URL, digest and timestamp. Position and membership
+filters apply after historical team/date aggregation and recalculate ranks
+among the selected players; they never add games from another team.
+
+P/G and EVP/G divide each player's points and EV points by that player's GP
+within the selected window. The table/CSV show three decimals; JSON and sorts
+retain full precision. Use `--sort ppg` or `--sort ev-ppg` for rate ordering. Every table header is
+sortable; click again to toggle ascending/descending order. Sorting preserves
+all displayed statistics, filters, highlight, theme and spacing. Use
+`--order asc` or `--order desc` (default) in the CLI; the web/API use `order=`.
+All thirteen displayed columns can be sort keys, including names, positions,
+games, goals, assists, special-teams points and the two count ranks.
+
+```powershell
+icelines query leaders --team BOS --date-from 2026-03-01 --date-to 2026-11-11 --pos F --roster current --sort ev-ppg --refresh --json
+```
+
+EV uses the NHL's `evPoints` field, including 3-on-3 and 4-on-4; it is not
+5-on-5-only scoring. Each row must satisfy P = G + A = EV P + PP P + SH P.
+The acquisition paginates official per-game summary records, checks unique
+player/game pairs, and reconciles the game set against official completed
+season schedules. Missing reports or unfinished games fail the refresh and
+retain the prior capture. A completed-game check cannot guarantee the NHL will
+never revise a player's official scoring afterward.
+
+Captures live under the configured snapshot root's `date-ranges/` directory.
+They retain exact source payloads and SHA-256 digests, acquisition time and
+query scope; a later refresh replaces only the same exact window. Copy the
+capture alongside an exported result to preserve dated evidence. Refresh is
+explicit, observes `--no-live` and the shared fetch lock, and has a three-minute
+deadline (plus a 90-second roster deadline when selected). Windows are limited to three years; the end date must precede today
+in UTC. An exact saved window is required for offline queries.
+
+`icelines query` supports team date-window scoring within **leaders** (ranked leaderboards),
+**player** (deep profiles), and **compare** (head-to-head or similarity).
 
 ---
 
@@ -116,7 +186,7 @@ Output includes:
 - Peak season, career PPG
 
 ```bash
-# Situational breakdown is parked until verified shift policy ships
+# Situational breakdown (Phase 5C — requires shift data)
 icelines query player "McDavid" --breakdown situation
 ```
 
@@ -209,3 +279,47 @@ icelines query compare "Beniers" --similar 8
 # 3-year consistent producers among Swedish D
 icelines query leaders --nationality SWE --pos D --seasons 3 --sort pts-pace
 ```
+
+
+Date bounds extend the existing `query leaders` command and `/leaders` report;
+they do not select a separate UI. Season and date-window adapters render the
+same shared query shell, controls, applied-filter strip, table and export tools.
+The applied-filter strip remains above the table when printing, including the
+franchise name, position group, inclusive dates, roster scope and ordered sorts.
+It describes the completed query, not unsubmitted form edits.
+
+For numbered multi-column sorting, click a primary heading, then Shift-click
+additional headings in priority order. Shift-click an active heading reverses
+its direction without changing its priority; an ordinary click returns to one
+sort column. Shift+Enter provides the same interaction from the keyboard.
+Bookmarks, filters and exports preserve the ordered chain. The CLI uses
+`--then <column>:<asc|desc>` (repeatable or comma-separated), for example:
+
+```powershell
+icelines query leaders --team BOS --date-from 2026-03-01 --date-to 2026-11-11 --pos F --roster current --sort ppg --order desc --then ev-ppg:desc --json-envelope
+```
+
+`--json` keeps the existing bare-array contract; `--json-envelope` includes
+source and query context. Row limits apply after filtering/sorting, while
+point/EV ranks describe the whole matching population. Legacy date-range
+bookmarks redirect to `/leaders`; the old command is a hidden compatibility
+alias. Date-window evidence currently supports team, position, roster and
+scoring sorts; unsupported season-only demographic/stat-expression constraints
+fail explicitly instead of being silently ignored.
+
+### Optional report bio columns
+
+The shared `/leaders` UI offers **Bio column**: Off, Season age, Real age,
+Both ages, Height, Weight, and Nationality. The selected field appears
+immediately after Player. Use `bio-column=season-age|real-age|both-ages|height|weight|nationality|off`
+in report URLs; `age` is an alias for `season-age`. Sorting, refresh, and
+CSV exports preserve the selection. JSON metadata includes the selected bio
+values and age reference season/date.
+
+Season age reuses the existing age-filter convention: January 31 of the
+season’s second year. A cross-season date window uses the season containing
+the inclusive end date. Real age uses the UTC report date. The table caption
+identifies these dates. Height is in inches and weight in pounds.
+Nationality uses the recorded nationality code; birth country is not substituted.
+Missing bio values display an em dash. Bio columns are informational; statistical
+sort priorities are unchanged.
