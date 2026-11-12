@@ -23,7 +23,7 @@ and CSV endpoint is `/api/v1/leaders` with the same query parameters
 and optional `format=csv`.
 
 Date-range reports share the browser workbench's **Night Game**, **Fresh Ice**,
-and **Hockey Club** palettes. Appearance preferences are stored per browser origin. The report
+**Hockey Club**, and **NHL Black & White** palettes. Appearance preferences are stored per browser origin. The report
 also has compact/comfortable table spacing; themes and spacing survive query form
 submission and can be preserved with `theme=` and `density=` URL parameters.
 
@@ -338,3 +338,8 @@ removes all highlights. The `selected` URL parameter stores comma-separated
 player IDs, so copied URLs, reloads, sorting, and query submissions preserve
 the selection. Players outside the current results remain selected and are
 identified by count. Selection is shared by season and date-window reports.
+
+The NHL Black & White appearance (`theme=nhl`) uses white surfaces, near-black
+text, black navigation, neutral gray separators and row highlights, and bold
+sans-serif headings, inspired by [NHL.com](https://www.nhl.com/). Native query
+table text is 16px for improved legibility; the compact caption is also larger.

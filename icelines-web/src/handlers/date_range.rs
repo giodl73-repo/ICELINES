@@ -119,7 +119,7 @@ impl Params {
             self.highlight,
             self.filter().position,
             self.filter().roster_scope,
-            if matches!(self.theme.as_str(),"night-game" | "fresh-ice" | "hockey-club") {&self.theme} else {""},
+            if matches!(self.theme.as_str(),"night-game" | "fresh-ice" | "hockey-club" | "nhl") {&self.theme} else {""},
             if matches!(self.density.as_str(),"compact" | "comfortable") {&self.density} else {""},
             self.order()
         ) + &format!("&then={}&top={}&bio-column={}&selected={}",crate::query_report::encode(&self.then_by),self.top.unwrap_or(500),self.bio_column.token(),crate::query_report::encode(&self.selected))

@@ -261,9 +261,7 @@ mod tests {
                 .collect::<Vec<_>>(),
             ["1", "Example Player", "27", "26", "10"]
         );
-        assert!(selected
-            .csv()
-            .contains("\"Player\",\"Season age\",\"Age\""));
+        assert!(selected.csv().contains("\"Player\",\"Season age\",\"Age\""));
         let off = BioDisplay::default().apply(report);
         assert_eq!(off.columns.len(), 3);
         assert_eq!(off.rows[0].cells.len(), 3);
