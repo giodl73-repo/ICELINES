@@ -47,12 +47,26 @@ fn display(
 
 /// Constant-participant half-open segments; no event-time goals or blame assigned.
 pub fn reconstruct(boxscore: &Value, raw: &Value, team: u64) -> Result<Value> {
-    reconstruct_inner(boxscore, raw, team, None)
+    reconstruct_inner(boxscore, raw, team, None, false)
 }
 
 /// Complete, untruncated personnel combinations while the selected player is on ice.
 pub fn reconstruct_player(boxscore: &Value, raw: &Value, team: u64, player: u64) -> Result<Value> {
-    reconstruct_inner(boxscore, raw, team, Some(player))
+    reconstruct_inner(boxscore, raw, team, Some(player), false)
+}
+
+/// All regulation team combinations, with no display truncation.
+pub fn reconstruct_complete(boxscore: &Value, raw: &Value, team: u64) -> Result<Value> {
+    let rows = raw["data"].as_array().ok_or("Missing shifts")?;
+    if !rows.iter().any(|r| r["typeCode"].as_u64() == Some(517)) {
+        return Err("No shift exposure rows".into());
+    }
+    if let Some(total) = raw["total"].as_u64() {
+        if total != rows.len() as u64 {
+            return Err("Incomplete shift capture".into());
+        }
+    }
+    reconstruct_inner(boxscore, raw, team, None, true)
 }
 
 fn reconstruct_inner(
@@ -60,6 +74,7 @@ fn reconstruct_inner(
     raw: &Value,
     team: u64,
     focus: Option<u64>,
+    complete: bool,
 ) -> Result<Value> {
     let game = id(boxscore, "id")?;
     let home = id(&boxscore["homeTeam"], "id")?;
@@ -237,13 +252,17 @@ fn reconstruct_inner(
             }
         }
     }
-    let limit = if focus.is_some() { usize::MAX } else { 12 };
+    let limit = if focus.is_some() || complete {
+        usize::MAX
+    } else {
+        12
+    };
     let mut report = json!({"schema":"icelines.observed-units.0.1-experimental","game_id":game,"team_id":team,"game_date":boxscore["gameDate"],
         "scope":"latest-game regulation only; units ranked by observed overlap, not coach labels",
         "state_seconds":totals,"zero_duration_rows_ignored":zero,"overtime_rows_excluded":ot,
         "exact_duplicate_intervals_ignored":duplicate_rows,
         "conflicting_shift_spans":conflicts.iter().map(|(p,start,end,pid)|json!({"period":p,"start":start,"end":end,"player_id":pid})).collect::<Vec<_>>(),
-        "five_on_five_trios":display(lines,&positions,limit),"five_on_five_pairs":display(pairs,&positions,if focus.is_some(){limit}else{8}),
+        "five_on_five_trios":display(lines,&positions,limit),"five_on_five_pairs":display(pairs,&positions,if focus.is_some()||complete{limit}else{8}),
         "five_on_four_units":display(pp,&positions,limit),"four_on_five_units":display(pk,&positions,limit),
         "five_on_four_player_seconds":player_pp.iter().map(|(id,seconds)|json!({"id":id,"name":positions[id].0,"seconds":seconds})).collect::<Vec<_>>(),
         "limitations":["Shift timestamps are second-resolution and may contain change artifacts","Invalid occupancy excluded from unit statistics and reported",
@@ -258,6 +277,10 @@ fn reconstruct_inner(
         let own = report.as_object_mut().unwrap();
         let overlap = own.remove("five_on_four_player_seconds").unwrap();
         own.insert("coincident_five_on_four_player_seconds".into(), overlap);
+    }
+    if complete {
+        report["schema"] = json!("icelines.complete-team-units.0.1-experimental");
+        report["scope"]=json!("complete regulation team combinations, no display truncation; no coach-assigned line numbers");
     }
     Ok(report)
 }
