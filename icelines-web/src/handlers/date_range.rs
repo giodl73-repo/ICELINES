@@ -15,6 +15,8 @@ use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct Params {
+    #[serde(default, rename = "bio-column")]
+    bio_column: crate::query_bio::BioColumn,
     #[serde(default)]
     top: Option<usize>,
     #[serde(default)]
@@ -118,8 +120,13 @@ impl Params {
             if matches!(self.theme.as_str(),"night-game" | "fresh-ice" | "hockey-club") {&self.theme} else {""},
             if matches!(self.density.as_str(),"compact" | "comfortable") {&self.density} else {""},
             self.order()
-        ) + &format!("&then={}&top={}",crate::query_report::encode(&self.then_by),self.top.unwrap_or(500))
+        ) + &format!("&then={}&top={}&bio-column={}",crate::query_report::encode(&self.then_by),self.top.unwrap_or(500),self.bio_column.token())
     }
+}
+fn season_for_date(date: NaiveDate) -> u32 {
+    use chrono::Datelike;
+    let start = date.year() as u32 - u32::from(date.month() < 7);
+    start * 10000 + start + 1
 }
 type ColumnHeader = crate::query_report::ReportColumn;
 fn column_headers(p: &Params, q: Option<&DateRangeQuery>) -> Vec<ColumnHeader> {
@@ -214,6 +221,7 @@ fn cached(state: &WebState, p: &Params) -> anyhow::Result<ResultSet> {
 #[derive(Template)]
 #[template(path = "date_range.html")]
 struct Page {
+    bio_display: crate::query_bio::BioDisplay,
     top: usize,
     total: usize,
     active_label: String,
@@ -385,7 +393,7 @@ impl Page {
             ),
         ];
         fields.push(input("top", "Rows", &self.top.to_string(), "number"));
-        QueryReport {
+        self.bio_display.apply(QueryReport {
             context,
             columns: self.columns.clone(),
             rows,
@@ -400,7 +408,7 @@ impl Page {
             json_href: format!("/api/v1/leaders?{}", self.link),
             csv_href: format!("/api/v1/leaders?{}&format=csv", self.link),
             error: self.error.clone(),
-        }
+        })
     }
 }
 pub async fn get_html(State(state): State<WebState>, Query(p): Query<Params>) -> Response {
@@ -408,6 +416,7 @@ pub async fn get_html(State(state): State<WebState>, Query(p): Query<Params>) ->
     let q = p.query();
     let link = q.as_ref().map(|q| p.link(q)).unwrap_or_default();
     let mut page = Page {
+        bio_display: Default::default(),
         top: p.top.unwrap_or(500).clamp(1, 500),
         total: 0,
         active_label: "Custom dates · team scoring".into(),
@@ -468,6 +477,18 @@ pub async fn get_html(State(state): State<WebState>, Query(p): Query<Params>) ->
             Err(e) => page.error = e.to_string(),
         }
     }
+    let season = p
+        .date_to
+        .map(season_for_date)
+        .unwrap_or(icelines_core::CURRENT_SEASON);
+    page.bio_display = crate::query_bio::BioDisplay::load(
+        &state,
+        p.bio_column,
+        season,
+        &page.team,
+        page.rows.iter().map(|r| r.player_id),
+    )
+    .await;
     match page.render() {
         Ok(html) => Html(html).into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
@@ -485,14 +506,15 @@ pub async fn refresh(State(state): State<WebState>, Form(p): Form<Params>) -> Re
         if p.date_from.is_none() && p.date_to.is_none() && p.filter().roster_scope != "all" {
             date_range::refresh_current_roster(root(&state)?, &p.team.to_ascii_uppercase()).await?;
             return Ok::<_, anyhow::Error>(format!(
-                "/leaders?team={}&pos={}&sort={}&order={}&then={}&roster={}&top={}",
+                "/leaders?team={}&pos={}&sort={}&order={}&then={}&roster={}&top={}&bio-column={}",
                 crate::query_report::encode(&p.team),
                 crate::query_report::encode(&p.pos),
                 p.sort(),
                 p.order(),
                 crate::query_report::encode(&p.then_by),
                 p.filter().roster_scope,
-                p.top.unwrap_or(20)
+                p.top.unwrap_or(20),
+                p.bio_column.token()
             ));
         }
         let q = p.query()?;
@@ -520,10 +542,27 @@ pub async fn get_export(State(state): State<WebState>, Query(p): Query<Params>) 
             roster,
             total,
         }) => {
+            let bio_display = crate::query_bio::BioDisplay::load(
+                &state,
+                p.bio_column,
+                season_for_date(c.query.date_to),
+                &c.query.team,
+                rows.iter().map(|r| r.player_id),
+            )
+            .await;
             if p.format == "csv" {
                 let mut csv =
                     "Player ID,Player,Pos,GP,G,A,P,EV P,P/G,EVP/G,PP P,SH P,P rank,EV rank\r\n"
                         .to_owned();
+                for (offset, label) in bio_display.column_labels().iter().enumerate() {
+                    let mut parts = csv
+                        .trim_end()
+                        .split(',')
+                        .map(str::to_owned)
+                        .collect::<Vec<_>>();
+                    parts.insert(2 + offset, (*label).into());
+                    csv = parts.join(",") + "\r\n";
+                }
                 for r in rows {
                     let name = r.name.replace('"', "\"\"");
                     let name = if name.starts_with(['=', '+', '-', '@']) {
@@ -531,10 +570,21 @@ pub async fn get_export(State(state): State<WebState>, Query(p): Query<Params>) 
                     } else {
                         name
                     };
+                    let bio_cells = bio_display
+                        .values
+                        .get(&r.player_id)
+                        .map(|values| {
+                            values
+                                .iter()
+                                .map(|s| format!(",\"{}\"", s.replace('"', "\"\"")))
+                                .collect::<String>()
+                        })
+                        .unwrap_or_default();
                     csv.push_str(&format!(
-                        "{},\"{}\",{},{},{},{},{},{},{:.3},{:.3},{},{},{},{}\r\n",
+                        "{},\"{}\"{},{},{},{},{},{},{},{:.3},{:.3},{},{},{},{}\r\n",
                         r.player_id,
                         name,
+                        bio_cells,
                         r.position,
                         r.games,
                         r.goals,
@@ -562,7 +612,7 @@ pub async fn get_export(State(state): State<WebState>, Query(p): Query<Params>) 
                     .into_response()
             } else {
                 axum::Json(serde_json::json!({"schema_version":1,"route":"leaders","data":rows,
-                    "meta":{"query":c.query,"fetched_at":c.fetched_at,"sort":p.sort(),"order":p.order(),"sort_chain":p.filter().sort_chain().unwrap_or_default(),"filters":p.filter(),
+                    "meta":{"bio_display":bio_display,"query":c.query,"fetched_at":c.fetched_at,"sort":p.sort(),"order":p.order(),"sort_chain":p.filter().sort_chain().unwrap_or_default(),"filters":p.filter(),
                     "current_roster":roster.map(|r|serde_json::json!({"team":r.team,"fetched_at":r.fetched_at,"url":r.source.url,"sha256":r.source.sha256})),"total":total,"top":p.top,"completed_games":c.game_ids.len(),
                     "latest_game":c.games.iter().map(|g|g.game_date).max(),"methodology":date_range::METHOD,
                     "sources":c.sources.iter().map(|s|serde_json::json!({"url":s.url,"sha256":s.sha256})).collect::<Vec<_>>()}})).into_response()
@@ -592,6 +642,7 @@ mod tests {
             pos: "F".into(),
             roster: "current".into(),
             sort: "ppg".into(),
+            bio_column: crate::query_bio::BioColumn::BothAges,
             theme: "fresh-ice".into(),
             density: "comfortable".into(),
             highlight: 42,
@@ -607,6 +658,7 @@ mod tests {
         assert!(rate.href.contains("pos=F&roster=current"));
         assert!(rate.href.contains("theme=fresh-ice&density=comfortable"));
         assert!(rate.href.contains("highlight=42"));
+        assert!(rate.href.contains("bio-column=both-ages"));
         assert!(headers
             .iter()
             .find(|h| h.key == "name")

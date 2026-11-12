@@ -306,3 +306,20 @@ bookmarks redirect to `/leaders`; the old command is a hidden compatibility
 alias. Date-window evidence currently supports team, position, roster and
 scoring sorts; unsupported season-only demographic/stat-expression constraints
 fail explicitly instead of being silently ignored.
+
+### Optional report bio columns
+
+The shared `/leaders` UI offers **Bio column**: Off, Season age, Real age,
+Both ages, Height, Weight, and Nationality. The selected field appears
+immediately after Player. Use `bio-column=season-age|real-age|both-ages|height|weight|nationality|off`
+in report URLs; `age` is an alias for `season-age`. Sorting, refresh, and
+CSV exports preserve the selection. JSON metadata includes the selected bio
+values and age reference season/date.
+
+Season age reuses the existing age-filter convention: January 31 of the
+season’s second year. A cross-season date window uses the season containing
+the inclusive end date. Real age uses the UTC report date. The table caption
+identifies these dates. Height is in inches and weight in pounds.
+Nationality uses the recorded nationality code; birth country is not substituted.
+Missing bio values display an em dash. Bio columns are informational; statistical
+sort priorities are unchanged.

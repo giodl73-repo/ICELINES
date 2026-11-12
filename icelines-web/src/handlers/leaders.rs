@@ -43,6 +43,8 @@ where
 /// review.
 #[derive(Debug, Deserialize, Default)]
 pub struct LeadersQuery {
+    #[serde(default, rename = "bio-column")]
+    pub bio_column: crate::query_bio::BioColumn,
     #[serde(default)]
     pub roster: Option<String>,
     #[serde(default)]
@@ -1259,6 +1261,17 @@ pub async fn get_leaders_json(
     .unwrap_or_default());
     meta["roster_scope"] = serde_json::json!(q.roster.as_deref().unwrap_or("all"));
     meta["current_roster"]=serde_json::json!(roster_for_query(&state,&q).ok().flatten().map(|r|serde_json::json!({"fetched_at":r.fetched_at,"url":r.source.url,"sha256":r.source.sha256})));
+    meta["bio_display"] = serde_json::to_value(
+        crate::query_bio::BioDisplay::load(
+            &state,
+            q.bio_column,
+            result.active_season_id.0,
+            q.team.as_deref().unwrap_or(""),
+            result.rows.iter().map(|r| r.nhl_id),
+        )
+        .await,
+    )
+    .unwrap_or_default();
     meta["franchise"] = serde_json::json!(q.team);
     crate::api::json_data_meta("leaders", data, meta)
 }
@@ -1762,7 +1775,17 @@ pub async fn build_leaders_template(
     };
     let leaders_svg = render_leaders_pts82_svg(&rows);
 
+    let bio_display = crate::query_bio::BioDisplay::load(
+        state,
+        q.bio_column,
+        season.0,
+        q.team.as_deref().unwrap_or(""),
+        rows.iter().map(|r| r.nhl_id),
+    )
+    .await;
+    bio_query_suffix.push_str(&format!("&bio-column={}", q.bio_column.token()));
     Ok(LeadersTemplate {
+        bio_display,
         roster_scope: q.roster.clone().unwrap_or_else(|| "all".into()),
         roster_fetched_at: roster_capture
             .as_ref()
@@ -2043,6 +2066,7 @@ mod tests {
         let leaders_svg = render_leaders_pts82_svg(&projected);
 
         let html = LeadersTemplate {
+            bio_display: Default::default(),
             roster_scope: "all".into(),
             roster_fetched_at: String::new(),
             franchise: String::new(),
@@ -2120,6 +2144,7 @@ mod tests {
         let empty = view.empty_state.as_ref().expect("empty state");
 
         let html = LeadersTemplate {
+            bio_display: Default::default(),
             roster_scope: "all".into(),
             roster_fetched_at: String::new(),
             franchise: String::new(),
@@ -2227,6 +2252,7 @@ mod tests {
     #[test]
     fn l0_web_leaders_active_position_control_exposes_current_route_state() {
         let html = LeadersTemplate {
+            bio_display: Default::default(),
             roster_scope: "all".into(),
             roster_fetched_at: String::new(),
             franchise: String::new(),

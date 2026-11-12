@@ -40,6 +40,7 @@ pub mod card_store;
 pub mod config;
 pub mod dashboard_command;
 pub mod error;
+pub mod query_bio;
 pub mod query_report;
 pub mod state;
 pub mod static_assets;

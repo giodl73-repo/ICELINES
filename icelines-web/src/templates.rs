@@ -318,6 +318,7 @@ pub struct ComingSoonTemplate {
 #[derive(Template)]
 #[template(path = "leaders.html")]
 pub struct LeadersTemplate {
+    pub bio_display: crate::query_bio::BioDisplay,
     pub roster_scope: String,
     pub roster_fetched_at: String,
     pub franchise: String,

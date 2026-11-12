@@ -524,7 +524,7 @@ impl LeadersTemplate {
             self.query_order,
             encode(&self.query_then)
         );
-        QueryReport {
+        self.bio_display.apply(QueryReport {
             context,
             columns,
             rows,
@@ -533,6 +533,6 @@ impl LeadersTemplate {
             csv_href: format!("{json_href}&format=csv"),
             json_href,
             ..Default::default()
-        }
+        })
     }
 }
