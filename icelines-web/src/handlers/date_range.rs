@@ -18,6 +18,8 @@ pub struct Params {
     #[serde(default, rename = "bio-column")]
     bio_column: crate::query_bio::BioColumn,
     #[serde(default)]
+    selected: String,
+    #[serde(default)]
     top: Option<usize>,
     #[serde(default)]
     team: String,
@@ -120,7 +122,7 @@ impl Params {
             if matches!(self.theme.as_str(),"night-game" | "fresh-ice" | "hockey-club") {&self.theme} else {""},
             if matches!(self.density.as_str(),"compact" | "comfortable") {&self.density} else {""},
             self.order()
-        ) + &format!("&then={}&top={}&bio-column={}",crate::query_report::encode(&self.then_by),self.top.unwrap_or(500),self.bio_column.token())
+        ) + &format!("&then={}&top={}&bio-column={}&selected={}",crate::query_report::encode(&self.then_by),self.top.unwrap_or(500),self.bio_column.token(),crate::query_report::encode(&self.selected))
     }
 }
 fn season_for_date(date: NaiveDate) -> u32 {
@@ -506,7 +508,7 @@ pub async fn refresh(State(state): State<WebState>, Form(p): Form<Params>) -> Re
         if p.date_from.is_none() && p.date_to.is_none() && p.filter().roster_scope != "all" {
             date_range::refresh_current_roster(root(&state)?, &p.team.to_ascii_uppercase()).await?;
             return Ok::<_, anyhow::Error>(format!(
-                "/leaders?team={}&pos={}&sort={}&order={}&then={}&roster={}&top={}&bio-column={}",
+                "/leaders?team={}&pos={}&sort={}&order={}&then={}&roster={}&top={}&bio-column={}&selected={}",
                 crate::query_report::encode(&p.team),
                 crate::query_report::encode(&p.pos),
                 p.sort(),
@@ -514,7 +516,8 @@ pub async fn refresh(State(state): State<WebState>, Form(p): Form<Params>) -> Re
                 crate::query_report::encode(&p.then_by),
                 p.filter().roster_scope,
                 p.top.unwrap_or(20),
-                p.bio_column.token()
+                p.bio_column.token(),
+                crate::query_report::encode(&p.selected)
             ));
         }
         let q = p.query()?;
@@ -643,6 +646,7 @@ mod tests {
             roster: "current".into(),
             sort: "ppg".into(),
             bio_column: crate::query_bio::BioColumn::BothAges,
+            selected: "1,2".into(),
             theme: "fresh-ice".into(),
             density: "comfortable".into(),
             highlight: 42,
@@ -659,6 +663,7 @@ mod tests {
         assert!(rate.href.contains("theme=fresh-ice&density=comfortable"));
         assert!(rate.href.contains("highlight=42"));
         assert!(rate.href.contains("bio-column=both-ages"));
+        assert!(rate.href.contains("selected=1%2C2"));
         assert!(headers
             .iter()
             .find(|h| h.key == "name")

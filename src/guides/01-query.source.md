@@ -323,3 +323,17 @@ identifies these dates. Height is in inches and weight in pounds.
 Nationality uses the recorded nationality code; birth country is not substituted.
 Missing bio values display an em dash. Bio columns are informational; statistical
 sort priorities are unchanged.
+
+### Selecting players for snapshots
+
+Click a table row to make it the active selection. Shift-click toggles a player
+in the selection without clearing others. Player-name links still open profiles
+on an ordinary click; Shift-clicking a name selects its row. Focus a row and
+press Enter or Space for the same actions, with Shift to add/remove.
+
+Selected rows stay bold with a tinted background and border marker, including
+in print. The table caption lists the selected players. **Clear selection**
+removes all highlights. The `selected` URL parameter stores comma-separated
+player IDs, so copied URLs, reloads, sorting, and query submissions preserve
+the selection. Players outside the current results remain selected and are
+identified by count. Selection is shared by season and date-window reports.
