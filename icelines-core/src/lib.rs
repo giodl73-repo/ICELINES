@@ -13,6 +13,8 @@ pub mod depth_chart;
 pub mod deployment_audit;
 pub mod roster_budget;
 pub mod observed_units;
+pub mod player_line_history;
+pub mod shift_html;
 pub mod entity;
 pub mod error;
 pub mod event_stream;

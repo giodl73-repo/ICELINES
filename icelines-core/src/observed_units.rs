@@ -47,6 +47,20 @@ fn display(
 
 /// Constant-participant half-open segments; no event-time goals or blame assigned.
 pub fn reconstruct(boxscore: &Value, raw: &Value, team: u64) -> Result<Value> {
+    reconstruct_inner(boxscore, raw, team, None)
+}
+
+/// Complete, untruncated personnel combinations while the selected player is on ice.
+pub fn reconstruct_player(boxscore: &Value, raw: &Value, team: u64, player: u64) -> Result<Value> {
+    reconstruct_inner(boxscore, raw, team, Some(player))
+}
+
+fn reconstruct_inner(
+    boxscore: &Value,
+    raw: &Value,
+    team: u64,
+    focus: Option<u64>,
+) -> Result<Value> {
     let game = id(boxscore, "id")?;
     let home = id(&boxscore["homeTeam"], "id")?;
     let away = id(&boxscore["awayTeam"], "id")?;
@@ -82,6 +96,13 @@ pub fn reconstruct(boxscore: &Value, raw: &Value, team: u64) -> Result<Value> {
             }
         }
     }
+    if let Some(pid) = focus {
+        if roster_teams.get(&pid) != Some(&team) {
+            return Err("Focused player absent from requested team roster".into());
+        }
+    }
+    let mut focused_states = BTreeMap::<&str, u32>::new();
+    let mut focused_segments = Vec::new();
     let mut shifts: Vec<Shift> = Vec::new();
     let mut duplicate_rows = 0;
     let mut conflicts = Vec::<(u32, u32, u32, u64)>::new();
@@ -178,6 +199,14 @@ pub fn reconstruct(boxscore: &Value, raw: &Value, team: u64) -> Result<Value> {
                 "other"
             };
             *totals.entry(state).or_default() += seconds;
+            if let Some(pid) = focus {
+                if !own.contains(&pid) {
+                    continue;
+                }
+                *focused_states.entry(state).or_default() += seconds;
+                focused_segments.push(json!({"period":period,"start_seconds":edge[0],"end_seconds":edge[1],"state":state,
+                    "own_participants":own.iter().map(|id|json!({"id":id,"name":positions[id].0,"position":positions[id].1})).collect::<Vec<_>>()}));
+            }
             let skaters: Vec<_> = own
                 .iter()
                 .filter(|id| positions[id].1 != "G")
@@ -208,19 +237,29 @@ pub fn reconstruct(boxscore: &Value, raw: &Value, team: u64) -> Result<Value> {
             }
         }
     }
-    Ok(
-        json!({"schema":"icelines.observed-units.0.1-experimental","game_id":game,"team_id":team,"game_date":boxscore["gameDate"],
+    let limit = if focus.is_some() { usize::MAX } else { 12 };
+    let mut report = json!({"schema":"icelines.observed-units.0.1-experimental","game_id":game,"team_id":team,"game_date":boxscore["gameDate"],
         "scope":"latest-game regulation only; units ranked by observed overlap, not coach labels",
         "state_seconds":totals,"zero_duration_rows_ignored":zero,"overtime_rows_excluded":ot,
         "exact_duplicate_intervals_ignored":duplicate_rows,
         "conflicting_shift_spans":conflicts.iter().map(|(p,start,end,pid)|json!({"period":p,"start":start,"end":end,"player_id":pid})).collect::<Vec<_>>(),
-        "five_on_five_trios":display(lines,&positions,12),"five_on_five_pairs":display(pairs,&positions,8),
-        "five_on_four_units":display(pp,&positions,12),"four_on_five_units":display(pk,&positions,12),
+        "five_on_five_trios":display(lines,&positions,limit),"five_on_five_pairs":display(pairs,&positions,if focus.is_some(){limit}else{8}),
+        "five_on_four_units":display(pp,&positions,limit),"four_on_five_units":display(pk,&positions,limit),
         "five_on_four_player_seconds":player_pp.iter().map(|(id,seconds)|json!({"id":id,"name":positions[id].0,"seconds":seconds})).collect::<Vec<_>>(),
         "limitations":["Shift timestamps are second-resolution and may contain change artifacts","Invalid occupancy excluded from unit statistics and reported",
             "Exact duplicate player intervals counted once; entire union of conflicting same-player intervals censored",
-            "No inferred quarterback/flank/bumper/net-front duties","One game is not a season assignment","Overtime and other strengths excluded from displayed units"]}),
-    )
+            "No inferred quarterback/flank/bumper/net-front duties","One game is not a season assignment","Overtime and other strengths excluded from displayed units"]});
+    if let Some(pid) = focus {
+        report["schema"] = json!("icelines.player-game-units.0.1-experimental");
+        report["scope"]=json!("complete regulation combinations during focused player exposure; not coach-assigned line numbers");
+        report["focused_player_id"] = json!(pid);
+        report["focused_state_seconds"] = json!(focused_states);
+        report["focused_segments"] = json!(focused_segments);
+        let own = report.as_object_mut().unwrap();
+        let overlap = own.remove("five_on_four_player_seconds").unwrap();
+        own.insert("coincident_five_on_four_player_seconds".into(), overlap);
+    }
+    Ok(report)
 }
 
 #[cfg(test)]
@@ -292,6 +331,21 @@ mod tests {
         assert_eq!(clock("20:00").unwrap(), 1200);
         assert!(clock("20:01").is_err());
         assert!(clock("01:60").is_err());
+    }
+    #[test]
+    fn focused_history_preserves_segments_and_rejects_absent_player() {
+        let (b, s) = fixture();
+        let report = reconstruct_player(&b, &s, 1, 1).unwrap();
+        assert_eq!(report["focused_state_seconds"]["5v5"], 3600);
+        assert_eq!(report["five_on_five_trios"][0]["seconds"], 3600);
+        let seconds: u64 = report["focused_segments"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|r| r["end_seconds"].as_u64().unwrap() - r["start_seconds"].as_u64().unwrap())
+            .sum();
+        assert_eq!(seconds, 3600);
+        assert!(reconstruct_player(&b, &s, 1, 99).is_err());
     }
     #[test]
     fn boundary_does_not_double_count_changing_player() {
