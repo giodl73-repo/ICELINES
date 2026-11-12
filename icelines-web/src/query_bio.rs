@@ -35,8 +35,8 @@ impl BioColumn {
         match self {
             Self::Off => &[],
             Self::SeasonAge => &[("season-age", "Season age")],
-            Self::RealAge => &[("real-age", "Real age")],
-            Self::BothAges => &[("season-age", "Season age"), ("real-age", "Real age")],
+            Self::RealAge => &[("real-age", "Age")],
+            Self::BothAges => &[("season-age", "Season age"), ("real-age", "Age")],
             Self::Height => &[("height", "Height (in)")],
             Self::Weight => &[("weight", "Weight (lb)")],
             Self::Nationality => &[("nationality", "Nationality")],
@@ -127,7 +127,7 @@ impl BioDisplay {
             [
                 ("off", "Off"),
                 ("season-age", "Season age"),
-                ("real-age", "Real age"),
+                ("real-age", "Age"),
                 ("both-ages", "Both ages"),
                 ("height", "Height"),
                 ("weight", "Weight"),
@@ -169,7 +169,7 @@ impl BioDisplay {
         if matches!(self.column, BioColumn::RealAge | BioColumn::BothAges) {
             report
                 .context
-                .push(("Real age".into(), format!("as of {}", self.real_age_as_of)));
+                .push(("Age".into(), format!("as of {}", self.real_age_as_of)));
         }
         if self.column == BioColumn::Nationality {
             report.context.push((
@@ -251,7 +251,7 @@ mod tests {
                 .iter()
                 .map(|c| c.label.as_str())
                 .collect::<Vec<_>>(),
-            ["#", "Player", "Season age", "Real age", "GP"]
+            ["#", "Player", "Season age", "Age", "GP"]
         );
         assert_eq!(
             selected.rows[0]
@@ -263,7 +263,7 @@ mod tests {
         );
         assert!(selected
             .csv()
-            .contains("\"Player\",\"Season age\",\"Real age\""));
+            .contains("\"Player\",\"Season age\",\"Age\""));
         let off = BioDisplay::default().apply(report);
         assert_eq!(off.columns.len(), 3);
         assert_eq!(off.rows[0].cells.len(), 3);
