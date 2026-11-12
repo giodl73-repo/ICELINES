@@ -131,6 +131,13 @@ fn season_for_date(date: NaiveDate) -> u32 {
     start * 10000 + start + 1
 }
 type ColumnHeader = crate::query_report::ReportColumn;
+fn report_metrics() -> Vec<(String, String)> {
+    SCORING_COLUMNS
+        .iter()
+        .filter(|(key, _)| !matches!(*key, "points-rank" | "ev-rank"))
+        .map(|(key, label)| (key.to_string(), label.to_string()))
+        .collect()
+}
 fn column_headers(p: &Params, q: Option<&DateRangeQuery>) -> Vec<ColumnHeader> {
     let chain = p.filter().sort_chain().unwrap_or_default();
     let base = q
@@ -146,14 +153,16 @@ fn column_headers(p: &Params, q: Option<&DateRangeQuery>) -> Vec<ColumnHeader> {
                 .join("&")
         })
         .unwrap_or_default();
-    crate::query_report::headers(
-        &SCORING_COLUMNS
-            .iter()
-            .map(|(k, l)| (k.to_string(), l.to_string()))
-            .collect::<Vec<_>>(),
+    let mut columns = vec![ColumnHeader {
+        label: "#".into(),
+        ..Default::default()
+    }];
+    columns.extend(crate::query_report::headers(
+        &report_metrics(),
         &format!("/leaders?{base}"),
         &chain,
-    )
+    ));
+    columns
 }
 pub async fn html_from_uri(state: WebState, uri: axum::http::Uri) -> Response {
     if !icelines_query::parse_filters_from_query(uri.query().unwrap_or("")).is_empty() {
@@ -260,10 +269,7 @@ impl Page {
             order: self.order.clone(),
             then_by: self.then_by.clone(),
         };
-        let metrics = SCORING_COLUMNS
-            .iter()
-            .map(|(k, l)| (k.to_string(), l.to_string()))
-            .collect::<Vec<_>>();
+        let metrics = report_metrics();
         let context = vec![
             (
                 "Date range".into(),
@@ -315,7 +321,8 @@ impl Page {
         let rows = self
             .rows
             .iter()
-            .map(|r| {
+            .enumerate()
+            .map(|(index, r)| {
                 let mut player = ReportCell::player(r.player_id, &r.name);
                 player.image = super::shared::build_headshot_url(
                     icelines_core::CURRENT_SEASON,
@@ -327,7 +334,7 @@ impl Page {
                     r.player_id
                 );
                 let mut cells = vec![
-                    ReportCell::text(r.points_rank),
+                    ReportCell::text(index + 1),
                     player,
                     ReportCell::text(&r.position),
                 ];
@@ -338,7 +345,6 @@ impl Page {
                         r.assists.to_string(),
                         r.points.to_string(),
                         r.ev_points.to_string(),
-                        r.ev_points_rank.to_string(),
                         format!("{:.3}", r.points_per_game),
                         format!("{:.3}", r.ev_points_per_game),
                         r.pp_points.to_string(),
@@ -470,8 +476,13 @@ pub async fn get_html(State(state): State<WebState>, Query(p): Query<Params>) ->
                     .unwrap_or_else(|| "No games".into());
                 if let Some(r) = rows.iter().find(|r| r.player_id == p.highlight) {
                     page.focus = format!(
-                        "{}: {} points (rank {}), {} EV points (rank {}), {:.3} P/G and {:.3} EVP/G in {} games",
-                        r.name, r.points, r.points_rank, r.ev_points, r.ev_points_rank, r.points_per_game,r.ev_points_per_game,r.games
+                        "{}: {} points, {} EV points, {:.3} P/G and {:.3} EVP/G in {} games",
+                        r.name,
+                        r.points,
+                        r.ev_points,
+                        r.points_per_game,
+                        r.ev_points_per_game,
+                        r.games
                     );
                 }
                 page.rows = rows;
@@ -555,18 +566,17 @@ pub async fn get_export(State(state): State<WebState>, Query(p): Query<Params>) 
             .await;
             if p.format == "csv" {
                 let mut csv =
-                    "Player ID,Player,Pos,GP,G,A,P,EV P,P/G,EVP/G,PP P,SH P,P rank,EV rank\r\n"
-                        .to_owned();
+                    "#,Player ID,Player,Pos,GP,G,A,P,EV P,P/G,EVP/G,PP P,SH P\r\n".to_owned();
                 for (offset, label) in bio_display.column_labels().iter().enumerate() {
                     let mut parts = csv
                         .trim_end()
                         .split(',')
                         .map(str::to_owned)
                         .collect::<Vec<_>>();
-                    parts.insert(2 + offset, (*label).into());
+                    parts.insert(3 + offset, (*label).into());
                     csv = parts.join(",") + "\r\n";
                 }
-                for r in rows {
+                for (index, r) in rows.into_iter().enumerate() {
                     let name = r.name.replace('"', "\"\"");
                     let name = if name.starts_with(['=', '+', '-', '@']) {
                         format!("'{name}")
@@ -584,7 +594,8 @@ pub async fn get_export(State(state): State<WebState>, Query(p): Query<Params>) 
                         })
                         .unwrap_or_default();
                     csv.push_str(&format!(
-                        "{},\"{}\"{},{},{},{},{},{},{},{:.3},{:.3},{},{},{},{}\r\n",
+                        "{},{},\"{}\"{},{},{},{},{},{},{},{:.3},{:.3},{},{}\r\n",
+                        index + 1,
                         r.player_id,
                         name,
                         bio_cells,
@@ -597,9 +608,7 @@ pub async fn get_export(State(state): State<WebState>, Query(p): Query<Params>) 
                         r.points_per_game,
                         r.ev_points_per_game,
                         r.pp_points,
-                        r.sh_points,
-                        r.points_rank,
-                        r.ev_points_rank
+                        r.sh_points
                     ));
                 }
                 (
@@ -654,7 +663,12 @@ mod tests {
         };
         let q = p.query().unwrap();
         let headers = column_headers(&p, Some(&q));
-        assert_eq!(headers.len(), 13);
+        assert_eq!(headers.len(), 12);
+        assert_eq!(headers[0].label, "#");
+        assert!(headers[0].href.is_empty());
+        assert!(headers
+            .iter()
+            .all(|h| !matches!(h.key.as_str(), "points-rank" | "ev-rank")));
         let rate = headers.iter().find(|h| h.key == "ppg").unwrap();
         assert_eq!(rate.aria_sort, "descending");
         assert!(rate.href.contains("sort=ppg"));

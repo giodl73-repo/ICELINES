@@ -16,7 +16,7 @@ icelines serve
 Open **IceStats → Query a date range**, or `/leaders`. Choose a team,
 start date, end date, and points/EV-points sort, then **Refresh data & run**.
 **Run cached query** replays the exact saved window without network access.
-The web view includes all skaters, points and EV ranks (ties share ranks), CSV,
+The web view numbers rows in the current sort order (1, 2, 3, …) and includes CSV,
 JSON with source URLs/digests, and print/save-PDF styling. A bookmark preserves
 the query; optional `highlight=<NHL-player-ID>` emphasizes a player. The JSON
 and CSV endpoint is `/api/v1/leaders` with the same query parameters
@@ -43,12 +43,13 @@ among the selected players; they never add games from another team.
 
 P/G and EVP/G divide each player's points and EV points by that player's GP
 within the selected window. The table/CSV show three decimals; JSON and sorts
-retain full precision. Use `--sort ppg` or `--sort ev-ppg` for rate ordering. Every table header is
+retain full precision. Use `--sort ppg` or `--sort ev-ppg` for rate ordering. Statistic and player-identity headers are
 sortable; click again to toggle ascending/descending order. Sorting preserves
 all displayed statistics, filters, highlight, theme and spacing. Use
 `--order asc` or `--order desc` (default) in the CLI; the web/API use `order=`.
-All thirteen displayed columns can be sort keys, including names, positions,
-games, goals, assists, special-teams points and the two count ranks.
+The leftmost **#** always follows the complete sort priority chain and is not a
+sort key. Separate P rank and EV rank columns are omitted from the table and CSV.
+Names, positions, games, goals, assists, and special-teams points remain sortable.
 
 ```powershell
 icelines query leaders --team BOS --date-from 2026-03-01 --date-to 2026-11-11 --pos F --roster current --sort ev-ppg --refresh --json
@@ -301,7 +302,7 @@ icelines query leaders --team BOS --date-from 2026-03-01 --date-to 2026-11-11 --
 
 `--json` keeps the existing bare-array contract; `--json-envelope` includes
 source and query context. Row limits apply after filtering/sorting, while
-point/EV ranks describe the whole matching population. Legacy date-range
+legacy point/EV rank fields in JSON describe the whole matching population. Legacy date-range
 bookmarks redirect to `/leaders`; the old command is a hidden compatibility
 alias. Date-window evidence currently supports team, position, roster and
 scoring sorts; unsupported season-only demographic/stat-expression constraints
