@@ -42,7 +42,7 @@ impl Slot {
             Self::G => "G",
         }
     }
-    fn address(self, side: Side) -> String {
+    pub(crate) fn address(self, side: Side) -> String {
         format!("{}:{}", side.label(), self.label())
     }
     pub(crate) fn accepts(self, c: &GameCharacter) -> bool {

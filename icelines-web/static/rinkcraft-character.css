@@ -302,3 +302,9 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 .rk-unit-log{padding-left:24px}.rk-unit-log li{padding:10px 0;border-bottom:1px solid #bfd0dd}.rk-unit-scene code{display:block;white-space:normal;overflow-wrap:anywhere;font-size:12px}.rk-unit-log small{font-size:12px}
 @media(max-width:650px){.rk-unit-scene{padding:12px}.rk-unit-duties{grid-template-columns:1fr}.rk-unit-toolbar>button,.rk-unit-actions>button{flex:1 1 40%}.rk-unit-controls>label{flex:1 1 100%}.rk-unit-attributes{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media print{.rk-unit-scene{display:none!important}}
+/* Readiness declarations are contextual; keep native checkboxes compact. */
+.rk-goalie-challenge label[hidden] { display: none !important; }
+.rk-goalie-challenge input[type="checkbox"] {
+  width: 1.15rem; height: 1.15rem; min-height: 0; padding: 0;
+  margin: .25rem 0; justify-self: start;
+}

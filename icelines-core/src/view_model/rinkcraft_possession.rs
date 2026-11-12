@@ -127,7 +127,7 @@ fn legal(s: &State, reception: bool, shooting: bool) -> Vec<Action> {
         _ => vec![],
     }
 }
-fn d20(state: &mut u64) -> u8 {
+pub(crate) fn d20(state: &mut u64) -> u8 {
     let limit = u32::MAX - u32::MAX % 20;
     loop {
         let n = game::random_word(state);

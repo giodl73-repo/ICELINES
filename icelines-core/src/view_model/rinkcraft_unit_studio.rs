@@ -1,5 +1,6 @@
 //! Shared native/WASM studio commands. Browser code never authors dice or placement legality.
 use super::{rinkcraft_game as game, rinkcraft_possession::Action, rinkcraft_units as units};
+use super::rinkcraft_goalie_readiness as readiness;
 use serde::{Deserialize, Serialize};
 pub const MAX_COMMAND_BYTES: usize = 768 * 1024;
 #[derive(Deserialize)]
@@ -29,6 +30,13 @@ pub enum Command {
     StartShooting {
         replay: serde_json::Value,
     },
+    AssessReadiness {
+        replay: serde_json::Value,
+        situation: readiness::Situation,
+        seed: u32,
+        lateral_feed_declared: bool,
+    },
+    ImportReadiness { report: serde_json::Value },
     Reset {
         replay: serde_json::Value,
         assignments: units::Assignments,
@@ -71,6 +79,10 @@ pub struct Response {
     pub replay: units::Replay,
     pub layout: Layout,
     pub message: String,
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub goalie_readiness: Option<readiness::Report>,
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub goalie_opportunities: Option<Vec<readiness::Opportunity>>,
 }
 fn imported(value: serde_json::Value) -> Result<units::Input, String> {
     Ok(units::import(&value.to_string())?.input)
@@ -140,7 +152,22 @@ pub fn execute(envelope: Envelope) -> Result<Response, String> {
     if envelope.schema != "rinkcraft.unit-studio-command.v1" {
         return Err("Unsupported unit studio command schema".into());
     }
+    let mut goalie_readiness = None;
     let (input, message) = match envelope.command {
+        Command::AssessReadiness { replay, situation, seed, lateral_feed_declared } => {
+            let input=imported(replay)?;
+            goalie_readiness=Some(readiness::export(readiness::Input {
+                schema:"rinkcraft.goalie-readiness-input.v1".into(),rules:readiness::Rules::default(),replay:units::export(input.clone())?,
+                situation,seed,lateral_feed_declared,
+            })?);
+            (input,"Goalie readiness assessed; source unit scene unchanged.")
+        }
+        Command::ImportReadiness { report } => {
+            let report=readiness::import(&report.to_string())?;
+            let input=report.input.replay.input.clone();
+            goalie_readiness=Some(report);
+            (input,"Readiness report verified; its source unit snapshot loaded.")
+        }
         Command::Create {
             character_rules,
             rules,
@@ -241,12 +268,17 @@ pub fn execute(envelope: Envelope) -> Result<Response, String> {
         }
     };
     let replay = units::export(input)?;
+    let goalie_opportunities=if replay.input.rules.version=="0.4.0-playtest" {
+        Some(readiness::opportunities(&replay.input,units::replay(&replay.input)?.scene.state.phase))
+    } else {None};
     let layout = layout(&replay.input, envelope.sheet_character.as_ref());
     Ok(Response {
         schema: "icelines.unit-studio-result.v1".into(),
         replay,
         layout,
         message: message.into(),
+        goalie_readiness,
+        goalie_opportunities,
     })
 }
 pub fn from_json(raw: &str) -> Result<String, String> {
@@ -260,6 +292,19 @@ pub fn from_json(raw: &str) -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn readiness_commands_keep_scene_exact_and_import_verified_reports() {
+        let replay:serde_json::Value=serde_json::from_str(include_str!("../../tests/fixtures/rinkcraft-unit-v04.json")).unwrap();
+        let value=command(serde_json::json!({"kind":"assess_readiness","replay":replay,"situation":"reset","seed":0,"lateral_feed_declared":false}),None);
+        assert_eq!(value["replay"],replay);
+        assert_eq!(value["goalie_readiness"]["input"]["replay"],replay);
+        assert_eq!(value["goalie_readiness"]["assessment"]["actor_capability"],"Recovery");
+        let imported=command(serde_json::json!({"kind":"import_readiness","report":value["goalie_readiness"]}),None);
+        assert_eq!(imported["replay"],replay);assert_eq!(imported["goalie_readiness"],value["goalie_readiness"]);
+        let mut bad=value["goalie_readiness"].clone();bad["assessment"]["readiness"]="reset".into();bad["assessment"]["source_scene_sha256"]="forged".into();
+        let raw=serde_json::json!({"schema":"rinkcraft.unit-studio-command.v1","command":{"kind":"import_readiness","report":bad}});
+        assert!(from_json(&raw.to_string()).is_err());
+    }
     fn file() -> units::Replay {
         let golden: serde_json::Value = serde_json::from_str(include_str!(
             "../../tests/fixtures/rinkcraft-legacy-possession.json"
