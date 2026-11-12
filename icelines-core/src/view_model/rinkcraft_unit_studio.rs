@@ -23,6 +23,9 @@ pub enum Command {
     FreezeLegacy {
         replay: serde_json::Value,
     },
+    StartReceiving {
+        replay: serde_json::Value,
+    },
     Reset {
         replay: serde_json::Value,
         assignments: units::Assignments,
@@ -149,6 +152,15 @@ pub fn execute(envelope: Envelope) -> Result<Response, String> {
             units::freeze_legacy(&replay.to_string())?,
             "Legacy replay copied into explicit units; original file unchanged.",
         ),
+        Command::StartReceiving { replay } => {
+            let mut input = imported(replay)?;
+            input.rules.version = "0.3.0-playtest".into();
+            input.request.actions.clear();
+            (
+                input,
+                "New receiving scene started; units and duties retained.",
+            )
+        }
         Command::Reset {
             replay,
             assignments,
@@ -332,5 +344,27 @@ mod tests {
         raw["command"].as_object_mut().unwrap().remove("ignored");
         raw["command"]["replay"]["session"]["units_sha256"] = "wrong".into();
         assert!(from_json(&raw.to_string()).is_err());
+    }
+    #[test]
+    fn receiving_upgrade_starts_new_history_without_rewriting_v02() {
+        let file = file();
+        let upgraded = command(
+            serde_json::json!({"kind":"start_receiving","replay":file}),
+            None,
+        );
+        assert_eq!(
+            upgraded["replay"]["input"]["rules"]["version"],
+            "0.3.0-playtest"
+        );
+        assert_eq!(
+            upgraded["replay"]["input"]["request"]["actions"],
+            serde_json::json!([])
+        );
+        assert_eq!(
+            upgraded["replay"]["session"]["units_sha256"],
+            file.session["units_sha256"]
+        );
+        assert_eq!(file.input.rules.version, "0.2.0-playtest");
+        assert!(!file.input.request.actions.is_empty());
     }
 }

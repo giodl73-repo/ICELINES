@@ -217,10 +217,10 @@ pub struct Rules {
 impl Rules {
     pub fn validate(&self) -> Result<(), String> {
         if self.schema != "rinkcraft.unit-possession-rules.v1"
-            || self.version != "0.2.0-playtest"
+            || !["0.2.0-playtest", "0.3.0-playtest"].contains(&self.version.as_str())
             || self.support_bonus > 2
         {
-            return Err("Use unit possession rules v0.2.0-playtest and support 0–2".into());
+            return Err("Use unit possession rules v0.2.0/v0.3.0-playtest and support 0–2".into());
         }
         Ok(())
     }
@@ -392,17 +392,31 @@ pub fn replay(input: &Input) -> Result<UnitSession, String> {
         commit_support: q.commit_support,
         actions: q.actions.clone(),
     };
-    let mut scene = legacy::resolve_scene(
+    let receiving = input.rules.version == "0.3.0-playtest";
+    let resolve = if receiving {
+        legacy::resolve_receiving_scene
+    } else {
+        legacy::resolve_scene
+    };
+    let mut scene = resolve(
         &arithmetic,
         &request,
         hero_slot,
         participants,
         &q.assignments.bindings(),
     )?;
-    scene.schema = "icelines.possession-session.v2".into();
+    scene.schema = if receiving {
+        "icelines.possession-session.v3"
+    } else {
+        "icelines.possession-session.v2"
+    }
+    .into();
     scene.rules_version = input.rules.version.clone();
     scene.rules_sha256 = hash(&input.rules)?;
     scene.note="Fictional explicit-unit outlet/carry/pass scene; named assignments and seeded contests. A received pass is not a shot or goal. No clock, fatigue, continuous movement or NHL probabilities. F1/F2/F3/D1/D2 are local scene addresses; roster positions and phase duties are separate.".into();
+    if receiving {
+        scene.note="Fictional receiving rules 0.3: a successful pass is in flight until the receiver contests Handling against the assigned away interceptor's Defending. Reception adds no support bonus. Failed reception is loose, not an automatic turnover; the declared carrier retains the recovery duty. A reception tie ends the window with a loose puck. No shots, saves, clock, fatigue, spatial feasibility or NHL probabilities.".into()
+    }
     Ok(UnitSession {
         schema: "icelines.unit-possession-session.v1".into(),
         units_sha256: hash(&(&members, &q.assignments))?,
@@ -709,5 +723,171 @@ mod tests {
                 .session,
             file.session
         );
+    }
+    fn receiving() -> Input {
+        let mut input = import(include_str!("../../tests/fixtures/rinkcraft-unit-v02.json"))
+            .unwrap()
+            .input;
+        input.rules.version = "0.3.0-playtest".into();
+        input.request.hero_id = "home-F2".into();
+        input
+    }
+    #[test]
+    fn frozen_v02_stays_exact_and_pass_in_v03_is_not_received_control() {
+        let raw = include_str!("../../tests/fixtures/rinkcraft-unit-v02.json");
+        let old = import(raw).unwrap();
+        assert_eq!(
+            serde_json::to_value(&old).unwrap(),
+            serde_json::from_str::<serde_json::Value>(raw).unwrap()
+        );
+        assert_eq!(old.session["scene"]["state"]["phase"], "complete");
+        assert!(old.session["scene"]["state"].get("in_flight_to").is_none());
+        let input = receiving();
+        let s = replay(&input).unwrap().scene;
+        assert_eq!(s.schema, "icelines.possession-session.v3");
+        assert_eq!(s.state.phase, legacy::Phase::PassArriving);
+        assert_eq!(s.state.control, None);
+        assert!(!s.state.loose);
+        assert_eq!(s.state.in_flight_to.as_deref(), Some("home:F2"));
+        assert_eq!(s.legal_actions, vec![Action::Receive]);
+        let mut invalid = old.input;
+        invalid.request.actions.push(Action::Receive);
+        assert!(replay(&invalid).is_err());
+    }
+    #[test]
+    fn handling_controls_reception_on_identical_dice_and_prior_events() {
+        let mut found = false;
+        for seed in 0..512 {
+            let mut input = receiving();
+            input.request.seed = seed;
+            input.request.actions.clear();
+            for action in [Action::Outlet, Action::Carry, Action::Pass] {
+                if !replay(&input)
+                    .unwrap()
+                    .scene
+                    .legal_actions
+                    .contains(&action)
+                {
+                    break;
+                }
+                input.request.actions.push(action)
+            }
+            if input.request.actions.len() != 3
+                || !replay(&input)
+                    .unwrap()
+                    .scene
+                    .legal_actions
+                    .contains(&Action::Receive)
+            {
+                continue;
+            }
+            let mut low = input.clone();
+            set_score(&mut low, Slot::F2, 1, 1);
+            low.request.actions.push(Action::Receive);
+            let mut high = input.clone();
+            set_score(&mut high, Slot::F2, 1, 20);
+            high.request.actions.push(Action::Receive);
+            let a = replay(&low).unwrap().scene;
+            let b = replay(&high).unwrap().scene;
+            if a.state.phase == legacy::Phase::Loose && b.state.phase == legacy::Phase::Complete {
+                println!("RECEPTION_PROBE_SEED={seed}");
+                assert_eq!(
+                    serde_json::to_value(&a.events[..3]).unwrap(),
+                    serde_json::to_value(&b.events[..3]).unwrap()
+                );
+                let x = &a.events[3];
+                let y = &b.events[3];
+                assert_eq!(x.actor, "home:F2");
+                assert_eq!(x.actor_capability, "Handling");
+                assert_eq!(x.opposition, "away:F2");
+                assert_eq!(x.opposition_capability, "Defending");
+                assert_eq!(
+                    (x.resolution.actor_die, x.resolution.opposition_die),
+                    (y.resolution.actor_die, y.resolution.opposition_die)
+                );
+                assert_eq!(y.terms[0] - x.terms[0], 10);
+                assert_eq!(b.state.control.as_deref(), Some("home:F2"));
+                assert!(a.state.in_flight_to.is_none() && b.state.in_flight_to.is_none());
+                assert!(a.state.loose);
+                assert_eq!(a.legal_actions, vec![Action::Recover]);
+                found = true;
+                break;
+            }
+        }
+        assert!(found);
+    }
+    #[test]
+    fn receiving_gets_no_second_support_bonus_and_unused_shooting_does_not_change_events() {
+        let mut input = receiving();
+        input.request.commit_support = true;
+        input.request.actions.push(Action::Receive);
+        let original = replay(&input).unwrap().scene;
+        assert_eq!(original.events[3].contest.actor_adjustment, 0);
+        assert_eq!(original.events[3].contest.opposition_adjustment, 0);
+        set_score(&mut input, Slot::F2, 3, 20);
+        let changed = replay(&input).unwrap().scene;
+        assert_eq!(
+            serde_json::to_value(original.events).unwrap(),
+            serde_json::to_value(changed.events).unwrap()
+        );
+    }
+    #[test]
+    fn reception_tie_ends_with_loose_puck_and_no_invented_control() {
+        let mut found = false;
+        for seed in 0..4096 {
+            let mut input = receiving();
+            input.request.seed = seed;
+            input.request.actions.clear();
+            for action in [Action::Outlet, Action::Carry, Action::Pass, Action::Receive] {
+                if !replay(&input)
+                    .unwrap()
+                    .scene
+                    .legal_actions
+                    .contains(&action)
+                {
+                    break;
+                }
+                input.request.actions.push(action)
+            }
+            if input.request.actions.len() == 4 {
+                let s = replay(&input).unwrap().scene;
+                if s.events[3].resolution.outcome
+                    == super::super::rinkcraft_contest::Outcome::Stalemate
+                {
+                    assert_eq!(s.state.phase, legacy::Phase::Stalemate);
+                    assert!(s.state.loose);
+                    assert!(s.state.control.is_none() && s.state.in_flight_to.is_none());
+                    assert!(s.legal_actions.is_empty());
+                    found = true;
+                    break;
+                }
+            }
+        }
+        assert!(found);
+    }
+    #[test]
+    fn receiving_paths_conserve_held_flight_or_loose_and_import_recomputes_pending_state() {
+        for seed in 0..128 {
+            let mut input = receiving();
+            input.request.seed = seed;
+            input.request.actions.clear();
+            let s = complete(&mut input).unwrap().scene;
+            assert!(input.request.actions.len() <= 16);
+            for event in &s.events {
+                for state in [&event.before, &event.after] {
+                    assert_eq!(
+                        u8::from(state.control.is_some())
+                            + u8::from(state.loose)
+                            + u8::from(state.in_flight_to.is_some()),
+                        1
+                    )
+                }
+            }
+        }
+        let file = export(receiving()).unwrap();
+        assert!(import(&serde_json::to_string(&file).unwrap()).is_ok());
+        let mut bad = serde_json::to_value(file).unwrap();
+        bad["session"]["scene"]["state"]["control"] = "home:F2".into();
+        assert!(import(&bad.to_string()).is_err());
     }
 }
