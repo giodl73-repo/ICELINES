@@ -5,7 +5,7 @@ use std::{collections::BTreeMap, error::Error, path::Path};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
-fn rows(path: &Path) -> Result<Vec<Value>> {
+pub(crate) fn rows(path: &Path) -> Result<Vec<Value>> {
     let value: Value = serde_json::from_slice(&std::fs::read(path)?)?;
     Ok(value
         .get("data")
@@ -14,7 +14,7 @@ fn rows(path: &Path) -> Result<Vec<Value>> {
         .clone())
 }
 
-fn number(row: &Value, field: &str) -> Result<f64> {
+pub(crate) fn number(row: &Value, field: &str) -> Result<f64> {
     let value = row
         .get(field)
         .and_then(Value::as_f64)
@@ -25,13 +25,13 @@ fn number(row: &Value, field: &str) -> Result<f64> {
     Ok(value)
 }
 
-fn id(row: &Value, field: &str) -> Result<u64> {
+pub(crate) fn id(row: &Value, field: &str) -> Result<u64> {
     row.get(field)
         .and_then(Value::as_u64)
         .ok_or_else(|| format!("Missing integer {field}").into())
 }
 
-fn index(rows: Vec<Value>, field: &str) -> Result<BTreeMap<u64, Value>> {
+pub(crate) fn index(rows: Vec<Value>, field: &str) -> Result<BTreeMap<u64, Value>> {
     let mut out = BTreeMap::new();
     for row in rows {
         let key = id(&row, field)?;

@@ -11,6 +11,8 @@ pub mod contract;
 pub mod cross_team;
 pub mod depth_chart;
 pub mod deployment_audit;
+pub mod roster_budget;
+pub mod observed_units;
 pub mod entity;
 pub mod error;
 pub mod event_stream;

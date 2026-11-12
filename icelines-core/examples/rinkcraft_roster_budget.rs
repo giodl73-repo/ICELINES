@@ -1,0 +1,13 @@
+use std::path::Path;
+fn read(path: &Path) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
+    Ok(serde_json::from_slice(&std::fs::read(path)?)?)
+}
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args: Vec<_> = std::env::args().skip(1).collect();
+    let report=match args.as_slice(){
+        [mode,root,prior,prior_toi] if mode=="budget"=>icelines_core::roster_budget::build(Path::new(root),Path::new(prior),Path::new(prior_toi),84.0,280.0,20.0)?,
+        [mode,box_path,shifts,team] if mode=="units"=>icelines_core::observed_units::reconstruct(&read(Path::new(box_path))?,&read(Path::new(shifts))?,team.parse()?)?,
+        _=>return Err("Usage: rinkcraft_roster_budget budget CAPTURE PRIOR_SUMMARY PRIOR_TOI | units BOX SHIFTS TEAM_ID".into())};
+    println!("{}", serde_json::to_string_pretty(&report)?);
+    Ok(())
+}
