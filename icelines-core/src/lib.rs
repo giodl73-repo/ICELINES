@@ -10,6 +10,7 @@ pub mod career_history;
 pub mod contract;
 pub mod cross_team;
 pub mod depth_chart;
+pub mod deployment_audit;
 pub mod entity;
 pub mod error;
 pub mod event_stream;
