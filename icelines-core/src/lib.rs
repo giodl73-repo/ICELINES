@@ -9,6 +9,7 @@ pub mod analytics_cache;
 pub mod career_history;
 pub mod center_lines;
 pub mod deployment_history;
+pub mod team_deployment_history;
 pub mod contract;
 pub mod cross_team;
 pub mod depth_chart;

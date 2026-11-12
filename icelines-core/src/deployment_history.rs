@@ -40,7 +40,11 @@ fn trio_ids(day: &Value) -> Option<Vec<u64>> {
     ids.sort_unstable();
     (ids.len() == 3).then_some(ids)
 }
-fn candidate(position: Option<&str>, draws: Option<u64>, no_center: u64) -> &'static str {
+pub(crate) fn candidate(
+    position: Option<&str>,
+    draws: Option<u64>,
+    no_center: u64,
+) -> &'static str {
     if !matches!(position, Some("L" | "R")) {
         return "not_a_winger_transition_test";
     }
