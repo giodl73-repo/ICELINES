@@ -1,6 +1,7 @@
 //! Shared native/WASM studio commands. Browser code never authors dice or placement legality.
 use super::{rinkcraft_game as game, rinkcraft_possession::Action, rinkcraft_units as units};
 use super::rinkcraft_goalie_readiness as readiness;
+use super::rinkcraft_readiness_followup as followup;
 use serde::{Deserialize, Serialize};
 pub const MAX_COMMAND_BYTES: usize = 768 * 1024;
 #[derive(Deserialize)]
@@ -37,6 +38,9 @@ pub enum Command {
         lateral_feed_declared: bool,
     },
     ImportReadiness { report: serde_json::Value },
+    StartReadinessFollowup { report: serde_json::Value, seed:u32 },
+    StepReadinessFollowup { followup:serde_json::Value, action:followup::Action },
+    ImportReadinessFollowup { followup:serde_json::Value },
     Reset {
         replay: serde_json::Value,
         assignments: units::Assignments,
@@ -83,6 +87,8 @@ pub struct Response {
     pub goalie_readiness: Option<readiness::Report>,
     #[serde(skip_serializing_if="Option::is_none")]
     pub goalie_opportunities: Option<Vec<readiness::Opportunity>>,
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub readiness_followup:Option<followup::Replay>,
 }
 fn imported(value: serde_json::Value) -> Result<units::Input, String> {
     Ok(units::import(&value.to_string())?.input)
@@ -153,7 +159,26 @@ pub fn execute(envelope: Envelope) -> Result<Response, String> {
         return Err("Unsupported unit studio command schema".into());
     }
     let mut goalie_readiness = None;
+    let mut readiness_followup = None;
     let (input, message) = match envelope.command {
+        Command::StartReadinessFollowup {report,seed} => {
+            let file=followup::create(readiness::import(&report.to_string())?,seed)?;
+            let input=file.input.report.input.replay.input.clone();
+            goalie_readiness=Some(file.input.report.clone());readiness_followup=Some(file);
+            (input,"Readiness follow-up started as a separate branch; parent scene unchanged.")
+        }
+        Command::StepReadinessFollowup {followup,action} => {
+            let file=followup::step(followup::import(&followup.to_string())?,action)?;
+            let input=file.input.report.input.replay.input.clone();
+            goalie_readiness=Some(file.input.report.clone());readiness_followup=Some(file);
+            (input,"Readiness follow-up action resolved in Rust; parent scene unchanged.")
+        }
+        Command::ImportReadinessFollowup {followup} => {
+            let file=followup::import(&followup.to_string())?;
+            let input=file.input.report.input.replay.input.clone();
+            goalie_readiness=Some(file.input.report.clone());readiness_followup=Some(file);
+            (input,"Follow-up verified; its parent unit and readiness report loaded.")
+        }
         Command::AssessReadiness { replay, situation, seed, lateral_feed_declared } => {
             let input=imported(replay)?;
             goalie_readiness=Some(readiness::export(readiness::Input {
@@ -279,6 +304,7 @@ pub fn execute(envelope: Envelope) -> Result<Response, String> {
         message: message.into(),
         goalie_readiness,
         goalie_opportunities,
+        readiness_followup,
     })
 }
 pub fn from_json(raw: &str) -> Result<String, String> {
@@ -292,6 +318,19 @@ pub fn from_json(raw: &str) -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn followup_commands_branch_from_verified_report_and_preserve_parent() {
+        let report:serde_json::Value=serde_json::from_str(include_str!("../../tests/fixtures/rinkcraft-readiness-v01.json")).unwrap();
+        let start=command(serde_json::json!({"kind":"start_readiness_followup","report":report,"seed":43}),None);
+        assert_eq!(start["replay"],report["input"]["replay"]);assert_eq!(start["goalie_readiness"],report);
+        let next=command(serde_json::json!({"kind":"step_readiness_followup","followup":start["readiness_followup"],"action":"shoot"}),None);
+        assert_eq!(next["replay"],start["replay"]);assert_eq!(next["goalie_readiness"],report);
+        assert_eq!(next["readiness_followup"]["session"]["legal_actions"],serde_json::json!(["track_save","scramble_save"]));
+        let imported=command(serde_json::json!({"kind":"import_readiness_followup","followup":next["readiness_followup"]}),None);
+        assert_eq!(imported["readiness_followup"],next["readiness_followup"]);
+        let mut bad=next["readiness_followup"].clone();bad["session"]["state"]["readiness"]="forged".into();
+        assert!(from_json(&serde_json::json!({"schema":"rinkcraft.unit-studio-command.v1","command":{"kind":"import_readiness_followup","followup":bad}}).to_string()).is_err());
+    }
     #[test]
     fn readiness_commands_keep_scene_exact_and_import_verified_reports() {
         let replay:serde_json::Value=serde_json::from_str(include_str!("../../tests/fixtures/rinkcraft-unit-v04.json")).unwrap();

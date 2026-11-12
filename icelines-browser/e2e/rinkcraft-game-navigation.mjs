@@ -1,0 +1,12 @@
+// Hold actual studio builds at a promise gate; panel navigation must never accept a lost early click.
+import {chromium,expect} from '@playwright/test';import {readFile,writeFile} from 'node:fs/promises';
+const rules=JSON.parse(await readFile('icelines-browser/public/rinkcraft-game-rules.json','utf8')),snapshot=JSON.parse(await readFile('icelines-core/tests/fixtures/rinkcraft-unit-v04.json','utf8'));
+const character=snapshot.input.request.members.find(m=>m.character.template_id===rules.templates[0].id).character;
+const browser=await chromium.launch({channel:'msedge',headless:true});
+try{for(const surface of ['native','browser']){const p=await browser.newPage({serviceWorkers:'block'});await p.goto(surface==='native'?'http://127.0.0.1:8772/rinkcraft/game':'http://127.0.0.1:8773/');
+ await p.evaluate(async({surface,rules,character})=>{const module=await import(surface==='native'?'/static/rinkcraft-game.js':'/rinkcraft-game.js');const root=document.createElement('div');root.id='navigation-gate-probe';document.body.append(root);window.probeCharacter=character;window.probeMount=module.mountGameStudio(root,{loadRules:async()=>rules,build:()=>new Promise(resolve=>{window.resolveProbeBuild=resolve})});},{surface,rules,character});
+ const root=p.locator('#navigation-gate-probe'),play=root.getByRole('button',{name:'Try a possession',exact:true}),arrange=root.getByRole('button',{name:'Arrange explicit units',exact:true});await expect(play).toBeDisabled();await expect(arrange).toBeDisabled();await expect(root.locator('.rk-game-profile')).toHaveCount(0);
+ await p.evaluate(async()=>{window.resolveProbeBuild(window.probeCharacter);await window.probeMount});await expect(play).toBeEnabled();await expect(arrange).toBeEnabled();await expect(root.locator('.rk-game-profile')).toBeVisible();
+ await root.getByRole('button',{name:'Create character',exact:true}).click();await expect(play).toBeDisabled();await expect(arrange).toBeDisabled();await p.evaluate(()=>window.resolveProbeBuild(window.probeCharacter));await expect(play).toBeEnabled();await expect(arrange).toBeEnabled();await p.close();console.log(surface+' delayed-build navigation gate passed');}
+ await writeFile('target/readiness-followup/navigation-check.json',JSON.stringify({pass:true,surfaces:['native','browser'],initialBuildGated:true,rebuildGated:true,buttonsOnlyEnableWithRenderedPanels:true},null,2));
+}finally{await browser.close()}

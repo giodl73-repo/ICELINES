@@ -308,3 +308,8 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
   width: 1.15rem; height: 1.15rem; min-height: 0; padding: 0;
   margin: .25rem 0; justify-self: start;
 }
+.rk-readiness-followup { margin-top: 1rem; padding-top: .75rem; border-top: 1px solid #c2d2e0; }
+.rk-readiness-followup .rk-unit-actions > section {
+  display: grid; gap: .3rem; min-width: 0; max-width: 100%;
+  padding: .5rem; border: 1px solid #c2d2e0; background: #ffffff99;
+}

@@ -2342,3 +2342,4 @@ pub mod rinkcraft_plan_experiment;
 pub mod rinkcraft_units;
 pub mod rinkcraft_unit_studio;
 pub mod rinkcraft_goalie_readiness;
+pub mod rinkcraft_readiness_followup;
