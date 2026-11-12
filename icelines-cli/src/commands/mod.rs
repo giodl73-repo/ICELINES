@@ -19,6 +19,7 @@ pub mod poach;
 pub mod project;
 pub mod query;
 pub mod query_career;
+pub mod query_date_range;
 pub mod query_window;
 pub mod rank;
 pub mod records;

@@ -59,8 +59,9 @@ pub async fn run(
         .unwrap_or_else(|| CURRENT_SEASON_STR.to_owned());
     // King.6 will introduce a per-user season-type setting; for
     // now everyone defaults to regular season.
-    let web_config = WebConfig::new(active_season.clone(), "regular")
+    let mut web_config = WebConfig::new(active_season.clone(), "regular")
         .with_layout_store_path(cfg.layout_store_path());
+    web_config.date_range_refresh_enabled = crate::config::live_feeds_enabled();
 
     // King.2.1 — load the active season's skater + goalie data into
     // the repo at boot. Same code path the CLI's query commands use.

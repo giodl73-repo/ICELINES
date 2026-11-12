@@ -19,7 +19,7 @@ use std::{fmt::Display, str::FromStr};
 
 /// HTML number inputs submit an empty string when left blank. Treat that as
 /// an absent optional value instead of rejecting the entire query string.
-fn deserialize_optional_number<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+pub(super) fn deserialize_optional_number<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
 where
     D: Deserializer<'de>,
     T: FromStr,
@@ -43,6 +43,29 @@ where
 /// review.
 #[derive(Debug, Deserialize, Default)]
 pub struct LeadersQuery {
+    #[serde(default)]
+    pub roster: Option<String>,
+    #[serde(default)]
+    pub team: Option<String>,
+    #[serde(default)]
+    pub order: Option<String>,
+    #[serde(default, rename = "then")]
+    pub then_by: Option<String>,
+    #[serde(default)]
+    pub format: Option<String>,
+    #[serde(
+        default,
+        rename = "date-from",
+        deserialize_with = "deserialize_optional_number"
+    )]
+    pub date_from: Option<chrono::NaiveDate>,
+    #[serde(
+        default,
+        rename = "date-to",
+        deserialize_with = "deserialize_optional_number"
+    )]
+    pub date_to: Option<chrono::NaiveDate>,
+
     /// Sort key: `points` (default), `goals`, `assists`, `gp`,
     /// `ppg`. Aliases `g`/`a`/`p` accepted.
     #[serde(default)]
@@ -917,6 +940,7 @@ async fn build_leader_result(
             .filter(|s| !s.is_empty()),
     };
 
+    let roster_capture = roster_for_query(state, q)?;
     let (rows, total) = {
         let repo = state.repo.read().await;
 
@@ -954,6 +978,24 @@ async fn build_leader_result(
 
         let mut all: Vec<LeaderRow> = repo
             .skaters(season, season_type)
+            .filter(|v| {
+                let member = roster_capture
+                    .as_ref()
+                    .is_some_and(|r| r.player_ids.contains(&v.id().0));
+                match q.roster.as_deref().unwrap_or("all") {
+                    "current" => member,
+                    "former" => !member,
+                    _ => true,
+                }
+            })
+            .filter(|v| {
+                q.team.as_deref().is_none_or(|team| {
+                    team.is_empty()
+                        || v.team_display()
+                            .split('/')
+                            .any(|t| t.eq_ignore_ascii_case(team))
+                })
+            })
             .filter(|v| match pos_filter {
                 None => true,
                 Some(PosFilter::Exact(p)) => v.position() == p,
@@ -1068,6 +1110,15 @@ async fn build_leader_result(
                 .then(b.points.cmp(&a.points))
                 .then(a.name.cmp(&b.name))
         });
+        if q.order.is_some() || q.then_by.is_some() {
+            let chain = crate::query_report::regular_chain(
+                q.sort.as_deref().unwrap_or("points"),
+                q.order.as_deref().unwrap_or("desc"),
+                q.then_by.as_deref().unwrap_or(""),
+            )
+            .map_err(|e| (StatusCode::BAD_REQUEST, e).into_response())?;
+            crate::query_report::sort_regular(&mut all, &chain);
+        }
         all.truncate(top_n);
         (all, total)
     };
@@ -1087,12 +1138,75 @@ async fn build_leader_result(
 }
 
 /// `GET /api/v1/leaders` — JSON twin of `/leaders`.
+fn roster_for_query(
+    state: &WebState,
+    q: &LeadersQuery,
+) -> Result<Option<icelines_fetch::date_range::CurrentRosterCapture>, Response> {
+    let scope = q.roster.as_deref().unwrap_or("all");
+    if scope == "all" {
+        return Ok(None);
+    }
+    if !matches!(scope, "current" | "former") {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "roster must be all, current or former",
+        )
+            .into_response());
+    }
+    let team = q.team.as_deref().filter(|s| !s.is_empty()).ok_or_else(|| {
+        (
+            StatusCode::BAD_REQUEST,
+            "Select a franchise before filtering roster membership",
+        )
+            .into_response()
+    })?;
+    let root = state.snapshots_root.as_ref().as_deref().ok_or_else(|| {
+        (
+            StatusCode::BAD_REQUEST,
+            "Current-roster evidence is unavailable",
+        )
+            .into_response()
+    })?;
+    icelines_fetch::date_range::load_current_roster(root, &team.to_ascii_uppercase())
+        .map(Some)
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()).into_response())
+}
 pub async fn get_leaders_json(
     State(state): State<WebState>,
     Query(q): Query<LeadersQuery>,
     uri: axum::http::Uri,
 ) -> Response {
     let raw_query = uri.query().unwrap_or("");
+    if q.date_from.is_some() || q.date_to.is_some() {
+        if q.age_min.is_some()
+            || q.age_max.is_some()
+            || q.draft_year_min.is_some()
+            || q.draft_year_max.is_some()
+            || q.height_min.is_some()
+            || q.height_max.is_some()
+            || q.weight_min.is_some()
+            || q.weight_max.is_some()
+            || q.country.as_deref().is_some_and(|s| !s.is_empty())
+            || q.shoots.as_deref().is_some_and(|s| !s.is_empty())
+        {
+            return (StatusCode::BAD_REQUEST,"Demographic filters require season evidence; clear them before applying date bounds.").into_response();
+        }
+
+        return super::date_range::export_from_uri(state, uri).await;
+    }
+    if q.format.as_deref() == Some("csv") {
+        return match build_leaders_template(&state, q, raw_query).await {
+            Ok(t) => {
+                let csv = t.report().csv();
+                (
+                    [(axum::http::header::CONTENT_TYPE, "text/csv; charset=utf-8")],
+                    csv,
+                )
+                    .into_response()
+            }
+            Err(e) => e,
+        };
+    }
     let result = match build_leader_result(&state, &q, raw_query).await {
         Ok(r) => r,
         Err(resp) => return resp,
@@ -1134,6 +1248,18 @@ pub async fn get_leaders_json(
     let _ = result.active_label;
     let _ = uri;
 
+    let mut meta = serde_json::to_value(meta).unwrap_or_default();
+    meta["sort"] = serde_json::json!(q.sort.as_deref().unwrap_or("points"));
+    meta["order"] = serde_json::json!(q.order.as_deref().unwrap_or("desc"));
+    meta["sort_chain"] = serde_json::json!(crate::query_report::regular_chain(
+        q.sort.as_deref().unwrap_or("points"),
+        q.order.as_deref().unwrap_or("desc"),
+        q.then_by.as_deref().unwrap_or("")
+    )
+    .unwrap_or_default());
+    meta["roster_scope"] = serde_json::json!(q.roster.as_deref().unwrap_or("all"));
+    meta["current_roster"]=serde_json::json!(roster_for_query(&state,&q).ok().flatten().map(|r|serde_json::json!({"fetched_at":r.fetched_at,"url":r.source.url,"sha256":r.source.sha256})));
+    meta["franchise"] = serde_json::json!(q.team);
     crate::api::json_data_meta("leaders", data, meta)
 }
 
@@ -1142,6 +1268,23 @@ pub async fn get_leaders(
     Query(q): Query<LeadersQuery>,
     uri: axum::http::Uri,
 ) -> Response {
+    if q.date_from.is_some() || q.date_to.is_some() {
+        if q.age_min.is_some()
+            || q.age_max.is_some()
+            || q.draft_year_min.is_some()
+            || q.draft_year_max.is_some()
+            || q.height_min.is_some()
+            || q.height_max.is_some()
+            || q.weight_min.is_some()
+            || q.weight_max.is_some()
+            || q.country.as_deref().is_some_and(|s| !s.is_empty())
+            || q.shoots.as_deref().is_some_and(|s| !s.is_empty())
+        {
+            return (StatusCode::BAD_REQUEST,"Demographic filters require season evidence; clear them before applying date bounds.").into_response();
+        }
+
+        return super::date_range::html_from_uri(state, uri).await;
+    }
     match build_leaders_template(&state, q, uri.query().unwrap_or("")).await {
         Ok(tmpl) => match tmpl.render() {
             Ok(html) => Html(html).into_response(),
@@ -1289,6 +1432,7 @@ pub async fn build_leaders_template(
     // Brief read of the repo. Project each PlayerView into a
     // LeaderRow inside the lock scope (per spec: views must
     // not escape the lock; we copy out scalar fields).
+    let roster_capture = roster_for_query(state, &q)?;
     let (rows, total) = {
         let repo = state.repo.read().await;
 
@@ -1311,6 +1455,24 @@ pub async fn build_leaders_template(
 
         let mut all: Vec<LeaderRow> = repo
             .skaters(season, season_type)
+            .filter(|v| {
+                let member = roster_capture
+                    .as_ref()
+                    .is_some_and(|r| r.player_ids.contains(&v.id().0));
+                match q.roster.as_deref().unwrap_or("all") {
+                    "current" => member,
+                    "former" => !member,
+                    _ => true,
+                }
+            })
+            .filter(|v| {
+                q.team.as_deref().is_none_or(|team| {
+                    team.is_empty()
+                        || v.team_display()
+                            .split('/')
+                            .any(|t| t.eq_ignore_ascii_case(team))
+                })
+            })
             .filter(|v| match pos_filter {
                 None => true,
                 Some(PosFilter::Exact(p)) => v.position() == p,
@@ -1435,6 +1597,15 @@ pub async fn build_leaders_template(
                 .then(b.points.cmp(&a.points))
                 .then(a.name.cmp(&b.name))
         });
+        if q.order.is_some() || q.then_by.is_some() {
+            let chain = crate::query_report::regular_chain(
+                q.sort.as_deref().unwrap_or("points"),
+                q.order.as_deref().unwrap_or("desc"),
+                q.then_by.as_deref().unwrap_or(""),
+            )
+            .map_err(|e| (StatusCode::BAD_REQUEST, e).into_response())?;
+            crate::query_report::sort_regular(&mut all, &chain);
+        }
         all.truncate(top_n);
         (all, total)
     };
@@ -1447,7 +1618,11 @@ pub async fn build_leaders_template(
     apply_leaders_warning_state(&mut leaders_view, &active_pos);
     let rows = leader_template_rows_from_view(&leaders_view, rows);
 
-    let active_sort_token = sort_key.url_token().to_owned();
+    let active_sort_token = if matches!(q.sort.as_deref(), Some("name" | "position" | "team")) {
+        q.sort.clone().unwrap()
+    } else {
+        sort_key.url_token().to_owned()
+    };
     let (empty_title, empty_detail, empty_recovery) =
         leaders_view.empty_state.as_ref().map_or_else(
             || (String::new(), String::new(), Vec::new()),
@@ -1494,7 +1669,7 @@ pub async fn build_leaders_template(
                 SortKey::Goals => "G".to_owned(),
                 SortKey::Assists => "A".to_owned(),
                 SortKey::Points => "P".to_owned(),
-                SortKey::PointsPerGame => "P/GP".to_owned(),
+                SortKey::PointsPerGame => "P/G".to_owned(),
                 _ => k.label().to_owned(),
             },
             is_active: k.url_token() == active_sort_token.as_str(),
@@ -1588,6 +1763,14 @@ pub async fn build_leaders_template(
     let leaders_svg = render_leaders_pts82_svg(&rows);
 
     Ok(LeadersTemplate {
+        roster_scope: q.roster.clone().unwrap_or_else(|| "all".into()),
+        roster_fetched_at: roster_capture
+            .as_ref()
+            .map(|r| r.fetched_at.clone())
+            .unwrap_or_default(),
+        franchise: q.team.unwrap_or_default().to_ascii_uppercase(),
+        query_order: q.order.unwrap_or_else(|| "desc".into()),
+        query_then: q.then_by.unwrap_or_default(),
         active_label,
         active_season: season.0.to_string(),
         active_season_type: season_type.label().to_owned(),
@@ -1605,7 +1788,13 @@ pub async fn build_leaders_template(
         empty_detail,
         empty_recovery,
         warnings,
-        active_sort_label: sort_key.label().to_owned(),
+        active_sort_label: match active_sort_token.as_str() {
+            "name" => "Player",
+            "position" => "Position",
+            "team" => "Team",
+            _ => sort_key.label(),
+        }
+        .to_owned(),
         active_sort: active_sort_token,
         active_pos,
         active_top: top_n,
@@ -1854,6 +2043,11 @@ mod tests {
         let leaders_svg = render_leaders_pts82_svg(&projected);
 
         let html = LeadersTemplate {
+            roster_scope: "all".into(),
+            roster_fetched_at: String::new(),
+            franchise: String::new(),
+            query_order: "desc".into(),
+            query_then: String::new(),
             active_label: "2024-25 regular".to_string(),
             active_season: "20242025".to_string(),
             active_season_type: "regular".to_string(),
@@ -1926,6 +2120,11 @@ mod tests {
         let empty = view.empty_state.as_ref().expect("empty state");
 
         let html = LeadersTemplate {
+            roster_scope: "all".into(),
+            roster_fetched_at: String::new(),
+            franchise: String::new(),
+            query_order: "desc".into(),
+            query_then: String::new(),
             active_label: "2024-25 regular".to_string(),
             active_season: "20242025".to_string(),
             active_season_type: "regular".to_string(),
@@ -2026,8 +2225,13 @@ mod tests {
     }
 
     #[test]
-    fn l0_web_leaders_active_position_chip_exposes_current_route_state() {
+    fn l0_web_leaders_active_position_control_exposes_current_route_state() {
         let html = LeadersTemplate {
+            roster_scope: "all".into(),
+            roster_fetched_at: String::new(),
+            franchise: String::new(),
+            query_order: "desc".into(),
+            query_then: String::new(),
             active_label: "2024-25 regular".to_string(),
             active_season: "20242025".to_string(),
             active_season_type: "regular".to_string(),
@@ -2068,8 +2272,8 @@ mod tests {
         .render()
         .expect("leaders template renders active position chip state");
 
-        assert_eq!(html.matches(r#"aria-current="true""#).count(), 1);
-        assert!(html.contains(r#"href="?sort=points&pos=G&top=5""#));
-        assert!(html.contains(r#"class="filter-chip fit-solid""#));
+        assert!(html.contains(r#"value="G" selected"#));
+        assert!(html.contains("Applied query filters"));
+        assert!(html.contains("Goalies (The Crease)"));
     }
 }

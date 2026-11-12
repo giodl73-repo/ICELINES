@@ -48,6 +48,9 @@ pub struct WebConfig {
     pub active_label: String,
     /// Durable named layout store passed in by the CLI boot layer.
     pub layout_store_path: PathBuf,
+    /// Runtime acquisition permission supplied by the CLI's live-feed policy.
+    #[serde(default = "refresh_enabled")]
+    pub date_range_refresh_enabled: bool,
 }
 
 impl Default for WebConfig {
@@ -62,6 +65,7 @@ impl Default for WebConfig {
             active_season,
             active_season_type,
             layout_store_path: default_layout_store_path(),
+            date_range_refresh_enabled: true,
         }
     }
 }
@@ -75,6 +79,7 @@ impl WebConfig {
             active_season,
             active_season_type,
             layout_store_path: default_layout_store_path(),
+            date_range_refresh_enabled: true,
         }
     }
 
@@ -82,6 +87,10 @@ impl WebConfig {
         self.layout_store_path = path;
         self
     }
+}
+
+fn refresh_enabled() -> bool {
+    true
 }
 
 /// Format a `YYYYZZZZ` season + type into the header label used by

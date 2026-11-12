@@ -925,7 +925,59 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         Commands::Dashboard => tui::run_tui(tui::RunTuiOpts::home()).await?,
         Commands::Data(sub) => commands::data::run(sub).await?,
         Commands::Query(sub) => match sub {
+            QuerySubcommand::DateRange {
+                then_by,
+                team,
+                date_from,
+                date_to,
+                season_type,
+                pos,
+                roster,
+                sort,
+                order,
+                refresh,
+                json,
+                csv,
+                out,
+            } => {
+                let query = icelines_fetch::date_range::DateRangeQuery {
+                    team: team.to_ascii_uppercase(),
+                    date_from,
+                    date_to,
+                    game_type: if season_type.to_core()
+                        == icelines_core::season_stats::SeasonType::Regular
+                    {
+                        2
+                    } else {
+                        3
+                    },
+                };
+                commands::query_date_range::run(
+                    &cfg,
+                    query,
+                    &icelines_core::date_range::ScoringFilter {
+                        then_by: then_by.join(","),
+                        position: pos.unwrap_or_default(),
+                        roster_scope: roster,
+                        sort,
+                        order,
+                    },
+                    refresh,
+                    json,
+                    json,
+                    csv,
+                    None,
+                    out.as_deref(),
+                )
+                .await?;
+            }
             QuerySubcommand::Leaders {
+                date_from,
+                date_to,
+                refresh,
+                roster,
+                order,
+                then_by,
                 pos,
                 team,
                 age_min,
@@ -965,6 +1017,53 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 playoff,
                 explain,
             } => {
+                if let (Some(date_from), Some(date_to)) = (date_from, date_to) {
+                    anyhow::ensure!(!explain && !percentiles && !ufa && !rfa && !elc && expiry_year.is_none() && filters.is_empty()
+                        && age_min.is_none() && age_max.is_none() && nationality.is_none() && draft_year.is_none() && round.is_none()
+                        && draft_pick_max.is_none() && !undrafted && !rookie && handedness.is_none() && ppg_min.is_none()
+                        && gp_min.is_none() && gp_max.is_none() && toi_min.is_none() && plus_minus_min.is_none() && shots_pg_min.is_none() && birth_province.is_none(),
+                        "date windows currently support team, position, roster membership and scoring sorts; other constraints are not yet available for per-game evidence");
+                    let query = icelines_fetch::date_range::DateRangeQuery {
+                        team: team
+                            .context("--team is required with date bounds")?
+                            .to_ascii_uppercase(),
+                        date_from,
+                        date_to,
+                        game_type: if season_type.to_core()
+                            == icelines_core::season_stats::SeasonType::Regular
+                        {
+                            2
+                        } else {
+                            3
+                        },
+                    };
+                    let sort = match sort.as_str() {
+                        "pts-pace" | "pts" | "p" => "points",
+                        "gp" => "games",
+                        s => s,
+                    }
+                    .to_owned();
+                    commands::query_date_range::run(
+                        &cfg,
+                        query,
+                        &icelines_core::date_range::ScoringFilter {
+                            position: pos.unwrap_or_default(),
+                            roster_scope: roster,
+                            sort,
+                            order,
+                            then_by: then_by.join(","),
+                        },
+                        refresh,
+                        json,
+                        json_envelope,
+                        csv,
+                        Some(top),
+                        out.as_deref(),
+                    )
+                    .await?;
+                    return Ok(());
+                }
+                anyhow::ensure!(!refresh && roster=="all" && order=="desc" && then_by.is_empty(), "--refresh, --roster, --order and --then currently require date bounds in the CLI");
                 if json_envelope && (explain || playoff || week || month) {
                     anyhow::bail!(
                         "--json-envelope is only supported for standard `query leaders` output"

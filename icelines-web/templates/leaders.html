@@ -1,10 +1,5 @@
-{% extends "base.html" %}
-
-{% block title %}IceStats — Leaderboards{% endblock %}
-
-{% block content %}
-<h1 aria-label="Player leaderboards">IceStats — Leaderboards</h1>
-
+{% extends "query_shell.html" %}
+{% block query_notices %}
 <p class="meta-line"
    data-active-season="{{ active_season }}"
    data-active-season-type="{{ active_season_type }}"
@@ -25,24 +20,30 @@
 </p>
 <p class="meta-line">{{ moneypuck_source_label }}</p>
 
-{# Position filter strip — King.2.2. Each link preserves the active
-   sort + top via query string. Active chip highlighted via .fit-solid. #}
-<nav aria-label="Position filter" class="chip-strip">
-    <span class="chip-strip-label">Position:</span>
-    {% for chip in pos_chips %}
-        <a href="?sort={{ active_sort }}&pos={{ chip.value }}&top={{ active_top }}{{ bio_query_suffix }}"
-           class="filter-chip{% if chip.is_active %} fit-solid{% endif %}"
-           {% if chip.is_active %}aria-current="true"{% endif %}>
-            {{ chip.label }}
-        </a>
-    {% endfor %}
-</nav>
 
+{% if !warnings.is_empty() %}
+<section class="state-warning" data-view-warning="leaders" data-warning-count="{{ warning_count }}">
+    <strong>Warnings</strong>
+    <ul>
+        {% for warning in warnings %}
+        <li data-warning-kind="{{ warning.kind }}">
+            {{ warning.message }}
+            {% for action in warning.recovery %}
+                <a href="{{ action.href }}">{{ action.label }}</a>
+            {% endfor %}
+        </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+{% if rows.is_empty() %}<section class="empty-state"><h2>{{ empty_title }}</h2><p>{{ empty_detail }}</p>{% for action in empty_recovery %}<a href="{{ action.href }}">{{ action.label }}</a>{% endfor %}</section>{% endif %}
+<details class="query-advanced"><summary>Advanced filters</summary>
 {# Filter form — King.2.3. Submits via GET so the URL is
    bookmarkable. Each row in the form becomes one ?filter= param.
    Per spec: repeated ?filter= keys ARE preserved (Vec extractor) and
    ANDed at the top level. The hidden inputs preserve sort/pos/top. #}
 <form method="get" action="" class="filter-panel">
+<input type="hidden" name="roster" value="{{ roster_scope }}"><input type="hidden" name="team" value="{{ franchise }}"><input type="hidden" name="order" value="{{ query_order }}"><input type="hidden" name="then" value="{{ query_then }}">
     <input type="hidden" name="sort" value="{{ active_sort }}">
     <input type="hidden" name="pos" value="{{ active_pos }}">
     <input type="hidden" name="top" value="{{ active_top }}">
@@ -80,21 +81,7 @@
 </p>
 {% endif %}
 
-{% if !warnings.is_empty() %}
-<section class="state-warning" data-view-warning="leaders" data-warning-count="{{ warning_count }}">
-    <strong>Warnings</strong>
-    <ul>
-        {% for warning in warnings %}
-        <li data-warning-kind="{{ warning.kind }}">
-            {{ warning.message }}
-            {% for action in warning.recovery %}
-                <a href="{{ action.href }}">{{ action.label }}</a>
-            {% endfor %}
-        </li>
-        {% endfor %}
-    </ul>
-</section>
-{% endif %}
+
 
 {# Sasq.9 — bio filter accordion. Open by default when any bio
    filter is currently active so the user sees what's narrowing
@@ -105,6 +92,7 @@
         {% if bio_active %}<span class="active-dot">●</span>{% endif %}
     </summary>
     <form method="get" action="" class="filter-panel">
+<input type="hidden" name="roster" value="{{ roster_scope }}"><input type="hidden" name="team" value="{{ franchise }}"><input type="hidden" name="order" value="{{ query_order }}"><input type="hidden" name="then" value="{{ query_then }}">
         <input type="hidden" name="sort" value="{{ active_sort }}">
         <input type="hidden" name="pos" value="{{ active_pos }}">
         <input type="hidden" name="top" value="{{ active_top }}">
@@ -174,87 +162,11 @@
     </form>
 </details>
 
-{% if rows.is_empty() %}
-<section class="empty-state" data-empty-state="leaders" data-empty-kind="{{ empty_kind }}">
-    <h2>{{ empty_title }}</h2>
-    {% if !empty_detail.is_empty() %}<p>{{ empty_detail }}</p>{% endif %}
-    {% if !empty_recovery.is_empty() %}
-    <p>
-        {% for action in empty_recovery %}
-            <a href="{{ action.href }}">{{ action.label }}</a>
-        {% endfor %}
-    </p>
-    {% endif %}
-</section>
-{% else %}
-<div class="table-scroll">
-<table>
-    <thead>
-        <tr>
-            <th class="numeric">#</th>
-            <th>Player</th>
-            <th>Pos</th>
-            <th>Team</th>
-            {% for col in col_headers %}
-                <th class="numeric"
-                    {% if col.is_active %}aria-sort="descending"{% endif %}>
-                    <a href="?sort={{ col.url_token }}&pos={{ active_pos }}&top={{ active_top }}{{ bio_query_suffix }}{% for f in active_filters %}&filter={{ f }}{% endfor %}"
-                       class="sort-link{% if col.is_active %} sort-link-active{% endif %}"
-                       title="Sort by {{ col.label }}">
-                        {{ col.label }}{% if col.is_active %} ↓{% endif %}
-                    </a>
-                </th>
-            {% endfor %}
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in rows %}
-        <tr data-row-rank="{{ loop.index }}"
-            data-nhl-id="{{ row.nhl_id }}"
-            data-player-name="{{ row.name }}"
-            data-team-abbrev="{{ row.team }}"
-            data-goals="{{ row.goals }}"
-            data-points="{{ row.points }}">
-            <td class="rank-cell">{{ loop.index }}</td>
-            <td>
-                <div class="player-cell">
-                    <img class="avatar" src="{{ row.headshot_url }}" alt="" loading="lazy"
-                         onerror="if(this.src!==this.dataset.fallback){this.src=this.dataset.fallback;}"
-                         data-fallback="{{ row.headshot_fallback_url }}">
-                    <a class="player-name" href="/player/{{ row.nhl_id }}">{{ row.name }}</a>
-                </div>
-            </td>
-            <td><span class="pos-chip pos-{{ row.position }}">{{ row.position }}</span></td>
-            <td><a class="team-link team-{{ row.team }}" href="/team/{{ row.team }}">{{ row.team }}</a></td>
-            <td class="numeric">{{ row.gp }}</td>
-            <td class="numeric">{{ row.goals }}</td>
-            <td class="numeric">{{ row.assists }}</td>
-            <td class="numeric"><strong>{{ row.points }}</strong></td>
-            <td class="numeric">{% if row.ppg_str.is_empty() %}—{% else %}{{ row.ppg_str }}{% endif %}</td>
-            <td class="numeric">{{ row.plus_minus_str }}</td>
-            <td class="numeric">{{ row.pim }}</td>
-            <td class="numeric">{{ row.shots }}</td>
-            <td class="numeric">{{ row.shooting_pct_str }}</td>
-            <td class="numeric">{{ row.hits_str }}</td>
-            <td class="numeric">{{ row.blocks_str }}</td>
-            <td class="numeric">{{ row.faceoff_pct_str }}</td>
-            <td class="numeric">{{ row.pp_points }}</td>
-            <td class="numeric">{{ row.points_per_60_str }}</td>
-            <td class="numeric">{{ row.goals_per_60_str }}</td>
-            <td class="numeric">{{ row.assists_per_60_str }}</td>
-            <td class="numeric">{{ row.hits_per_60_str }}</td>
-            <td class="numeric">{{ row.blocks_per_60_str }}</td>
-            <td class="numeric">
-                {% if row.points_delta_str.is_empty() %}—{% else %}<span class="stat-delta {{ row.points_delta_class }}">{{ row.points_delta_str }}</span>{% endif %}
-            </td>
-            <td class="numeric">
-                {% if row.points_delta_str.is_empty() %}—{% else %}<span class="stat-delta {{ row.points_delta_class }}">{{ row.points_delta_str }}</span>{% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-</div>
+
+</details>
+{% endblock %}
+
+{% block query_after_table %}
 {% match leaders_svg %}
     {% when Some with (svg) %}
     <section class="leaders-svg-chart" aria-label="Leaders Pts/82 chart" style="margin-top:1rem;">
@@ -265,13 +177,4 @@
     </section>
     {% when None %}
 {% endmatch %}
-{% endif %}
-
-<p class="page-section meta-line">
-    Click any column header to sort by that stat. Click a position chip to filter.
-    Default: top 20, sorted by points.
-    Filter grammar examples: <code>g&gt;=50 AND hits&gt;=200</code>,
-    <code>(g&gt;=40 OR a&gt;=60) AND gp&gt;=70</code>.
-    JSON twin: <a href="/api/v1/leaders"><code>/api/v1/leaders</code></a>.
-</p>
 {% endblock %}

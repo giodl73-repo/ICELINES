@@ -26,6 +26,9 @@ use axum::response::{IntoResponse, Response};
 const HTMX_MIN_JS: &[u8] = include_bytes!("../static/htmx.min.js");
 const DASHBOARD_JS: &[u8] = include_bytes!("../static/dashboard.js");
 const STYLE_CSS: &[u8] = include_bytes!("../static/style.css");
+const APPEARANCE_CSS: &[u8] = include_bytes!("../static/appearance.css");
+const QUERY_APPEARANCE_JS: &[u8] = include_bytes!("../static/query-appearance.js");
+const DATE_RANGE_CSS: &[u8] = include_bytes!("../static/date-range.css");
 const ICELINES_SVG: &[u8] = include_bytes!("../static/icelines.svg");
 const SITE_WEBMANIFEST: &[u8] = include_bytes!("../static/site.webmanifest");
 
@@ -51,6 +54,9 @@ pub async fn serve_static(Path(asset): Path<String>) -> Response {
         "htmx.min.js" => (HTMX_MIN_JS, "application/javascript; charset=utf-8"),
         "dashboard.js" => (DASHBOARD_JS, "application/javascript; charset=utf-8"),
         "style.css" => (STYLE_CSS, "text/css; charset=utf-8"),
+        "appearance.css" => (APPEARANCE_CSS, "text/css; charset=utf-8"),
+        "date-range.css" => (DATE_RANGE_CSS, "text/css; charset=utf-8"),
+        "query-appearance.js" => (QUERY_APPEARANCE_JS, "application/javascript; charset=utf-8"),
         "icelines.svg" => (ICELINES_SVG, "image/svg+xml; charset=utf-8"),
         "site.webmanifest" => (SITE_WEBMANIFEST, "application/manifest+json; charset=utf-8"),
         _ => return (StatusCode::NOT_FOUND, "static asset not found").into_response(),

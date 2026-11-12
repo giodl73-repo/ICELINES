@@ -1,0 +1,6 @@
+{% extends "query_shell.html" %}
+{% block query_notices %}
+{% if !fetched_at.is_empty() %}<div class="range-summary"><strong>{{ game_count }} completed team games · {{ rows.len() }} selected skaters</strong><br>Latest included game: {{ latest }} · Stats captured {{ fetched_at }}{% if !focus.is_empty() %}<p>{{ focus }}</p>{% endif %}</div>{% endif %}
+{% if !roster_evidence.is_empty() %}<p class="range-note">{{ roster_evidence }}</p>{% endif %}
+<p class="range-note">{{ method }}</p>
+{% endblock %}

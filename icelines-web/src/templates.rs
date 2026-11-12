@@ -318,6 +318,11 @@ pub struct ComingSoonTemplate {
 #[derive(Template)]
 #[template(path = "leaders.html")]
 pub struct LeadersTemplate {
+    pub roster_scope: String,
+    pub roster_fetched_at: String,
+    pub franchise: String,
+    pub query_order: String,
+    pub query_then: String,
     pub active_label: String,
     pub active_season: String,
     pub active_season_type: String,

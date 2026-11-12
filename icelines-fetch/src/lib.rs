@@ -294,3 +294,4 @@ pub use source_catalog::{
 pub use source_package_builder::{build_source_package, SourcePackageBuildInput};
 pub use source_package_store::{SourcePackageStore, SourcePackageStoreError};
 pub use teams::{nhl_teams_for_season, ALL_NHL_TEAMS};
+pub mod date_range;

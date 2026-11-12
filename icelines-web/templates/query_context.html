@@ -1,0 +1,1 @@
+<span class="query-context" aria-label="Applied query filters">{% for chip in report.context %}{% if !loop.first %} · {% endif %}{{ chip.0 }}: {{ chip.1 }}{% endfor %}</span>
