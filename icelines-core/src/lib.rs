@@ -8,6 +8,7 @@ pub const CURRENT_SEASON_STR: &str = "20262027";
 pub mod analytics_cache;
 pub mod career_history;
 pub mod center_lines;
+pub mod deployment_history;
 pub mod contract;
 pub mod cross_team;
 pub mod depth_chart;
