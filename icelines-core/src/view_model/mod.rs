@@ -2340,3 +2340,4 @@ pub mod rinkcraft_possession;
 pub mod rinkcraft_plan_compare;
 pub mod rinkcraft_plan_experiment;
 pub mod rinkcraft_units;
+pub mod rinkcraft_unit_studio;

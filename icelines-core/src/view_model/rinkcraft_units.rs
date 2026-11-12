@@ -45,7 +45,7 @@ impl Slot {
     fn address(self, side: Side) -> String {
         format!("{}:{}", side.label(), self.label())
     }
-    fn accepts(self, c: &GameCharacter) -> bool {
+    pub(crate) fn accepts(self, c: &GameCharacter) -> bool {
         match self {
             Self::G => c.branch == Branch::Goalie && c.position == "G",
             Self::D1 | Self::D2 => {
@@ -73,6 +73,77 @@ pub struct MemberRecipe {
     pub side: Side,
     pub slot: Slot,
     pub build: BuildRequest,
+}
+/// Transport-only file references are resolved by the caller, never by the model.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Blueprint {
+    pub schema: String,
+    pub character_rules_path: String,
+    pub unit_rules_path: String,
+    pub members: Vec<MemberRecipe>,
+    pub assignments: Assignments,
+    pub hero_id: String,
+    pub seed: u32,
+    pub commit_support: bool,
+    pub actions: Vec<Action>,
+}
+impl Blueprint {
+    pub fn validate_shape(&self) -> Result<(), String> {
+        if self.schema != "rinkcraft.unit-blueprint.v1"
+            || self.members.len() != 12
+            || self.character_rules_path.len() > 1024
+            || self.unit_rules_path.len() > 1024
+        {
+            return Err(
+                "Use unit blueprint v1 with twelve recipes and bounded rule references".into(),
+            );
+        }
+        Ok(())
+    }
+}
+pub fn build_input(
+    character_rules: GameRules,
+    rules: Rules,
+    b: Blueprint,
+) -> Result<Input, String> {
+    b.validate_shape()?;
+    rules.validate()?;
+    character_rules.validate()?;
+    if serde_json::to_vec(&character_rules)
+        .map_err(|e| e.to_string())?
+        .len()
+        > 65536
+    {
+        return Err("Character rules exceed 64 KiB".into());
+    }
+    let members = b
+        .members
+        .into_iter()
+        .map(|m| {
+            Ok(Member {
+                id: m.id,
+                side: m.side,
+                slot: m.slot,
+                character: game::build(&character_rules, m.build)?,
+            })
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    let input = Input {
+        schema: "rinkcraft.unit-possession-input.v1".into(),
+        character_rules,
+        rules,
+        request: Request {
+            members,
+            assignments: b.assignments,
+            hero_id: b.hero_id,
+            seed: b.seed,
+            commit_support: b.commit_support,
+            actions: b.actions,
+        },
+    };
+    replay(&input)?;
+    Ok(input)
 }
 /// Slot addresses belong to this scene only; duties do not follow class or roster position.
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -284,3 +284,21 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 .rk-plan-steps{padding-left:1.3rem}.rk-plan-steps>li{margin:.8rem 0}
 .rk-plan-comparison button{margin-top:.75rem}
 @media(max-width:600px){.rk-plan-columns{grid-template-columns:1fr}.rk-plan-comparison{padding:.65rem}}
+
+/* Explicit-unit workbench stays separate from the compact printable sheet. */
+.rk-unit-scene{--surface:#f8fbfd;--fg:#173247;--muted:#40596d;--row:#edf4fa;--hover:#dfeaf3;--accent:#315f83;--on-accent:#fff;--border:#9ab0c0;color-scheme:light;margin:24px 0;padding:18px;border:2px solid #315f83;border-radius:6px;background:#f3f8fc;color:#173247;scroll-margin-top:100px;min-width:0}
+.rk-unit-scene summary{font:700 17px system-ui;cursor:pointer;color:#173247}
+.rk-unit-scene h3,.rk-unit-scene h4,.rk-unit-scene p,.rk-unit-scene label,.rk-unit-scene legend{color:#173247}
+.rk-unit-scene h3{font-size:23px;margin:18px 0 8px}.rk-unit-scene p{font-size:13px;line-height:1.5}.rk-unit-scene h4{margin:6px 0}
+.rk-unit-scene button,.rk-unit-scene input,.rk-unit-scene select{font:14px system-ui;color:#173247;background:white;border:1px solid #70889a;border-radius:4px;min-height:44px;padding:9px;max-width:100%;min-width:0}
+.rk-unit-scene button{cursor:pointer}.rk-unit-scene button:disabled{opacity:.5;cursor:default}
+.rk-unit-toolbar,.rk-unit-controls,.rk-unit-placement,.rk-unit-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:15px 0}
+.rk-unit-scene label{display:flex;flex-direction:column;gap:5px;font-size:13px;min-width:0;flex:1 1 180px}.rk-unit-scene select{width:100%}
+.rk-unit-duties{flex:1 1 100%;min-inline-size:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;border:1px solid #8aa3b6;padding:12px}
+.rk-unit-placement{padding:12px;border:1px solid #9ab0c0}.rk-unit-placement p{flex:1 1 100%;margin:0}.rk-unit-placement label{max-width:240px}
+.rk-unit-hero{border-left:4px solid #315f83;background:#e8f0f7;padding:12px}.rk-unit-hero small{font-size:12px}.rk-unit-attributes{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;margin:12px 0 0}.rk-unit-attributes>div{border:1px solid #9ab0c0;background:#fff;padding:8px;min-width:0}.rk-unit-attributes dt{font-size:11px;overflow-wrap:anywhere}.rk-unit-attributes dd{font-size:23px;font-weight:750;margin:4px 0 0}
+.rk-unit-state{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0;padding:12px;background:#e7eef5;font-size:13px}
+.rk-unit-table-wrap{max-width:100%;overflow-x:auto}.rk-unit-scene table{width:100%;min-width:550px;border-collapse:collapse;font-size:12px;color:#173247}.rk-unit-scene th,.rk-unit-scene td{padding:8px;text-align:left;border-bottom:1px solid #c4d3de}.rk-unit-scene caption{text-align:left;font-weight:700;margin:8px 0}.rk-unit-scene tr[data-hero]{background:#fff0cc}
+.rk-unit-log{padding-left:24px}.rk-unit-log li{padding:10px 0;border-bottom:1px solid #bfd0dd}.rk-unit-scene code{display:block;white-space:normal;overflow-wrap:anywhere;font-size:12px}.rk-unit-log small{font-size:12px}
+@media(max-width:650px){.rk-unit-scene{padding:12px}.rk-unit-duties{grid-template-columns:1fr}.rk-unit-toolbar>button,.rk-unit-actions>button{flex:1 1 40%}.rk-unit-controls>label{flex:1 1 100%}.rk-unit-attributes{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media print{.rk-unit-scene{display:none!important}}

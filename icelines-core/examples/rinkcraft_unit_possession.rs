@@ -2,21 +2,7 @@
 use icelines_core::view_model::{
     rinkcraft_game as game, rinkcraft_possession::Action, rinkcraft_units as units,
 };
-use serde::Deserialize;
 use std::path::Path;
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Blueprint {
-    schema: String,
-    character_rules_path: String,
-    unit_rules_path: String,
-    members: Vec<units::MemberRecipe>,
-    assignments: units::Assignments,
-    hero_id: String,
-    seed: u32,
-    commit_support: bool,
-    actions: Vec<Action>,
-}
 fn read(path: &Path, max: usize) -> Result<String, Box<dyn std::error::Error>> {
     if std::fs::metadata(path)?.len() > max as u64 {
         return Err("Input file exceeds bound".into());
@@ -28,41 +14,13 @@ fn read(path: &Path, max: usize) -> Result<String, Box<dyn std::error::Error>> {
     Ok(raw)
 }
 fn blueprint(path: &Path) -> Result<units::Input, Box<dyn std::error::Error>> {
-    let b: Blueprint = serde_json::from_str(&read(path, units::MAX_INPUT_BYTES)?)?;
-    if b.schema != "rinkcraft.unit-blueprint.v1" || b.members.len() != 12 {
-        return Err("Use unit blueprint v1 with twelve explicit member recipes".into());
-    }
+    let b: units::Blueprint = serde_json::from_str(&read(path, units::MAX_INPUT_BYTES)?)?;
+    b.validate_shape()?;
     let base = path.parent().unwrap_or(Path::new("."));
     let cr: game::GameRules =
-        serde_json::from_str(&read(&base.join(b.character_rules_path), 65536)?)?;
-    cr.validate()?;
-    let rules: units::Rules = serde_json::from_str(&read(&base.join(b.unit_rules_path), 8192)?)?;
-    rules.validate()?;
-    let members = b
-        .members
-        .into_iter()
-        .map(|m| {
-            Ok(units::Member {
-                id: m.id,
-                side: m.side,
-                slot: m.slot,
-                character: game::build(&cr, m.build)?,
-            })
-        })
-        .collect::<Result<Vec<_>, String>>()?;
-    Ok(units::Input {
-        schema: "rinkcraft.unit-possession-input.v1".into(),
-        character_rules: cr,
-        rules,
-        request: units::Request {
-            members,
-            assignments: b.assignments,
-            hero_id: b.hero_id,
-            seed: b.seed,
-            commit_support: b.commit_support,
-            actions: b.actions,
-        },
-    })
+        serde_json::from_str(&read(&base.join(&b.character_rules_path), 65536)?)?;
+    let rules: units::Rules = serde_json::from_str(&read(&base.join(&b.unit_rules_path), 8192)?)?;
+    Ok(units::build_input(cr, rules, b)?)
 }
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<_> = std::env::args_os().skip(1).collect();

@@ -20,6 +20,8 @@ for (const name of ['index.html', 'style.css']) await cp(new URL(name, import.me
 await cp(new URL('../icelines-web/static/rinkcraft-character.css',import.meta.url),new URL('dist/rinkcraft-character.css',import.meta.url));
 await cp(new URL('../icelines-web/static/rinkcraft-game.js',import.meta.url),new URL('dist/rinkcraft-game.js',import.meta.url));
 await cp(new URL('../icelines-web/static/rinkcraft-possession.js',import.meta.url),new URL('dist/rinkcraft-possession.js',import.meta.url));
+await cp(new URL('../icelines-web/static/rinkcraft-unit-studio.js',import.meta.url),new URL('dist/rinkcraft-unit-studio.js',import.meta.url));
+for(const name of ['rinkcraft-unit-blueprint.json','rinkcraft-unit-rules.json']){try{await cp(new URL('public/'+name,import.meta.url),new URL('dist/'+name,import.meta.url));}catch(e){if(e.code!=='ENOENT')throw e;}}
 try {await cp(new URL('public/rinkcraft-game-rules.json',import.meta.url),new URL('dist/rinkcraft-game-rules.json',import.meta.url));}catch(error){if(error.code!=='ENOENT')throw error;}
 try {await cp(new URL('public/rinkcraft-possession-rules.json',import.meta.url),new URL('dist/rinkcraft-possession-rules.json',import.meta.url));}catch(error){if(error.code!=='ENOENT')throw error;}
 try {await cp(new URL('public/rinkcraft-characters.json',import.meta.url),new URL('dist/rinkcraft-characters.json',import.meta.url));}catch(error){if(error.code!=='ENOENT')throw error;}

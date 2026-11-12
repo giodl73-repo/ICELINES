@@ -380,6 +380,9 @@ impl BrowserEngine {
     pub fn compare_possession_plans(&self, replay: &str) -> Result<String, JsValue> {
         icelines_core::view_model::rinkcraft_plan_compare::compare_replay_from_json(replay).map_err(|e|JsValue::from_str(&e))
     }
+    pub fn unit_studio(&self, command: &str) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_unit_studio::from_json(command).map_err(|e|JsValue::from_str(&e))
+    }
     pub fn import_game_character(&self, rules: &str, character: &str) -> Result<String, JsValue> {
         icelines_core::view_model::rinkcraft_game::import_from_json(rules, character).map_err(|e| JsValue::from_str(&e))
     }

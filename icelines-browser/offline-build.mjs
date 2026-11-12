@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { gzipSync } from 'node:zlib';
 
 export async function buildOfflineShell(root) {
-  const files = ['index.html', 'style.css', 'rinkcraft-character.css','rinkcraft-game.js','rinkcraft-possession.js','catalog.json'];
+  const files = ['index.html', 'style.css', 'rinkcraft-character.css','rinkcraft-game.js','rinkcraft-possession.js','rinkcraft-unit-studio.js','catalog.json'];
   try {await readFile(new URL('dist/rinkcraft-game-rules.json',root));files.push('rinkcraft-game-rules.json');}catch(error){if(error.code!=='ENOENT')throw error;}
   try {await readFile(new URL('dist/rinkcraft-possession-rules.json',root));files.push('rinkcraft-possession-rules.json');}catch(error){if(error.code!=='ENOENT')throw error;}
   try {await readFile(new URL('dist/rinkcraft-characters.json',root));files.push('rinkcraft-characters.json');}catch(error){if(error.code!=='ENOENT')throw error;}
@@ -14,6 +14,7 @@ export async function buildOfflineShell(root) {
   for (const name of await readdir(new URL('src/', root))) if (name.endsWith('.ts')) files.push('src/' + name.replace(/\.ts$/, '.js'));
   for (const name of await readdir(new URL('public/pkg/', root))) if (/\.(js|wasm)$/.test(name)) files.push('pkg/' + name);
   if (!files.includes('pkg/icelines_wasm_bg.wasm') || !files.includes('pkg/icelines_wasm.js')) throw new Error('Generate matching WASM bindings before building');
+  for(const name of ['rinkcraft-unit-blueprint.json','rinkcraft-unit-rules.json']){try{await readFile(new URL('dist/'+name,root));files.push(name);}catch(e){if(e.code!=='ENOENT')throw e;}}
   const assets = [];
   for (const path of files.sort()) {
     const bytes = await readFile(new URL('dist/' + path, root));

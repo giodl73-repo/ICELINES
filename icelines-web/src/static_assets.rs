@@ -28,6 +28,7 @@ const DASHBOARD_JS: &[u8] = include_bytes!("../static/dashboard.js");
 const STYLE_CSS: &[u8] = include_bytes!("../static/style.css");
 const RINKCRAFT_CHARACTER_CSS: &[u8] = include_bytes!("../static/rinkcraft-character.css");
 const RINKCRAFT_POSSESSION_JS: &[u8] = include_bytes!("../static/rinkcraft-possession.js");
+const RINKCRAFT_UNIT_STUDIO_JS: &[u8] = include_bytes!("../static/rinkcraft-unit-studio.js");
 const RINKCRAFT_GAME_JS: &[u8] = include_bytes!("../static/rinkcraft-game.js");
 const ICELINES_SVG: &[u8] = include_bytes!("../static/icelines.svg");
 const SITE_WEBMANIFEST: &[u8] = include_bytes!("../static/site.webmanifest");
@@ -55,6 +56,7 @@ pub async fn serve_static(Path(asset): Path<String>) -> Response {
         "dashboard.js" => (DASHBOARD_JS, "application/javascript; charset=utf-8"),
         "style.css" => (STYLE_CSS, "text/css; charset=utf-8"),
         "rinkcraft-possession.js" => (RINKCRAFT_POSSESSION_JS, "application/javascript; charset=utf-8"),
+        "rinkcraft-unit-studio.js" => (RINKCRAFT_UNIT_STUDIO_JS, "application/javascript; charset=utf-8"),
         "rinkcraft-game.js" => (RINKCRAFT_GAME_JS, "application/javascript; charset=utf-8"),
         "rinkcraft-character.css" => (RINKCRAFT_CHARACTER_CSS, "text/css; charset=utf-8"),
         "icelines.svg" => (ICELINES_SVG, "image/svg+xml; charset=utf-8"),

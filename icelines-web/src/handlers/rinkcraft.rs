@@ -1818,3 +1818,26 @@ pub async fn post_branch_possession(axum::Json(p):axum::Json<PossessionBranchPay
 pub async fn post_compare_possession(axum::Json(p):axum::Json<PossessionReplayPayload>)->Result<Response,WebError> {
     possession_replay_response(icelines_core::view_model::rinkcraft_plan_compare::compare_replay_from_json(&p.replay.to_string()))
 }
+pub async fn post_unit_studio(axum::Json(p):axum::Json<serde_json::Value>)->Result<Response,WebError> {
+    let raw=icelines_core::view_model::rinkcraft_unit_studio::from_json(&p.to_string()).map_err(|message|WebError::BadParam{param:"unit_scene".into(),message,hint:None})?;
+    let value:serde_json::Value=serde_json::from_str(&raw).map_err(|e|WebError::Internal(e.into()))?;
+    Ok(crate::api::json_data_meta("rinkcraft-unit-studio",value,serde_json::json!({"fictional":true,"validation":"recomputed_internal_consistency"})))
+}
+fn read_unit_asset(env:&str,max:usize)->Result<String,WebError> {
+    let path=std::env::var_os(env).ok_or_else(||WebError::NotFound{what:"Authored unit setup not configured".into(),hint:None})?;
+    if std::fs::metadata(&path).map_err(|e|WebError::Internal(e.into()))?.len()>max as u64 {return Err(WebError::BadParam{param:"unit_setup".into(),message:"Unit setup file exceeds bounds".into(),hint:None})}
+    let raw=std::fs::read_to_string(path).map_err(|e|WebError::Internal(e.into()))?;
+    if raw.len()>max {return Err(WebError::BadParam{param:"unit_setup".into(),message:"Unit setup file exceeds bounds".into(),hint:None})}Ok(raw)
+}
+pub async fn get_unit_blueprint()->Result<Response,WebError> {
+    let raw=read_unit_asset("ICELINES_RINKCRAFT_UNIT_BLUEPRINT",256*1024)?;
+    let value:icelines_core::view_model::rinkcraft_units::Blueprint=serde_json::from_str(&raw).map_err(|e|WebError::BadParam{param:"unit_blueprint".into(),message:e.to_string(),hint:None})?;
+    value.validate_shape().map_err(|message|WebError::BadParam{param:"unit_blueprint".into(),message,hint:None})?;
+    Ok(crate::api::json_data_meta("rinkcraft-unit-blueprint",value,serde_json::json!({"fictional":true})))
+}
+pub async fn get_unit_rules()->Result<Response,WebError> {
+    let raw=read_unit_asset("ICELINES_RINKCRAFT_UNIT_RULES",8192)?;
+    let value:icelines_core::view_model::rinkcraft_units::Rules=serde_json::from_str(&raw).map_err(|e|WebError::BadParam{param:"unit_rules".into(),message:e.to_string(),hint:None})?;
+    value.validate().map_err(|message|WebError::BadParam{param:"unit_rules".into(),message,hint:None})?;
+    Ok(crate::api::json_data_meta("rinkcraft-unit-rules",value,serde_json::json!({"fictional":true})))
+}

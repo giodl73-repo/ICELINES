@@ -2,7 +2,7 @@
 const el=(tag,text)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=String(text);return e};
 const words=s=>s.replaceAll('_',' ');
 export function mountPossession(hero,characterRules,options){
- const root=el('details');root.className='rk-possession';root.append(el('summary','Play a possession with this character'));
+ const root=el('details');root.className='rk-possession';root.append(el('summary','Legacy scene 0.1 · Play a possession with this character'));
  const body=el('section');body.append(el('h3','One possession. Twelve players. Real choices.'),el('p','Fictional playtest: goalie outlet → carry → pass. Failed actions create loose pucks and possible counters. No shots or goals. Opponent responses follow this scene’s fixed policy.'));
  const status=el('p','Open the playtest to load its rules.');status.setAttribute('role','status');body.append(status);
  const form=el('form');form.className='rk-possession-controls';
