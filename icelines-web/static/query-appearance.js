@@ -33,6 +33,63 @@
     apply();
     document.addEventListener('DOMContentLoaded', () => {
         apply();
+        const rows = Array.from(document.querySelectorAll('.range-table tbody tr[data-nhl-id]'));
+        const selectionParams = new URLSearchParams(location.search);
+        const selected = new Set((selectionParams.has('selected') ? selectionParams.get('selected') : selectionParams.get('highlight') || '')
+            .split(',').filter(id => /^[1-9]\d{0,9}$/.test(id) && Number(id) <= 4294967295).slice(0,500));
+        const selectionForm = document.getElementById('query-controls');
+        let selectionInput = selectionForm?.querySelector('input[name="selected"]');
+        if (selectionForm && !selectionInput) {
+            selectionInput = document.createElement('input');
+            selectionInput.type = 'hidden'; selectionInput.name = 'selected'; selectionForm.append(selectionInput);
+        }
+        const selectionContext = document.createElement('span');
+        selectionContext.className = 'query-selection-context';
+        document.querySelector('.query-context')?.append(selectionContext);
+        function syncSelection(updateURL) {
+            const ids = Array.from(selected).join(',');
+            for (const row of rows) {
+                const active = selected.has(row.dataset.nhlId);
+                row.classList.toggle('range-focus', active);
+                row.setAttribute('aria-selected', String(active));
+            }
+            if (selectionInput) selectionInput.value = ids;
+            for (const link of document.querySelectorAll('.range-sort-link')) {
+                const url = new URL(link.href); url.searchParams.set('selected', ids); link.href = url.href;
+            }
+            const visible = rows.filter(row => selected.has(row.dataset.nhlId));
+            const names = visible.slice(0,10).map(row => row.dataset.playerName);
+            const hiddenCount = selected.size-visible.length;
+            const status = document.getElementById('query-selection-status');
+            if (status) status.textContent = `${selected.size} selected${hiddenCount ? ` (${hiddenCount} outside these results)` : ''}`;
+            selectionContext.textContent = selected.size ? ` · Selected: ${names.join(', ')}${visible.length>10 ? ` +${visible.length-10} more` : ''}${hiddenCount ? `${names.length ? '; ' : ''}${hiddenCount} outside these results` : ''}` : '';
+            const clear = document.getElementById('query-clear-selection');
+            if (clear) clear.disabled = selected.size === 0;
+            if (updateURL) {
+                const url = new URL(location.href); url.searchParams.set('selected', ids); history.replaceState(null, '', url);
+            }
+        }
+        function selectRow(row, additive) {
+            const id = row.dataset.nhlId;
+            if (additive) { if (selected.has(id)) selected.delete(id); else if (selected.size < 500) selected.add(id); }
+            else { selected.clear(); selected.add(id); }
+            syncSelection(true);
+        }
+        for (const row of rows) {
+            row.tabIndex = 0;
+            row.setAttribute('aria-describedby', 'query-selection-help');
+            row.addEventListener('click', event => {
+                if (event.button !== 0 || event.ctrlKey || event.metaKey || event.altKey) return;
+                if (!event.shiftKey && event.target.closest('a,button,input,select,textarea')) return;
+                event.preventDefault(); selectRow(row, event.shiftKey);
+            });
+            row.addEventListener('keydown', event => {
+                if (event.target !== row || !['Enter',' '].includes(event.key) || event.ctrlKey || event.metaKey || event.altKey) return;
+                event.preventDefault(); selectRow(row, event.shiftKey);
+            });
+        }
+        document.getElementById('query-clear-selection')?.addEventListener('click', () => { selected.clear(); syncSelection(true); });
+        syncSelection(false);
         function shiftSort(link) {
             const chain = Array.from(document.querySelectorAll('.range-sort-link'))
                 .filter(node => Number(node.dataset.sortPriority) > 0)

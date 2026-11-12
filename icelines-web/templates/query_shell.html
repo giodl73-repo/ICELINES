@@ -2,8 +2,8 @@
 {% block title %}IceStats — Leaderboards{% endblock %}
 {% block head_extra %}
 <link rel="stylesheet" href="/static/appearance.css">
-<link rel="stylesheet" href="/static/date-range.css?v=table-context-2">
-<script src="/static/query-appearance.js?v=shared-query-2"></script>
+<link rel="stylesheet" href="/static/date-range.css?v=row-selection-1">
+<script src="/static/query-appearance.js?v=row-selection-1"></script>
 {% endblock %}
 {% block content %}
 {% let report = self.report() %}
@@ -17,6 +17,7 @@
 {% block query_notices %}{% endblock %}
 {% if !report.json_href.is_empty() %}<div class="range-tools"><a href="{{ report.csv_href }}">Download CSV</a><a href="{{ report.json_href }}">Query JSON &amp; sources</a><button type="button" onclick="window.print()">Print / save PDF</button></div>{% endif %}
 <p id="query-sort-help" class="range-note">Click a column for a single sort. Shift-click (or Shift+Enter) adds a numbered sort priority or reverses its direction. Rates use full precision. All statistics stay visible.</p>
+<div class="query-selection-controls"><span id="query-selection-help">Click a row to select a player. Shift-click adds or removes players. Keyboard: focus a row and use Enter or Space; hold Shift to add or remove.</span> <span id="query-selection-status" role="status" aria-live="polite"></span> <button id="query-clear-selection" type="button">Clear selection</button></div>
 {% include "query_table.html" %}
 {% block query_after_table %}{% endblock %}
 {% endblock %}
