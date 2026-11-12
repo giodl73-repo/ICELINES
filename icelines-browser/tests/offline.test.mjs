@@ -39,6 +39,7 @@ test('offline install verifies and caches the complete shell, excluding datasets
   const h = harness(); await h.dispatch('install');
   assert.equal(h.fetched.length, manifest.assets.length);
   assert.ok(manifest.assets.some(asset => asset.path === 'pkg/icelines_wasm_bg.wasm'));
+  assert.ok(manifest.assets.some(asset => asset.path === 'appearance.css'), 'Shared palettes remain available offline');
   assert.ok(!manifest.assets.some(asset => asset.path.startsWith('data/')));
   for (const { options } of h.fetched) assert.equal(options.cache, 'no-store');
   assert.equal(h.activated(), 0, 'Installing an update must not activate it silently');
