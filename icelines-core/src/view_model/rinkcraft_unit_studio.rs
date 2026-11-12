@@ -26,6 +26,9 @@ pub enum Command {
     StartReceiving {
         replay: serde_json::Value,
     },
+    StartShooting {
+        replay: serde_json::Value,
+    },
     Reset {
         replay: serde_json::Value,
         assignments: units::Assignments,
@@ -92,7 +95,9 @@ fn layout(input: &units::Input, sheet: Option<&game::GameCharacter>) -> Layout {
                 duties.push("Carry / recover / pass".into())
             }
             if m.slot == a.receiver {
-                duties.push("Receive".into())
+                duties.push(if input.rules.version == "0.4.0-playtest" {
+                    "Receive / shoot / rebound pressure"
+                } else { "Receive" }.into())
             }
             if m.slot == a.high_cover {
                 duties.push(
@@ -160,6 +165,12 @@ pub fn execute(envelope: Envelope) -> Result<Response, String> {
                 input,
                 "New receiving scene started; units and duties retained.",
             )
+        }
+        Command::StartShooting { replay } => {
+            let mut input = imported(replay)?;
+            input.rules.version = "0.4.0-playtest".into();
+            input.request.actions.clear();
+            (input, "New shooting scene started; units and duties retained.")
         }
         Command::Reset {
             replay,
@@ -366,5 +377,14 @@ mod tests {
         );
         assert_eq!(file.input.rules.version, "0.2.0-playtest");
         assert!(!file.input.request.actions.is_empty());
+    }
+    #[test]
+    fn shooting_upgrade_preserves_units_but_starts_new_history() {
+        let file = file();
+        let upgraded = command(serde_json::json!({"kind":"start_shooting","replay":file}), None);
+        assert_eq!(upgraded["replay"]["input"]["rules"]["version"], "0.4.0-playtest");
+        assert_eq!(upgraded["replay"]["input"]["request"]["actions"], serde_json::json!([]));
+        assert_eq!(upgraded["replay"]["session"]["units_sha256"], file.session["units_sha256"]);
+        assert_eq!(file.input.rules.version,"0.2.0-playtest");
     }
 }

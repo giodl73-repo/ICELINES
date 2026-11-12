@@ -217,10 +217,10 @@ pub struct Rules {
 impl Rules {
     pub fn validate(&self) -> Result<(), String> {
         if self.schema != "rinkcraft.unit-possession-rules.v1"
-            || !["0.2.0-playtest", "0.3.0-playtest"].contains(&self.version.as_str())
+            || !["0.2.0-playtest", "0.3.0-playtest", "0.4.0-playtest"].contains(&self.version.as_str())
             || self.support_bonus > 2
         {
-            return Err("Use unit possession rules v0.2.0/v0.3.0-playtest and support 0–2".into());
+            return Err("Use unit possession rules v0.2.0/v0.3.0/v0.4.0-playtest and support 0–2".into());
         }
         Ok(())
     }
@@ -392,8 +392,11 @@ pub fn replay(input: &Input) -> Result<UnitSession, String> {
         commit_support: q.commit_support,
         actions: q.actions.clone(),
     };
-    let receiving = input.rules.version == "0.3.0-playtest";
-    let resolve = if receiving {
+    let shooting = input.rules.version == "0.4.0-playtest";
+    let receiving = input.rules.version == "0.3.0-playtest" || shooting;
+    let resolve = if shooting {
+        legacy::resolve_shooting_scene
+    } else if receiving {
         legacy::resolve_receiving_scene
     } else {
         legacy::resolve_scene
@@ -405,7 +408,9 @@ pub fn replay(input: &Input) -> Result<UnitSession, String> {
         participants,
         &q.assignments.bindings(),
     )?;
-    scene.schema = if receiving {
+    scene.schema = if shooting {
+        "icelines.possession-session.v4"
+    } else if receiving {
         "icelines.possession-session.v3"
     } else {
         "icelines.possession-session.v2"
@@ -416,6 +421,9 @@ pub fn replay(input: &Input) -> Result<UnitSession, String> {
     scene.note="Fictional explicit-unit outlet/carry/pass scene; named assignments and seeded contests. A received pass is not a shot or goal. No clock, fatigue, continuous movement or NHL probabilities. F1/F2/F3/D1/D2 are local scene addresses; roster positions and phase duties are separate.".into();
     if receiving {
         scene.note="Fictional receiving rules 0.3: a successful pass is in flight until the receiver contests Handling against the assigned away interceptor's Defending. Reception adds no support bonus. Failed reception is loose, not an automatic turnover; the declared carrier retains the recovery duty. A reception tie ends the window with a loose puck. No shots, saves, clock, fatigue, spatial feasibility or NHL probabilities.".into()
+    }
+    if shooting {
+        scene.note="Authored shooting rules 0.4: controlled reception opens a contested release, receiver Shooting versus assigned gap defender Defending. On-target flight requires away goalie Tracking versus shooter Shooting in a fixed clear-view situation. Save contact stays uncontrolled; goalie Rebounds versus receiver Handling determines held or loose. These sequential contests assert no empirical independence. No extra support on receive/shoot/save/rebound. Release/rebound failures end loose; save failure scores. Ties end unresolved with puck status preserved. No traffic, lateral movement, nearest-player geometry, clock, fatigue, restart or NHL probabilities. Positioning, Movement and Recovery are not tested.".into()
     }
     Ok(UnitSession {
         schema: "icelines.unit-possession-session.v1".into(),
@@ -723,6 +731,128 @@ mod tests {
                 .session,
             file.session
         );
+    }
+    fn shooting() -> Input {
+        let mut input = import(include_str!("../../tests/fixtures/rinkcraft-unit-v03.json")).unwrap().input;
+        input.rules.version = "0.4.0-playtest".into();
+        input
+    }
+    fn shot_score(input: &mut Input, side: Side, slot: Slot, index: usize, score: u8) {
+        let m = input.request.members.iter_mut().find(|m| m.side == side && m.slot == slot).unwrap();
+        let mut scores: [u8; 6] = std::array::from_fn(|i| m.character.capabilities[i].score);
+        scores[index] = score;
+        m.character = game::build(&input.character_rules, game::BuildRequest {
+            template_id: m.character.template_id.clone(), name: m.character.name.clone(),
+            position: m.character.position.clone(), scores: game::ScoreMethod::Manual { scores }, inspiration: None,
+        }).unwrap();
+    }
+    fn goalie_score(input: &mut Input, index: usize, score: u8) {
+        shot_score(input, Side::Away, Slot::G, index, score)
+    }
+    #[test]
+    fn frozen_v03_remains_exact_and_control_only_opens_shooting_in_v04() {
+        let raw = include_str!("../../tests/fixtures/rinkcraft-unit-v03.json");
+        let old = import(raw).unwrap();
+        assert_eq!(serde_json::to_value(&old).unwrap(), serde_json::from_str::<serde_json::Value>(raw).unwrap());
+        let s = replay(&shooting()).unwrap().scene;
+        assert_eq!(s.schema, "icelines.possession-session.v4");
+        assert_eq!(s.state.phase, legacy::Phase::ReadyToShoot);
+        assert_eq!(s.state.control.as_deref(), Some("home:F2"));
+        assert_eq!(s.legal_actions, vec![Action::Shoot]);
+        assert!(s.state.scored_by.is_none());
+        let mut invalid = old.input;
+        invalid.request.actions.push(Action::Shoot);
+        assert!(replay(&invalid).is_err());
+    }
+    fn reach(input: &mut Input, actions: &[Action]) -> bool {
+        input.request.actions.clear();
+        for action in actions {
+            if !replay(input).unwrap().scene.legal_actions.contains(action) { return false; }
+            input.request.actions.push(*action);
+        }
+        true
+    }
+    #[test]
+    fn shooting_tracking_and_rebounds_change_only_their_declared_contests() {
+        let path = [Action::Outlet, Action::Carry, Action::Pass, Action::Receive, Action::Shoot, Action::Save, Action::Rebound];
+        for (target, index, prefix_len) in [("shooting", 3, 4), ("tracking", 0, 5), ("rebounds", 3, 6)] {
+            let mut found = false;
+            for seed in 0..4096 {
+                let mut base = shooting();base.request.seed = seed;
+                if target == "rebounds" { goalie_score(&mut base, 0, 20); }
+                if !reach(&mut base, &path[..prefix_len]) { continue; }
+                let mut low = base.clone();let mut high = base;
+                if target == "shooting" { shot_score(&mut low, Side::Home, Slot::F2, index, 1);shot_score(&mut high, Side::Home, Slot::F2, index, 20); }
+                else { goalie_score(&mut low, index, 1);goalie_score(&mut high, index, 20); }
+                let action = path[prefix_len];
+                if !replay(&low).unwrap().scene.legal_actions.contains(&action) { continue; }
+                low.request.actions.push(action);high.request.actions.push(action);
+                let a = replay(&low).unwrap().scene;let b = replay(&high).unwrap().scene;
+                let x = &a.events[prefix_len];let y = &b.events[prefix_len];
+                if x.resolution.outcome == super::super::rinkcraft_contest::Outcome::OppositionWins && y.resolution.outcome == super::super::rinkcraft_contest::Outcome::ActorWins {
+                    assert_eq!(serde_json::to_value(&a.events[..prefix_len]).unwrap(),serde_json::to_value(&b.events[..prefix_len]).unwrap());
+                    assert_eq!((x.resolution.actor_die,x.resolution.opposition_die),(y.resolution.actor_die,y.resolution.opposition_die));
+                    assert_eq!(y.contest.actor_adjustment,0);assert_eq!(y.contest.opposition_adjustment,0);
+                    assert_eq!(y.terms[0]-x.terms[0],10);
+                    if target == "shooting" { assert_eq!(a.state.phase,legacy::Phase::ShotDisrupted);assert!(a.state.loose);assert_eq!(b.state.phase,legacy::Phase::ShotInFlight);assert_eq!(b.state.in_flight_to.as_deref(),Some("away:G")); }
+                    if target == "tracking" { assert_eq!(a.state.phase,legacy::Phase::Goal);assert_eq!(a.state.scored_by.as_deref(),Some("home:F2"));assert!(a.state.control.is_none());assert_eq!(b.state.phase,legacy::Phase::SaveContact);assert!(b.state.loose);assert!(b.state.control.is_none()); }
+                    if target == "rebounds" { assert_eq!(a.state.phase,legacy::Phase::ReboundLoose);assert!(a.state.loose);assert!(a.state.control.is_none());assert_eq!(b.state.phase,legacy::Phase::GoalieHeld);assert_eq!(b.state.control.as_deref(),Some("away:G")); }
+                    println!("SHOT_PROBE_{target}_SEED={seed}");found=true;break;
+                }
+            }
+            assert!(found,"No same-dice {target} contrast found");
+        }
+    }
+    #[test]
+    fn shooting_paths_conserve_puck_and_ties_and_verify_intermediate_states() {
+        let mut shot_tie=false;let mut save_tie=false;let mut rebound_tie=false;let mut goal=false;let mut saved=false;
+        for seed in 0..512 {
+            let mut input=shooting();input.request.seed=seed;input.request.actions.clear();
+            let s=complete(&mut input).unwrap().scene;
+            assert!(input.request.actions.len()<=16);
+            for e in &s.events {
+                for state in [&e.before,&e.after] {
+                    assert_eq!(u8::from(state.control.is_some())+u8::from(state.loose)+u8::from(state.in_flight_to.is_some())+u8::from(state.scored_by.is_some()),1);
+                }
+                if e.action==Action::Save && e.after.phase==legacy::Phase::Goal { goal=true; }
+                if e.action==Action::Rebound && e.after.phase==legacy::Phase::GoalieHeld { saved=true; }
+                if e.resolution.outcome==super::super::rinkcraft_contest::Outcome::Stalemate {
+                    if e.action==Action::Shoot {shot_tie=true;assert_eq!(e.after.control.as_deref(),Some("home:F2"));assert!(e.after.scored_by.is_none());}
+                    if e.action==Action::Save {save_tie=true;assert_eq!(e.after.in_flight_to.as_deref(),Some("away:G"));assert!(e.after.scored_by.is_none());}
+                    if e.action==Action::Rebound {rebound_tie=true;assert!(e.after.loose);assert!(e.after.control.is_none());}
+                    assert!(s.legal_actions.is_empty());
+                }
+            }
+        }
+        assert!(shot_tie&&save_tie&&rebound_tie&&goal&&saved,"coverage: {shot_tie}/{save_tie}/{rebound_tie}/{goal}/{saved}");
+        let mut input=shooting();
+        for action in [Action::Shoot,Action::Save,Action::Rebound] {
+            let s=replay(&input).unwrap().scene;if !s.legal_actions.contains(&action){break}
+            input.request.actions.push(action);
+            let f=export(input.clone()).unwrap();assert!(import(&serde_json::to_string(&f).unwrap()).is_ok());
+            let mut bad=serde_json::to_value(&f).unwrap();bad["session"]["scene"]["state"]["scored_by"]="home:F2".into();assert!(import(&bad.to_string()).is_err());
+        }
+    }
+    #[test]
+    fn untested_goalie_attributes_do_not_change_shooting_scene() {
+        let mut input=shooting();complete(&mut input).unwrap();let a=replay(&input).unwrap().scene;
+        for i in [1,2,4,5] {goalie_score(&mut input,i,20);}
+        let b=replay(&input).unwrap().scene;
+        assert_eq!(serde_json::to_value(a.events).unwrap(),serde_json::to_value(b.events).unwrap());
+    }
+    #[test]
+    fn committed_support_does_not_add_shoot_save_or_rebound_bonuses() {
+        let mut seen = [false;3];
+        for seed in 0..64 {
+            let mut input=shooting();input.request.seed=seed;input.request.actions.clear();input.request.commit_support=true;
+            let s=complete(&mut input).unwrap().scene;
+            for e in s.events {
+                if let Some(i)=[Action::Shoot,Action::Save,Action::Rebound].iter().position(|a| *a==e.action) {
+                    seen[i]=true;assert_eq!(e.contest.actor_adjustment,0);assert_eq!(e.contest.opposition_adjustment,0);
+                }
+            }
+        }
+        assert!(seen.iter().all(|s| *s));
     }
     fn receiving() -> Input {
         let mut input = import(include_str!("../../tests/fixtures/rinkcraft-unit-v02.json"))

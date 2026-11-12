@@ -31,6 +31,9 @@ pub enum Action {
     Carry,
     Pass,
     Receive,
+    Shoot,
+    Save,
+    Rebound,
     Recover,
     Counter,
 }
@@ -49,6 +52,13 @@ pub enum Phase {
     Breakout,
     Advanced,
     PassArriving,
+    ReadyToShoot,
+    ShotInFlight,
+    SaveContact,
+    ShotDisrupted,
+    ReboundLoose,
+    GoalieHeld,
+    Goal,
     Loose,
     Counter,
     Complete,
@@ -65,6 +75,8 @@ pub struct State {
     pub cover_owner: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub in_flight_to: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scored_by: Option<String>,
 }
 #[derive(Clone, Debug, Serialize)]
 pub struct Participant {
@@ -101,12 +113,15 @@ pub struct Session {
     pub legal_actions: Vec<Action>,
     pub note: String,
 }
-fn legal(s: &State, reception: bool) -> Vec<Action> {
+fn legal(s: &State, reception: bool, shooting: bool) -> Vec<Action> {
     match s.phase {
         Phase::GoalieControl => vec![Action::Outlet],
         Phase::Breakout => vec![Action::Carry],
         Phase::Advanced => vec![Action::Pass],
         Phase::PassArriving if reception => vec![Action::Receive],
+        Phase::ReadyToShoot if shooting => vec![Action::Shoot],
+        Phase::ShotInFlight if shooting => vec![Action::Save],
+        Phase::SaveContact if shooting => vec![Action::Rebound],
         Phase::Loose => vec![Action::Recover],
         Phase::Counter => vec![Action::Counter],
         _ => vec![],
@@ -238,7 +253,7 @@ pub(crate) fn resolve_scene(
     participants: Vec<Participant>,
     bindings: &SceneBindings,
 ) -> Result<Session, String> {
-    resolve_scene_inner(rules, request, hero_slot, participants, bindings, false)
+    resolve_scene_inner(rules, request, hero_slot, participants, bindings, false, false)
 }
 pub(crate) fn resolve_receiving_scene(
     rules: &Rules,
@@ -247,7 +262,16 @@ pub(crate) fn resolve_receiving_scene(
     participants: Vec<Participant>,
     bindings: &SceneBindings,
 ) -> Result<Session, String> {
-    resolve_scene_inner(rules, request, hero_slot, participants, bindings, true)
+    resolve_scene_inner(rules, request, hero_slot, participants, bindings, true, false)
+}
+pub(crate) fn resolve_shooting_scene(
+    rules: &Rules,
+    request: &Request,
+    hero_slot: String,
+    participants: Vec<Participant>,
+    bindings: &SceneBindings,
+) -> Result<Session, String> {
+    resolve_scene_inner(rules, request, hero_slot, participants, bindings, true, true)
 }
 fn resolve_scene_inner(
     rules: &Rules,
@@ -256,6 +280,7 @@ fn resolve_scene_inner(
     mut participants: Vec<Participant>,
     bindings: &SceneBindings,
     reception: bool,
+    shooting: bool,
 ) -> Result<Session, String> {
     let carrier = bindings.carrier.as_str();
     let mut state = State {
@@ -268,11 +293,12 @@ fn resolve_scene_inner(
             Some(bindings.cover.clone())
         },
         in_flight_to: None,
+        scored_by: None,
     };
     let mut rng = u64::from(request.seed);
     let mut events = Vec::new();
     for action in &request.actions {
-        if !legal(&state, reception).contains(action) {
+        if !legal(&state, reception, shooting).contains(action) {
             return Err(format!(
                 "{action:?} has no legal opportunity in {:?}",
                 state.phase
@@ -294,6 +320,9 @@ fn resolve_scene_inner(
                 4,
             ),
             Action::Recover => (carrier.into(), bindings.pressure.as_str(), 4, 1),
+            Action::Shoot => (bindings.receiver.clone(), bindings.gap.as_str(), 3, 5),
+            Action::Save => ("away:G".into(), bindings.receiver.as_str(), 0, 3),
+            Action::Rebound => ("away:G".into(), bindings.receiver.as_str(), 3, 1),
             Action::Receive => (
                 bindings.receiver.clone(),
                 bindings.interceptor.as_str(),
@@ -341,17 +370,26 @@ fn resolve_scene_inner(
         let resolution = contest.resolve(d20(&mut rng), d20(&mut rng))?;
         let explanation=match resolution.outcome {
             Outcome::Stalemate if *action==Action::Receive=>{state.phase=Phase::Stalemate;state.in_flight_to=None;state.control=None;state.loose=true;"Reception ends tied with an uncontrolled loose puck. The opportunity ends; no automatic control, retry or turnover."},
+            Outcome::Stalemate if *action==Action::Save=>{state.phase=Phase::Stalemate;"Shot response is unresolved at the window end. The puck remains in flight; no goal, save contact or retry is awarded."},
+            Outcome::Stalemate if *action==Action::Rebound=>{state.phase=Phase::Stalemate;"Rebound containment ends tied. The puck remains loose; neither side receives control and the window ends."},
             Outcome::Stalemate=>{state.phase=Phase::Stalemate;"Opportunity ends tied. Existing control or loose-puck status is preserved; no automatic retry."},
             Outcome::ActorWins=>match action {
                 Action::Outlet=>{state.phase=Phase::Breakout;state.control=Some(carrier.into());"Goalie outlet reaches the carrier. This is possession, not a scoring chance."},
                 Action::Carry=>{state.phase=Phase::Advanced;"Carrier advances; the middle passing opportunity opens."},
                 Action::Pass if reception=>{state.phase=Phase::PassArriving;state.control=None;state.loose=false;state.in_flight_to=Some(bindings.receiver.clone());"Pass reaches the receiving lane but control is not awarded. The assigned receiver must handle it under pressure."},
                 Action::Pass=>{state.phase=Phase::Complete;state.control=Some(bindings.receiver.clone());"Receiver controls the pass. Possession sequence complete; no shot or goal is awarded."},
+                Action::Receive if shooting=>{state.phase=Phase::ReadyToShoot;state.control=Some(bindings.receiver.clone());state.loose=false;state.in_flight_to=None;"Receiver establishes control and a declared contested-release opportunity opens. No shot or goal is awarded yet."},
                 Action::Receive=>{state.phase=Phase::Complete;state.control=Some(bindings.receiver.clone());state.loose=false;state.in_flight_to=None;"Receiver handles the arriving pass and establishes control. Sequence complete; no shot or goal is awarded."},
+                Action::Shoot=>{state.phase=Phase::ShotInFlight;state.control=None;state.loose=false;state.in_flight_to=Some("away:G".into());"Shooter gets an on-target release past the assigned gap defender. The shot is in flight; the goalie must respond. No goal yet."},
+                Action::Save=>{state.phase=Phase::SaveContact;state.control=None;state.loose=true;state.in_flight_to=None;"Goalie tracks and stops the clear-view shot. Save contact does not grant control; rebound containment must resolve next."},
+                Action::Rebound=>{state.phase=Phase::GoalieHeld;state.control=Some("away:G".into());state.loose=false;"Goalie secures the saved puck. This bounded scene ends held, without a restart or rebound shot."},
                 Action::Recover=>{state.phase=Phase::Breakout;state.control=Some(carrier.into());state.loose=false;"Home recovers the loose puck, creating a new breakout opportunity."},
                 Action::Counter=>{state.phase=Phase::CounterAdvanced;"Away advances the counter. The scene ends without a shot or goal."},
             },
             Outcome::OppositionWins=>match action {
+                Action::Shoot=>{state.phase=Phase::ShotDisrupted;state.control=None;state.loose=true;"The assigned gap defender disrupts the release into a loose puck. This window ends without an on-target shot, save or goal."},
+                Action::Save=>{state.phase=Phase::Goal;state.control=None;state.loose=false;state.in_flight_to=None;state.scored_by=Some(bindings.receiver.clone());"The on-target shot beats the tracking response: goal in this authored scene. No live possession, rebound or match score is inferred."},
+                Action::Rebound=>{state.phase=Phase::ReboundLoose;state.control=None;state.loose=true;"Rebound containment fails under the assigned receiver's pressure. The window ends with a loose puck, not automatic skater possession or a rebound goal."},
                 Action::Receive=>{state.phase=Phase::Loose;state.control=None;state.loose=true;state.in_flight_to=None;"Reception breaks down under pressure into a loose puck. The declared recovery player may contest it; no automatic turnover or shot."},
                 Action::Recover=>{state.phase=Phase::Counter;state.control=Some(bindings.pressure.clone());state.loose=false;"Away wins recovery and gains control. High cover will affect the counter defense."},
                 Action::Counter=>{state.phase=Phase::CounterStopped;state.control=None;state.loose=true;"Home disrupts the counter into a loose puck. No automatic home possession or goal."},
@@ -376,6 +414,9 @@ fn resolve_scene_inner(
             Phase::Breakout => Some("breakout lane"),
             Phase::Advanced => Some("advanced carrier lane"),
             Phase::PassArriving => Some("receiving lane"),
+            Phase::ReadyToShoot => Some("controlled shooting lane"),
+            Phase::ShotInFlight => Some("clear-view shot response"),
+            Phase::GoalieHeld => Some("secured saved puck"),
             Phase::Complete => Some("controlled receiving lane"),
             Phase::Counter => Some("counter lane"),
             Phase::CounterAdvanced => Some("advanced counter lane"),
@@ -392,11 +433,11 @@ fn resolve_scene_inner(
                 .station = station.into();
         }
     }
-    if request.actions.len() == 16 && !legal(&state, reception).is_empty() {
+    if request.actions.len() == 16 && !legal(&state, reception, shooting).is_empty() {
         state.phase = Phase::WindowEnded;
     }
     let canonical = serde_json::to_vec(rules).map_err(|e| e.to_string())?;
-    Ok(Session {schema:"icelines.possession-session.v1".into(),rules_version:rules.version.clone(),rules_sha256:format!("{:x}",Sha256::digest(canonical)),seed:request.seed,commit_support:request.commit_support,hero_slot,participants,legal_actions:legal(&state,reception),state,events,note:"Fictional outlet/carry/pass scene; scripted opponent responses, half-offset arithmetic and a support/cover tradeoff. No shots, goals, clock, fatigue or NHL probabilities. F1/F2/F3 name this scene's duties only.".into()})
+    Ok(Session {schema:"icelines.possession-session.v1".into(),rules_version:rules.version.clone(),rules_sha256:format!("{:x}",Sha256::digest(canonical)),seed:request.seed,commit_support:request.commit_support,hero_slot,participants,legal_actions:legal(&state,reception,shooting),state,events,note:"Fictional outlet/carry/pass scene; scripted opponent responses, half-offset arithmetic and a support/cover tradeoff. No shots, goals, clock, fatigue or NHL probabilities. F1/F2/F3 name this scene's duties only.".into()})
 }
 pub fn from_json(char_rules: &str, rules: &str, request: &str) -> Result<String, String> {
     if char_rules.len() > 65536 || rules.len() > 8192 || request.len() > 32768 {
