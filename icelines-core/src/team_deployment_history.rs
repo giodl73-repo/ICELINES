@@ -8,6 +8,109 @@ use std::{
     path::Path,
 };
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+
+/// Separate descriptive summary; does not alter the canonical team history.
+pub fn summarize(report: &Value) -> Result<Value> {
+    if report["schema"] != "icelines.team-deployment-history.0.1-experimental" {
+        return Err("Unsupported team history schema".into());
+    }
+    let days = report["days"]
+        .as_array()
+        .ok_or("Missing team history days")?;
+    let mut output = json!({"schema":"icelines.team-deployment-summary.0.1-experimental","team_id":report["team_id"],
+        "expected_games":report["expected_games"],"resolved_games":report["resolved_games"],
+        "first_date":days.first().map(|d|&d["date"]),"last_date":days.last().map(|d|&d["date"])});
+    for (players, changes, out) in [
+        ("forwards", "forward_changes", "forward"),
+        ("defense", "defense_changes", "defense"),
+    ] {
+        let mut compared = 0u64;
+        let mut changed = 0u64;
+        let mut adjacent = 0u64;
+        let mut unchanged = 0u64;
+        let mut standard = 0u64;
+        let mut primary_seconds = 0u64;
+        let mut roster_games = 0u64;
+        let mut ties = 0u64;
+        let mut max_streak = 0u64;
+        let mut longest = Vec::new();
+        let mut entries = 0usize;
+        let mut exits = 0usize;
+        let mut face_games = 0u64;
+        for day in days {
+            let c = &day[changes];
+            if c["status"] == "comparable" {
+                let n = c["comparable_continuing_players"]
+                    .as_u64()
+                    .ok_or("Missing comparison denominator")?;
+                let k = c["changed_players"]
+                    .as_u64()
+                    .ok_or("Missing changed count")?;
+                if k > n {
+                    return Err("Changed players exceed comparable players".into());
+                }
+                compared += n;
+                changed += k;
+                // Zero-comparable games are not classified as stable.
+                if n > 0 {
+                    adjacent += 1;
+                    if k == 0 {
+                        unchanged += 1;
+                    }
+                }
+                entries += c["newly_box_listed"].as_array().map_or(0, Vec::len);
+                exits += c["no_longer_box_listed"].as_array().map_or(0, Vec::len);
+            }
+            if day["status"] != "ok" {
+                continue;
+            }
+            for p in day[players].as_array().ok_or("Missing player rows")? {
+                roster_games += 1;
+                if p["primary_tied"] == true {
+                    ties += 1;
+                }
+                if p["game_ev_faceoffs"].as_u64().is_some() {
+                    face_games += 1;
+                }
+                let s = p["standard_unit_seconds"]
+                    .as_u64()
+                    .ok_or("Missing standard exposure")?;
+                let top = p["primary"]["seconds"].as_u64().unwrap_or(0);
+                if top > s {
+                    return Err("Primary exceeds standard exposure".into());
+                }
+                standard += s;
+                primary_seconds += top;
+                if let Some(streak) = p["consecutive_primary_games"].as_u64() {
+                    if streak > max_streak {
+                        max_streak = streak;
+                        longest.clear();
+                    }
+                    if streak == max_streak {
+                        longest.push(json!({"player_id":p["id"],"name":p["name"],"end_date":day["date"],"primary":p["primary"]}));
+                    }
+                }
+            }
+        }
+        output[out] = json!({"changed_player_comparisons":changed,"comparable_player_comparisons":compared,
+            "primary_change_fraction":(compared>0).then(||changed as f64/compared as f64),
+            "adjacent_games_with_comparable_players":adjacent,"adjacent_games_without_primary_change":unchanged,
+            "box_player_games":roster_games,"tied_primary_player_games":ties,"game_faceoff_player_games_available":face_games,
+            "box_entries_across_comparable_games":entries,"box_exits_across_comparable_games":exits,
+            "standard_unit_player_seconds":standard,"most_used_unit_player_seconds":primary_seconds,
+            "exposure_weighted_primary_concentration":(standard>0).then(||primary_seconds as f64/standard as f64),
+            "longest_trailing_primary_run_games":max_streak,"longest_run_records":longest});
+    }
+    output["limits"]=json!(["Descriptive selected-window deployment, not team quality, coaching intent or chemistry",
+        "Change fraction counts dependent per-player adjacent-game comparisons, not independent line changes or an accuracy probability",
+        "Forward trios and defense pairs have different combinatorial opportunities; do not interpret a direct position comparison as quality",
+        "Concentration uses standard-unit exposure; pair/trio player seconds count two/three participants, not elapsed team time",
+        "Primary ties remain in concentration as equal maximal exposure but are excluded from unambiguous change and continuity",
+        "Availability, injuries, opponents, score and tactical systems are not adjusted; no significance or causal claims",
+        "Game faceoff coverage is separate and may differ by team; missing counts are not zero draws",
+        "Longest run is trailing through observed dates, not exclusive assignment or future persistence"]);
+    Ok(output)
+}
 fn read(path: &str) -> Result<Value> {
     Ok(serde_json::from_slice(&std::fs::read(path)?)?)
 }
@@ -370,5 +473,44 @@ mod tests {
         after["season"] = json!(9);
         annotate_streaks(&mut after, Some(&b));
         assert_eq!(after["forwards"][0]["consecutive_primary_games"], 1);
+    }
+    fn summary_fixture() -> Value {
+        let mut d = day(&[1, 2, 3]);
+        d["date"] = json!("2000-01-01");
+        d["defense"] = json!([]);
+        d["forwards"][0]["standard_unit_seconds"] = json!(200);
+        d["forwards"][0]["consecutive_primary_games"] = json!(1);
+        d["forward_changes"] =
+            json!({"status":"comparable","comparable_continuing_players":2,"changed_players":1});
+        d["defense_changes"] = json!({"status":"first_supplied_game"});
+        json!({"schema":"icelines.team-deployment-history.0.1-experimental","team_id":1,"expected_games":1,"resolved_games":1,"days":[d]})
+    }
+    #[test]
+    fn summaries_use_explicit_dependent_counts_and_standard_exposure() {
+        let r = summarize(&summary_fixture()).unwrap();
+        assert_eq!(r["forward"]["primary_change_fraction"], 0.5);
+        assert_eq!(r["forward"]["exposure_weighted_primary_concentration"], 0.5);
+        assert_eq!(r["forward"]["game_faceoff_player_games_available"], 0);
+        assert_eq!(r["forward"]["longest_trailing_primary_run_games"], 1);
+    }
+    #[test]
+    fn zero_comparisons_are_unknown_not_perfect_stability() {
+        let mut f = summary_fixture();
+        f["days"][0]["forward_changes"]["comparable_continuing_players"] = json!(0);
+        f["days"][0]["forward_changes"]["changed_players"] = json!(0);
+        let r = summarize(&f).unwrap();
+        assert!(r["forward"]["primary_change_fraction"].is_null());
+        assert_eq!(r["forward"]["adjacent_games_without_primary_change"], 0);
+        assert!(r["defense"]["exposure_weighted_primary_concentration"].is_null());
+    }
+    #[test]
+    fn invalid_schema_and_impossible_counts_are_rejected() {
+        assert!(summarize(&json!({"schema":"other"})).is_err());
+        let mut f = summary_fixture();
+        f["days"][0]["forward_changes"]["changed_players"] = json!(3);
+        assert!(summarize(&f).is_err());
+        let mut f = summary_fixture();
+        f["days"][0]["forwards"][0]["standard_unit_seconds"] = json!(99);
+        assert!(summarize(&f).is_err());
     }
 }
