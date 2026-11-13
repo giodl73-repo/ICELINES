@@ -62,6 +62,22 @@ pub struct Request {
     pub proposed: Vec<Team>,
     pub config: season::TeamSeasonSimulationConfig,
 }
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct UnitWeightEdit {
+    pub unit_id: String,
+    pub weight: f64,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct StudyCase {
+    pub id: String,
+    pub label: String,
+    pub team: String,
+    pub edits: Vec<super::rinkcraft_season::ScoreEdit>,
+    pub swap_creator_receiver: Vec<String>,
+    pub unit_weights: Vec<UnitWeightEdit>,
+}
 fn hash<T: Serialize>(v: &T) -> Result<String, String> {
     Ok(format!(
         "{:x}",
@@ -421,6 +437,169 @@ pub fn run(input: &Request) -> Result<serde_json::Value, String> {
     )
 }
 
+/// Exact regular-season expectations for this fixed-probability native model.
+/// Playoff qualification still requires the season simulation.
+pub fn inspect(input: &Request) -> Result<serde_json::Value, String> {
+    let (_, reference, ref_audit) = project(input, &input.reference)?;
+    let (_, proposed, proposed_audit) = project(input, &input.proposed)?;
+    let summarize = |model: &season::SeasonProbabilityModel, audit: &serde_json::Value| {
+        let pairs: BTreeMap<_, _> = audit["pair_audits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| {
+                (
+                    (p["home"].as_str().unwrap(), p["away"].as_str().unwrap()),
+                    p,
+                )
+            })
+            .collect();
+        let mut totals = BTreeMap::<String, [f64; 6]>::new();
+        for row in &model.games {
+            let p = &row.probabilities;
+            let pair = pairs[&(row.home.as_str(), row.away.as_str())];
+            let home_points =
+                2.0 * p.home_regulation_win + p.overtime * (1.0 + p.home_overtime_win);
+            let away_points =
+                2.0 * p.away_regulation_win + p.overtime * (2.0 - p.home_overtime_win);
+            let hm = pair["home_model_goals_mean"].as_f64().unwrap();
+            let am = pair["away_model_goals_mean"].as_f64().unwrap();
+            for (team, points, win, gf, ga) in [
+                (
+                    &row.home,
+                    home_points,
+                    p.home_regulation_win + p.overtime * p.home_overtime_win,
+                    hm,
+                    am,
+                ),
+                (
+                    &row.away,
+                    away_points,
+                    p.away_regulation_win + p.overtime * (1.0 - p.home_overtime_win),
+                    am,
+                    hm,
+                ),
+            ] {
+                let t = totals.entry(team.clone()).or_default();
+                t[0] += 1.0;
+                t[1] += points;
+                t[2] += win;
+                t[3] += gf;
+                t[4] += ga;
+                t[5] += p.overtime;
+            }
+        }
+        totals
+    };
+    let a = summarize(&reference, &ref_audit);
+    let b = summarize(&proposed, &proposed_audit);
+    let teams:Vec<_>=a.iter().map(|(team,x)|{let y=b[team];serde_json::json!({"team":team,"games":x[0] as u64,
+        "reference_expected_points":x[1],"proposed_expected_points":y[1],"expected_points_delta":y[1]-x[1],
+        "reference_expected_wins":x[2],"proposed_expected_wins":y[2],"reference_model_goals_for":x[3],"proposed_model_goals_for":y[3],
+        "reference_model_goals_against":x[4],"proposed_model_goals_against":y[4],"reference_expected_overtime_games":x[5],"proposed_expected_overtime_games":y[5]})}).collect();
+    Ok(
+        serde_json::json!({"schema":"rinkcraft.task-season-inspection.0.1","kind":KIND,"input_sha256":hash(input)?,"rules_sha256":hash(&input.rules)?,"seed":null,"trials":null,
+        "scope":"exact regular-season expectations under fixed task probabilities; no playoff qualification probabilities",
+        "teams":teams,"reference_audit":ref_audit,"proposed_audit":proposed_audit,
+        "reference_model_sha256":hash(&reference)?,"proposed_model_sha256":hash(&proposed)?,
+        "limits":["Fixed native mode has no dynamic form/race or adaptive feedback; expectation is a sum of supplied game probabilities, not Monte Carlo",
+            "Model-goal totals are authored Poisson rate sums, not measured NHL xG or a sampled player scoring ledger",
+            "League expected standings points can change when task-derived overtime probability changes",
+            "No inference of balance, NHL ability, coaching intent or causal chemistry"]}),
+    )
+}
+pub fn apply_study_case(base: &Request, case: &StudyCase) -> Result<Request, String> {
+    if case.id.is_empty()
+        || case.id.len() > 80
+        || !case
+            .id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+        || case.label.trim().is_empty()
+    {
+        return Err("Invalid task study case ID/label".into());
+    }
+    let mut r = base.clone();
+    let t = r
+        .proposed
+        .iter_mut()
+        .find(|t| t.team == case.team)
+        .ok_or("Unknown study team")?;
+    let mut seen = BTreeSet::new();
+    let rj = serde_json::to_string(&r.character_rules).map_err(|e| e.to_string())?;
+    for e in &case.edits {
+        if e.capability >= 6
+            || !(1..=20).contains(&e.score)
+            || !seen.insert((&e.member_id, e.capability))
+        {
+            return Err("Invalid/duplicate task score edit".into());
+        }
+        let m = t
+            .members
+            .iter_mut()
+            .find(|m| m.id == e.member_id)
+            .ok_or("Unknown task score member")?;
+        game::import_from_json(
+            &rj,
+            &serde_json::to_string(&m.character).map_err(|e| e.to_string())?,
+        )?;
+        let mut scores: [u8; 6] = m
+            .character
+            .capabilities
+            .iter()
+            .map(|c| c.score)
+            .collect::<Vec<_>>()
+            .try_into()
+            .map_err(|_| "Need six task capabilities")?;
+        scores[e.capability] = e.score;
+        m.character = game::build(
+            &r.character_rules,
+            game::BuildRequest {
+                template_id: m.character.template_id.clone(),
+                name: m.character.name.clone(),
+                position: m.character.position.clone(),
+                scores: game::ScoreMethod::Manual { scores },
+                inspiration: m.character.inspiration.clone(),
+            },
+        )?;
+    }
+    let mut swaps = BTreeSet::new();
+    for id in &case.swap_creator_receiver {
+        if !swaps.insert(id) {
+            return Err("Duplicate task swap".into());
+        }
+        let u = t
+            .units
+            .iter_mut()
+            .find(|u| &u.id == id)
+            .ok_or("Unknown swapped unit")?;
+        std::mem::swap(&mut u.creator, &mut u.receiver);
+    }
+    let reference = r
+        .reference
+        .iter_mut()
+        .find(|t| t.team == case.team)
+        .ok_or("Unknown reference study team")?;
+    let mut weights = BTreeSet::new();
+    for e in &case.unit_weights {
+        if !weights.insert(&e.unit_id) {
+            return Err("Duplicate unit weight edit".into());
+        }
+        t.units
+            .iter_mut()
+            .find(|u| u.id == e.unit_id)
+            .ok_or("Unknown proposed weight unit")?
+            .weight = e.weight;
+        reference
+            .units
+            .iter_mut()
+            .find(|u| u.id == e.unit_id)
+            .ok_or("Unknown reference weight unit")?
+            .weight = e.weight;
+    }
+    Ok(r)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -691,5 +870,89 @@ mod tests {
         assert!(
             season::simulate_team_season_forecast_with_probabilities(&f, r.config, &m).is_err()
         );
+    }
+    #[test]
+    fn inspection_has_exact_regular_ledger_and_no_sampling_dependence() {
+        let mut r = fixture();
+        let a = inspect(&r).unwrap();
+        let teams = a["teams"].as_array().unwrap();
+        let wins: f64 = teams
+            .iter()
+            .map(|t| t["proposed_expected_wins"].as_f64().unwrap())
+            .sum();
+        let points: f64 = teams
+            .iter()
+            .map(|t| t["proposed_expected_points"].as_f64().unwrap())
+            .sum();
+        let overtime: f64 = teams
+            .iter()
+            .map(|t| t["proposed_expected_overtime_games"].as_f64().unwrap())
+            .sum();
+        assert!((wins - 128.0).abs() < 1e-9);
+        assert!((points - 256.0 - overtime / 2.0).abs() < 1e-9);
+        assert!(teams.iter().all(|t| t["expected_points_delta"] == 0.0));
+        r.config.seed = 999;
+        r.config.trials = 1;
+        let b = inspect(&r).unwrap();
+        assert_eq!(a["teams"], b["teams"]);
+    }
+    #[test]
+    fn complementary_gate_effects_compound_without_an_extra_bonus() {
+        let t = table(ScoreRule::HalfOffset).unwrap();
+        let base = [10; 9];
+        let mut a = base;
+        a[1] = 16;
+        let mut b = base;
+        b[3] = 16;
+        let mut both = a;
+        both[3] = 16;
+        assert!(
+            route(both, base, &t).2 - route(a, base, &t).2 - route(b, base, &t).2
+                + route(base, base, &t).2
+                > 0.0
+        );
+        let r = fixture();
+        let case = StudyCase {
+            id: "single".into(),
+            label: "Single passer".into(),
+            team: "NYR".into(),
+            edits: vec![super::super::rinkcraft_season::ScoreEdit {
+                member_id: "NYR:0".into(),
+                capability: 2,
+                score: 16,
+            }],
+            swap_creator_receiver: vec![],
+            unit_weights: vec![],
+        };
+        let q = apply_study_case(&r, &case).unwrap();
+        assert_eq!(
+            q.reference
+                .iter()
+                .find(|t| t.team == "NYR")
+                .unwrap()
+                .members[0]
+                .character
+                .capabilities[2]
+                .score,
+            10
+        );
+        assert_eq!(
+            q.proposed.iter().find(|t| t.team == "NYR").unwrap().members[0]
+                .character
+                .capabilities[2]
+                .score,
+            16
+        );
+        let mut forged = r.clone();
+        forged
+            .proposed
+            .iter_mut()
+            .find(|t| t.team == "NYR")
+            .unwrap()
+            .members[0]
+            .character
+            .capabilities[3]
+            .score = 20;
+        assert!(apply_study_case(&forged, &case).is_err());
     }
 }

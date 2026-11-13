@@ -13,9 +13,71 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let a: Vec<_> = std::env::args().skip(1).collect();
     match a.as_slice(){
         [mode,input,out] if mode=="run"=>{let r:task::Request=read(input)?;write(Path::new(out),&task::run(&r)?)?;},
+        [mode,input,out] if mode=="inspect"=>{let r:task::Request=read(input)?;write(Path::new(out),&task::inspect(&r)?)?;},
+        [mode,base,plan,out] if mode=="study"=>study(read(base)?,read(plan)?,Path::new(out))?,
         [mode,base,rules,out] if mode=="demo"=>demo(read(base)?,read(rules)?,Path::new(out))?,
-        _=>return Err("Usage: rinkcraft_task_season run REQUEST OUTPUT | demo AGGREGATE_NEUTRAL_REQUEST TASK_RULES OUTPUT_DIR".into())
+        _=>return Err("Usage: rinkcraft_task_season run REQUEST OUTPUT | inspect REQUEST OUTPUT | study BASE_REQUEST PLAN OUTPUT_DIR | demo AGGREGATE_NEUTRAL_REQUEST TASK_RULES OUTPUT_DIR".into())
     }
+    Ok(())
+}
+#[derive(serde::Deserialize)]
+struct StudyPlan {
+    schema: String,
+    cases: Vec<task::StudyCase>,
+}
+fn study(
+    base: task::Request,
+    plan: StudyPlan,
+    out: &Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if plan.schema != "rinkcraft.task-balance-plan.0.1"
+        || plan.cases.is_empty()
+        || plan.cases.len() > 1000
+    {
+        return Err("Invalid task balance plan".into());
+    }
+    std::fs::create_dir_all(out)?;
+    let mut seen = std::collections::BTreeSet::new();
+    let mut rows = Vec::new();
+    for c in plan.cases {
+        if !seen.insert(c.id.clone()) {
+            return Err("Duplicate study ID".into());
+        }
+        let r = task::apply_study_case(&base, &c)?;
+        let canonical: task::Request = serde_json::from_slice(&serde_json::to_vec(&r)?)?;
+        let result = task::inspect(&canonical)?;
+        let focus = result["teams"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|t| t["team"] == c.team)
+            .ok_or("Missing study team")?
+            .clone();
+        let pair = result["proposed_audit"]["pair_audits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|p| p["home"] == c.team && p["away"] == "CAR")
+            .ok_or("Missing study benchmark pair")?
+            .clone();
+        let reference_pair = result["reference_audit"]["pair_audits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|p| p["home"] == c.team && p["away"] == "CAR")
+            .ok_or("Missing reference benchmark pair")?
+            .clone();
+        rows.push(serde_json::json!({"id":c.id,"label":c.label,"focus":focus,"benchmark_pair":pair,"reference_benchmark_pair":reference_pair,"input_sha256":result["input_sha256"],"rules_sha256":result["rules_sha256"]}));
+        write(&out.join(format!("{}-inspection.json", c.id)), &result)?;
+        println!(
+            "{}: exact regular points delta {}",
+            c.id, focus["expected_points_delta"]
+        );
+    }
+    write(
+        &out.join("summary.json"),
+        &serde_json::json!({"schema":"rinkcraft.task-balance-summary.0.1","kind":"authored_game_scenario_not_nhl_estimate","seed":null,"trials":null,"cases":rows}),
+    )?;
     Ok(())
 }
 fn demo(
