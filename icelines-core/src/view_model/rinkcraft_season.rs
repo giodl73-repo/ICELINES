@@ -46,6 +46,36 @@ pub struct Assignment {
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+pub struct ScoreEdit {
+    pub member_id: String,
+    pub capability: usize,
+    pub score: u8,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ExposureTransfer {
+    pub from: String,
+    pub to: String,
+    pub share: f64,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AssignmentEdit {
+    pub member_id: String,
+    pub assignment: Assignment,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProbeCase {
+    pub id: String,
+    pub label: String,
+    pub team: String,
+    pub edits: Vec<ScoreEdit>,
+    pub exposure_transfer: Option<ExposureTransfer>,
+    pub assignment: Option<AssignmentEdit>,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TeamChange {
     pub team: String,
     pub reference: Vec<Member>,
@@ -293,6 +323,175 @@ pub fn run(input: &Request) -> Result<serde_json::Value, String> {
         "character_rules_sha256":fingerprint(&input.character_rules)?,"profile_rules_sha256":fingerprint(&input.profile_rules)?,
         "forecast_sha256":fingerprint(&input.forecast)?,"audit":audit,"scenario":scenario,"baseline":baseline,"proposed":proposed,"impacts":impact}),
     )
+}
+
+/// Noiseless regular-season projection with dynamic form/race edge frozen at zero.
+/// Uses the sampler's actual probability kernel, not a duplicate approximation.
+pub fn probe(input: &Request) -> Result<serde_json::Value, String> {
+    let (scenario, audit) = adapt(input)?;
+    let mut totals = std::collections::BTreeMap::<String, [f64; 4]>::new();
+    let mut games = Vec::new();
+    let active = |team: &str, date: NaiveDate| -> f64 {
+        scenario
+            .events
+            .iter()
+            .filter(|e| {
+                e.team == team
+                    && e.effective_date <= date
+                    && e.end_date.is_none_or(|end| date <= end)
+            })
+            .map(|e| e.strength_delta)
+            .sum()
+    };
+    for g in &input.forecast.games {
+        if input.as_of_date.is_some_and(|date| g.date <= date) {
+            continue;
+        }
+        let ot = g.overtime_probability;
+        if !ot.is_finite()
+            || !(0.0..=1.0).contains(&ot)
+            || !g.home_overall_win_probability.is_finite()
+            || !(0.0..=1.0).contains(&g.home_overall_win_probability)
+            || !input.forecast.parameters.strength_edge_scale.is_finite()
+            || input.forecast.parameters.strength_edge_scale < 0.0
+        {
+            return Err("Invalid probability probe inputs".into());
+        }
+        let before = season::game_probability_components(
+            g,
+            0.0,
+            0.0,
+            input.forecast.parameters.strength_edge_scale,
+            0.0,
+        );
+        let after = season::game_probability_components(
+            g,
+            active(&g.home_team, g.date),
+            active(&g.away_team, g.date),
+            input.forecast.parameters.strength_edge_scale,
+            0.0,
+        );
+        let points = |p: [f64; 3]| {
+            [
+                2.0 * p[0] + ot * (1.0 + p[2]),
+                2.0 * p[1] + ot * (2.0 - p[2]),
+            ]
+        };
+        let a = points(before);
+        let b = points(after);
+        for (index, team) in [&g.home_team, &g.away_team].into_iter().enumerate() {
+            let row = totals.entry(team.clone()).or_default();
+            row[0] += a[index];
+            row[1] += b[index];
+            row[2] += 1.0;
+            if (a[index] - b[index]).abs() > 1e-14 {
+                row[3] += 1.0;
+            }
+        }
+        games.push(serde_json::json!({"game_id":g.game_id,"date":g.date,"home":g.home_team,"away":g.away_team,
+            "overtime_probability":ot,"baseline_expected_points":a,"proposed_expected_points":b,
+            "baseline_components":before,"proposed_components":after}));
+    }
+    let rows:Vec<_>=totals.into_iter().map(|(team,v)|serde_json::json!({"team":team,"baseline_expected_points":v[0],"proposed_expected_points":v[1],
+        "expected_points_delta":v[1]-v[0],"games":v[2] as u64,"games_with_probability_change":v[3] as u64})).collect();
+    Ok(
+        serde_json::json!({"schema":"rinkcraft.profile-probability-probe.0.1","kind":KIND,"input_sha256":fingerprint(input)?,
+        "scope":"frozen-state regular-season projection; dynamic edge zero; no playoffs or endogenous feedback",
+        "component_order":["home_regulation_win","away_regulation_win","home_overtime_win_given_overtime"],"points_order":["home","away"],
+        "strength_edge_scale":input.forecast.parameters.strength_edge_scale,"audit":audit,"teams":rows,"games":games,
+        "limits":["Exact for the declared per-game frozen-state probability kernel, not the full dynamic season model's expectation",
+            "Form, race, adaptive choices, injuries and playoff paths are not integrated; no claim of empirical NHL effect sizes",
+            "As-of past dates excluded; event dates applied; overtime probability unchanged so expected point deltas sum to zero",
+            "No random trials or uncertainty estimate; probe is deterministic authored-model arithmetic"]}),
+    )
+}
+
+pub fn apply_probe_case(base: &Request, case: &ProbeCase) -> Result<Request, String> {
+    adapt(base)?;
+    if case.id.is_empty()
+        || case.id.len() > 80
+        || !case
+            .id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+        || case.label.trim().is_empty()
+    {
+        return Err("Invalid probe case ID/label".into());
+    }
+    let mut r = base.clone();
+    r.label = format!("Sensitivity: {}", case.label);
+    let t = r
+        .teams
+        .iter_mut()
+        .find(|t| t.team == case.team)
+        .ok_or("Unknown probe team")?;
+    let mut seen = BTreeSet::new();
+    for edit in &case.edits {
+        if edit.capability >= 6
+            || !(1..=20).contains(&edit.score)
+            || !seen.insert((&edit.member_id, edit.capability))
+        {
+            return Err("Invalid or duplicate capability edit".into());
+        }
+        let m = t
+            .proposed
+            .iter_mut()
+            .find(|m| m.id == edit.member_id)
+            .ok_or("Unknown edited member")?;
+        let mut scores: [u8; 6] = m
+            .character
+            .capabilities
+            .iter()
+            .map(|c| c.score)
+            .collect::<Vec<_>>()
+            .try_into()
+            .map_err(|_| "Need six capabilities")?;
+        scores[edit.capability] = edit.score;
+        m.character = game::build(
+            &r.character_rules,
+            game::BuildRequest {
+                template_id: m.character.template_id.clone(),
+                name: m.character.name.clone(),
+                position: m.character.position.clone(),
+                scores: game::ScoreMethod::Manual { scores },
+                inspiration: m.character.inspiration.clone(),
+            },
+        )?;
+    }
+    if let Some(move_share) = &case.exposure_transfer {
+        if move_share.from == move_share.to
+            || !move_share.share.is_finite()
+            || move_share.share <= 0.0
+        {
+            return Err("Invalid exposure transfer".into());
+        }
+        for roster in [&mut t.reference, &mut t.proposed] {
+            let from = roster
+                .iter()
+                .position(|m| m.id == move_share.from)
+                .ok_or("Missing exposure donor")?;
+            let to = roster
+                .iter()
+                .position(|m| m.id == move_share.to)
+                .ok_or("Missing exposure receiver")?;
+            if bucket(&roster[from].character) != bucket(&roster[to].character) {
+                return Err("Cannot transfer shares between F/D/G buckets".into());
+            }
+            roster[from].exposure_share -= move_share.share;
+            roster[to].exposure_share += move_share.share;
+        }
+    }
+    if let Some(edit) = &case.assignment {
+        for roster in [&mut t.reference, &mut t.proposed] {
+            roster
+                .iter_mut()
+                .find(|m| m.id == edit.member_id)
+                .ok_or("Unknown task-emphasis member")?
+                .assignment = Some(edit.assignment.clone());
+        }
+    }
+    adapt(&r)?;
+    Ok(r)
 }
 
 #[cfg(test)]
@@ -558,5 +757,86 @@ mod tests {
         )
         .unwrap();
         assert_eq!(first["proposed"], serde_json::to_value(direct).unwrap());
+    }
+    fn nyr_delta(p: &serde_json::Value) -> f64 {
+        p["teams"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|t| t["team"] == "NYR")
+            .unwrap()["expected_points_delta"]
+            .as_f64()
+            .unwrap()
+    }
+    #[test]
+    fn frozen_probe_is_monotone_neutral_and_conserves_league_points() {
+        let i = fixture();
+        assert_eq!(nyr_delta(&probe(&i).unwrap()), 0.0);
+        let mut old = f64::NEG_INFINITY;
+        for score in [1, 5, 10, 15, 20] {
+            let mut r = i.clone();
+            replace(&mut r, 0, 3, score);
+            let p = probe(&r).unwrap();
+            let delta = nyr_delta(&p);
+            assert!(delta > old);
+            old = delta;
+            let sum: f64 = p["teams"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|t| t["expected_points_delta"].as_f64().unwrap())
+                .sum();
+            assert!(sum.abs() < 1e-10);
+            for g in p["games"].as_array().unwrap() {
+                let points: f64 = g["proposed_expected_points"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|p| p.as_f64().unwrap())
+                    .sum();
+                assert!((points - 2.0 - g["overtime_probability"].as_f64().unwrap()).abs() < 1e-12);
+            }
+        }
+    }
+    #[test]
+    fn probe_respects_effect_dates_and_strength_scale() {
+        let mut i = fixture();
+        replace(&mut i, 0, 3, 20);
+        let full = nyr_delta(&probe(&i).unwrap());
+        assert!(full > 0.0);
+        i.end_date = Some(i.effective_date);
+        let short = nyr_delta(&probe(&i).unwrap());
+        assert!(short >= 0.0 && short < full);
+        i.forecast.parameters.strength_edge_scale = 0.0;
+        assert_eq!(nyr_delta(&probe(&i).unwrap()), 0.0);
+        i.forecast.parameters.strength_edge_scale = f64::NAN;
+        assert!(probe(&i).is_err());
+    }
+    #[test]
+    fn declared_case_edits_preserve_reference_and_reject_cross_bucket_transfers() {
+        let i = fixture();
+        let mut c = ProbeCase {
+            id: "passing".into(),
+            label: "Passing".into(),
+            team: "NYR".into(),
+            edits: vec![ScoreEdit {
+                member_id: "p0".into(),
+                capability: 2,
+                score: 20,
+            }],
+            exposure_transfer: None,
+            assignment: None,
+        };
+        let r = apply_probe_case(&i, &c).unwrap();
+        assert_eq!(r.teams[0].reference[0].character.capabilities[2].score, 10);
+        assert_eq!(r.teams[0].proposed[0].character.capabilities[2].score, 20);
+        c.exposure_transfer = Some(ExposureTransfer {
+            from: "p0".into(),
+            to: "p5".into(),
+            share: 0.1,
+        });
+        assert!(apply_probe_case(&i, &c).is_err());
+        c.id = "../invalid".into();
+        assert!(apply_probe_case(&i, &c).is_err());
     }
 }

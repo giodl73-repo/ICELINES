@@ -15,9 +15,66 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<_> = std::env::args().skip(1).collect();
     match args.as_slice(){
         [mode,input,output] if mode=="run"=>{let request:adapter::Request=read(input)?;write(Path::new(output),&adapter::run(&request)?)?;},
+        [mode,input,output] if mode=="probe"=>{let request:adapter::Request=read(input)?;write(Path::new(output),&adapter::probe(&request)?)?;},
+        [mode,input,plan,output] if mode=="probe-grid"=>probe_grid(read(input)?,read(plan)?,Path::new(output))?,
         [mode,rules,mapping,calendar,output] if mode=="demo"=>demo(read(rules)?,read(mapping)?,read(calendar)?,Path::new(output))?,
-        _=>return Err("Usage: rinkcraft_season run REQUEST_JSON OUTPUT_JSON | demo CHARACTER_RULES PROFILE_RULES ARCHIVED_SEASON_JSON OUTPUT_DIR".into())
+        _=>return Err("Usage: rinkcraft_season run REQUEST_JSON OUTPUT_JSON | probe REQUEST_JSON OUTPUT_JSON | probe-grid BASE_REQUEST PLAN OUTPUT_DIR | demo CHARACTER_RULES PROFILE_RULES ARCHIVED_SEASON_JSON OUTPUT_DIR".into())
     }
+    Ok(())
+}
+#[derive(serde::Deserialize)]
+struct ProbePlan {
+    schema: String,
+    cases: Vec<adapter::ProbeCase>,
+}
+fn probe_grid(
+    base: adapter::Request,
+    plan: ProbePlan,
+    out: &Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if plan.schema != "rinkcraft.profile-sensitivity-plan.0.1"
+        || plan.cases.is_empty()
+        || plan.cases.len() > 1000
+    {
+        return Err("Invalid sensitivity plan".into());
+    }
+    std::fs::create_dir_all(out)?;
+    let mut seen = BTreeSet::new();
+    let mut rows = Vec::new();
+    for case in plan.cases {
+        if !seen.insert(case.id.clone()) {
+            return Err("Duplicate sensitivity case ID".into());
+        }
+        let request = adapter::apply_probe_case(&base, &case)?;
+        // Canonical transport boundary is shared with the standalone probe command.
+        let persisted: adapter::Request = serde_json::from_slice(&serde_json::to_vec(&request)?)?;
+        let result = adapter::probe(&persisted)?;
+        let impact = result["teams"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|t| t["team"] == case.team)
+            .ok_or("Missing focus team probe")?
+            .clone();
+        let delta = result["audit"]["teams"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|t| t["team"] == case.team)
+            .ok_or("Missing focus audit")?["strength_delta"]
+            .clone();
+        rows.push(serde_json::json!({"id":case.id,"label":case.label,"team":case.team,"strength_delta":delta,"frozen_state":impact,"input_sha256":result["input_sha256"]}));
+        write(&out.join(format!("{}-probe.json", case.id)), &result)?;
+        println!(
+            "{}: frozen-state points delta {}",
+            case.id, impact["expected_points_delta"]
+        );
+    }
+    write(
+        &out.join("summary.json"),
+        &serde_json::json!({"schema":"rinkcraft.profile-sensitivity-summary.0.1","kind":"authored_game_scenario_not_nhl_estimate","seed":null,"trials":null,
+        "scope":"frozen-state regular-season model arithmetic; no form/race feedback or playoffs","cases":rows}),
+    )?;
     Ok(())
 }
 fn demo(

@@ -3257,6 +3257,25 @@ fn recent_form_edge(state: &BTreeMap<String, TrialTeam>, home_team: &str, away_t
         .clamp(-0.015, 0.015)
 }
 
+/// Shared probability kernel. A frozen dynamic edge is not an exact season expectation.
+pub(crate) fn game_probability_components(
+    game: &TeamGameForecastRow,
+    home_strength_delta: f64,
+    away_strength_delta: f64,
+    strength_edge_scale: f64,
+    dynamic_edge: f64,
+) -> [f64; 3] {
+    let overtime = game.overtime_probability;
+    let attribution_scale = 1.0 - overtime * 0.5;
+    let baseline_edge = (game.home_overall_win_probability - 0.5) / attribution_scale;
+    let scenario_edge = ((home_strength_delta - away_strength_delta) / 100.0) * strength_edge_scale;
+    let edge = (baseline_edge + scenario_edge + dynamic_edge).clamp(-0.24, 0.24);
+    let home_regulation = (1.0 - overtime) * (0.5 + edge);
+    let away_regulation = (1.0 - overtime) * (0.5 - edge);
+    let home_overtime = (0.5 + edge * 0.5).clamp(0.25, 0.75);
+    [home_regulation, away_regulation, home_overtime]
+}
+
 fn sample_game(
     game: &TeamGameForecastRow,
     home_strength_delta: f64,
@@ -3266,14 +3285,13 @@ fn sample_game(
     state: &mut BTreeMap<String, TrialTeam>,
     rng: &mut SimRng,
 ) {
-    let overtime = game.overtime_probability;
-    let attribution_scale = 1.0 - overtime * 0.5;
-    let baseline_edge = (game.home_overall_win_probability - 0.5) / attribution_scale;
-    let scenario_edge = ((home_strength_delta - away_strength_delta) / 100.0) * strength_edge_scale;
-    let edge = (baseline_edge + scenario_edge + dynamic_edge).clamp(-0.24, 0.24);
-    let home_regulation = (1.0 - overtime) * (0.5 + edge);
-    let away_regulation = (1.0 - overtime) * (0.5 - edge);
-    let home_overtime = (0.5 + edge * 0.5).clamp(0.25, 0.75);
+    let [home_regulation, away_regulation, home_overtime] = game_probability_components(
+        game,
+        home_strength_delta,
+        away_strength_delta,
+        strength_edge_scale,
+        dynamic_edge,
+    );
     let draw = rng.unit();
     let (home_win, overtime_loss) = if draw < home_regulation {
         (true, false)
