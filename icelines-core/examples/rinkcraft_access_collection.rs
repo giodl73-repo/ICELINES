@@ -20,6 +20,7 @@ struct Study {
     budgets: Vec<u16>,
     modes: Vec<seq::access::Mode>,
     recovery: seq::recovery::Rules,
+    support: Option<seq::support::Rules>,
 }
 fn read<T: for<'a> Deserialize<'a>>(p: &str) -> Result<T, String> {
     serde_json::from_slice(&fs::read(p).map_err(|e| e.to_string())?).map_err(|e| e.to_string())
@@ -54,7 +55,12 @@ fn run() -> Result<(), String> {
     if base.schema != task::SCHEMA
         || base.kind != "authored_game_scenario_not_nhl_estimate"
         || study.kind != base.kind
-        || study.schema != "rinkcraft.opening-access-study.0.1"
+        || study.schema
+            != if study.support.is_some() {
+                "rinkcraft.opening-support-study.0.1"
+            } else {
+                "rinkcraft.opening-access-study.0.1"
+            }
         || study.focus == study.opponent
         || study.cases.is_empty()
         || study.cases.len() > 20
@@ -130,26 +136,34 @@ fn run() -> Result<(), String> {
                         kind: study.kind.clone(),
                         mode,
                     };
-                    let reference = seq::access::inspect(
-                        &q.character_rules,
-                        &rules,
-                        &a,
-                        &b,
-                        &plan,
-                        &policy.definition,
-                        &study.recovery,
-                        &ar,
-                    )?;
-                    let proposed = seq::access::inspect(
-                        &q.character_rules,
-                        &rules,
-                        &x,
-                        &y,
-                        &plan,
-                        &policy.definition,
-                        &study.recovery,
-                        &ar,
-                    )?;
+                    let inspect = |first: &task::Team, second: &task::Team| {
+                        if let Some(sr) = &study.support {
+                            seq::support::inspect(
+                                &q.character_rules,
+                                &rules,
+                                first,
+                                second,
+                                &plan,
+                                &policy.definition,
+                                &study.recovery,
+                                &ar,
+                                sr,
+                            )
+                        } else {
+                            seq::access::inspect(
+                                &q.character_rules,
+                                &rules,
+                                first,
+                                second,
+                                &plan,
+                                &policy.definition,
+                                &study.recovery,
+                                &ar,
+                            )
+                        }
+                    };
+                    let reference = inspect(&a, &b)?;
+                    let proposed = inspect(&x, &y)?;
                     write(
                         &out.join(&filename),
                         &serde_json::json!({"case":c,"policy":policy.id,"reference":reference,"proposed":proposed}),
@@ -168,7 +182,7 @@ fn run() -> Result<(), String> {
     }
     write(
         &out.join("summary.json"),
-        &serde_json::json!({"schema":"rinkcraft.opening-access-summary.0.1","kind":study.kind,"seed":null,"trials":null,"rows":rows}),
+        &serde_json::json!({"schema":if study.support.is_some(){"rinkcraft.opening-support-summary.0.1"}else{"rinkcraft.opening-access-summary.0.1"},"kind":study.kind,"seed":null,"trials":null,"rows":rows}),
     )
 }
 fn main() {

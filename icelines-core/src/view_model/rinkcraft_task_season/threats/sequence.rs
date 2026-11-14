@@ -3,6 +3,7 @@ use super::*;
 pub mod access;
 pub mod matchups;
 pub mod recovery;
+pub mod support;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -430,6 +431,7 @@ struct Ledger {
     recoveries: BTreeMap<(String, String, String, String, String, u16, String), [f64; 4]>,
     recovery_changes: f64,
     access_collections: BTreeMap<(String, String, String, String, String, u16, String), [f64; 4]>,
+    supports: BTreeMap<(String, String, String, String, u16, String), [f64; 4]>,
 }
 impl Ledger {
     fn end(
@@ -712,7 +714,7 @@ pub fn inspect(
     b: &Team,
     p: &Plan,
 ) -> Result<serde_json::Value, String> {
-    inspect_inner(cr, r, a, b, p, None, None, None)
+    inspect_inner(cr, r, a, b, p, None, None, None, None)
 }
 pub fn inspect_with_policies(
     cr: &game::GameRules,
@@ -723,7 +725,7 @@ pub fn inspect_with_policies(
     policies: &HolderPolicies,
 ) -> Result<serde_json::Value, String> {
     policies.validate(a, b, p)?;
-    inspect_inner(cr, r, a, b, p, Some(policies), None, None)
+    inspect_inner(cr, r, a, b, p, Some(policies), None, None, None)
 }
 fn inspect_inner(
     cr: &game::GameRules,
@@ -734,6 +736,7 @@ fn inspect_inner(
     policies: Option<&HolderPolicies>,
     recovery: Option<&recovery::Rules>,
     access: Option<&access::Rules>,
+    support: Option<&support::Rules>,
 ) -> Result<serde_json::Value, String> {
     super::validate(&r.opening)?;
     if r.schema != "rinkcraft.control-sequence-rules.0.1"
@@ -781,6 +784,7 @@ fn inspect_inner(
         recoveries: BTreeMap::new(),
         recovery_changes: 0.0,
         access_collections: BTreeMap::new(),
+        supports: BTreeMap::new(),
     };
     for au in &a.units {
         for bu in &b.units {
@@ -854,6 +858,7 @@ fn inspect_inner(
                             policies,
                             recovery,
                             access.unwrap(),
+                            support,
                         );
                         access::collect(
                             s,
@@ -869,6 +874,7 @@ fn inspect_inner(
                             policies,
                             recovery,
                             access.unwrap(),
+                            support,
                         );
                         ended = true;
                         break;
@@ -961,7 +967,8 @@ fn inspect_inner(
         "cost_seconds":match action.as_str(){"exit_holder"=>r.exit_seconds,"advance_holder"=>r.opening.action_seconds["entry_duel"],
         "connect_holder"=>r.opening.action_seconds["slot_connection"],"shoot_holder"=>r.opening.action_seconds["finish"],
         "loose_collect_connect"|"loose_collect_receive"=>recovery.expect("recovery traces require rules").cost_seconds,
-        "access_collect_hunter"|"access_collect_defender"=>r.opening.action_seconds["gather"],_=>r.opening.action_seconds[&action]}
+        "access_collect_hunter"|"access_collect_defender"=>r.opening.action_seconds["gather"],
+        "support_collect"=>support.expect("support trace requires rules").cost_seconds,_=>r.opening.action_seconds[&action]}
     })).collect();
     let tasks:Vec<_>=l.tasks.into_iter().map(|((team,id,cap),w)|serde_json::json!({"team":team,"member_id":id,"capability":cap,"expected_contests":w})).collect();
     let mut result = serde_json::json!({"schema":"rinkcraft.control-sequence-inspection.0.1","kind":r.kind,
@@ -1025,6 +1032,38 @@ fn inspect_inner(
             "First-access mode gives winner a Handling-vs-Defending attempt; disruption does not give the defender control",
             "Only dump retrieval through collection is supported; race ties, failed first attempts and unsupported loose play still stop",
             "Opening collection does not consume the separate pass-recovery allowance; fixed units and one shared clock remain"]);
+    }
+    if let Some(sr) = support {
+        result["access_limits"][3] = serde_json::json!("Only dump retrieval through collection is supported; race ties and unsupported loose play stop; completed first-collection failures may enter the declared support window");
+        result["schema"] = "rinkcraft.opening-support-inspection.0.1".into();
+        result["input_sha256"] = hash(&(cr, r, a, b, p, policies, recovery, access, sr))?.into();
+        result["support_rules"] = serde_json::to_value(sr).map_err(|e| e.to_string())?;
+        result["support_audits"] = l.supports.into_iter().map(|((race_team,trigger,actor,opponent,time,status),q)|serde_json::json!({
+            "race_winner_team":race_team,"trigger_outcome":trigger,"collector_id":actor,"opposing_collector_id":opponent,
+            "start_seconds":time,"status":status,"reached_probability":q[0],"first_team_control_probability":q[1],
+            "second_team_control_probability":q[2],"loose_probability":q[3]
+        })).collect::<Vec<_>>().into();
+        let mut initial = BTreeMap::from([(a.team.clone(), 0.0), (b.team.clone(), 0.0)]);
+        for x in result["opening_collection_audits"].as_array().unwrap() {
+            let own = x["race_winner_team"].as_str().unwrap();
+            let other = if own == a.team { &b.team } else { &a.team };
+            *initial.get_mut(own).unwrap() += x["collector_control_probability"].as_f64().unwrap();
+            *initial.get_mut(other).unwrap() += x["opponent_control_probability"].as_f64().unwrap();
+        }
+        for x in result["support_audits"].as_array().unwrap() {
+            *initial.get_mut(&a.team).unwrap() +=
+                x["first_team_control_probability"].as_f64().unwrap();
+            *initial.get_mut(&b.team).unwrap() +=
+                x["second_team_control_probability"].as_f64().unwrap();
+        }
+        result["first_possession_probability_by_team"] =
+            serde_json::to_value(initial).map_err(|e| e.to_string())?;
+        result["support_limits"] = serde_json::json!(["Declared shared support access after first-access collection tie/disruption only; no geometric proximity or F2/F3 assignment inferred",
+            "First receiver versus second gap defender, distinct from the initial collectors; Handling versus Handling, at most once",
+            "Race ties, uncompleted collection, carry failures and goalie contacts do not open this support window",
+            "Opening audit loose mass is the immediate collection outcome, not final terminal mass; support audits show its continuation",
+            "First-possession probabilities are disjoint initial acquisition events, separate from terminal possession and eventual goals",
+            "Separate pass recovery allowance is retained; support tie ends loose, no repeated collection, rebound or full-game integration"]);
     }
     Ok(result)
 }

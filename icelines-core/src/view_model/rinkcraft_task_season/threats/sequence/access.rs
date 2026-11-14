@@ -25,6 +25,12 @@ pub fn inspect(
     rr: &recovery::Rules,
     ar: &Rules,
 ) -> Result<serde_json::Value, String> {
+    validate(ar, p)?;
+    policies.validate(a, b, p)?;
+    rr.validate()?;
+    inspect_inner(cr, r, a, b, p, Some(policies), Some(rr), Some(ar), None)
+}
+pub(super) fn validate(ar: &Rules, p: &Plan) -> Result<(), String> {
     if ar.schema != "rinkcraft.opening-access-rules.0.1"
         || ar.version != "0.1.0-playtest"
         || ar.kind != "authored_game_scenario_not_nhl_estimate"
@@ -35,9 +41,7 @@ pub fn inspect(
             "Opening access model requires its rules and dump prefix through collection".into(),
         );
     }
-    policies.validate(a, b, p)?;
-    rr.validate()?;
-    inspect_inner(cr, r, a, b, p, Some(policies), Some(rr), Some(ar))
+    Ok(())
 }
 pub(super) fn collect(
     mut s: State,
@@ -53,6 +57,7 @@ pub(super) fn collect(
     policies: Option<&HolderPolicies>,
     rr: Option<&recovery::Rules>,
     ar: &Rules,
+    sr: Option<&support::Rules>,
 ) {
     let other = 1 - side;
     let actor = if side == 0 {
@@ -136,14 +141,33 @@ pub(super) fn collect(
             audit[3] += w * (q[1] + q[2]);
         }
     }
-    l.end(
-        w * q[1],
-        "access_collection_unresolved",
-        s,
-        units,
-        teams,
-        false,
-    );
+    if ar.mode == Mode::FirstAccessCollection && sr.is_some() {
+        support::resolve(
+            s,
+            w * q[1],
+            side,
+            "access_collection_unresolved",
+            p,
+            r,
+            units,
+            teams,
+            members,
+            t,
+            l,
+            policies,
+            rr,
+            sr.unwrap(),
+        );
+    } else {
+        l.end(
+            w * q[1],
+            "access_collection_unresolved",
+            s,
+            units,
+            teams,
+            false,
+        );
+    }
     if ar.mode == Mode::SharedCollection {
         let mut opponent_state = s;
         opponent_state.side = other;
@@ -167,14 +191,33 @@ pub(super) fn collect(
             rr.map_or(0, |x| x.max_contests),
         );
     } else {
-        l.end(
-            w * q[2],
-            "access_collection_disrupted",
-            s,
-            units,
-            teams,
-            false,
-        );
+        if let Some(sr) = sr {
+            support::resolve(
+                s,
+                w * q[2],
+                side,
+                "access_collection_disrupted",
+                p,
+                r,
+                units,
+                teams,
+                members,
+                t,
+                l,
+                policies,
+                rr,
+                sr,
+            );
+        } else {
+            l.end(
+                w * q[2],
+                "access_collection_disrupted",
+                s,
+                units,
+                teams,
+                false,
+            );
+        }
     }
     let mut own = s;
     own.side = side;
