@@ -11,7 +11,7 @@ pub struct Rules {
     pub max_contests: u8,
 }
 impl Rules {
-    fn validate(&self) -> Result<(), String> {
+    pub(super) fn validate(&self) -> Result<(), String> {
         if self.schema != "rinkcraft.pass-recovery-rules.0.1"
             || self.version != "0.1.0-playtest"
             || self.kind != "authored_game_scenario_not_nhl_estimate"
@@ -35,7 +35,7 @@ pub fn inspect(
 ) -> Result<serde_json::Value, String> {
     recovery.validate()?;
     policies.validate(a, b, p)?;
-    inspect_inner(cr, r, a, b, p, Some(policies), Some(recovery))
+    inspect_inner(cr, r, a, b, p, Some(policies), Some(recovery), None)
 }
 pub(super) fn resolve(
     mut s: State,

@@ -1,5 +1,6 @@
 //! Exact controlled follow-ups on fixed units and one shared clock.
 use super::*;
+pub mod access;
 pub mod matchups;
 pub mod recovery;
 
@@ -428,6 +429,7 @@ struct Ledger {
     decisions: BTreeMap<(String, String, u16, String, String, String), f64>,
     recoveries: BTreeMap<(String, String, String, String, String, u16, String), [f64; 4]>,
     recovery_changes: f64,
+    access_collections: BTreeMap<(String, String, String, String, String, u16, String), [f64; 4]>,
 }
 impl Ledger {
     fn end(
@@ -710,7 +712,7 @@ pub fn inspect(
     b: &Team,
     p: &Plan,
 ) -> Result<serde_json::Value, String> {
-    inspect_inner(cr, r, a, b, p, None, None)
+    inspect_inner(cr, r, a, b, p, None, None, None)
 }
 pub fn inspect_with_policies(
     cr: &game::GameRules,
@@ -721,7 +723,7 @@ pub fn inspect_with_policies(
     policies: &HolderPolicies,
 ) -> Result<serde_json::Value, String> {
     policies.validate(a, b, p)?;
-    inspect_inner(cr, r, a, b, p, Some(policies), None)
+    inspect_inner(cr, r, a, b, p, Some(policies), None, None)
 }
 fn inspect_inner(
     cr: &game::GameRules,
@@ -731,6 +733,7 @@ fn inspect_inner(
     p: &Plan,
     policies: Option<&HolderPolicies>,
     recovery: Option<&recovery::Rules>,
+    access: Option<&access::Rules>,
 ) -> Result<serde_json::Value, String> {
     super::validate(&r.opening)?;
     if r.schema != "rinkcraft.control-sequence-rules.0.1"
@@ -777,6 +780,7 @@ fn inspect_inner(
         decisions: BTreeMap::new(),
         recoveries: BTreeMap::new(),
         recovery_changes: 0.0,
+        access_collections: BTreeMap::new(),
     };
     for au in &a.units {
         for bu in &b.units {
@@ -830,6 +834,45 @@ fn inspect_inner(
                     );
                     l.task(&a.team, aid, capability(d.actor, d.cap), w);
                     l.task(&b.team, did, capability(d.opponent, d.opp_cap), w);
+                    if step.name == "retrieval_race"
+                        && access.is_some_and(|x| x.mode != access::Mode::Legacy)
+                    {
+                        let mut tied = s;
+                        tied.control = step.tie_control;
+                        l.end(w * q[1], "unresolved", tied, units, teams, false);
+                        access::collect(
+                            s,
+                            w * q[0],
+                            0,
+                            p,
+                            r,
+                            units,
+                            teams,
+                            members,
+                            &table,
+                            &mut l,
+                            policies,
+                            recovery,
+                            access.unwrap(),
+                        );
+                        access::collect(
+                            s,
+                            w * q[2],
+                            1,
+                            p,
+                            r,
+                            units,
+                            teams,
+                            members,
+                            &table,
+                            &mut l,
+                            policies,
+                            recovery,
+                            access.unwrap(),
+                        );
+                        ended = true;
+                        break;
+                    }
                     let mut tied = s;
                     tied.control = step.tie_control;
                     l.end(w * q[1], "unresolved", tied, units, teams, false);
@@ -917,7 +960,8 @@ fn inspect_inner(
         "win_probability":q[3],"tie_probability":q[4],"loss_probability":q[5],
         "cost_seconds":match action.as_str(){"exit_holder"=>r.exit_seconds,"advance_holder"=>r.opening.action_seconds["entry_duel"],
         "connect_holder"=>r.opening.action_seconds["slot_connection"],"shoot_holder"=>r.opening.action_seconds["finish"],
-        "loose_collect_connect"|"loose_collect_receive"=>recovery.expect("recovery traces require rules").cost_seconds,_=>r.opening.action_seconds[&action]}
+        "loose_collect_connect"|"loose_collect_receive"=>recovery.expect("recovery traces require rules").cost_seconds,
+        "access_collect_hunter"|"access_collect_defender"=>r.opening.action_seconds["gather"],_=>r.opening.action_seconds[&action]}
     })).collect();
     let tasks:Vec<_>=l.tasks.into_iter().map(|((team,id,cap),w)|serde_json::json!({"team":team,"member_id":id,"capability":cap,"expected_contests":w})).collect();
     let mut result = serde_json::json!({"schema":"rinkcraft.control-sequence-inspection.0.1","kind":r.kind,
@@ -966,6 +1010,21 @@ fn inspect_inner(
         limits.push(serde_json::json!("Eligible follow-up connection/reception ties or disruptions enter a declared shared-access Handling contest; no access race, proximity or geometry inferred"));
         limits.push(serde_json::json!("At most one recovery contest per path on the same clock; later loose states, shot contact, unknown and dead states terminate; no rebounds or full continuous play"));
         limits.push(serde_json::json!("Control-change outputs distinguish opening switch probability from expected additional/total change counts; a branch can change control twice"));
+    }
+    if let Some(ar) = access {
+        result["schema"] = "rinkcraft.opening-access-inspection.0.1".into();
+        result["input_sha256"] = hash(&(cr, r, a, b, p, policies, recovery, ar))?.into();
+        result["opening_access_rules"] = serde_json::to_value(ar).map_err(|e| e.to_string())?;
+        result["opening_collection_audits"]=l.access_collections.into_iter().map(|((race_team,actor,opponent,actor_cap,op_cap,time,status),q)|serde_json::json!({
+            "race_winner_team":race_team,"collector_id":actor,"opponent_id":opponent,"collector_capability":actor_cap,"opponent_capability":op_cap,
+            "start_seconds":time,"status":status,"reached_probability":q[0],"collector_control_probability":q[1],
+            "opponent_control_probability":q[2],"loose_probability":q[3]
+        })).collect::<Vec<_>>().into();
+        result["access_limits"]=serde_json::json!(["Declared alternative collection models; no inferred geometry, empirical access advantage or class bonus",
+            "Shared mode permits Handling control by either named skater after either race winner; race direction need not determine the controller",
+            "First-access mode gives winner a Handling-vs-Defending attempt; disruption does not give the defender control",
+            "Only dump retrieval through collection is supported; race ties, failed first attempts and unsupported loose play still stop",
+            "Opening collection does not consume the separate pass-recovery allowance; fixed units and one shared clock remain"]);
     }
     Ok(result)
 }
