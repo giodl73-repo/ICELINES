@@ -1,6 +1,7 @@
 //! Exact controlled follow-ups on fixed units and one shared clock.
 use super::*;
 pub mod matchups;
+pub mod recovery;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -425,6 +426,8 @@ struct Ledger {
     tasks: BTreeMap<(String, String, String), f64>,
     switches: f64,
     decisions: BTreeMap<(String, String, u16, String, String, String), f64>,
+    recoveries: BTreeMap<(String, String, String, String, String, u16, String), [f64; 4]>,
+    recovery_changes: f64,
 }
 impl Ledger {
     fn end(
@@ -517,6 +520,8 @@ fn follow(
     t: &super::super::Table,
     l: &mut Ledger,
     policies: Option<&HolderPolicies>,
+    recovery: Option<&recovery::Rules>,
+    recovery_left: u8,
 ) {
     loop {
         let side = s.side;
@@ -637,20 +642,43 @@ fn follow(
         } else {
             Control::Unknown
         };
-        l.end(w * q[1], "unresolved", tied, units, teams, false);
+        recovery::resolve(
+            tied,
+            w * q[1],
+            name,
+            "unresolved",
+            p,
+            r,
+            units,
+            teams,
+            members,
+            t,
+            l,
+            policies,
+            recovery,
+            recovery_left,
+        );
         let mut lost = s;
         lost.control = Control::Loose;
-        l.end(
+        recovery::resolve(
+            lost,
             w * q[2],
+            name,
             if name == "shoot_holder" {
                 "goalie_contact"
             } else {
                 "disrupted"
             },
-            lost,
+            p,
+            r,
             units,
             teams,
-            false,
+            members,
+            t,
+            l,
+            policies,
+            recovery,
+            recovery_left,
         );
         w *= q[0];
         match name {
@@ -682,7 +710,7 @@ pub fn inspect(
     b: &Team,
     p: &Plan,
 ) -> Result<serde_json::Value, String> {
-    inspect_inner(cr, r, a, b, p, None)
+    inspect_inner(cr, r, a, b, p, None, None)
 }
 pub fn inspect_with_policies(
     cr: &game::GameRules,
@@ -693,7 +721,7 @@ pub fn inspect_with_policies(
     policies: &HolderPolicies,
 ) -> Result<serde_json::Value, String> {
     policies.validate(a, b, p)?;
-    inspect_inner(cr, r, a, b, p, Some(policies))
+    inspect_inner(cr, r, a, b, p, Some(policies), None)
 }
 fn inspect_inner(
     cr: &game::GameRules,
@@ -702,6 +730,7 @@ fn inspect_inner(
     b: &Team,
     p: &Plan,
     policies: Option<&HolderPolicies>,
+    recovery: Option<&recovery::Rules>,
 ) -> Result<serde_json::Value, String> {
     super::validate(&r.opening)?;
     if r.schema != "rinkcraft.control-sequence-rules.0.1"
@@ -746,6 +775,8 @@ fn inspect_inner(
         tasks: BTreeMap::new(),
         switches: 0.0,
         decisions: BTreeMap::new(),
+        recoveries: BTreeMap::new(),
+        recovery_changes: 0.0,
     };
     for au in &a.units {
         for bu in &b.units {
@@ -820,6 +851,8 @@ fn inspect_inner(
                             &table,
                             &mut l,
                             policies,
+                            recovery,
+                            recovery.map_or(0, |x| x.max_contests),
                         );
                     } else {
                         l.end(w * q[2], step.failure, lost, units, teams, false);
@@ -847,7 +880,20 @@ fn inspect_inner(
             }
             if !ended {
                 if matches!(s.control, Control::Attacking) {
-                    follow(s, w, p, r, units, teams, members, &table, &mut l, policies);
+                    follow(
+                        s,
+                        w,
+                        p,
+                        r,
+                        units,
+                        teams,
+                        members,
+                        &table,
+                        &mut l,
+                        policies,
+                        recovery,
+                        recovery.map_or(0, |x| x.max_contests),
+                    );
                 } else {
                     l.end(w, "opening_boundary", s, units, teams, false);
                 }
@@ -870,7 +916,8 @@ fn inspect_inner(
         "start_seconds":elapsed,"reached_probability":q[0],"completed_probability":q[1],"expired_probability":q[2],
         "win_probability":q[3],"tie_probability":q[4],"loss_probability":q[5],
         "cost_seconds":match action.as_str(){"exit_holder"=>r.exit_seconds,"advance_holder"=>r.opening.action_seconds["entry_duel"],
-        "connect_holder"=>r.opening.action_seconds["slot_connection"],"shoot_holder"=>r.opening.action_seconds["finish"],_=>r.opening.action_seconds[&action]}
+        "connect_holder"=>r.opening.action_seconds["slot_connection"],"shoot_holder"=>r.opening.action_seconds["finish"],
+        "loose_collect_connect"|"loose_collect_receive"=>recovery.expect("recovery traces require rules").cost_seconds,_=>r.opening.action_seconds[&action]}
     })).collect();
     let tasks:Vec<_>=l.tasks.into_iter().map(|((team,id,cap),w)|serde_json::json!({"team":team,"member_id":id,"capability":cap,"expected_contests":w})).collect();
     let mut result = serde_json::json!({"schema":"rinkcraft.control-sequence-inspection.0.1","kind":r.kind,
@@ -897,6 +944,28 @@ fn inspect_inner(
         result["policy_limits"]=serde_json::json!(["Declared member-ID choices only at offensive controlled states; no oracle, score-based optimization or clock fallback",
             "Selection can occur without time to complete; check action completion/expiry before crediting execution",
             "Known but unused overrides have no effect; no skill absence inferred; receiver self-pass guard still applies"]);
+    }
+    if let Some(rr) = recovery {
+        result["schema"] = "rinkcraft.loose-recovery-inspection.0.1".into();
+        result["input_sha256"] = hash(&(cr, r, a, b, p, policies, rr))?.into();
+        result["recovery_rules"] = serde_json::to_value(rr).map_err(|e| e.to_string())?;
+        result
+            .as_object_mut()
+            .unwrap()
+            .remove("control_switch_probability");
+        result["opening_control_switch_probability"] = l.switches.into();
+        result["expected_recovery_control_changes"] = l.recovery_changes.into();
+        result["expected_total_control_changes"] = (l.switches + l.recovery_changes).into();
+        result["recovery_audits"]=l.recoveries.into_iter().map(|((trigger,outcome,team,actor,opponent,time,status),q)|serde_json::json!({
+            "trigger_action":trigger,"trigger_outcome":outcome,"initial_team":team,"collector_id":actor,"opposing_collector_id":opponent,
+            "start_seconds":time,"status":status,"reached_probability":q[0],"same_team_control_probability":q[1],
+            "other_team_control_probability":q[2],"unresolved_probability":q[3]
+        })).collect::<Vec<_>>().into();
+        let limits = result["limits"].as_array_mut().unwrap();
+        limits.retain(|v|v.as_str()!=Some("Loose/unknown/dead states terminate except explicit in-flight reception after a chosen connection; no rebound recycle or interception possession"));
+        limits.push(serde_json::json!("Eligible follow-up connection/reception ties or disruptions enter a declared shared-access Handling contest; no access race, proximity or geometry inferred"));
+        limits.push(serde_json::json!("At most one recovery contest per path on the same clock; later loose states, shot contact, unknown and dead states terminate; no rebounds or full continuous play"));
+        limits.push(serde_json::json!("Control-change outputs distinguish opening switch probability from expected additional/total change counts; a branch can change control twice"));
     }
     Ok(result)
 }

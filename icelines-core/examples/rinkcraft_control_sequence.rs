@@ -20,6 +20,7 @@ struct Study {
     budgets: Vec<u16>,
     policies: Vec<Policy>,
     cases: Vec<task::StudyCase>,
+    recovery_rules: Option<seq::recovery::Rules>,
 }
 fn read<T: for<'a> Deserialize<'a>>(p: &str) -> Result<T, String> {
     serde_json::from_slice(&fs::read(p).map_err(|e| e.to_string())?).map_err(|e| e.to_string())
@@ -49,7 +50,9 @@ fn run() -> Result<(), String> {
         || study.kind != base.kind
         || !matches!(
             study.schema.as_str(),
-            "rinkcraft.control-sequence-study.0.1" | "rinkcraft.holder-policy-study.0.1"
+            "rinkcraft.control-sequence-study.0.1"
+                | "rinkcraft.holder-policy-study.0.1"
+                | "rinkcraft.loose-recovery-study.0.1"
         )
         || study.focus == study.opponent
         || study.budgets.is_empty()
@@ -63,7 +66,11 @@ fn run() -> Result<(), String> {
     {
         return Err("Invalid sequence study identity or size".into());
     }
-    let holder_mode = study.schema == "rinkcraft.holder-policy-study.0.1";
+    let recovery_mode = study.schema == "rinkcraft.loose-recovery-study.0.1";
+    let holder_mode = study.schema != "rinkcraft.control-sequence-study.0.1";
+    if study.recovery_rules.is_some() != recovery_mode {
+        return Err("Recovery schema/payload mismatch".into());
+    }
     if study
         .policies
         .iter()
@@ -121,6 +128,15 @@ fn run() -> Result<(), String> {
                 };
                 let inspect =
                     |first: &task::Team, second: &task::Team| match &policy.holder_policies {
+                        Some(ps) if recovery_mode => seq::recovery::inspect(
+                            &q.character_rules,
+                            &rules,
+                            first,
+                            second,
+                            &plan,
+                            ps,
+                            study.recovery_rules.as_ref().unwrap(),
+                        ),
                         Some(ps) => seq::inspect_with_policies(
                             &q.character_rules,
                             &rules,
@@ -144,10 +160,22 @@ fn run() -> Result<(), String> {
                     &out.join(&filename),
                     &serde_json::json!({"case":c,"policy_id":policy.id,"reference":a,"proposed":b}),
                 )?;
-                rows.push(serde_json::json!({"case":c.id,"policy":policy.id,"budget_seconds":budget,"result":filename,
+                let mut row = serde_json::json!({"case":c.id,"policy":policy.id,"budget_seconds":budget,"result":filename,
                 "reference_goals":a["goal_probability_by_team"],"proposed_goals":b["goal_probability_by_team"],
                 "reference_control":a["terminal_control_probability_by_team"],"proposed_control":b["terminal_control_probability_by_team"],
-                "proposed_switch_probability":b["control_switch_probability"],"expected_seconds":b["expected_elapsed_seconds"]}));
+                "proposed_switch_probability":b["control_switch_probability"],"expected_seconds":b["expected_elapsed_seconds"]});
+                if recovery_mode {
+                    row.as_object_mut()
+                        .unwrap()
+                        .remove("proposed_switch_probability");
+                    row["opening_switch_probability"] =
+                        b["opening_control_switch_probability"].clone();
+                    row["expected_recovery_control_changes"] =
+                        b["expected_recovery_control_changes"].clone();
+                    row["expected_total_control_changes"] =
+                        b["expected_total_control_changes"].clone();
+                }
+                rows.push(row);
             }
         }
         println!(
@@ -159,7 +187,7 @@ fn run() -> Result<(), String> {
     }
     write(
         &out.join("summary.json"),
-        &serde_json::json!({"schema":if holder_mode{"rinkcraft.holder-policy-summary.0.1"}else{"rinkcraft.control-sequence-summary.0.1"},"kind":study.kind,"focus":study.focus,"opponent":study.opponent,"seed":null,"trials":null,"rows":rows}),
+        &serde_json::json!({"schema":if recovery_mode{"rinkcraft.loose-recovery-summary.0.1"}else if holder_mode{"rinkcraft.holder-policy-summary.0.1"}else{"rinkcraft.control-sequence-summary.0.1"},"kind":study.kind,"focus":study.focus,"opponent":study.opponent,"seed":null,"trials":null,"rows":rows}),
     )
 }
 fn main() {
