@@ -1,5 +1,6 @@
 //! One explicitly shared-access pass-recovery window per path, opt-in only.
 use super::*;
+pub mod sensitivity;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Rules {
