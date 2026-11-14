@@ -605,7 +605,7 @@ pub fn apply_study_case(base: &Request, case: &StudyCase) -> Result<Request, Str
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn fixture() -> Request {
+    pub(super) fn fixture() -> Request {
         let rules = game::GameRules {
             schema: game::RULES_SCHEMA.into(),
             version: "test".into(),

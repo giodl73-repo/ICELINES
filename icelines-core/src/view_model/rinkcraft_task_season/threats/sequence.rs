@@ -1,5 +1,6 @@
 //! Exact controlled follow-ups on fixed units and one shared clock.
 use super::*;
+pub mod matchups;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -70,7 +71,7 @@ pub struct Rules {
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn fixture() -> (game::GameRules, Rules, Team, Team, Plan) {
+    pub(super) fn fixture() -> (game::GameRules, Rules, Team, Team, Plan) {
         let (cr, r, a, b) = super::super::tests::fixture();
         (
             cr,
