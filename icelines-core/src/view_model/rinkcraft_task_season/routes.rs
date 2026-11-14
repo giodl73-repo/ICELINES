@@ -30,7 +30,7 @@ pub struct Mixture {
 // Slot resolves to an actual member on each selected six-player unit. A defender
 // can be creator/receiver. Carry uses the creator as its shooter: no implicit pass.
 #[derive(Clone, Copy)]
-enum Slot {
+pub(super) enum Slot {
     Creator,
     Receiver,
     Goalie,
@@ -39,7 +39,7 @@ enum Slot {
     Gap,
 }
 impl Slot {
-    fn name(self) -> &'static str {
+    pub(super) fn name(self) -> &'static str {
         match self {
             Self::Creator => "creator",
             Self::Receiver => "receiver",
@@ -49,7 +49,7 @@ impl Slot {
             Self::Gap => "gap_defender",
         }
     }
-    fn id(self, unit: &super::Unit) -> &str {
+    pub(super) fn id(self, unit: &super::Unit) -> &str {
         match self {
             Self::Creator => &unit.creator,
             Self::Receiver => &unit.receiver,
@@ -141,7 +141,7 @@ fn stages(route: RouteKind) -> Vec<Stage> {
         ],
     }
 }
-fn capability(slot: Slot, cap: usize) -> &'static str {
+pub(super) fn capability(slot: Slot, cap: usize) -> &'static str {
     if matches!(slot, Slot::Goalie) {
         [
             "Tracking",
