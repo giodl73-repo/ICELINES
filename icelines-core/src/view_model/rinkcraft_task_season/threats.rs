@@ -6,6 +6,7 @@ use super::{
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
+pub mod sequence;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -373,7 +374,7 @@ pub fn inspect(
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn fixture() -> (game::GameRules, Rules, Team, Team) {
+    pub(super) fn fixture() -> (game::GameRules, Rules, Team, Team) {
         let cr = game::GameRules {
             schema: game::RULES_SCHEMA.into(),
             version: "test".into(),
