@@ -8,6 +8,7 @@ struct Policy {
     id: String,
     first: seq::Choice,
     second: seq::Choice,
+    holder_policies: Option<seq::HolderPolicies>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -46,7 +47,10 @@ fn run() -> Result<(), String> {
     if base.schema != task::SCHEMA
         || base.kind != "authored_game_scenario_not_nhl_estimate"
         || study.kind != base.kind
-        || study.schema != "rinkcraft.control-sequence-study.0.1"
+        || !matches!(
+            study.schema.as_str(),
+            "rinkcraft.control-sequence-study.0.1" | "rinkcraft.holder-policy-study.0.1"
+        )
         || study.focus == study.opponent
         || study.budgets.is_empty()
         || study.budgets.len() > 12
@@ -58,6 +62,14 @@ fn run() -> Result<(), String> {
         || study.cases.len() > 100
     {
         return Err("Invalid sequence study identity or size".into());
+    }
+    let holder_mode = study.schema == "rinkcraft.holder-policy-study.0.1";
+    if study
+        .policies
+        .iter()
+        .any(|x| x.holder_policies.is_some() != holder_mode)
+    {
+        return Err("Policy schema/payload mismatch".into());
     }
     let mut seen = BTreeSet::new();
     for x in &study.policies {
@@ -107,19 +119,25 @@ fn run() -> Result<(), String> {
                     first_policy: policy.first,
                     second_policy: policy.second,
                 };
-                let a = seq::inspect(
-                    &q.character_rules,
-                    &rules,
+                let inspect =
+                    |first: &task::Team, second: &task::Team| match &policy.holder_policies {
+                        Some(ps) => seq::inspect_with_policies(
+                            &q.character_rules,
+                            &rules,
+                            first,
+                            second,
+                            &plan,
+                            ps,
+                        ),
+                        None => seq::inspect(&q.character_rules, &rules, first, second, &plan),
+                    };
+                let a = inspect(
                     &team(&q.reference, &study.focus)?,
                     &team(&q.reference, &study.opponent)?,
-                    &plan,
                 )?;
-                let b = seq::inspect(
-                    &q.character_rules,
-                    &rules,
+                let b = inspect(
                     &team(&q.proposed, &study.focus)?,
                     &team(&q.proposed, &study.opponent)?,
-                    &plan,
                 )?;
                 let filename = format!("{}--{}--{}.json", c.id, policy.id, budget);
                 write(
@@ -141,7 +159,7 @@ fn run() -> Result<(), String> {
     }
     write(
         &out.join("summary.json"),
-        &serde_json::json!({"schema":"rinkcraft.control-sequence-summary.0.1","kind":study.kind,"focus":study.focus,"opponent":study.opponent,"seed":null,"trials":null,"rows":rows}),
+        &serde_json::json!({"schema":if holder_mode{"rinkcraft.holder-policy-summary.0.1"}else{"rinkcraft.control-sequence-summary.0.1"},"kind":study.kind,"focus":study.focus,"opponent":study.opponent,"seed":null,"trials":null,"rows":rows}),
     )
 }
 fn main() {

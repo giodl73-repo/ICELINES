@@ -1,11 +1,61 @@
 //! Exact controlled follow-ups on fixed units and one shared clock.
 use super::*;
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Choice {
     ShootHolder,
     ConnectThenShoot,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct HolderChoice {
+    pub member_id: String,
+    pub choice: Choice,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TeamPolicy {
+    pub team: String,
+    pub default: Choice,
+    pub overrides: Vec<HolderChoice>,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct HolderPolicies {
+    pub schema: String,
+    pub version: String,
+    pub kind: String,
+    pub first: TeamPolicy,
+    pub second: TeamPolicy,
+}
+impl HolderPolicies {
+    fn validate(&self, a: &Team, b: &Team, p: &Plan) -> Result<(), String> {
+        if self.schema != "rinkcraft.holder-policies.0.1"
+            || self.version != "0.1.0-playtest"
+            || self.kind != "authored_game_scenario_not_nhl_estimate"
+            || self.first.default != p.first_policy
+            || self.second.default != p.second_policy
+        {
+            return Err("Invalid holder-policy identity or conflicting plan defaults".into());
+        }
+        for (policy, team) in [(&self.first, a), (&self.second, b)] {
+            if policy.team != team.team || policy.overrides.len() > 40 {
+                return Err("Holder policy team/size mismatch".into());
+            }
+            let mut seen = BTreeSet::new();
+            for entry in &policy.overrides {
+                if !seen.insert(&entry.member_id)
+                    || !team.members.iter().any(|m| {
+                        m.id == entry.member_id && m.character.branch == game::Branch::Skater
+                    })
+                {
+                    return Err("Unknown/duplicate/non-skater holder override".into());
+                }
+            }
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -44,6 +94,153 @@ mod tests {
     }
     fn num(v: &serde_json::Value, k: &str) -> f64 {
         v[k].as_f64().unwrap()
+    }
+    fn policies(a: &Team, b: &Team, p: &Plan) -> HolderPolicies {
+        HolderPolicies {
+            schema: "rinkcraft.holder-policies.0.1".into(),
+            version: "0.1.0-playtest".into(),
+            kind: "authored_game_scenario_not_nhl_estimate".into(),
+            first: TeamPolicy {
+                team: a.team.clone(),
+                default: p.first_policy,
+                overrides: vec![],
+            },
+            second: TeamPolicy {
+                team: b.team.clone(),
+                default: p.second_policy,
+                overrides: vec![],
+            },
+        }
+    }
+    #[test]
+    fn empty_policy_overrides_preserve_existing_mechanics_and_old_shape() {
+        let (cr, r, a, b, p) = fixture();
+        let ps = policies(&a, &b, &p);
+        let old = inspect(&cr, &r, &a, &b, &p).unwrap();
+        let new = inspect_with_policies(&cr, &r, &a, &b, &p, &ps).unwrap();
+        for key in [
+            "terminal_states",
+            "action_audits",
+            "task_opportunities",
+            "goal_probability_by_team",
+            "terminal_control_probability_by_team",
+            "expected_elapsed_seconds",
+            "control_switch_probability",
+        ] {
+            assert_eq!(old[key], new[key], "{key}");
+        }
+        assert!(old.get("holder_policies").is_none());
+        assert_ne!(old["input_sha256"], new["input_sha256"]);
+        assert_eq!(
+            new,
+            inspect_with_policies(&cr, &r, &a, &b, &p, &ps).unwrap()
+        );
+    }
+    #[test]
+    fn override_follows_actual_holder_and_receiver_guard_is_audited() {
+        let (cr, r, a, b, p) = fixture();
+        let mut ps = policies(&a, &b, &p);
+        ps.first.overrides = vec![
+            HolderChoice {
+                member_id: "Alpha:2".into(),
+                choice: Choice::ConnectThenShoot,
+            },
+            HolderChoice {
+                member_id: "Alpha:1".into(),
+                choice: Choice::ConnectThenShoot,
+            },
+        ];
+        let v = inspect_with_policies(&cr, &r, &a, &b, &p, &ps).unwrap();
+        let ds = v["policy_decisions"].as_array().unwrap();
+        assert!(ds.iter().any(|x| x["holder_id"] == "Alpha:2"
+            && x["selected_action"] == "connect_holder"
+            && x["selection_source"] == "member_override"));
+        assert!(ds.iter().any(|x| x["holder_id"] == "Alpha:1"
+            && x["self_pass_guard"] == true
+            && x["selected_action"] == "shoot_holder"));
+        assert!(ds
+            .iter()
+            .filter(|x| x["team"] == "Beta")
+            .all(|x| x["selection_source"] == "team_default"));
+        let mut short = p;
+        short.budget_seconds = 6;
+        let v = inspect_with_policies(&cr, &r, &a, &b, &short, &ps).unwrap();
+        assert!(v["policy_decisions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|x| x["holder_id"] == "Alpha:2" && x["remaining_seconds"] == 0));
+        assert!(v["action_audits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|x| x["action"] == "connect_holder")
+            .all(|x| num(x, "completed_probability") == 0.0));
+    }
+    #[test]
+    fn declared_specialist_policy_changes_fit_without_a_bonus() {
+        let (cr, r, mut a, b, p) = fixture();
+        for (i, scores) in [(2, [10, 10, 20, 1, 10, 10]), (1, [10, 20, 10, 20, 10, 10])] {
+            let c = &a.members[i].character;
+            a.members[i].character = game::build(
+                &cr,
+                game::BuildRequest {
+                    template_id: c.template_id.clone(),
+                    name: c.name.clone(),
+                    position: c.position.clone(),
+                    scores: game::ScoreMethod::Manual { scores },
+                    inspiration: None,
+                },
+            )
+            .unwrap();
+        }
+        let base = inspect(&cr, &r, &a, &b, &p).unwrap();
+        let mut ps = policies(&a, &b, &p);
+        ps.first.overrides.push(HolderChoice {
+            member_id: "Alpha:2".into(),
+            choice: Choice::ConnectThenShoot,
+        });
+        let v = inspect_with_policies(&cr, &r, &a, &b, &p, &ps).unwrap();
+        assert!(
+            v["goal_probability_by_team"]["Alpha"].as_f64().unwrap()
+                > base["goal_probability_by_team"]["Alpha"].as_f64().unwrap()
+        );
+        assert_eq!(
+            v["goal_probability_by_team"]["Beta"],
+            base["goal_probability_by_team"]["Beta"]
+        );
+        assert_eq!(
+            v["control_switch_probability"],
+            base["control_switch_probability"]
+        );
+    }
+    #[test]
+    fn policy_identity_duplicates_unknowns_and_goalies_reject() {
+        let (cr, r, a, b, p) = fixture();
+        let base = policies(&a, &b, &p);
+        for id in ["missing", "Beta:3", "Alpha:5"] {
+            let mut ps = base.clone();
+            ps.first.overrides.push(HolderChoice {
+                member_id: id.into(),
+                choice: Choice::ConnectThenShoot,
+            });
+            assert!(inspect_with_policies(&cr, &r, &a, &b, &p, &ps).is_err());
+        }
+        let mut ps = base.clone();
+        ps.first.overrides = vec![
+            HolderChoice {
+                member_id: "Alpha:2".into(),
+                choice: Choice::ConnectThenShoot
+            };
+            2
+        ];
+        assert!(inspect_with_policies(&cr, &r, &a, &b, &p, &ps).is_err());
+        let mut ps = base.clone();
+        ps.first.default = Choice::ConnectThenShoot;
+        assert!(inspect_with_policies(&cr, &r, &a, &b, &p, &ps).is_err());
+        let mut ps = base;
+        ps.second.team = "Alpha".into();
+        assert!(inspect_with_policies(&cr, &r, &a, &b, &p, &ps).is_err());
     }
     #[test]
     fn terminal_clock_action_and_task_ledgers_conserve() {
@@ -226,6 +423,7 @@ struct Ledger {
     traces: BTreeMap<TraceKey, [f64; 6]>,
     tasks: BTreeMap<(String, String, String), f64>,
     switches: f64,
+    decisions: BTreeMap<(String, String, u16, String, String, String), f64>,
 }
 impl Ledger {
     fn end(
@@ -317,6 +515,7 @@ fn follow(
     members: [&BTreeMap<&str, &game::GameCharacter>; 2],
     t: &super::super::Table,
     l: &mut Ledger,
+    policies: Option<&HolderPolicies>,
 ) {
     loop {
         let side = s.side;
@@ -324,11 +523,20 @@ fn follow(
         let u = units[side];
         let d = units[other];
         let relative = if side == 0 { s.zone } else { -s.zone };
-        let choice = if side == 0 {
+        let default_choice = if side == 0 {
             p.first_policy
         } else {
             p.second_policy
         };
+        let override_choice = policies.and_then(|ps| {
+            let team_policy = if side == 0 { &ps.first } else { &ps.second };
+            team_policy
+                .overrides
+                .iter()
+                .find(|x| x.member_id == s.slot.id(u))
+                .map(|x| x.choice)
+        });
+        let choice = override_choice.unwrap_or(default_choice);
         let (name, cost, cap, opponent, opp_cap) = if s.receive {
             (
                 "receive",
@@ -365,6 +573,28 @@ fn follow(
             )
         };
         let aid = s.slot.id(u);
+        if policies.is_some() && !s.receive && relative > 0 {
+            let declared = if matches!(choice, Choice::ConnectThenShoot) {
+                "connect_then_shoot"
+            } else {
+                "shoot_holder"
+            };
+            let source = if override_choice.is_some() {
+                "member_override"
+            } else {
+                "team_default"
+            };
+            *l.decisions
+                .entry((
+                    teams[side].team.clone(),
+                    aid.into(),
+                    s.elapsed,
+                    declared.into(),
+                    source.into(),
+                    name.into(),
+                ))
+                .or_default() += w;
+        }
         let did = opponent.id(d);
         let target = if name == "connect_holder" {
             u.receiver.as_str()
@@ -451,6 +681,27 @@ pub fn inspect(
     b: &Team,
     p: &Plan,
 ) -> Result<serde_json::Value, String> {
+    inspect_inner(cr, r, a, b, p, None)
+}
+pub fn inspect_with_policies(
+    cr: &game::GameRules,
+    r: &Rules,
+    a: &Team,
+    b: &Team,
+    p: &Plan,
+    policies: &HolderPolicies,
+) -> Result<serde_json::Value, String> {
+    policies.validate(a, b, p)?;
+    inspect_inner(cr, r, a, b, p, Some(policies))
+}
+fn inspect_inner(
+    cr: &game::GameRules,
+    r: &Rules,
+    a: &Team,
+    b: &Team,
+    p: &Plan,
+    policies: Option<&HolderPolicies>,
+) -> Result<serde_json::Value, String> {
     super::validate(&r.opening)?;
     if r.schema != "rinkcraft.control-sequence-rules.0.1"
         || r.version != "0.1.0-playtest"
@@ -493,6 +744,7 @@ pub fn inspect(
         traces: BTreeMap::new(),
         tasks: BTreeMap::new(),
         switches: 0.0,
+        decisions: BTreeMap::new(),
     };
     for au in &a.units {
         for bu in &b.units {
@@ -556,7 +808,18 @@ pub fn inspect(
                         lost.slot = d.opponent;
                         lost.control = Control::Attacking;
                         l.switches += w * q[2];
-                        follow(lost, w * q[2], p, r, units, teams, members, &table, &mut l);
+                        follow(
+                            lost,
+                            w * q[2],
+                            p,
+                            r,
+                            units,
+                            teams,
+                            members,
+                            &table,
+                            &mut l,
+                            policies,
+                        );
                     } else {
                         l.end(w * q[2], step.failure, lost, units, teams, false);
                     }
@@ -583,7 +846,7 @@ pub fn inspect(
             }
             if !ended {
                 if matches!(s.control, Control::Attacking) {
-                    follow(s, w, p, r, units, teams, members, &table, &mut l);
+                    follow(s, w, p, r, units, teams, members, &table, &mut l, policies);
                 } else {
                     l.end(w, "opening_boundary", s, units, teams, false);
                 }
@@ -609,8 +872,7 @@ pub fn inspect(
         "connect_holder"=>r.opening.action_seconds["slot_connection"],"shoot_holder"=>r.opening.action_seconds["finish"],_=>r.opening.action_seconds[&action]}
     })).collect();
     let tasks:Vec<_>=l.tasks.into_iter().map(|((team,id,cap),w)|serde_json::json!({"team":team,"member_id":id,"capability":cap,"expected_contests":w})).collect();
-    Ok(
-        serde_json::json!({"schema":"rinkcraft.control-sequence-inspection.0.1","kind":r.kind,
+    let mut result = serde_json::json!({"schema":"rinkcraft.control-sequence-inspection.0.1","kind":r.kind,
         "input_sha256":hash(&(cr,r,a,b,p))?,"plan":p,"seed":null,"trials":null,"terminal_states":terminals,"action_audits":traces,
         "task_opportunities":tasks,"goal_probability_by_team":goals,"terminal_control_probability_by_team":held,
         "expected_elapsed_seconds":expected,"control_switch_probability":l.switches,
@@ -621,6 +883,19 @@ pub fn inspect(
         "Loose/unknown/dead states terminate except explicit in-flight reception after a chosen connection; no rebound recycle or interception possession",
         "No self-pass: connect policy shoots if holder already is the declared receiver; no other implicit teammate transfer",
         "One shared clock; completed actions pay full costs, incomplete actions expire at last boundary without a roll",
-        "Costs fixed by action; no fatigue, goalie readiness, penalties, line changes or full-game outcome/points ledger"]}),
-    )
+        "Costs fixed by action; no fatigue, goalie readiness, penalties, line changes or full-game outcome/points ledger"]});
+    if let Some(ps) = policies {
+        result["schema"] = "rinkcraft.holder-policy-inspection.0.1".into();
+        result["input_sha256"] = hash(&(cr, r, a, b, p, ps))?.into();
+        result["holder_policies"] = serde_json::to_value(ps).map_err(|e| e.to_string())?;
+        result["policy_decisions"]=l.decisions.into_iter().map(|((team,id,time,choice,source,action),w)|serde_json::json!({
+            "team":team,"holder_id":id,"start_seconds":time,"remaining_seconds":p.budget_seconds-time,"declared_choice":choice,
+            "selection_source":source,"selected_action":action,"reached_probability":w,
+            "self_pass_guard":choice=="connect_then_shoot"&&action=="shoot_holder"
+        })).collect::<Vec<_>>().into();
+        result["policy_limits"]=serde_json::json!(["Declared member-ID choices only at offensive controlled states; no oracle, score-based optimization or clock fallback",
+            "Selection can occur without time to complete; check action completion/expiry before crediting execution",
+            "Known but unused overrides have no effect; no skill absence inferred; receiver self-pass guard still applies"]);
+    }
+    Ok(result)
 }
