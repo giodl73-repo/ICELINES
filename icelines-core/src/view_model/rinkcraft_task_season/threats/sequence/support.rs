@@ -1,5 +1,6 @@
 //! One declared shared-access support window after a failed opening collection.
 use super::*;
+pub mod arrival;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Rules {
@@ -23,6 +24,10 @@ pub fn inspect(
     access::validate(ar, p)?;
     rr.validate()?;
     ps.validate(a, b, p)?;
+    validate(a, b, ar, sr)?;
+    inspect_inner(cr, r, a, b, p, Some(ps), Some(rr), Some(ar), Some(sr), None)
+}
+pub(super) fn validate(a: &Team, b: &Team, ar: &access::Rules, sr: &Rules) -> Result<(), String> {
     if sr.schema != "rinkcraft.opening-support-rules.0.1"
         || sr.version != "0.1.0-playtest"
         || sr.kind != "authored_game_scenario_not_nhl_estimate"
@@ -38,7 +43,7 @@ pub fn inspect(
                 .into(),
         );
     }
-    inspect_inner(cr, r, a, b, p, Some(ps), Some(rr), Some(ar), Some(sr))
+    Ok(())
 }
 pub(super) fn resolve(
     mut s: State,
@@ -55,7 +60,14 @@ pub(super) fn resolve(
     ps: Option<&HolderPolicies>,
     rr: Option<&recovery::Rules>,
     sr: &Rules,
+    arrival: Option<&arrival::Rules>,
 ) {
+    if let Some(arr) = arrival {
+        arrival::resolve(
+            s, w, race_side, trigger, p, r, units, teams, members, t, l, ps, rr, sr, arr,
+        );
+        return;
+    }
     let aid = Slot::Receiver.id(units[0]);
     let bid = Slot::Gap.id(units[1]);
     let status = if sr.max_contests == 0 {
@@ -171,7 +183,7 @@ pub(super) fn resolve(
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn fixture() -> (
+    pub(super) fn fixture() -> (
         game::GameRules,
         super::super::Rules,
         Team,

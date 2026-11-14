@@ -432,6 +432,7 @@ struct Ledger {
     recovery_changes: f64,
     access_collections: BTreeMap<(String, String, String, String, String, u16, String), [f64; 4]>,
     supports: BTreeMap<(String, String, String, String, u16, String), [f64; 4]>,
+    arrivals: BTreeMap<(String, String, u16, String), f64>,
 }
 impl Ledger {
     fn end(
@@ -714,7 +715,7 @@ pub fn inspect(
     b: &Team,
     p: &Plan,
 ) -> Result<serde_json::Value, String> {
-    inspect_inner(cr, r, a, b, p, None, None, None, None)
+    inspect_inner(cr, r, a, b, p, None, None, None, None, None)
 }
 pub fn inspect_with_policies(
     cr: &game::GameRules,
@@ -725,7 +726,7 @@ pub fn inspect_with_policies(
     policies: &HolderPolicies,
 ) -> Result<serde_json::Value, String> {
     policies.validate(a, b, p)?;
-    inspect_inner(cr, r, a, b, p, Some(policies), None, None, None)
+    inspect_inner(cr, r, a, b, p, Some(policies), None, None, None, None)
 }
 fn inspect_inner(
     cr: &game::GameRules,
@@ -737,6 +738,7 @@ fn inspect_inner(
     recovery: Option<&recovery::Rules>,
     access: Option<&access::Rules>,
     support: Option<&support::Rules>,
+    arrival: Option<&support::arrival::Rules>,
 ) -> Result<serde_json::Value, String> {
     super::validate(&r.opening)?;
     if r.schema != "rinkcraft.control-sequence-rules.0.1"
@@ -785,6 +787,7 @@ fn inspect_inner(
         recovery_changes: 0.0,
         access_collections: BTreeMap::new(),
         supports: BTreeMap::new(),
+        arrivals: BTreeMap::new(),
     };
     for au in &a.units {
         for bu in &b.units {
@@ -859,6 +862,7 @@ fn inspect_inner(
                             recovery,
                             access.unwrap(),
                             support,
+                            arrival,
                         );
                         access::collect(
                             s,
@@ -875,6 +879,7 @@ fn inspect_inner(
                             recovery,
                             access.unwrap(),
                             support,
+                            arrival,
                         );
                         ended = true;
                         break;
@@ -968,7 +973,8 @@ fn inspect_inner(
         "connect_holder"=>r.opening.action_seconds["slot_connection"],"shoot_holder"=>r.opening.action_seconds["finish"],
         "loose_collect_connect"|"loose_collect_receive"=>recovery.expect("recovery traces require rules").cost_seconds,
         "access_collect_hunter"|"access_collect_defender"=>r.opening.action_seconds["gather"],
-        "support_collect"=>support.expect("support trace requires rules").cost_seconds,_=>r.opening.action_seconds[&action]}
+        "support_collect"|"support_collect_first"|"support_collect_second"=>support.expect("support trace requires rules").cost_seconds,
+        "support_arrive"=>arrival.expect("arrival trace requires rules").wait_seconds().unwrap(),_=>r.opening.action_seconds[&action]}
     })).collect();
     let tasks:Vec<_>=l.tasks.into_iter().map(|((team,id,cap),w)|serde_json::json!({"team":team,"member_id":id,"capability":cap,"expected_contests":w})).collect();
     let mut result = serde_json::json!({"schema":"rinkcraft.control-sequence-inspection.0.1","kind":r.kind,
@@ -1064,6 +1070,11 @@ fn inspect_inner(
             "Opening audit loose mass is the immediate collection outcome, not final terminal mass; support audits show its continuation",
             "First-possession probabilities are disjoint initial acquisition events, separate from terminal possession and eventual goals",
             "Separate pass recovery allowance is retained; support tie ends loose, no repeated collection, rebound or full-game integration"]);
+    }
+    if let Some(arr) = arrival {
+        support::arrival::describe(&mut result, arr, support.unwrap(), l.arrivals)?;
+        result["input_sha256"] =
+            hash(&(cr, r, a, b, p, policies, recovery, access, support, arr))?.into();
     }
     Ok(result)
 }

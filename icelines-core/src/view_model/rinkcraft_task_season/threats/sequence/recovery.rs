@@ -35,7 +35,18 @@ pub fn inspect(
 ) -> Result<serde_json::Value, String> {
     recovery.validate()?;
     policies.validate(a, b, p)?;
-    inspect_inner(cr, r, a, b, p, Some(policies), Some(recovery), None, None)
+    inspect_inner(
+        cr,
+        r,
+        a,
+        b,
+        p,
+        Some(policies),
+        Some(recovery),
+        None,
+        None,
+        None,
+    )
 }
 pub(super) fn resolve(
     mut s: State,

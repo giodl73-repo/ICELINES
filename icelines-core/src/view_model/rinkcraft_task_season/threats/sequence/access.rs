@@ -28,7 +28,18 @@ pub fn inspect(
     validate(ar, p)?;
     policies.validate(a, b, p)?;
     rr.validate()?;
-    inspect_inner(cr, r, a, b, p, Some(policies), Some(rr), Some(ar), None)
+    inspect_inner(
+        cr,
+        r,
+        a,
+        b,
+        p,
+        Some(policies),
+        Some(rr),
+        Some(ar),
+        None,
+        None,
+    )
 }
 pub(super) fn validate(ar: &Rules, p: &Plan) -> Result<(), String> {
     if ar.schema != "rinkcraft.opening-access-rules.0.1"
@@ -58,6 +69,7 @@ pub(super) fn collect(
     rr: Option<&recovery::Rules>,
     ar: &Rules,
     sr: Option<&support::Rules>,
+    arrival: Option<&support::arrival::Rules>,
 ) {
     let other = 1 - side;
     let actor = if side == 0 {
@@ -157,6 +169,7 @@ pub(super) fn collect(
             policies,
             rr,
             sr.unwrap(),
+            arrival,
         );
     } else {
         l.end(
@@ -207,6 +220,7 @@ pub(super) fn collect(
                 policies,
                 rr,
                 sr,
+                arrival,
             );
         } else {
             l.end(
