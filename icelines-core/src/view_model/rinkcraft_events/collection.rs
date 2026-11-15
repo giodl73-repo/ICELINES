@@ -63,6 +63,7 @@ pub fn build(draft: Draft) -> Result<Request, String> {
             | ("rinkcraft.event-draft.0.7", "rinkcraft.event-episode.0.7")
             | ("rinkcraft.event-draft.0.8", "rinkcraft.event-episode.0.8")
             | ("rinkcraft.event-draft.0.9", "rinkcraft.event-episode.0.9")
+            | ("rinkcraft.event-draft.0.10", "rinkcraft.event-episode.0.10")
     ) || draft.episode.profiles.is_some()
     {
         return Err(
@@ -116,7 +117,8 @@ pub(super) fn validate(q: &Request) -> Result<(), String> {
             | "rinkcraft.event-episode.0.6"
             | "rinkcraft.event-episode.0.7"
             | "rinkcraft.event-episode.0.8"
-            | "rinkcraft.event-episode.0.9",
+            | "rinkcraft.event-episode.0.9"
+            | "rinkcraft.event-episode.0.10",
             Some(p),
         ) => {
             if p.schema != "rinkcraft.event-profiles.0.1"

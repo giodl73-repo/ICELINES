@@ -84,6 +84,8 @@ pub enum Move {
     Carry {
         context: pass_context::Context,
         seconds: u16,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        on_failure: Option<Failure>,
     },
     Pass {
         receiver: String,
@@ -91,7 +93,32 @@ pub enum Move {
         receipt: pass_context::Context,
         seconds: u16,
         receipt_seconds: u16,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        on_delivery_failure: Option<Failure>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        on_receipt_failure: Option<Failure>,
     },
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Failure {
+    pub scene: String,
+    pub basis: String,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Progress {
+    Advanced,
+    Recovered,
+    Stop,
+}
+impl From<bool> for Progress {
+    fn from(value: bool) -> Self {
+        if value {
+            Self::Advanced
+        } else {
+            Self::Stop
+        }
+    }
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
@@ -288,6 +315,7 @@ fn movement(q: &Request, p: &collection::Profiles, m: &Move, side: Side) -> Resu
         Move::Carry {
             context: c,
             seconds,
+            ..
         } => {
             if !duration(*seconds) {
                 return Err("invalid movement time".into());
@@ -300,6 +328,7 @@ fn movement(q: &Request, p: &collection::Profiles, m: &Move, side: Side) -> Resu
             receipt,
             seconds,
             receipt_seconds,
+            ..
         } => {
             if !duration(*seconds) || !duration(*receipt_seconds) {
                 return Err("invalid pass time".into());
@@ -316,8 +345,10 @@ pub(super) fn validate(q: &Request, p: &collection::Profiles) -> Result<(), Stri
             continue;
         };
         let f = z.frame;
-        if q.schema != "rinkcraft.event-episode.0.9"
-            || !(1..=1200).contains(&step.seconds)
+        if !matches!(
+            q.schema.as_str(),
+            "rinkcraft.event-episode.0.9" | "rinkcraft.event-episode.0.10"
+        ) || !(1..=1200).contains(&step.seconds)
             || !(-18..=18).contains(&f.west_blue_line)
             || !(-18..=18).contains(&f.east_blue_line)
             || f.east_blue_line - f.west_blue_line < 4
@@ -327,7 +358,7 @@ pub(super) fn validate(q: &Request, p: &collection::Profiles) -> Result<(), Stri
             || !(1..=24).contains(&z.max_transitions)
             || z.sides.len() != 2
             || z.scenes.is_empty()
-            || z.scenes.len() > 9
+            || z.scenes.len() > if q.schema.ends_with(".0.10") { 33 } else { 9 }
         {
             return Err("invalid explicit 0.9 three-zone frame, window or route bounds".into());
         }
@@ -417,6 +448,62 @@ pub(super) fn validate(q: &Request, p: &collection::Profiles) -> Result<(), Stri
                     }
                     ruling(r)?;
                     check_scene(scene, *landing)?;
+                }
+            }
+        }
+        let mut locations = vec![z.start_puck];
+        for side in [Side::A, Side::B] {
+            for phase in ["exit", "neutral", "regroup", "entry", "clear"] {
+                locations.push(f.target(side, phase));
+            }
+        }
+        for policy in &z.sides {
+            if let Entry::Dump { landing, .. } = policy.entry {
+                locations.push(landing);
+            }
+        }
+        for policy in &z.sides {
+            let mut moves = vec![("neutral", &policy.neutral)];
+            if let Exit::Controlled { movement, .. } = &policy.exit {
+                moves.push(("exit", movement));
+            }
+            if let Entry::Controlled { movement, .. } = &policy.entry {
+                moves.push(("entry", movement));
+            }
+            if let Some(regroup) = &policy.regroup {
+                moves.push(("regroup", &regroup.movement));
+            }
+            for (phase, m) in moves {
+                let (departure, receipt) = match m {
+                    Move::Carry { on_failure, .. } => (on_failure.as_ref(), None),
+                    Move::Pass {
+                        on_delivery_failure,
+                        on_receipt_failure,
+                        ..
+                    } => (on_delivery_failure.as_ref(), on_receipt_failure.as_ref()),
+                };
+                for failure in departure.into_iter().chain(receipt) {
+                    if q.schema != "rinkcraft.event-episode.0.10" || !text(&failure.basis) {
+                        return Err(
+                            "failure retrieval needs explicit 0.10 and bounded basis".into()
+                        );
+                    }
+                }
+                if let Some(failure) = departure {
+                    let origin = if phase == "exit" {
+                        Zone::Defensive
+                    } else {
+                        Zone::Neutral
+                    };
+                    for at in locations
+                        .iter()
+                        .filter(|c| f.zone(**c, policy.side) == origin)
+                    {
+                        check_scene(&failure.scene, *at)?;
+                    }
+                }
+                if let Some(failure) = receipt {
+                    check_scene(&failure.scene, f.target(policy.side, phase))?;
                 }
             }
         }
@@ -530,6 +617,50 @@ impl Engine<'_> {
         self.events.last_mut().unwrap().transport_task = Some(audit);
         Ok(success)
     }
+    fn transport_failure(
+        &mut self,
+        i: usize,
+        z: &Plan,
+        puck: Cell,
+        phase: &str,
+        failure: Option<&Failure>,
+        budget: &mut u16,
+    ) -> Result<Progress, String> {
+        if self.state.unresolved.is_some() {
+            return Ok(Progress::Stop);
+        }
+        self.state.puck = Puck::Loose;
+        let Some(failure) = failure else {
+            return Ok(Progress::Stop);
+        };
+        self.territory(i, z, puck, phase, "failed_task_loose", None);
+        if self.retrieve_scene(i, z, &failure.scene, puck, budget)? {
+            self.territory(i, z, puck, phase, "failed_task_recovered", None);
+            Ok(Progress::Recovered)
+        } else {
+            Ok(Progress::Stop)
+        }
+    }
+    fn lawful_move(
+        &mut self,
+        i: usize,
+        z: &Plan,
+        puck: &mut Cell,
+        m: &Move,
+        phase: &str,
+        rule: Option<&Ruling>,
+        budget: &mut u16,
+    ) -> Result<Progress, String> {
+        if rule.is_some_and(|r| !self.lawful(i, r)) {
+            return Ok(Progress::Stop);
+        }
+        let holder = match &self.state.puck {
+            Puck::Controlled { player } => player,
+            _ => return Err("move needs actual holder".into()),
+        };
+        let side = self.player(holder)?.side;
+        self.transport_move(i, z, puck, z.frame.target(side, phase), m, phase, budget)
+    }
     fn transport_move(
         &mut self,
         i: usize,
@@ -539,7 +670,7 @@ impl Engine<'_> {
         m: &Move,
         phase: &str,
         budget: &mut u16,
-    ) -> Result<bool, String> {
+    ) -> Result<Progress, String> {
         let Puck::Controlled { player: actor } = &self.state.puck else {
             return Err("transport requires actual control".into());
         };
@@ -547,18 +678,19 @@ impl Engine<'_> {
         let side = self.player(&actor)?.side;
         let from = *puck;
         let (method, success) = match m {
-            Move::Carry { context, seconds } => {
+            Move::Carry {
+                context,
+                seconds,
+                on_failure,
+            } => {
                 if !self.zone_time(i, *seconds, budget)? {
-                    return Ok(false);
+                    return Ok(Progress::Stop);
                 }
                 let index = if phase == "entry" { 1 } else { 0 };
                 let ok =
                     self.transport_check(i, &actor, context, index, 5, &format!("{phase}_carry"))?;
                 if !ok {
-                    if self.state.unresolved.is_none() {
-                        self.state.puck = Puck::Loose;
-                    }
-                    return Ok(false);
+                    return self.transport_failure(i, z, *puck, phase, on_failure.as_ref(), budget);
                 }
                 self.state.last_deliberate = Some(actor.clone());
                 ("carry", true)
@@ -569,20 +701,26 @@ impl Engine<'_> {
                 receipt,
                 seconds,
                 receipt_seconds,
+                on_delivery_failure,
+                on_receipt_failure,
             } => {
                 if receiver == &actor {
                     return Err("route pass cannot target actual holder".into());
                 }
                 self.active(receiver)?;
                 if !self.zone_time(i, *seconds, budget)? {
-                    return Ok(false);
+                    return Ok(Progress::Stop);
                 }
                 // Unknown lane does not silently release a puck.
                 if !self.transport_check(i, &actor, lane, 2, 4, &format!("{phase}_delivery"))? {
-                    if self.state.unresolved.is_none() {
-                        self.state.puck = Puck::Loose;
-                    }
-                    return Ok(false);
+                    return self.transport_failure(
+                        i,
+                        z,
+                        *puck,
+                        phase,
+                        on_delivery_failure.as_ref(),
+                        budget,
+                    );
                 }
                 self.state.puck = Puck::Flight;
                 self.state.last_deliberate = Some(actor.clone());
@@ -605,20 +743,24 @@ impl Engine<'_> {
                     }),
                 );
                 if !self.zone_time(i, *receipt_seconds, budget)? {
-                    return Ok(false);
+                    return Ok(Progress::Stop);
                 }
                 if !self.transport_check(i, receiver, receipt, 1, 5, &format!("{phase}_receipt"))? {
-                    if self.state.unresolved.is_none() {
-                        self.state.puck = Puck::Loose;
-                    }
-                    return Ok(false);
+                    return self.transport_failure(
+                        i,
+                        z,
+                        *puck,
+                        phase,
+                        on_receipt_failure.as_ref(),
+                        budget,
+                    );
                 }
                 self.control(i, receiver.clone(), None)?;
                 ("pass", matches!(self.state.puck, Puck::Controlled { .. }))
             }
         };
         if !success {
-            return Ok(false);
+            return Ok(Progress::Stop);
         }
         *puck = to;
         self.territory(
@@ -640,7 +782,7 @@ impl Engine<'_> {
                 None
             },
         );
-        Ok(true)
+        Ok(Progress::Advanced)
     }
     fn retrieve_scene(
         &mut self,
@@ -731,7 +873,7 @@ impl Engine<'_> {
             }
             previous = Some(side);
             let policy = z.sides.iter().find(|s| s.side == side).unwrap();
-            let ok = match z.frame.zone(puck, side) {
+            let progress = match z.frame.zone(puck, side) {
                 Zone::Offensive => {
                     self.territory(i, z, puck, "complete", "attack_established", None);
                     return Ok(());
@@ -739,25 +881,22 @@ impl Engine<'_> {
                 Zone::Defensive => {
                     progressed = None;
                     match &policy.exit {
-                        Exit::Controlled { movement, ruling } => {
-                            self.lawful(i, ruling)
-                                && self.transport_move(
-                                    i,
-                                    z,
-                                    &mut puck,
-                                    z.frame.target(side, "exit"),
-                                    movement,
-                                    "exit",
-                                    &mut budget,
-                                )?
-                        }
+                        Exit::Controlled { movement, ruling } => self.lawful_move(
+                            i,
+                            z,
+                            &mut puck,
+                            movement,
+                            "exit",
+                            Some(ruling),
+                            &mut budget,
+                        )?,
                         Exit::Clear {
                             scene,
                             seconds,
                             ruling,
                         } => {
-                            self.lawful(i, ruling)
-                                && self.transport_loose(
+                            if self.lawful(i, ruling) {
+                                self.transport_loose(
                                     i,
                                     z,
                                     &mut puck,
@@ -767,6 +906,10 @@ impl Engine<'_> {
                                     scene,
                                     &mut budget,
                                 )?
+                                .into()
+                            } else {
+                                Progress::Stop
+                            }
                         }
                     }
                 }
@@ -774,41 +917,37 @@ impl Engine<'_> {
                     if let Some(r) = policy.regroup.as_ref().filter(|_| !regrouped[side.index()]) {
                         regrouped[side.index()] = true;
                         progressed = None;
-                        self.lawful(i, &r.ruling)
-                            && self.transport_move(
-                                i,
-                                z,
-                                &mut puck,
-                                z.frame.target(side, "regroup"),
-                                &r.movement,
-                                "regroup",
-                                &mut budget,
-                            )?
-                    } else if progressed != Some(side) {
-                        progressed = Some(side);
-                        self.transport_move(
+                        self.lawful_move(
                             i,
                             z,
                             &mut puck,
-                            z.frame.target(side, "neutral"),
+                            &r.movement,
+                            "regroup",
+                            Some(&r.ruling),
+                            &mut budget,
+                        )?
+                    } else if progressed != Some(side) {
+                        progressed = Some(side);
+                        self.lawful_move(
+                            i,
+                            z,
+                            &mut puck,
                             &policy.neutral,
                             "neutral",
+                            None,
                             &mut budget,
                         )?
                     } else {
                         match &policy.entry {
-                            Entry::Controlled { movement, ruling } => {
-                                self.lawful(i, ruling)
-                                    && self.transport_move(
-                                        i,
-                                        z,
-                                        &mut puck,
-                                        z.frame.target(side, "entry"),
-                                        movement,
-                                        "entry",
-                                        &mut budget,
-                                    )?
-                            }
+                            Entry::Controlled { movement, ruling } => self.lawful_move(
+                                i,
+                                z,
+                                &mut puck,
+                                movement,
+                                "entry",
+                                Some(ruling),
+                                &mut budget,
+                            )?,
                             Entry::Dump {
                                 landing,
                                 scene,
@@ -816,8 +955,8 @@ impl Engine<'_> {
                                 ruling,
                                 ..
                             } => {
-                                self.lawful(i, ruling)
-                                    && self.transport_loose(
+                                if self.lawful(i, ruling) {
+                                    self.transport_loose(
                                         i,
                                         z,
                                         &mut puck,
@@ -827,16 +966,27 @@ impl Engine<'_> {
                                         scene,
                                         &mut budget,
                                     )?
+                                    .into()
+                                } else {
+                                    Progress::Stop
+                                }
                             }
                         }
                     }
                 }
             };
-            if !ok {
-                self.territory(i, z, puck, "stop", "route_not_completed", None);
-                return Ok(());
+            match progress {
+                Progress::Recovered => {
+                    progressed = None;
+                }
+                Progress::Stop => {
+                    self.territory(i, z, puck, "stop", "route_not_completed", None);
+                    return Ok(());
+                }
+                Progress::Advanced => {}
             }
         }
+
         // A final successful entry can consume the last allowed transition.
         if let Puck::Controlled { player } = &self.state.puck {
             if z.frame.zone(puck, self.player(player)?.side) == Zone::Offensive {
