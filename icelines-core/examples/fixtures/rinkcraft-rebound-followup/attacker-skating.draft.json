@@ -1,0 +1,294 @@
+{
+  "schema": "rinkcraft.event-draft.0.7",
+  "episode": {
+    "schema": "rinkcraft.event-episode.0.7",
+    "seed": 20261119,
+    "players": [
+      {
+        "id": "p0",
+        "side": "a",
+        "goalie": false
+      },
+      {
+        "id": "p1",
+        "side": "a",
+        "goalie": false
+      },
+      {
+        "id": "p2",
+        "side": "a",
+        "goalie": false
+      },
+      {
+        "id": "p3",
+        "side": "a",
+        "goalie": false
+      },
+      {
+        "id": "p4",
+        "side": "a",
+        "goalie": false
+      },
+      {
+        "id": "p5",
+        "side": "a",
+        "goalie": true
+      },
+      {
+        "id": "p6",
+        "side": "b",
+        "goalie": false
+      },
+      {
+        "id": "p7",
+        "side": "b",
+        "goalie": false
+      },
+      {
+        "id": "p8",
+        "side": "b",
+        "goalie": false
+      },
+      {
+        "id": "p9",
+        "side": "b",
+        "goalie": false
+      },
+      {
+        "id": "p10",
+        "side": "b",
+        "goalie": false
+      },
+      {
+        "id": "p11",
+        "side": "b",
+        "goalie": true
+      }
+    ],
+    "controller": "p0",
+    "seconds_remaining": 600,
+    "steps": [
+      {
+        "seconds": 1,
+        "action": {
+          "kind": "release",
+          "actor": "p0",
+          "shot": true
+        }
+      },
+      {
+        "seconds": 1,
+        "action": {
+          "kind": "resolve_shot",
+          "plan": {
+            "shooter": "p0",
+            "goalie": "p11",
+            "finish": [
+              {
+                "weight": 5000,
+                "outcome": "goal"
+              },
+              {
+                "weight": 2500,
+                "outcome": "post"
+              },
+              {
+                "weight": 2500,
+                "outcome": "loose"
+              }
+            ],
+            "rebound_context": {
+              "kind": "hold_eligible",
+              "target": 13,
+              "basis": "Authored hold-eligible contact; target 13 bridges the older neutral 40% hold share"
+            }
+          }
+        }
+      },
+      {
+        "seconds": 1,
+        "action": {
+          "kind": "rebound_followup",
+          "plan": {
+            "collector": "p1",
+            "pressure": "p6",
+            "access_basis": "Authored immediate reachable attacking rebound, not inferred arrival",
+            "recovery_basis": "Authored Reset race during collection; Recovery versus attacker Skating",
+            "late_tracking_adjustment": -2,
+            "release_seconds": 1,
+            "shot_seconds": 1,
+            "shot": {
+              "shooter": "p1",
+              "goalie": "p11",
+              "finish": [
+                {
+                  "weight": 5000,
+                  "outcome": "goal"
+                },
+                {
+                  "weight": 2500,
+                  "outcome": "post"
+                },
+                {
+                  "weight": 2500,
+                  "outcome": "loose"
+                }
+              ],
+              "rebound_context": {
+                "kind": "hold_eligible",
+                "target": 13,
+                "basis": "Authored hold-eligible contact; target 13 bridges the older neutral 40% hold share"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "character_rules": {
+    "schema": "rinkcraft.game-rules.v1",
+    "version": "shot-encounter.0.1",
+    "title": "Fictional shot and goalie encounter",
+    "standard_array": [
+      17,
+      16,
+      15,
+      13,
+      11,
+      9
+    ],
+    "templates": [
+      {
+        "id": "retriever",
+        "branch": "skater",
+        "class_id": "retriever",
+        "class_name": "Retriever",
+        "specialty": "Loose pucks",
+        "description": "Neutral fictional skater for the collection adapter",
+        "priority": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "task_skills": [
+          "Loose-puck collection"
+        ],
+        "methods": [
+          "Secure under pressure"
+        ],
+        "tendencies": [],
+        "playbook_options": []
+      },
+      {
+        "id": "goalie",
+        "branch": "goalie",
+        "class_id": "guardian",
+        "class_name": "Guardian",
+        "specialty": "Track the puck",
+        "description": "Fictional goalie test build",
+        "priority": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "task_skills": [
+          "Tracking"
+        ],
+        "methods": [
+          "Follow release"
+        ],
+        "tendencies": [],
+        "playbook_options": []
+      }
+    ]
+  },
+  "score_rule": "half_offset",
+  "members": [
+    {
+      "player": "p0",
+      "build": {
+        "template_id": "retriever",
+        "name": "Shooter",
+        "position": "F",
+        "scores": {
+          "kind": "manual",
+          "scores": [
+            10,
+            10,
+            10,
+            10,
+            10,
+            10
+          ]
+        },
+        "inspiration": null
+      }
+    },
+    {
+      "player": "p11",
+      "build": {
+        "template_id": "goalie",
+        "name": "Goalie",
+        "position": "G",
+        "scores": {
+          "kind": "manual",
+          "scores": [
+            10,
+            10,
+            10,
+            10,
+            10,
+            10
+          ]
+        },
+        "inspiration": null
+      }
+    },
+    {
+      "player": "p1",
+      "build": {
+        "template_id": "retriever",
+        "name": "Reachable rebound collector",
+        "position": "F",
+        "scores": {
+          "kind": "manual",
+          "scores": [
+            16,
+            10,
+            10,
+            10,
+            10,
+            10
+          ]
+        },
+        "inspiration": null
+      }
+    },
+    {
+      "player": "p6",
+      "build": {
+        "template_id": "retriever",
+        "name": "Collection pressure",
+        "position": "F",
+        "scores": {
+          "kind": "manual",
+          "scores": [
+            10,
+            10,
+            10,
+            10,
+            10,
+            10
+          ]
+        },
+        "inspiration": null
+      }
+    }
+  ]
+}

@@ -60,6 +60,7 @@ pub fn build(draft: Draft) -> Result<Request, String> {
             | ("rinkcraft.event-draft.0.4", "rinkcraft.event-episode.0.4")
             | ("rinkcraft.event-draft.0.5", "rinkcraft.event-episode.0.5")
             | ("rinkcraft.event-draft.0.6", "rinkcraft.event-episode.0.6")
+            | ("rinkcraft.event-draft.0.7", "rinkcraft.event-episode.0.7")
     ) || draft.episode.profiles.is_some()
     {
         return Err(
@@ -97,6 +98,7 @@ pub(super) fn validate(q: &Request) -> Result<(), String> {
                         | Action::PassUnderPressure { .. }
                         | Action::PassWithContext { .. }
                         | Action::ResolveShot { .. }
+                        | Action::ReboundFollowup { .. }
                 )
             }) {
                 return Err("capability tasks require an explicit 0.2 episode".into());
@@ -107,7 +109,8 @@ pub(super) fn validate(q: &Request) -> Result<(), String> {
             | "rinkcraft.event-episode.0.3"
             | "rinkcraft.event-episode.0.4"
             | "rinkcraft.event-episode.0.5"
-            | "rinkcraft.event-episode.0.6",
+            | "rinkcraft.event-episode.0.6"
+            | "rinkcraft.event-episode.0.7",
             Some(p),
         ) => {
             if p.schema != "rinkcraft.event-profiles.0.1"
@@ -163,6 +166,7 @@ pub(super) fn validate(q: &Request) -> Result<(), String> {
         passing::validate(q, p)?;
         pass_context::validate(q, p)?;
         shot::validate(q, p)?;
+        followup::validate(q, p)?;
     }
     Ok(())
 }

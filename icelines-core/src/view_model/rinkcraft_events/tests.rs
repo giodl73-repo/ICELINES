@@ -2,6 +2,8 @@ use super::*;
 use serde_json::{json, Value};
 #[path = "collection_tests.rs"]
 mod collection_tests;
+#[path = "followup_tests.rs"]
+mod followup_tests;
 #[path = "pass_context_tests.rs"]
 mod pass_context_tests;
 #[path = "passing_tests.rs"]
