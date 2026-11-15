@@ -2,6 +2,8 @@ use super::*;
 use serde_json::{json, Value};
 #[path = "collection_tests.rs"]
 mod collection_tests;
+#[path = "pass_context_tests.rs"]
+mod pass_context_tests;
 #[path = "passing_tests.rs"]
 mod passing_tests;
 fn request(actions: Vec<Value>) -> Request {

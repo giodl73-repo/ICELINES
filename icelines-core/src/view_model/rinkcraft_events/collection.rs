@@ -57,9 +57,10 @@ pub fn build(draft: Draft) -> Result<Request, String> {
         (draft.schema.as_str(), draft.episode.schema.as_str()),
         ("rinkcraft.event-draft.0.2", "rinkcraft.event-episode.0.2")
             | ("rinkcraft.event-draft.0.3", "rinkcraft.event-episode.0.3")
+            | ("rinkcraft.event-draft.0.4", "rinkcraft.event-episode.0.4")
     ) || draft.episode.profiles.is_some()
     {
-        return Err("draft requires matching 0.2/0.3 episode without populated profiles".into());
+        return Err("draft requires a matching supported episode without populated profiles".into());
     }
     let members = draft
         .members
@@ -88,13 +89,20 @@ pub(super) fn validate(q: &Request) -> Result<(), String> {
             if q.steps.iter().any(|s| {
                 matches!(
                     s.action,
-                    Action::CollectUnderPressure { .. } | Action::PassUnderPressure { .. }
+                    Action::CollectUnderPressure { .. }
+                        | Action::PassUnderPressure { .. }
+                        | Action::PassWithContext { .. }
                 )
             }) {
                 return Err("capability tasks require an explicit 0.2 episode".into());
             }
         }
-        ("rinkcraft.event-episode.0.2" | "rinkcraft.event-episode.0.3", Some(p)) => {
+        (
+            "rinkcraft.event-episode.0.2"
+            | "rinkcraft.event-episode.0.3"
+            | "rinkcraft.event-episode.0.4",
+            Some(p),
+        ) => {
             if p.schema != "rinkcraft.event-profiles.0.1"
                 || p.members.is_empty()
                 || p.members.len() > 12
@@ -122,7 +130,7 @@ pub(super) fn validate(q: &Request) -> Result<(), String> {
             }
             for step in &q.steps {
                 if matches!(step.action, Action::PassUnderPressure { .. })
-                    && q.schema != "rinkcraft.event-episode.0.3"
+                    && q.schema == "rinkcraft.event-episode.0.2"
                 {
                     return Err("passing tasks require explicit 0.3 episode".into());
                 }
@@ -146,6 +154,7 @@ pub(super) fn validate(q: &Request) -> Result<(), String> {
     }
     if let Some(p) = &q.profiles {
         passing::validate(q, p)?;
+        pass_context::validate(q, p)?;
     }
     Ok(())
 }

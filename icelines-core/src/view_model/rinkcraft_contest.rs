@@ -7,6 +7,18 @@ pub enum ScoreRule {
     Direct,
     HalfOffset,
 }
+impl ScoreRule {
+    /// Shared fictional score term, including for unopposed target checks.
+    pub fn term(self, score: u8) -> Result<i16, String> {
+        if !(1..=20).contains(&score) {
+            return Err("Fictional scores must be 1–20".into());
+        }
+        Ok(match self {
+            Self::Direct => i16::from(score),
+            Self::HalfOffset => (i16::from(score) - 10).div_euclid(2),
+        })
+    }
+}
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Contest {
@@ -52,13 +64,9 @@ impl Contest {
     }
     pub fn terms(self) -> Result<[i16; 2], String> {
         self.validate()?;
-        let score = |x: u8| match self.score_rule {
-            ScoreRule::Direct => i16::from(x),
-            ScoreRule::HalfOffset => (i16::from(x) - 10).div_euclid(2),
-        };
         Ok([
-            score(self.actor_score) + i16::from(self.actor_adjustment),
-            score(self.opposition_score) + i16::from(self.opposition_adjustment),
+            self.score_rule.term(self.actor_score)? + i16::from(self.actor_adjustment),
+            self.score_rule.term(self.opposition_score)? + i16::from(self.opposition_adjustment),
         ])
     }
     pub fn resolve(self, actor_die: u8, opposition_die: u8) -> Result<Resolution, String> {

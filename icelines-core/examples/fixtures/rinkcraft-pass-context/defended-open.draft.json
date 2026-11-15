@@ -1,0 +1,195 @@
+{
+  "schema": "rinkcraft.event-draft.0.4",
+  "episode": {
+    "schema": "rinkcraft.event-episode.0.4",
+    "seed": 20261114,
+    "players": [
+      {
+        "id": "p0",
+        "side": "a",
+        "goalie": false
+      },
+      {
+        "id": "p1",
+        "side": "a",
+        "goalie": false
+      },
+      {
+        "id": "p2",
+        "side": "a",
+        "goalie": false
+      },
+      {
+        "id": "p3",
+        "side": "a",
+        "goalie": false
+      },
+      {
+        "id": "p4",
+        "side": "a",
+        "goalie": false
+      },
+      {
+        "id": "p5",
+        "side": "a",
+        "goalie": true
+      },
+      {
+        "id": "p6",
+        "side": "b",
+        "goalie": false
+      },
+      {
+        "id": "p7",
+        "side": "b",
+        "goalie": false
+      },
+      {
+        "id": "p8",
+        "side": "b",
+        "goalie": false
+      },
+      {
+        "id": "p9",
+        "side": "b",
+        "goalie": false
+      },
+      {
+        "id": "p10",
+        "side": "b",
+        "goalie": false
+      },
+      {
+        "id": "p11",
+        "side": "b",
+        "goalie": true
+      }
+    ],
+    "controller": "p0",
+    "seconds_remaining": 600,
+    "steps": [
+      {
+        "seconds": 1,
+        "action": {
+          "kind": "pass_with_context",
+          "plan": {
+            "passer": "p0",
+            "receiver": "p1",
+            "lane": {
+              "kind": "defended",
+              "defender": "p6"
+            },
+            "receipt": {
+              "kind": "open",
+              "target": 5,
+              "basis": "Authored unopposed task target; no reachable defender declared in this stage"
+            },
+            "receive_seconds": 1
+          }
+        }
+      }
+    ]
+  },
+  "character_rules": {
+    "schema": "rinkcraft.game-rules.v1",
+    "version": "event-collection.0.1",
+    "title": "Fictional collection playtest",
+    "standard_array": [
+      17,
+      16,
+      15,
+      13,
+      11,
+      9
+    ],
+    "templates": [
+      {
+        "id": "retriever",
+        "branch": "skater",
+        "class_id": "retriever",
+        "class_name": "Retriever",
+        "specialty": "Loose pucks",
+        "description": "Neutral fictional skater for the collection adapter",
+        "priority": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "task_skills": [
+          "Loose-puck collection"
+        ],
+        "methods": [
+          "Secure under pressure"
+        ],
+        "tendencies": [],
+        "playbook_options": []
+      }
+    ]
+  },
+  "score_rule": "half_offset",
+  "members": [
+    {
+      "player": "p0",
+      "build": {
+        "template_id": "retriever",
+        "name": "Passer",
+        "position": "F",
+        "scores": {
+          "kind": "manual",
+          "scores": [
+            10,
+            10,
+            10,
+            10,
+            10,
+            10
+          ]
+        },
+        "inspiration": null
+      }
+    },
+    {
+      "player": "p1",
+      "build": {
+        "template_id": "retriever",
+        "name": "Receiver",
+        "position": "F",
+        "scores": {
+          "kind": "manual",
+          "scores": [
+            10,
+            10,
+            10,
+            10,
+            10,
+            10
+          ]
+        },
+        "inspiration": null
+      }
+    },
+    {
+      "player": "p6",
+      "build": {
+        "template_id": "retriever",
+        "name": "Lane reader",
+        "position": "F",
+        "scores": {
+          "kind": "manual",
+          "scores": [
+            10,
+            10,
+            10,
+            10,
+            10,
+            10
+          ]
+        },
+        "inspiration": null
+      }
+    }
+  ]
+}

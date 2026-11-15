@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
 pub mod collection;
+pub mod pass_context;
 pub mod passing;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -74,6 +75,9 @@ pub enum Action {
         lane_defender: String,
         pressure: String,
         receive_seconds: u16,
+    },
+    PassWithContext {
+        plan: pass_context::Plan,
     },
     Challenge {
         actor: String,
@@ -192,6 +196,8 @@ pub struct Event {
     pub task: Option<collection::Audit>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pass_task: Option<passing::Audit>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context_task: Option<pass_context::Audit>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -257,6 +263,7 @@ impl Engine<'_> {
             state: self.state.clone(),
             task: None,
             pass_task: None,
+            context_task: None,
         });
     }
     fn choose<T: Serialize>(&mut self, choices: &[Choice<T>]) -> Result<(usize, u16), String> {
@@ -689,6 +696,7 @@ impl Engine<'_> {
                     self.emit(i, "pass_receipt_denied", Some(pressure.clone()), None, None);
                 }
             }
+            Action::PassWithContext { plan } => self.context_pass(i, plan)?,
             Action::Challenge {
                 actor,
                 victim,
@@ -811,8 +819,8 @@ pub fn run(q: &Request) -> Result<ResultSet, String> {
             break;
         }
     }
-    Ok(ResultSet { schema:match q.schema.as_str() { "rinkcraft.event-episode.0.3" => "rinkcraft.event-result.0.3", "rinkcraft.event-episode.0.2"=>"rinkcraft.event-result.0.2", _=>"rinkcraft.event-result.0.1" }.into(),request:q.clone(),events:e.events,goals:e.goals,final_state:e.state,
-        limitations:vec![if q.schema == "rinkcraft.event-episode.0.3" { "Skater passing/receiving and pressure collection use verified fictional capabilities; access, timing, other contacts, shots and calls remain authored, not NHL-calibrated." } else if q.profiles.is_some() { "Only skater pressure collection maps verified fictional Handling versus Defending through the declared d20 rule; other contacts, reachability and timing remain authored, not NHL-calibrated." } else { "Authored contact distributions and declared reachability; no calibrated physics or capability-to-probability mapping." }.into(),
+    Ok(ResultSet { schema:match q.schema.as_str() { "rinkcraft.event-episode.0.4" => "rinkcraft.event-result.0.4", "rinkcraft.event-episode.0.3" => "rinkcraft.event-result.0.3", "rinkcraft.event-episode.0.2"=>"rinkcraft.event-result.0.2", _=>"rinkcraft.event-result.0.1" }.into(),request:q.clone(),events:e.events,goals:e.goals,final_state:e.state,
+        limitations:vec![if q.schema == "rinkcraft.event-episode.0.4" { "Pass lane/receipt pressure and open-task targets are declared game context, not inferred geometry or NHL-calibrated difficulty; other contacts, shots and calls remain authored." } else if q.schema == "rinkcraft.event-episode.0.3" { "Skater passing/receiving and pressure collection use verified fictional capabilities; access, timing, other contacts, shots and calls remain authored, not NHL-calibrated." } else if q.profiles.is_some() { "Only skater pressure collection maps verified fictional Handling versus Defending through the declared d20 rule; other contacts, reachability and timing remain authored, not NHL-calibrated." } else { "Authored contact distributions and declared reachability; no calibrated physics or capability-to-probability mapping." }.into(),
             "Bounded action script, fixed initial 5v5, one ordinary skater minor, no coaching substitutions or complete NHL adjudication.".into(),
             "Raw contacts and goals only; no official SOG, save, scorer or assist attribution.".into()] })
 }
