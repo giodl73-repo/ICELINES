@@ -76,6 +76,7 @@ pub(super) fn validate(q: &Request, p: &collection::Profiles) -> Result<(), Stri
                     | "rinkcraft.event-episode.0.8"
                     | "rinkcraft.event-episode.0.9"
                     | "rinkcraft.event-episode.0.10"
+                    | "rinkcraft.event-episode.0.11"
             ) {
                 return Err("context passes require explicit 0.4 episode".into());
             }

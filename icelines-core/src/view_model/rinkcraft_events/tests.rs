@@ -18,6 +18,8 @@ mod space_tests;
 mod zones_tests;
 #[path = "recovery_tests.rs"]
 mod recovery_tests;
+#[path = "team_intent_tests.rs"]
+mod team_intent_tests;
 fn request(actions: Vec<Value>) -> Request {
     serde_json::from_value(json!({"schema":"rinkcraft.event-episode.0.1","seed":17,
         "players":(0..12).map(|i| json!({"id":format!("p{i}"),"side":if i<6 {"a"} else {"b"},"goalie":i==5||i==11})).collect::<Vec<_>>(),

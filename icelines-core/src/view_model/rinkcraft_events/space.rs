@@ -148,6 +148,7 @@ pub(super) fn validate(q: &Request, p: &collection::Profiles) -> Result<(), Stri
                 "rinkcraft.event-episode.0.8"
                     | "rinkcraft.event-episode.0.9"
                     | "rinkcraft.event-episode.0.10"
+                    | "rinkcraft.event-episode.0.11"
             ) || plan.schema != "rinkcraft.access-grid.0.1"
             {
                 return Err("spatial access requires explicit 0.8/grid0.1".into());

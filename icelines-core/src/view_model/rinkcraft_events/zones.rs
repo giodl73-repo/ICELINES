@@ -182,6 +182,8 @@ pub struct Scene {
     pub open_target: u8,
     pub reach_cells: u16,
     pub actors: Vec<Placement>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub team_intent: Option<team_intent::Plan>,
 }
 impl Scene {
     fn project(&self, puck: Cell, clock: u16, active: Option<&[String]>) -> space::Plan {
@@ -347,7 +349,9 @@ pub(super) fn validate(q: &Request, p: &collection::Profiles) -> Result<(), Stri
         let f = z.frame;
         if !matches!(
             q.schema.as_str(),
-            "rinkcraft.event-episode.0.9" | "rinkcraft.event-episode.0.10"
+            "rinkcraft.event-episode.0.9"
+                | "rinkcraft.event-episode.0.10"
+                | "rinkcraft.event-episode.0.11"
         ) || !(1..=1200).contains(&step.seconds)
             || !(-18..=18).contains(&f.west_blue_line)
             || !(-18..=18).contains(&f.east_blue_line)
@@ -358,7 +362,15 @@ pub(super) fn validate(q: &Request, p: &collection::Profiles) -> Result<(), Stri
             || !(1..=24).contains(&z.max_transitions)
             || z.sides.len() != 2
             || z.scenes.is_empty()
-            || z.scenes.len() > if q.schema.ends_with(".0.10") { 33 } else { 9 }
+            || z.scenes.len()
+                > if matches!(
+                    q.schema.as_str(),
+                    "rinkcraft.event-episode.0.10" | "rinkcraft.event-episode.0.11"
+                ) {
+                    33
+                } else {
+                    9
+                }
         {
             return Err("invalid explicit 0.9 three-zone frame, window or route bounds".into());
         }
@@ -386,12 +398,12 @@ pub(super) fn validate(q: &Request, p: &collection::Profiles) -> Result<(), Stri
                 .iter()
                 .find(|s| s.id == *id)
                 .ok_or("unknown scene reference")?;
-            space::validate_plan(
-                q,
-                p,
-                &scene.project(at, q.seconds_remaining, None),
-                scene.window_seconds,
-            )
+            let projected = scene.project(at, q.seconds_remaining, None);
+            space::validate_plan(q, p, &projected, scene.window_seconds)?;
+            if let Some(intent) = &scene.team_intent {
+                team_intent::validate(q, p, &projected, intent)?;
+            }
+            Ok(())
         };
         check_scene(&z.initial_scene, z.start_puck)?;
         for side in [Side::A, Side::B] {
@@ -483,7 +495,11 @@ pub(super) fn validate(q: &Request, p: &collection::Profiles) -> Result<(), Stri
                     } => (on_delivery_failure.as_ref(), on_receipt_failure.as_ref()),
                 };
                 for failure in departure.into_iter().chain(receipt) {
-                    if q.schema != "rinkcraft.event-episode.0.10" || !text(&failure.basis) {
+                    if !matches!(
+                        q.schema.as_str(),
+                        "rinkcraft.event-episode.0.10" | "rinkcraft.event-episode.0.11"
+                    ) || !text(&failure.basis)
+                    {
                         return Err(
                             "failure retrieval needs explicit 0.10 and bounded basis".into()
                         );
@@ -798,7 +814,12 @@ impl Engine<'_> {
             return Ok(false);
         }
         let window = scene.window_seconds.min(*budget);
-        let plan = scene.project(puck, self.state.seconds_remaining, Some(&self.state.active));
+        let mut plan = scene.project(puck, self.state.seconds_remaining, Some(&self.state.active));
+        if let Some(intent) = &scene.team_intent {
+            if !self.apply_team_intent(i, &mut plan, intent)? {
+                return Ok(false);
+            }
+        }
         let before = self.state.seconds_remaining;
         self.spatial_access(i, window, &plan)?;
         *budget = budget.saturating_sub(before - self.state.seconds_remaining);
