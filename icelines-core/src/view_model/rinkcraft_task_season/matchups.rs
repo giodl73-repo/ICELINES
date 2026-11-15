@@ -1,5 +1,6 @@
 //! Calendar-independent matchup boundary using the unchanged task-season route.
 use super::*;
+pub mod tactics;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TaskExposure {
     pub attack_team: String,

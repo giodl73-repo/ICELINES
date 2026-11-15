@@ -1,6 +1,6 @@
 //! Standalone local report; unsupported individual box-score statistics stay absent.
 use super::*;
-fn e(s: &str) -> String {
+pub(super) fn e(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
@@ -58,6 +58,9 @@ pub fn html(r: &ResultSet) -> String {
     s.push_str("</ul><details><summary>Matchup evidence and expected task checks</summary><p>Expected checks per modeled attack window, not actual player game statistics.</p><pre>");
     s.push_str(&e(&serde_json::to_string_pretty(&r.matchups).unwrap()));
     s.push_str(&format!("</pre></details></section><footer>Model {} · input SHA-256 {} · <a href=\"tournament.json\">Full result JSON</a> · <a href=\"request.json\">Canonical character/deployment input</a></footer></main></html>",e(&r.model_id),e(&r.input_sha256)));
+    if r.request.tactics.is_some() {
+        s = s.replacen("The first tournament", "Rules 0.2 tournament", 1);
+    }
     s
 }
 #[cfg(test)]

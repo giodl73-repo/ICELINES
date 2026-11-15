@@ -1,7 +1,9 @@
 //! Seeded neutral-site round robin and final, using the versioned abstract route.
 use super::*;
 pub mod report;
+pub mod study;
 pub const TOURNAMENT_SCHEMA: &str = "rinkcraft.tournament-request.0.1";
+pub const TACTICAL_SCHEMA: &str = "rinkcraft.tournament-request.0.2";
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Entrant {
@@ -18,6 +20,8 @@ pub struct Request {
     pub teams: Vec<Entrant>,
     pub seed: u64,
     pub batch_trials: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tactics: Option<matchups::tactics::Rules>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -43,9 +47,16 @@ pub struct Draft {
     pub teams: Vec<DraftTeam>,
     pub seed: u64,
     pub batch_trials: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tactics: Option<matchups::tactics::Rules>,
 }
 pub fn build(draft: Draft) -> Result<Request, String> {
-    if draft.schema != "rinkcraft.tournament-draft.0.1"
+    if draft.schema
+        != if draft.tactics.is_some() {
+            "rinkcraft.tournament-draft.0.2"
+        } else {
+            "rinkcraft.tournament-draft.0.1"
+        }
         || draft.kind != KIND
         || !(2..=16).contains(&draft.teams.len())
     {
@@ -73,13 +84,19 @@ pub fn build(draft: Draft) -> Result<Request, String> {
         });
     }
     Ok(Request {
-        schema: TOURNAMENT_SCHEMA.into(),
+        schema: if draft.tactics.is_some() {
+            TACTICAL_SCHEMA
+        } else {
+            TOURNAMENT_SCHEMA
+        }
+        .into(),
         kind: draft.kind,
         character_rules: draft.character_rules,
         rules: draft.rules,
         teams,
         seed: draft.seed,
         batch_trials: draft.batch_trials,
+        tactics: draft.tactics,
     })
 }
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -308,7 +325,12 @@ fn one(
 pub fn run(input: &Request) -> Result<ResultSet, String> {
     let n = input.teams.len();
     let games = n.saturating_mul(n.saturating_sub(1)) / 2 + 1;
-    if input.schema != TOURNAMENT_SCHEMA
+    if input.schema
+        != if input.tactics.is_some() {
+            TACTICAL_SCHEMA
+        } else {
+            TOURNAMENT_SCHEMA
+        }
         || input.kind != KIND
         || !(2..=16).contains(&n)
         || input.batch_trials == 0
@@ -348,11 +370,17 @@ pub fn run(input: &Request) -> Result<ResultSet, String> {
             u.weight /= total;
         }
     }
-    let pairs = matchups::project(
-        &input.character_rules,
-        &input.rules,
-        &active.iter().map(|e| e.roster.clone()).collect::<Vec<_>>(),
-    )?;
+    let rosters = active.iter().map(|e| e.roster.clone()).collect::<Vec<_>>();
+    let pairs = if let Some(tactics) = &input.tactics {
+        let (expanded, pairs) =
+            matchups::tactics::project(&input.character_rules, &input.rules, &rosters, tactics)?;
+        for (entry, roster) in active.iter_mut().zip(expanded) {
+            entry.roster = roster;
+        }
+        pairs
+    } else {
+        matchups::project(&input.character_rules, &input.rules, &rosters)?
+    };
     let lookup: BTreeMap<_, _> = pairs
         .iter()
         .enumerate()
@@ -384,7 +412,7 @@ pub fn run(input: &Request) -> Result<ResultSet, String> {
             }
         })
         .collect();
-    Ok(ResultSet{schema:"rinkcraft.tournament-result.0.1".into(),kind:KIND.into(),input_sha256:hash(input)?,model_id:"rinkcraft.task-matchup.0.1".into(),request:input.clone(),
+    let mut result=ResultSet{schema:"rinkcraft.tournament-result.0.1".into(),kind:KIND.into(),input_sha256:hash(input)?,model_id:"rinkcraft.task-matchup.0.1".into(),request:input.clone(),
         active_teams:active,matchups:pairs,illustrative,title_frequencies:frequencies,
         tournament_rules:vec!["Neutral-site single round robin, top two advance to one final; final excluded from round-robin standings".into(),
             "Win 2 points; tied-regulation loss 1; regulation loss 0".into(),"Standings: points, regulation wins, total wins, goal difference, goals for, seeded lot, stable team ID".into(),
@@ -396,13 +424,22 @@ pub fn run(input: &Request) -> Result<ResultSet, String> {
             "Task exposure is expected checks per modeled attack window, not actual goals, assists, shots, saves, minutes or game-event counts".into(),
             "One declared starter per team for all games; original joint units are conditioned and renormalized on that goalie; backup remains rostered".into(),
             "No PP/PK, penalties, fatigue, injuries, shift changes, rebounds, later-arriver recovery or commitment/cover costs".into(),
-            "Title frequencies describe Monte Carlo sampling under fixed authored rules, not empirical skill uncertainty or proven balance".into()]})
+            "Title frequencies describe Monte Carlo sampling under fixed authored rules, not empirical skill uncertainty or proven balance".into()]};
+    if input.tactics.is_some() {
+        result.schema = "rinkcraft.tournament-result.0.2".into();
+        result.model_id = "rinkcraft.task-matchup.0.2".into();
+        result.limits[1]="Uses declared route/context mixtures and optional forward task cycling; not an optimized policy or free choice from an identical puck state".into();
+        result.limits[2]="Route-specific capabilities only: Carry uses Skating; goalie Positioning/Movement/Rebounds/Recovery remain unused; no class bonuses".into();
+        result.limits.push("One common legacy neutral-window anchor is retained across variants; shorter routes can increase scoring and trigger existing rate caps; no per-route normalization".into());
+        result.limits.push("Forward cycling is an authored opportunity policy, not a universal coaching assignment or an ability grade; specialists may benefit from declared roles".into());
+    }
+    Ok(result)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn fixture() -> Request {
+    pub(super) fn fixture() -> Request {
         let q = super::super::tests::fixture();
         let mut rules = q.rules;
         rules.home_goals_multiplier = 1.0;
@@ -422,6 +459,7 @@ mod tests {
                 .collect(),
             seed: 20261114,
             batch_trials: 12,
+            tactics: None,
         }
     }
     #[test]

@@ -10,7 +10,7 @@ try{
  page.on('pageerror',e=>errors.push(String(e)));
  const response=await page.request.get(new URL('tournament.json',url).href);expect(response.ok()).toBeTruthy();const r=await response.json();
  await page.goto(url,{waitUntil:'networkidle'});
- await expect(page.getByRole('heading',{name:'The first tournament',exact:true})).toBeVisible();
+ await expect(page.getByRole('heading',{name:r.request.tactics?'Rules 0.2 tournament':'The first tournament',exact:true})).toBeVisible();
  await expect(page.locator('.winner')).toHaveText(r.illustrative.champion);
  const standings=page.getByRole('heading',{name:'Round-robin standings',exact:true}).locator('..');
  await expect(standings.getByRole('row')).toHaveCount(r.active_teams.length+1);
