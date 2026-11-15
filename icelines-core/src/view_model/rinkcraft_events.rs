@@ -7,6 +7,7 @@ use std::collections::BTreeSet;
 pub mod collection;
 pub mod pass_context;
 pub mod passing;
+pub mod shot;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -78,6 +79,9 @@ pub enum Action {
     },
     PassWithContext {
         plan: pass_context::Plan,
+    },
+    ResolveShot {
+        plan: shot::Plan,
     },
     Challenge {
         actor: String,
@@ -198,6 +202,8 @@ pub struct Event {
     pub pass_task: Option<passing::Audit>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub context_task: Option<pass_context::Audit>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shot_task: Option<shot::Audit>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -264,6 +270,7 @@ impl Engine<'_> {
             task: None,
             pass_task: None,
             context_task: None,
+            shot_task: None,
         });
     }
     fn choose<T: Serialize>(&mut self, choices: &[Choice<T>]) -> Result<(usize, u16), String> {
@@ -402,6 +409,46 @@ impl Engine<'_> {
         }
         Ok(())
     }
+    fn record_goal(&mut self, i: usize, draw: Option<u16>) -> Result<(), String> {
+        let side = self.shooter_side.ok_or("goal requires shot side")?;
+        let attempt = self.state.attempt.ok_or("goal requires attempt")?;
+        if let Some(p) = &self.state.penalty {
+            if p.delayed && self.player(&p.offender)?.side == side {
+                self.unresolved(
+                    i,
+                    "offending-team goal during delayed penalty requires adjudication".into(),
+                );
+                return Ok(());
+            }
+        }
+        if self.goals.iter().any(|g| g.attempt == attempt) {
+            return Err("duplicate goal in attempt".into());
+        }
+        self.state.score[side.index()] += 1;
+        self.state.puck = Puck::Scored;
+        self.state.restart = Some("center".into());
+        self.emit(i, "goal", None, draw, None);
+        self.goals.push(Goal {
+            event: self.events.len() as u32,
+            attempt,
+            side,
+        });
+        if let Some(p) = &self.state.penalty {
+            let penalized_side = self.player(&p.offender)?.side;
+            if side != penalized_side {
+                self.release_penalty(
+                    i,
+                    if p.delayed {
+                        "pending_minor_washed"
+                    } else {
+                        "minor_ended_by_goal"
+                    },
+                );
+            }
+        }
+
+        Ok(())
+    }
     fn apply(&mut self, i: usize, step: &Step) -> Result<(), String> {
         if let Action::Restart { winner } = &step.action {
             if step.seconds != 0
@@ -507,41 +554,7 @@ impl Engine<'_> {
                             );
                         }
                     }
-                    Contact::Goal => {
-                        let side = self.shooter_side.ok_or("goal requires shot side")?;
-                        let attempt = self.state.attempt.ok_or("goal requires attempt")?;
-                        if let Some(p) = &self.state.penalty {
-                            if p.delayed && self.player(&p.offender)?.side == side {
-                                self.unresolved(i, "offending-team goal during delayed penalty requires adjudication".into());
-                                return Ok(());
-                            }
-                        }
-                        if self.goals.iter().any(|g| g.attempt == attempt) {
-                            return Err("duplicate goal in attempt".into());
-                        }
-                        self.state.score[side.index()] += 1;
-                        self.state.puck = Puck::Scored;
-                        self.state.restart = Some("center".into());
-                        self.emit(i, "goal", None, Some(draw), None);
-                        self.goals.push(Goal {
-                            event: self.events.len() as u32,
-                            attempt,
-                            side,
-                        });
-                        if let Some(p) = &self.state.penalty {
-                            let penalized_side = self.player(&p.offender)?.side;
-                            if side != penalized_side {
-                                self.release_penalty(
-                                    i,
-                                    if p.delayed {
-                                        "pending_minor_washed"
-                                    } else {
-                                        "minor_ended_by_goal"
-                                    },
-                                );
-                            }
-                        }
-                    }
+                    Contact::Goal => self.record_goal(i, Some(draw))?,
                     Contact::Out { deflected, ruling } => {
                         self.emit(
                             i,
@@ -697,6 +710,7 @@ impl Engine<'_> {
                 }
             }
             Action::PassWithContext { plan } => self.context_pass(i, plan)?,
+            Action::ResolveShot { plan } => self.resolve_shot(i, plan)?,
             Action::Challenge {
                 actor,
                 victim,
@@ -819,8 +833,8 @@ pub fn run(q: &Request) -> Result<ResultSet, String> {
             break;
         }
     }
-    Ok(ResultSet { schema:match q.schema.as_str() { "rinkcraft.event-episode.0.4" => "rinkcraft.event-result.0.4", "rinkcraft.event-episode.0.3" => "rinkcraft.event-result.0.3", "rinkcraft.event-episode.0.2"=>"rinkcraft.event-result.0.2", _=>"rinkcraft.event-result.0.1" }.into(),request:q.clone(),events:e.events,goals:e.goals,final_state:e.state,
-        limitations:vec![if q.schema == "rinkcraft.event-episode.0.4" { "Pass lane/receipt pressure and open-task targets are declared game context, not inferred geometry or NHL-calibrated difficulty; other contacts, shots and calls remain authored." } else if q.schema == "rinkcraft.event-episode.0.3" { "Skater passing/receiving and pressure collection use verified fictional capabilities; access, timing, other contacts, shots and calls remain authored, not NHL-calibrated." } else if q.profiles.is_some() { "Only skater pressure collection maps verified fictional Handling versus Defending through the declared d20 rule; other contacts, reachability and timing remain authored, not NHL-calibrated." } else { "Authored contact distributions and declared reachability; no calibrated physics or capability-to-probability mapping." }.into(),
+    Ok(ResultSet { schema:match q.schema.as_str() { "rinkcraft.event-episode.0.5" => "rinkcraft.event-result.0.5", "rinkcraft.event-episode.0.4" => "rinkcraft.event-result.0.4", "rinkcraft.event-episode.0.3" => "rinkcraft.event-result.0.3", "rinkcraft.event-episode.0.2"=>"rinkcraft.event-result.0.2", _=>"rinkcraft.event-result.0.1" }.into(),request:q.clone(),events:e.events,goals:e.goals,final_state:e.state,
+        limitations:vec![if q.schema == "rinkcraft.event-episode.0.5" { "Shooting versus goalie Tracking changes a declared shot contest; finish/contact branches, context, other goalie capabilities and rates remain authored, not NHL-calibrated." } else if q.schema == "rinkcraft.event-episode.0.4" { "Pass lane/receipt pressure and open-task targets are declared game context, not inferred geometry or NHL-calibrated difficulty; other contacts, shots and calls remain authored." } else if q.schema == "rinkcraft.event-episode.0.3" { "Skater passing/receiving and pressure collection use verified fictional capabilities; access, timing, other contacts, shots and calls remain authored, not NHL-calibrated." } else if q.profiles.is_some() { "Only skater pressure collection maps verified fictional Handling versus Defending through the declared d20 rule; other contacts, reachability and timing remain authored, not NHL-calibrated." } else { "Authored contact distributions and declared reachability; no calibrated physics or capability-to-probability mapping." }.into(),
             "Bounded action script, fixed initial 5v5, one ordinary skater minor, no coaching substitutions or complete NHL adjudication.".into(),
             "Raw contacts and goals only; no official SOG, save, scorer or assist attribution.".into()] })
 }

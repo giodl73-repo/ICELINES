@@ -58,9 +58,12 @@ pub fn build(draft: Draft) -> Result<Request, String> {
         ("rinkcraft.event-draft.0.2", "rinkcraft.event-episode.0.2")
             | ("rinkcraft.event-draft.0.3", "rinkcraft.event-episode.0.3")
             | ("rinkcraft.event-draft.0.4", "rinkcraft.event-episode.0.4")
+            | ("rinkcraft.event-draft.0.5", "rinkcraft.event-episode.0.5")
     ) || draft.episode.profiles.is_some()
     {
-        return Err("draft requires a matching supported episode without populated profiles".into());
+        return Err(
+            "draft requires a matching supported episode without populated profiles".into(),
+        );
     }
     let members = draft
         .members
@@ -92,6 +95,7 @@ pub(super) fn validate(q: &Request) -> Result<(), String> {
                     Action::CollectUnderPressure { .. }
                         | Action::PassUnderPressure { .. }
                         | Action::PassWithContext { .. }
+                        | Action::ResolveShot { .. }
                 )
             }) {
                 return Err("capability tasks require an explicit 0.2 episode".into());
@@ -100,7 +104,8 @@ pub(super) fn validate(q: &Request) -> Result<(), String> {
         (
             "rinkcraft.event-episode.0.2"
             | "rinkcraft.event-episode.0.3"
-            | "rinkcraft.event-episode.0.4",
+            | "rinkcraft.event-episode.0.4"
+            | "rinkcraft.event-episode.0.5",
             Some(p),
         ) => {
             if p.schema != "rinkcraft.event-profiles.0.1"
@@ -155,6 +160,7 @@ pub(super) fn validate(q: &Request) -> Result<(), String> {
     if let Some(p) = &q.profiles {
         passing::validate(q, p)?;
         pass_context::validate(q, p)?;
+        shot::validate(q, p)?;
     }
     Ok(())
 }

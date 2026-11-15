@@ -67,7 +67,10 @@ impl Audit {
 pub(super) fn validate(q: &Request, p: &collection::Profiles) -> Result<(), String> {
     for step in &q.steps {
         if let Action::PassWithContext { plan } = &step.action {
-            if q.schema != "rinkcraft.event-episode.0.4" {
+            if !matches!(
+                q.schema.as_str(),
+                "rinkcraft.event-episode.0.4" | "rinkcraft.event-episode.0.5"
+            ) {
                 return Err("context passes require explicit 0.4 episode".into());
             }
             if plan.passer == plan.receiver || !(1..=1200).contains(&plan.receive_seconds) {
