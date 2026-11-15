@@ -10,6 +10,7 @@ pub mod pass_context;
 pub mod passing;
 pub mod rebound;
 pub mod shot;
+pub mod space;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -87,6 +88,9 @@ pub enum Action {
     },
     ReboundFollowup {
         plan: followup::Plan,
+    },
+    LoosePuckAccess {
+        plan: space::Plan,
     },
     Challenge {
         actor: String,
@@ -213,6 +217,10 @@ pub struct Event {
     pub rebound_task: Option<rebound::Audit>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recovery_task: Option<followup::Audit>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub access_task: Option<space::Audit>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spatial_collection: Option<space::CollectionAudit>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -282,6 +290,8 @@ impl Engine<'_> {
             shot_task: None,
             rebound_task: None,
             recovery_task: None,
+            access_task: None,
+            spatial_collection: None,
         });
     }
     fn choose<T: Serialize>(&mut self, choices: &[Choice<T>]) -> Result<(usize, u16), String> {
@@ -461,6 +471,9 @@ impl Engine<'_> {
         Ok(())
     }
     fn apply(&mut self, i: usize, step: &Step) -> Result<(), String> {
+        if let Action::LoosePuckAccess { plan } = &step.action {
+            return self.spatial_access(i, step.seconds, plan);
+        }
         if let Action::ReboundFollowup { plan } = &step.action {
             return self.follow_rebound(i, step.seconds, plan);
         }
@@ -787,7 +800,9 @@ impl Engine<'_> {
                 }
             }
             Action::Wait => self.emit(i, "wait", None, None, None),
-            Action::Restart { .. } | Action::ReboundFollowup { .. } => unreachable!(),
+            Action::Restart { .. }
+            | Action::ReboundFollowup { .. }
+            | Action::LoosePuckAccess { .. } => unreachable!(),
         }
         Ok(())
     }
@@ -847,8 +862,8 @@ pub fn run(q: &Request) -> Result<ResultSet, String> {
             break;
         }
     }
-    Ok(ResultSet { schema:match q.schema.as_str() { "rinkcraft.event-episode.0.7" => "rinkcraft.event-result.0.7", "rinkcraft.event-episode.0.6" => "rinkcraft.event-result.0.6", "rinkcraft.event-episode.0.5" => "rinkcraft.event-result.0.5", "rinkcraft.event-episode.0.4" => "rinkcraft.event-result.0.4", "rinkcraft.event-episode.0.3" => "rinkcraft.event-result.0.3", "rinkcraft.event-episode.0.2"=>"rinkcraft.event-result.0.2", _=>"rinkcraft.event-result.0.1" }.into(),request:q.clone(),events:e.events,goals:e.goals,final_state:e.state,
-        limitations:vec![if q.schema == "rinkcraft.event-episode.0.7" { "Immediate rebound follow-up uses declared access and a Recovery/Skating race; late Tracking adjustment and all context/rate calibration remain authored; recovery ties stop unresolved." } else if q.schema == "rinkcraft.event-episode.0.6" { "Rebounds affects containment only after a hold-eligible goalie contact; eligibility/target, finish weights, geometry and other tasks remain authored, not NHL-calibrated." } else if q.schema == "rinkcraft.event-episode.0.5" { "Shooting versus goalie Tracking changes a declared shot contest; finish/contact branches, context, other goalie capabilities and rates remain authored, not NHL-calibrated." } else if q.schema == "rinkcraft.event-episode.0.4" { "Pass lane/receipt pressure and open-task targets are declared game context, not inferred geometry or NHL-calibrated difficulty; other contacts, shots and calls remain authored." } else if q.schema == "rinkcraft.event-episode.0.3" { "Skater passing/receiving and pressure collection use verified fictional capabilities; access, timing, other contacts, shots and calls remain authored, not NHL-calibrated." } else if q.profiles.is_some() { "Only skater pressure collection maps verified fictional Handling versus Defending through the declared d20 rule; other contacts, reachability and timing remain authored, not NHL-calibrated." } else { "Authored contact distributions and declared reachability; no calibrated physics or capability-to-probability mapping." }.into(),
+    Ok(ResultSet { schema:match q.schema.as_str() { "rinkcraft.event-episode.0.8" => "rinkcraft.event-result.0.8", "rinkcraft.event-episode.0.7" => "rinkcraft.event-result.0.7", "rinkcraft.event-episode.0.6" => "rinkcraft.event-result.0.6", "rinkcraft.event-episode.0.5" => "rinkcraft.event-result.0.5", "rinkcraft.event-episode.0.4" => "rinkcraft.event-result.0.4", "rinkcraft.event-episode.0.3" => "rinkcraft.event-result.0.3", "rinkcraft.event-episode.0.2"=>"rinkcraft.event-result.0.2", _=>"rinkcraft.event-result.0.1" }.into(),request:q.clone(),events:e.events,goals:e.goals,final_state:e.state,
+        limitations:vec![if q.schema == "rinkcraft.event-episode.0.8" { "Loose-puck access uses a timestamped authored local grid, movement intents/rates and separate collection; no calibrated speed mapping, persistent trajectories or automatic team system is inferred." } else if q.schema == "rinkcraft.event-episode.0.7" { "Immediate rebound follow-up uses declared access and a Recovery/Skating race; late Tracking adjustment and all context/rate calibration remain authored; recovery ties stop unresolved." } else if q.schema == "rinkcraft.event-episode.0.6" { "Rebounds affects containment only after a hold-eligible goalie contact; eligibility/target, finish weights, geometry and other tasks remain authored, not NHL-calibrated." } else if q.schema == "rinkcraft.event-episode.0.5" { "Shooting versus goalie Tracking changes a declared shot contest; finish/contact branches, context, other goalie capabilities and rates remain authored, not NHL-calibrated." } else if q.schema == "rinkcraft.event-episode.0.4" { "Pass lane/receipt pressure and open-task targets are declared game context, not inferred geometry or NHL-calibrated difficulty; other contacts, shots and calls remain authored." } else if q.schema == "rinkcraft.event-episode.0.3" { "Skater passing/receiving and pressure collection use verified fictional capabilities; access, timing, other contacts, shots and calls remain authored, not NHL-calibrated." } else if q.profiles.is_some() { "Only skater pressure collection maps verified fictional Handling versus Defending through the declared d20 rule; other contacts, reachability and timing remain authored, not NHL-calibrated." } else { "Authored contact distributions and declared reachability; no calibrated physics or capability-to-probability mapping." }.into(),
             "Bounded action script, fixed initial 5v5, one ordinary skater minor, no coaching substitutions or complete NHL adjudication.".into(),
             "Raw contacts and goals only; no official SOG, save, scorer or assist attribution.".into()] })
 }

@@ -33,8 +33,11 @@ pub struct Audit {
 pub(super) fn validate(q: &Request, p: &collection::Profiles) -> Result<(), String> {
     for (i, step) in q.steps.iter().enumerate() {
         if let Action::ReboundFollowup { plan } = &step.action {
-            if q.schema != "rinkcraft.event-episode.0.7" {
-                return Err("rebound followup requires explicit 0.7".into());
+            if !matches!(
+                q.schema.as_str(),
+                "rinkcraft.event-episode.0.7" | "rinkcraft.event-episode.0.8"
+            ) {
+                return Err("rebound followup requires a supported explicit version".into());
             }
             let source = match i
                 .checked_sub(1)
