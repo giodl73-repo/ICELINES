@@ -7,8 +7,10 @@ use super::{
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
+pub mod matchups;
 pub mod routes;
 pub mod threats;
+pub mod tournament;
 pub const SCHEMA: &str = "rinkcraft.task-season-request.0.1";
 pub const RULES_SCHEMA: &str = "rinkcraft.task-season-rules.0.1";
 const KIND: &str = "authored_game_scenario_not_nhl_estimate";
