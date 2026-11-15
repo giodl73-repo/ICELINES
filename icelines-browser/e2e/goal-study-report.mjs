@@ -22,12 +22,19 @@ assert.ok(annotated);const card=page.locator('#cases article').filter({hasText:a
 assert.ok((await card.innerText()).includes('Delivery plus receiver redirect'));
 assert.ok((await card.innerText()).includes('slap'));
 assert.equal(await card.getByRole('link',{name:'SRC-132',exact:true}).count(),1);
+assert.ok((await card.locator('dt[data-credit="secondary assist"]').innerText()).includes('Mikkola'));
+assert.ok((await card.locator('.contributors dd').nth(0).innerText()).includes('Action unassessed'));
+assert.ok((await card.locator('dt[data-credit="primary assist"]').innerText()).includes('Kulikov'));
+assert.ok((await card.locator('.contributors dd').nth(1).innerText()).includes('Shot delivery'));
+assert.ok((await card.locator('.contributors dd').nth(2).innerText()).includes('Receiver redirect'));
+
 const native=await card.getByRole('link',{name:'Open native IceLines sequence'}).getAttribute('href');
+await card.screenshot({path:root+'/assist-card.png'});
 await page.screenshot({path:root+'/study-desktop.png',fullPage:true});
 await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
 await page.screenshot({path:root+'/study-mobile.png',fullPage:true});
 await page.goto(native);assert.equal(await page.locator('#ga-report').isVisible(),true);
 assert.ok((await page.locator('#ga-heading').innerText()).includes('Tkachuk'));
 assert.deepEqual(errors,[]);await browser.close();
-const result={status:'passed',planned_cases:summary.planned_cases,captured_cases:summary.captured_cases,checks:['all cases and missing cases','per-player filter','attributed annotation and original shot label','official source link','native sequence link','desktop/mobile','zero page errors']};
+const result={status:'passed',planned_cases:summary.planned_cases,captured_cases:summary.captured_cases,checks:['all cases and missing cases','per-player filter','attributed annotation and original shot label','official source link','native sequence link','desktop/mobile','zero page errors','official assist slots','source-supported actions and unresolved secondary contribution']};
 await writeFile(root+'/ui-verification.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result));

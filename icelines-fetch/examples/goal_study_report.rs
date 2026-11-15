@@ -5,6 +5,8 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     path::PathBuf,
 };
+#[path = "support/goal_contributors.rs"]
+mod contributors;
 
 fn increment(counts: &mut BTreeMap<String, usize>, key: Option<&str>) {
     *counts
@@ -91,6 +93,35 @@ fn main() -> Result<()> {
             record["documentary_annotation"] = annotation.clone();
         }
     }
+    let source_dir = PathBuf::from(&args[0])
+        .parent()
+        .context("records directory")?
+        .to_owned();
+    for record in records.iter_mut().filter(|r| r["status"] == "captured") {
+        let filename = record["report_file"].as_str().context("report_file")?;
+        anyhow::ensure!(
+            std::path::Path::new(filename)
+                .file_name()
+                .and_then(|p| p.to_str())
+                == Some(filename),
+            "Invalid report filename"
+        );
+        let bytes = std::fs::read(source_dir.join("goals").join(filename))?;
+        anyhow::ensure!(
+            record["report_sha256"].as_str()
+                == Some(icelines_fetch::goal_visualizer::sha256_hex(&bytes).as_str()),
+            "Goal report hash mismatch"
+        );
+        let report: Value = serde_json::from_slice(&bytes)?;
+        anyhow::ensure!(
+            report["target"] == record["target"] && report["summary"] == record["summary"],
+            "Goal report identity/context mismatch"
+        );
+        record["credited_contributions"] = contributors::assess(
+            &report["audit"]["events"][0],
+            &record["documentary_annotation"],
+        )?;
+    }
     let mut summary = summarize(&records);
     summary["documentary_annotated_cases"] = json!(records
         .iter()
@@ -137,12 +168,12 @@ fn main() -> Result<()> {
     Ok(())
 }
 const HTML: &str = r##"<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IceLines · Successful-goal study</title>
-<style>body{font:15px system-ui;background:#eff3f7;color:#18304a;margin:0}main{max-width:1200px;margin:auto;padding:24px}h1{margin:0}header,article{background:white;border:1px solid #cad7e3;border-radius:8px;padding:18px;margin-bottom:14px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:14px}article{margin:0}h2{font-size:18px}p{line-height:1.5}.small{font-size:12px;color:#52687a}label{display:inline-block;margin:12px 20px 12px 0}select{padding:8px;font:inherit}a{color:#145386}.bad{border-left:5px solid #ac6720}table{width:100%;border-collapse:collapse;font-size:13px}td,th{text-align:left;padding:8px;border-bottom:1px solid #dce5ed}.scroll{overflow:auto}.status{font-weight:bold;color:#6b510c}</style>
+<style>body{font:15px system-ui;background:#eff3f7;color:#18304a;margin:0}main{max-width:1200px;margin:auto;padding:24px}h1{margin:0}header,article{background:white;border:1px solid #cad7e3;border-radius:8px;padding:18px;margin-bottom:14px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:14px}article{margin:0}h2{font-size:18px}p{line-height:1.5}.small{font-size:12px;color:#52687a}label{display:inline-block;margin:12px 20px 12px 0}select{padding:8px;font:inherit}a{color:#145386}.bad{border-left:5px solid #ac6720}table{width:100%;border-collapse:collapse;font-size:13px}td,th{text-align:left;padding:8px;border-bottom:1px solid #dce5ed}.scroll{overflow:auto}.contributors dt{font-weight:bold;margin-top:8px;text-transform:capitalize}.contributors dd{margin:3px 0 8px;font-size:13px}.status{font-weight:bold;color:#6b510c}</style>
 <main><header><p class="small">ICELINES · RINKCRAFT EXPLORATORY STUDY · 2023–24 REGULAR SEASON</p><h1>How do these goals happen?</h1><p id="coverage"></p><p>Official-context and observation pass. Selected cards include attributed NHL descriptions and provisional mechanisms. Video/release alignment and independent review remain incomplete. Scoring outcomes alone do not identify a missed assignment or player capability.</p><div class="scroll"><table><thead><tr><th>Player</th><th>Captured / selected</th><th>Strength</th><th>Recorded shot type</th></tr></thead><tbody id="summary"></tbody></table></div><label>Player <select id="player"><option value="">All players</option></select></label><label>Status <select id="status"><option value="">All cases</option><option value="captured">Captured</option><option value="unavailable">Unavailable</option></select></label><p class="small">Each case links to native IceLines analysis and the official source. Counted cases are successful goals selected by scoring-game rank, not a denominator of attempts or a representative sample of a player's goals.</p></header><div id="cases" class="grid"></div></main>
 <script type="application/json" id="data">__STUDY_DATA__</script><script>(()=>{const d=JSON.parse(document.getElementById('data').textContent),$=id=>document.getElementById(id);const node=(tag,text,parent)=>{let n=document.createElement(tag);n.textContent=text;parent.append(n);return n};const counts=o=>Object.entries(o).map(([k,v])=>`${k}: ${v}`).join(', ');$('coverage').textContent=`${d.summary.planned_cases} planned cases · ${d.summary.captured_cases} captured · ${d.summary.frames} frames`;
 for(const p of d.summary.players){let tr=node('tr','',$('summary'));for(const text of [p.player,`${p.captured_cases} / ${p.planned_cases}`,counts(p.strength_counts),counts(p.recorded_shot_type_counts)])node('td',text,tr);let o=node('option',p.player,$('player'));o.value=p.player}
 function link(parent,text,url){try{let u=new URL(url);if(u.origin!=='http://127.0.0.1:8786'&&!(u.protocol==='https:'&&['www.nhl.com','nhl.com','wsr.nhle.com'].includes(u.hostname)))return;let a=node('a',text,parent);a.href=u.href;a.target='_blank';a.rel='noopener';parent.append(document.createElement('br'))}catch{}}
-function render(){$('cases').replaceChildren();for(const r of d.records){let s=r.selection;if($('player').value&&$('player').value!==s.player.name)continue;if($('status').value&&$('status').value!==r.status)continue;let article=node('article','',$('cases'));article.dataset.status=r.status;node('h2',`${s.player.name} · ${s.game_date}`,article);node('p',`Scoring-game rank ${s.scoring_game_rank} · game ${s.game_id}`,article).className='small';if(r.status!=='captured'){article.className='bad';node('p',`Unavailable: ${r.reason}`,article);continue}let g=r.summary.goal;node('p',`${r.summary.away_team} at ${r.summary.home_team} · P${g.period} ${g.time_in_period} · ${g.strength||'unknown strength'} · ${g.shot_type||'unknown shot type'} · ${r.summary.goalkeeper_context}`,article);node('p',`Official assists: ${g.assists.map(a=>a.name||a.player_id).join(', ')||'none recorded'}.`,article);node('p',`${r.summary.frame_count} frames · ${r.summary.unique_observed_players} observed player IDs; active membership unverified.`,article).className='small';if(r.documentary_annotation){const a=r.documentary_annotation;node('p',`Documentary hypothesis: ${a.candidate_mechanism}`,article).className='status';node('p',`NHL description: ${a.documentary_basis}`,article);node('p',`Still unknown: ${a.unresolved}`,article).className='small';for(const source of a.sources)link(article,source.id,source.url)}else{node('p','Mechanism: unassessed — review required.',article).className='status';}let ul=node('ul','',article);for(const q of r.annotation.questions)node('li',q,ul);link(article,'Open native IceLines sequence',`http://127.0.0.1:8786/goal-analysis?target=${r.target.game_id}/${r.target.event_id}`);link(article,'Official goal replay',r.source_links.visualizer);link(article,'Official video',r.source_links.video)}}$('player').onchange=render;$('status').onchange=render;render()})();</script></html>"##;
+function render(){$('cases').replaceChildren();for(const r of d.records){let s=r.selection;if($('player').value&&$('player').value!==s.player.name)continue;if($('status').value&&$('status').value!==r.status)continue;let article=node('article','',$('cases'));article.dataset.status=r.status;node('h2',`${s.player.name} · ${s.game_date}`,article);node('p',`Scoring-game rank ${s.scoring_game_rank} · game ${s.game_id}`,article).className='small';if(r.status!=='captured'){article.className='bad';node('p',`Unavailable: ${r.reason}`,article);continue}let g=r.summary.goal;node('p',`${r.summary.away_team} at ${r.summary.home_team} · P${g.period} ${g.time_in_period} · ${g.strength||'unknown strength'} · ${g.shot_type||'unknown shot type'} · ${r.summary.goalkeeper_context}`,article);node('h3','Scoring credits and contributions',article);if(r.credited_contributions){let dl=node('dl','',article);dl.className='contributors';for(const p of r.credited_contributions.participants){let dt=node('dt',`${p.official_credit} · ${p.name||p.player_id}`,dl);dt.dataset.credit=p.official_credit;let description=p.action_status==='documentary-supported'?`${p.action} · attributed description (${p.action_source_ids.join(', ')})`:'Action unassessed — official credit alone does not identify the task.';node('dd',description,dl)}node('p','Credit order is not a verified pass sequence or an importance ranking. Other contributors can be uncredited.',article).className='small'}else{node('p',`Official assists: ${g.assists.map(a=>a.name||a.player_id).join(', ')||'none recorded'}.`,article);} node('p',`${r.summary.frame_count} frames · ${r.summary.unique_observed_players} observed player IDs; active membership unverified.`,article).className='small';if(r.documentary_annotation){const a=r.documentary_annotation;node('p',`Documentary hypothesis: ${a.candidate_mechanism}`,article).className='status';node('p',`NHL description: ${a.documentary_basis}`,article);node('p',`Still unknown: ${a.unresolved}`,article).className='small';for(const source of a.sources)link(article,source.id,source.url)}else{node('p','Mechanism: unassessed — review required.',article).className='status';}let ul=node('ul','',article);for(const q of r.annotation.questions)node('li',q,ul);link(article,'Open native IceLines sequence',`http://127.0.0.1:8786/goal-analysis?target=${r.target.game_id}/${r.target.event_id}`);link(article,'Official goal replay',r.source_links.visualizer);link(article,'Official video',r.source_links.video)}}$('player').onchange=render;$('status').onchange=render;render()})();</script></html>"##;
 
 #[cfg(test)]
 mod tests {

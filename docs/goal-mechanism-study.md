@@ -56,3 +56,25 @@ manifest are recorded in PUCK `scenarios/league/2023-24/goal-mechanisms/` and
 Rinkcraft decision0066. No NHL source payloads or personal cohort fixtures are
 committed to IceLines. No full tactical annotation or independent review is
 implied by successful acquisition/report tests.
+
+
+## Credited participants and separately supported actions
+
+Each captured goal now gets `icelines.goal-contributors.v0.1`. The report verifies
+its source report hash and game/event/context before using official PBP fields
+`assist1PlayerId`, `assist2PlayerId` and `scoringPlayerId`. These identify primary,
+secondary and scorer credits independently of the landing assist-array order.
+Conflicting/duplicate credit identities are rejected.
+
+The display orders secondary, primary and scorer as official credits. This is
+not a verified pass sequence or an importance ranking. Primary assists can
+include shot deliveries followed by redirects; the action needs its own source.
+Unassisted goals can still have supporting contributions outside scoring credit.
+
+Optional `contributor_actions` annotation rows join by player ID and require
+linked source IDs. Duplicate/uncredited actors or unlinked sources are rejected.
+Missing action evidence stays unassessed, including secondary credits. A
+source-supported action remains an attributed documentary description, not a
+moving-video observation or a player class. Frame-presence and puck-nearest
+indices are retained as inspection anchors; they do not establish control or
+infer a pass. The original source record and machine audit are unchanged.
