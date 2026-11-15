@@ -157,12 +157,14 @@ async fn main() -> Result<()> {
     for selection in plan["selections"].as_array().unwrap() {
         let game = selection["game_id"].as_u64().unwrap();
         let id = selection["player"]["player_id"].as_u64().unwrap();
+        let mut identified_goal = None;
         let attempt:Result<Value>=async {
             let landing=goal_analysis::discover_game(game,&root,true).await?;
             let goals=player_scoring_goals(&landing,id)?;
             anyhow::ensure!(Some(goals.len() as u64)==selection["goals_in_game"].as_u64(),"Game-log and landing goal totals disagree");
             let eligible:Vec<_>=goals.iter().filter(|g|g.replay_url.is_some()).collect();
             let goal=eligible.first().context("No published tracking for this scorer in the selected game")?;
+            identified_goal=Some((*goal).clone());
             let target=goal_analysis::GoalTarget::new(game,goal.event_id)?;
             let report=goal_analysis::prepare(target,&root,true,None).await?;
             let file=out.join(format!("goals/{game}-{}.json",goal.event_id));
@@ -189,7 +191,7 @@ async fn main() -> Result<()> {
             }
             Err(error) => {
                 eprintln!("unavailable {game}: {error:#}");
-                records.push(json!({"selection":selection,"status":"unavailable","reason":format!("{error:#}")}));
+                records.push(json!({"selection":selection,"status":"unavailable","identified_goal":identified_goal,"reason":format!("{error:#}")}));
             }
         }
         write_json_atomic(
