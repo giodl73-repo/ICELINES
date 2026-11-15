@@ -51,3 +51,22 @@ source correction/history are not inferred from missing observations or old cach
 No full-app/WASM acceptance, automatic tactical causality, calibrated NHL rates or
 observed duty/blame system is implied. Browser/WASM clients can consume the JSON
 boundary; a standalone WASM source-fetch/analysis surface is not claimed here.
+
+## Same-player geometry comparisons
+
+The additive `geometry_changes` object uses schema
+`icelines.goal-geometry-change.v0.1`. Each frame compares against ten frames
+earlier, shortened at the start. Frame zero has no earlier comparison. Rust
+computes puck/scorer endpoint displacement and matches player IDs across both
+endpoints, retaining each player's before/after separation from the scorer.
+Nearest-opponent identity changes are explicit; subtracting two different
+opponents' distances must not be presented as one defender's movement.
+
+Missing scorer observations produce null scorer movement/separation changes.
+Endpoint presence changes are listed, and matched players indicate whether they
+were observed in every intervening frame. Neither establishes active ice status
+or a substitution. Distances are native Euclidean endpoint distances, not path
+length, speed, physical reach, possession, coverage or causation. There is no
+automatic open-lane verdict. Post-goal movement can occur anywhere in this
+unaligned clip. The native and exported surface display the shared Rust values
+and optionally connect matching endpoint observations on the plot.

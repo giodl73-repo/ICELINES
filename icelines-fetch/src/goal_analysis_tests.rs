@@ -18,6 +18,8 @@ fn evidence_keeps_missing_observations_unknown_and_groups_no_possession() {
     let (t, b, l, x, p) = source();
     let r = analyze_sources(t, &b, &l, &x, &p).unwrap();
     let e = &r["audit"]["events"][0];
+    assert_eq!(r["geometry_changes"]["frames"].as_array().unwrap().len(), 2);
+    assert!(r["geometry_changes"]["frames"][1]["scorer_displacement"].is_null());
     assert!(e["frames"][0]["scorer_nearest_opposing_skater"].is_null());
     assert_eq!(
         e["frames"][1]["scorer_nearest_opposing_skater"]["distance_native"],
