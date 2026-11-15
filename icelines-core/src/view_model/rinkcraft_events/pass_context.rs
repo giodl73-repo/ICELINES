@@ -69,7 +69,9 @@ pub(super) fn validate(q: &Request, p: &collection::Profiles) -> Result<(), Stri
         if let Action::PassWithContext { plan } = &step.action {
             if !matches!(
                 q.schema.as_str(),
-                "rinkcraft.event-episode.0.4" | "rinkcraft.event-episode.0.5"
+                "rinkcraft.event-episode.0.4"
+                    | "rinkcraft.event-episode.0.5"
+                    | "rinkcraft.event-episode.0.6"
             ) {
                 return Err("context passes require explicit 0.4 episode".into());
             }

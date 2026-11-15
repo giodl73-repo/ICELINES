@@ -22,7 +22,10 @@ pub struct Plan {
     pub shooter: String,
     pub goalie: String,
     pub finish: Vec<Choice<Finish>>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub containment: Vec<Choice<Containment>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rebound_context: Option<rebound::Context>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Audit {
@@ -57,8 +60,11 @@ fn weights<T: Serialize>(choices: &[Choice<T>]) -> Result<(), String> {
 pub(super) fn validate(q: &Request, p: &collection::Profiles) -> Result<(), String> {
     for s in &q.steps {
         if let Action::ResolveShot { plan } = &s.action {
-            if q.schema != "rinkcraft.event-episode.0.5" {
-                return Err("shot contests require explicit 0.5 episode".into());
+            if !matches!(
+                q.schema.as_str(),
+                "rinkcraft.event-episode.0.5" | "rinkcraft.event-episode.0.6"
+            ) {
+                return Err("shot contests require explicit 0.5/0.6 episode".into());
             }
             if collection::profile(p, &plan.shooter)?.branch != game::Branch::Skater
                 || collection::profile(p, &plan.goalie)?.branch != game::Branch::Goalie
@@ -66,7 +72,18 @@ pub(super) fn validate(q: &Request, p: &collection::Profiles) -> Result<(), Stri
                 return Err("shot task requires a skater and a verified goalie profile".into());
             }
             weights(&plan.finish)?;
-            weights(&plan.containment)?;
+            match (q.schema.as_str(), &plan.rebound_context) {
+                ("rinkcraft.event-episode.0.5", None) => weights(&plan.containment)?,
+                ("rinkcraft.event-episode.0.6", Some(context)) if plan.containment.is_empty() => {
+                    rebound::validate(context)?
+                }
+                _ => {
+                    return Err(
+                        "use authored containment in 0.5 or exclusive rebound context in 0.6"
+                            .into(),
+                    )
+                }
+            }
         }
     }
     Ok(())
@@ -152,6 +169,9 @@ impl Engine<'_> {
                 self.state.puck = Puck::Loose;
                 self.state.last_touch = Some(plan.goalie.clone());
                 self.emit(i, "goalie_contact", Some(plan.goalie.clone()), None, None);
+                if let Some(context) = &plan.rebound_context {
+                    return self.contain_contact(i, &plan.goalie, context);
+                }
                 let (n, draw) = self.choose(&plan.containment)?;
                 self.emit(
                     i,

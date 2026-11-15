@@ -6,6 +6,8 @@ mod collection_tests;
 mod pass_context_tests;
 #[path = "passing_tests.rs"]
 mod passing_tests;
+#[path = "rebound_tests.rs"]
+mod rebound_tests;
 #[path = "shot_tests.rs"]
 mod shot_tests;
 fn request(actions: Vec<Value>) -> Request {
