@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
 pub mod collection;
+pub mod passing;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -66,6 +67,13 @@ pub enum Action {
     CollectUnderPressure {
         collector: String,
         pressure: String,
+    },
+    PassUnderPressure {
+        passer: String,
+        receiver: String,
+        lane_defender: String,
+        pressure: String,
+        receive_seconds: u16,
     },
     Challenge {
         actor: String,
@@ -182,6 +190,8 @@ pub struct Event {
     pub state: State,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub task: Option<collection::Audit>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pass_task: Option<passing::Audit>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -246,6 +256,7 @@ impl Engine<'_> {
             draw,
             state: self.state.clone(),
             task: None,
+            pass_task: None,
         });
     }
     fn choose<T: Serialize>(&mut self, choices: &[Choice<T>]) -> Result<(usize, u16), String> {
@@ -594,6 +605,90 @@ impl Engine<'_> {
                     self.emit(i, "collection_denied", Some(pressure.clone()), None, None);
                 }
             }
+            Action::PassUnderPressure {
+                passer,
+                receiver,
+                lane_defender,
+                pressure,
+                receive_seconds,
+            } => {
+                let side = self.active(passer)?.side;
+                if self.state.puck
+                    != (Puck::Controlled {
+                        player: passer.clone(),
+                    })
+                {
+                    return Err("pass requires actual puck controller".into());
+                }
+                for id in [passer, receiver, lane_defender, pressure] {
+                    self.active(id)?;
+                }
+                if self.player(receiver)?.side != side
+                    || self.player(lane_defender)?.side == side
+                    || self.player(pressure)?.side == side
+                {
+                    return Err("pass requires a teammate receiver and opposing defenders".into());
+                }
+                self.state.puck = Puck::Flight;
+                self.state.attempt = None;
+                self.shooter_side = None;
+                self.state.last_touch = Some(passer.clone());
+                self.state.last_deliberate = Some(passer.clone());
+                self.emit(i, "pass_released", Some(passer.clone()), None, None);
+                let pair = self.below(400);
+                let audit = passing::resolve(
+                    self.q.profiles.as_ref().unwrap(),
+                    passer,
+                    lane_defender,
+                    passing::Task::Delivery,
+                    pair,
+                )?;
+                let delivered = audit.outcome == super::rinkcraft_contest::Outcome::ActorWins;
+                self.emit(i, "pass_delivery_contest", Some(passer.clone()), None, None);
+                self.events.last_mut().unwrap().pass_task = Some(audit);
+                if !delivered {
+                    self.state.puck = Puck::Loose;
+                    self.emit(
+                        i,
+                        "pass_delivery_denied",
+                        Some(lane_defender.clone()),
+                        None,
+                        None,
+                    );
+                    return Ok(());
+                }
+                self.emit(i, "pass_arriving", Some(receiver.clone()), None, None);
+                if !self.advance(i, *receive_seconds)? {
+                    return Ok(());
+                }
+                self.active(receiver)?;
+                self.active(pressure)?;
+                self.state.puck = Puck::Loose;
+                self.state.last_touch = Some(receiver.clone());
+                self.emit(i, "receiver_contact", Some(receiver.clone()), None, None);
+                let pair = self.below(400);
+                let audit = passing::resolve(
+                    self.q.profiles.as_ref().unwrap(),
+                    receiver,
+                    pressure,
+                    passing::Task::Receipt,
+                    pair,
+                )?;
+                let controlled = audit.outcome == super::rinkcraft_contest::Outcome::ActorWins;
+                self.emit(
+                    i,
+                    "pass_receipt_contest",
+                    Some(receiver.clone()),
+                    None,
+                    None,
+                );
+                self.events.last_mut().unwrap().pass_task = Some(audit);
+                if controlled {
+                    self.control(i, receiver.clone(), None)?;
+                } else {
+                    self.emit(i, "pass_receipt_denied", Some(pressure.clone()), None, None);
+                }
+            }
             Action::Challenge {
                 actor,
                 victim,
@@ -716,8 +811,8 @@ pub fn run(q: &Request) -> Result<ResultSet, String> {
             break;
         }
     }
-    Ok(ResultSet { schema:if q.profiles.is_some() { "rinkcraft.event-result.0.2" } else { "rinkcraft.event-result.0.1" }.into(),request:q.clone(),events:e.events,goals:e.goals,final_state:e.state,
-        limitations:vec![if q.profiles.is_some() { "Only skater pressure collection maps verified fictional Handling versus Defending through the declared d20 rule; other contacts, reachability and timing remain authored, not NHL-calibrated." } else { "Authored contact distributions and declared reachability; no calibrated physics or capability-to-probability mapping." }.into(),
+    Ok(ResultSet { schema:match q.schema.as_str() { "rinkcraft.event-episode.0.3" => "rinkcraft.event-result.0.3", "rinkcraft.event-episode.0.2"=>"rinkcraft.event-result.0.2", _=>"rinkcraft.event-result.0.1" }.into(),request:q.clone(),events:e.events,goals:e.goals,final_state:e.state,
+        limitations:vec![if q.schema == "rinkcraft.event-episode.0.3" { "Skater passing/receiving and pressure collection use verified fictional capabilities; access, timing, other contacts, shots and calls remain authored, not NHL-calibrated." } else if q.profiles.is_some() { "Only skater pressure collection maps verified fictional Handling versus Defending through the declared d20 rule; other contacts, reachability and timing remain authored, not NHL-calibrated." } else { "Authored contact distributions and declared reachability; no calibrated physics or capability-to-probability mapping." }.into(),
             "Bounded action script, fixed initial 5v5, one ordinary skater minor, no coaching substitutions or complete NHL adjudication.".into(),
             "Raw contacts and goals only; no official SOG, save, scorer or assist attribution.".into()] })
 }

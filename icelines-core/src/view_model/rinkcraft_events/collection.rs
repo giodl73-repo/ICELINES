@@ -53,11 +53,13 @@ pub struct Audit {
 }
 
 pub fn build(draft: Draft) -> Result<Request, String> {
-    if draft.schema != "rinkcraft.event-draft.0.2"
-        || draft.episode.schema != "rinkcraft.event-episode.0.2"
-        || draft.episode.profiles.is_some()
+    if !matches!(
+        (draft.schema.as_str(), draft.episode.schema.as_str()),
+        ("rinkcraft.event-draft.0.2", "rinkcraft.event-episode.0.2")
+            | ("rinkcraft.event-draft.0.3", "rinkcraft.event-episode.0.3")
+    ) || draft.episode.profiles.is_some()
     {
-        return Err("draft requires 0.2 episode without already populated profiles".into());
+        return Err("draft requires matching 0.2/0.3 episode without populated profiles".into());
     }
     let members = draft
         .members
@@ -83,14 +85,16 @@ pub fn build(draft: Draft) -> Result<Request, String> {
 pub(super) fn validate(q: &Request) -> Result<(), String> {
     match (q.schema.as_str(), &q.profiles) {
         ("rinkcraft.event-episode.0.1", None) => {
-            if q.steps
-                .iter()
-                .any(|s| matches!(s.action, Action::CollectUnderPressure { .. }))
-            {
+            if q.steps.iter().any(|s| {
+                matches!(
+                    s.action,
+                    Action::CollectUnderPressure { .. } | Action::PassUnderPressure { .. }
+                )
+            }) {
                 return Err("capability tasks require an explicit 0.2 episode".into());
             }
         }
-        ("rinkcraft.event-episode.0.2", Some(p)) => {
+        ("rinkcraft.event-episode.0.2" | "rinkcraft.event-episode.0.3", Some(p)) => {
             if p.schema != "rinkcraft.event-profiles.0.1"
                 || p.members.is_empty()
                 || p.members.len() > 12
@@ -117,6 +121,11 @@ pub(super) fn validate(q: &Request) -> Result<(), String> {
                 )?;
             }
             for step in &q.steps {
+                if matches!(step.action, Action::PassUnderPressure { .. })
+                    && q.schema != "rinkcraft.event-episode.0.3"
+                {
+                    return Err("passing tasks require explicit 0.3 episode".into());
+                }
                 if let Action::CollectUnderPressure {
                     collector,
                     pressure,
@@ -135,10 +144,13 @@ pub(super) fn validate(q: &Request) -> Result<(), String> {
         }
         _ => return Err("unsupported episode schema/profile combination".into()),
     }
+    if let Some(p) = &q.profiles {
+        passing::validate(q, p)?;
+    }
     Ok(())
 }
 
-fn profile<'a>(p: &'a Profiles, id: &str) -> Result<&'a game::GameCharacter, String> {
+pub(super) fn profile<'a>(p: &'a Profiles, id: &str) -> Result<&'a game::GameCharacter, String> {
     p.members
         .iter()
         .find(|m| m.player == id)
