@@ -3446,6 +3446,40 @@ against and fight opponents, and for Rocket Richard scoring reports built from
 goal, shot-on-goal, missed-shot, and blocked-shot events. Empty-net goals remain
 no-goalie rows; the records layer must not infer a goalie from the boxscore.
 
+### `icelines analyze-goal` — one-goal Rinkcraft evidence report
+
+```bash
+icelines analyze-goal https://www.nhl.com/ppt-replay/goal/2025021167/996 --output-dir ./goal-report
+icelines analyze-goal --game-id 2025021167 --event-id 996 --output-dir ./goal-report
+icelines --no-live analyze-goal 2025021167/996 --offline-dir ./captured-sources --output-dir ./goal-report
+```
+
+The same Rust service powers `/goal-analysis` and `/api/v1/goal-analysis?target=GAME/EVENT`.
+Game pages link to a goal picker; the global navigation accepts a Goal Visualizer
+URL or game/event pair. Video and game-page URLs do not unambiguously identify a
+goal and are rejected. The source's published replay URL is discovered, not guessed.
+Goals without published tracking are explicitly unavailable for positional analysis.
+
+Outputs: `analysis.json` and a portable `analysis.html` report. The report contains
+all frames, official scorer/assist context, native-coordinate separation, grouped
+nearest-observation runs, goal-context questions and unresolved assignments.
+Nearest is not possession; a point is not a stick, vision or a called role. No
+player grades, automatic defensive culprit or causal success probabilities are generated.
+
+Stored source captures are reused. `--no-live` permits only existing captures or
+explicit offline input. `--data-root` overrides the analysis cache root; by default
+it is the existing IceLines data directory under `goal_analysis/GAME/EVENT/`.
+Default-cache imports are available in the native web page without another fetch.
+Offline source directories contain `GAME.bundle.json` (the existing typed Goal
+Visualizer bundle), `GAME.landing.json`, `GAME.boxscore.json`, and
+`GAME.play-by-play.json`. Source identities and per-input hashes are checked/
+recorded; incompatible game, goal, scorer or tracking URLs are rejected.
+
+The feature preserves feed-native coordinate/time scale and unknown exact goal
+alignment/active personnel. Capture refresh/history, physical calibration, video/
+shift alignment, observed possession/contact and source-defined duty assessment
+remain separate work. A goals-only report cannot estimate tactic success rates.
+
 ### `icelines fetch goal-visualizer` — goal-level player and puck tracking
 
 ```bash

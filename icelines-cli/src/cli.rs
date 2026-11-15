@@ -79,6 +79,24 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
+    /// Analyze one NHL goal using published tracking and explicit evidence limits.
+    AnalyzeGoal {
+        /// NHL Goal Visualizer URL or GAME_ID/EVENT_ID.
+        #[arg(required_unless_present="game_id",conflicts_with="game_id")]
+        target: Option<String>,
+        #[arg(long,requires="event_id",conflicts_with="target")]
+        game_id: Option<u64>,
+        #[arg(long,requires="game_id",conflicts_with="target")]
+        event_id: Option<u32>,
+        #[arg(long)]
+        output_dir: PathBuf,
+        /// Explicit source capture directory for offline analysis.
+        #[arg(long)]
+        offline_dir: Option<PathBuf>,
+        /// Override the local goal evidence cache.
+        #[arg(long)]
+        data_root: Option<PathBuf>,
+    },
     /// Project a measured assessment and annual evidence from an explicit local history archive.
     ProfileAssess {
         #[arg(long)]

@@ -1,4 +1,5 @@
 pub mod analysis;
+pub mod goal_analysis;
 pub mod awards;
 pub mod card_renderer;
 pub mod config;

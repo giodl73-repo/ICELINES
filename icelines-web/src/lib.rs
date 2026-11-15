@@ -40,6 +40,7 @@ pub mod card_store;
 pub mod config;
 pub mod dashboard_command;
 pub mod error;
+pub mod goal_analysis;
 pub mod state;
 pub mod static_assets;
 pub mod templates;
@@ -69,6 +70,8 @@ pub use state::WebState;
 /// directory mounts, reintroduce a `RouterConfig` then.
 pub fn router(state: WebState) -> Router {
     Router::new()
+        .route("/goal-analysis",get(handlers::goal_analysis::page))
+        .route("/api/v1/goal-analysis",get(handlers::goal_analysis::json))
         .route("/rinkcraft", get(handlers::rinkcraft::get_atlas))
         .route("/rinkcraft/game", get(handlers::rinkcraft::get_game_page))
         .route("/api/v1/rinkcraft/game-rules", get(handlers::rinkcraft::get_game_rules))
@@ -731,6 +734,7 @@ pub fn router(state: WebState) -> Router {
 }
 
 mod handlers {
+    pub mod goal_analysis;
     pub mod behavior_rankings;
     // QueryA — bio filter primitives moved to the icelines-query
     // crate so the CLI can share them. The web handlers reach in via

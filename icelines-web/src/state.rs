@@ -51,6 +51,9 @@ use crate::config::WebConfig;
 /// 50ms fan-out NEVER blocks readers.
 #[derive(Clone, Default)]
 pub struct WebState {
+    /// Goal evidence cache and live-source policy supplied by the boot layer.
+    pub goal_analysis_root: Arc<Option<PathBuf>>,
+    pub goal_analysis_live: bool,
     /// `StatsRepository` behind a tokio RwLock so multi-threaded axum
     /// handlers can read concurrently. Phase Hart's `!Send + !Sync`
     /// soft-lint is bypassed via `icelines-core`'s `send-sync` feature
@@ -99,6 +102,8 @@ impl WebState {
             config: Arc::new(RwLock::new(WebConfig::default())),
             snapshots_root: Arc::new(None),
             card_data_root: Arc::new(None),
+            goal_analysis_root: Arc::new(None),
+            goal_analysis_live: false,
         }
     }
 
@@ -110,6 +115,8 @@ impl WebState {
             config: Arc::new(RwLock::new(config)),
             snapshots_root: Arc::new(None),
             card_data_root: Arc::new(None),
+            goal_analysis_root: Arc::new(None),
+            goal_analysis_live: false,
         }
     }
 }

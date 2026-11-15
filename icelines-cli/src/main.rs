@@ -142,6 +142,9 @@ fn should_auto_setup(
 
 async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
     match cli.command {
+        Commands::AnalyzeGoal {target,game_id,event_id,output_dir,offline_dir,data_root} => {
+            commands::goal_analysis::run(target,game_id,event_id,output_dir,offline_dir,data_root).await?;
+        },
         Commands::ProfileAssess {
             history,
             player,
