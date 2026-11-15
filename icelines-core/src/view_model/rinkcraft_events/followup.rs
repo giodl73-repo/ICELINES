@@ -35,7 +35,9 @@ pub(super) fn validate(q: &Request, p: &collection::Profiles) -> Result<(), Stri
         if let Action::ReboundFollowup { plan } = &step.action {
             if !matches!(
                 q.schema.as_str(),
-                "rinkcraft.event-episode.0.7" | "rinkcraft.event-episode.0.8"
+                "rinkcraft.event-episode.0.7"
+                    | "rinkcraft.event-episode.0.8"
+                    | "rinkcraft.event-episode.0.9"
             ) {
                 return Err("rebound followup requires a supported explicit version".into());
             }

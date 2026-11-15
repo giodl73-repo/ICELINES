@@ -143,58 +143,64 @@ pub(super) fn arrivals(plan: &Plan) -> Vec<Arrival> {
 pub(super) fn validate(q: &Request, p: &collection::Profiles) -> Result<(), String> {
     for step in &q.steps {
         if let Action::LoosePuckAccess { plan } = &step.action {
-            if q.schema != "rinkcraft.event-episode.0.8"
-                || plan.schema != "rinkcraft.access-grid.0.1"
+            if !matches!(
+                q.schema.as_str(),
+                "rinkcraft.event-episode.0.8" | "rinkcraft.event-episode.0.9"
+            ) || plan.schema != "rinkcraft.access-grid.0.1"
             {
                 return Err("spatial access requires explicit 0.8/grid0.1".into());
             }
-            if !(1..=1200).contains(&step.seconds)
-                || !(1..=step.seconds).contains(&plan.collection_seconds)
-                || !(1..=40).contains(&plan.open_target)
-                || plan.reach_cells > 2
-                || plan.basis.trim().is_empty()
-                || plan.basis.chars().count() > 240
-            {
-                return Err("invalid grid window, collection, target, reach or basis".into());
+            validate_plan(q, p, plan, step.seconds)?;
+        }
+    }
+    Ok(())
+}
+pub(super) fn validate_plan(
+    q: &Request,
+    p: &collection::Profiles,
+    plan: &Plan,
+    window: u16,
+) -> Result<(), String> {
+    if plan.schema != "rinkcraft.access-grid.0.1" {
+        return Err("unsupported access grid".into());
+    }
+    if !(1..=1200).contains(&window)
+        || !(1..=window).contains(&plan.collection_seconds)
+        || !(1..=40).contains(&plan.open_target)
+        || plan.reach_cells > 2
+        || plan.basis.trim().is_empty()
+        || plan.basis.chars().count() > 240
+    {
+        return Err("invalid grid window, collection, target, reach or basis".into());
+    }
+    let cell = |c: Cell| (-20..=20).contains(&c.x) && (-20..=20).contains(&c.y);
+    if !cell(plan.puck) || plan.actors.is_empty() || plan.actors.len() > 12 {
+        return Err("invalid local grid puck/pool".into());
+    }
+    let mut ids = BTreeSet::new();
+    for a in &plan.actors {
+        if !ids.insert(&a.player) || !cell(a.cell) || !q.players.iter().any(|p| p.id == a.player) {
+            return Err("invalid/duplicate grid actor".into());
+        }
+        if let Intent::Pursue {
+            seconds_per_cell,
+            reaction_seconds,
+            turn_seconds,
+        } = a.intent
+        {
+            if !(1..=10).contains(&seconds_per_cell) || reaction_seconds > 60 || turn_seconds > 60 {
+                return Err("declared movement rates/delays out of bounds".into());
             }
-            let cell = |c: Cell| (-20..=20).contains(&c.x) && (-20..=20).contains(&c.y);
-            if !cell(plan.puck) || plan.actors.is_empty() || plan.actors.len() > 12 {
-                return Err("invalid local grid puck/pool".into());
-            }
-            let mut ids = BTreeSet::new();
-            for a in &plan.actors {
-                if !ids.insert(&a.player)
-                    || !cell(a.cell)
-                    || !q.players.iter().any(|p| p.id == a.player)
-                {
-                    return Err("invalid/duplicate grid actor".into());
-                }
-                if let Intent::Pursue {
-                    seconds_per_cell,
-                    reaction_seconds,
-                    turn_seconds,
-                } = a.intent
-                {
-                    if !(1..=10).contains(&seconds_per_cell)
-                        || reaction_seconds > 60
-                        || turn_seconds > 60
-                    {
-                        return Err("declared movement rates/delays out of bounds".into());
-                    }
-                }
-            }
-            // All potentially involved skaters need profiles, not just the eventual winner.
-            for a in arrivals(plan)
-                .iter()
-                .filter(|a| a.seconds.is_some_and(|t| t <= step.seconds))
-            {
-                let player = q.players.iter().find(|p| p.id == a.player).unwrap();
-                if !player.goalie
-                    && collection::profile(p, &a.player)?.branch != game::Branch::Skater
-                {
-                    return Err("spatial skater domain mismatch".into());
-                }
-            }
+        }
+    }
+    // All potentially involved skaters need profiles, not just the eventual winner.
+    for a in arrivals(plan)
+        .iter()
+        .filter(|a| a.seconds.is_some_and(|t| t <= window))
+    {
+        let player = q.players.iter().find(|p| p.id == a.player).unwrap();
+        if !player.goalie && collection::profile(p, &a.player)?.branch != game::Branch::Skater {
+            return Err("spatial skater domain mismatch".into());
         }
     }
     Ok(())
@@ -245,7 +251,7 @@ pub(super) fn exact_collection(actor_term: i16, opposition: &[i16], target: u8) 
     (successes, combinations)
 }
 impl Engine<'_> {
-    fn spatial_advance(&mut self, i: usize, seconds: u16) -> Result<bool, String> {
+    pub(super) fn spatial_advance(&mut self, i: usize, seconds: u16) -> Result<bool, String> {
         if let Some(until) = self
             .state
             .penalty

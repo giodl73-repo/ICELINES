@@ -78,6 +78,7 @@ pub(super) fn validate_plan(
             | "rinkcraft.event-episode.0.6"
             | "rinkcraft.event-episode.0.7"
             | "rinkcraft.event-episode.0.8"
+            | "rinkcraft.event-episode.0.9"
     ) {
         return Err("shot contest needs supported explicit version".into());
     }
@@ -92,7 +93,8 @@ pub(super) fn validate_plan(
         (
             "rinkcraft.event-episode.0.6"
             | "rinkcraft.event-episode.0.7"
-            | "rinkcraft.event-episode.0.8",
+            | "rinkcraft.event-episode.0.8"
+            | "rinkcraft.event-episode.0.9",
             Some(context),
         ) if plan.containment.is_empty() => rebound::validate(context)?,
         _ => return Err("use exclusive containment policy for selected episode version".into()),

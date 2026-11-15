@@ -62,6 +62,7 @@ pub fn build(draft: Draft) -> Result<Request, String> {
             | ("rinkcraft.event-draft.0.6", "rinkcraft.event-episode.0.6")
             | ("rinkcraft.event-draft.0.7", "rinkcraft.event-episode.0.7")
             | ("rinkcraft.event-draft.0.8", "rinkcraft.event-episode.0.8")
+            | ("rinkcraft.event-draft.0.9", "rinkcraft.event-episode.0.9")
     ) || draft.episode.profiles.is_some()
     {
         return Err(
@@ -101,6 +102,7 @@ pub(super) fn validate(q: &Request) -> Result<(), String> {
                         | Action::ResolveShot { .. }
                         | Action::ReboundFollowup { .. }
                         | Action::LoosePuckAccess { .. }
+                        | Action::ThreeZoneSequence { .. }
                 )
             }) {
                 return Err("capability tasks require an explicit 0.2 episode".into());
@@ -113,7 +115,8 @@ pub(super) fn validate(q: &Request) -> Result<(), String> {
             | "rinkcraft.event-episode.0.5"
             | "rinkcraft.event-episode.0.6"
             | "rinkcraft.event-episode.0.7"
-            | "rinkcraft.event-episode.0.8",
+            | "rinkcraft.event-episode.0.8"
+            | "rinkcraft.event-episode.0.9",
             Some(p),
         ) => {
             if p.schema != "rinkcraft.event-profiles.0.1"
@@ -171,6 +174,7 @@ pub(super) fn validate(q: &Request) -> Result<(), String> {
         shot::validate(q, p)?;
         followup::validate(q, p)?;
         space::validate(q, p)?;
+        zones::validate(q, p)?;
     }
     Ok(())
 }
