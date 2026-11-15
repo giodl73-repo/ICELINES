@@ -40,6 +40,13 @@ async fn capture(client: &reqwest::Client, url: &str, path: &Path) -> Result<Val
 fn goal_order(g: &gv::GoalVisualizerGoal) -> (u8, String, u32) {
     (g.period, g.time_in_period.clone(), g.event_id)
 }
+fn player_scoring_goals(landing: &Value, player: u64) -> Result<Vec<gv::GoalVisualizerGoal>> {
+    let mut goals = gv::discover_goals(landing)?;
+    // Landing includes shootout conversions; player game-log goals exclude them.
+    goals.retain(|g| g.scorer_id.map(u64::from) == Some(player) && g.period_type != "SO");
+    goals.sort_by_key(goal_order);
+    Ok(goals)
+}
 #[tokio::main]
 async fn main() -> Result<()> {
     let args: Vec<_> = std::env::args().skip(1).collect();
@@ -152,9 +159,7 @@ async fn main() -> Result<()> {
         let id = selection["player"]["player_id"].as_u64().unwrap();
         let attempt:Result<Value>=async {
             let landing=goal_analysis::discover_game(game,&root,true).await?;
-            let mut goals=gv::discover_goals(&landing)?;
-            goals.retain(|g|g.scorer_id.map(u64::from)==Some(id));
-            goals.sort_by_key(goal_order);
+            let goals=player_scoring_goals(&landing,id)?;
             anyhow::ensure!(Some(goals.len() as u64)==selection["goals_in_game"].as_u64(),"Game-log and landing goal totals disagree");
             let eligible:Vec<_>=goals.iter().filter(|g|g.replay_url.is_some()).collect();
             let goal=eligible.first().context("No published tracking for this scorer in the selected game")?;
@@ -237,6 +242,19 @@ mod tests {
         assert_eq!(
             goals.iter().map(|g| g.event_id).collect::<Vec<_>>(),
             vec![800, 900, 2]
+        );
+    }
+    #[test]
+    fn shootout_conversions_do_not_count_as_player_goals() {
+        let landing = json!({"summary":{"scoring":[
+            {"periodDescriptor":{"number":3,"periodType":"REG"},"goals":[{"eventId":10,"playerId":1,"timeInPeriod":"01:00"}]},
+            {"periodDescriptor":{"number":4,"periodType":"OT"},"goals":[{"eventId":20,"playerId":1,"timeInPeriod":"02:00"}]},
+            {"periodDescriptor":{"number":5,"periodType":"SO"},"goals":[{"eventId":30,"playerId":1,"timeInPeriod":"00:00"}]}
+        ]}});
+        let goals = player_scoring_goals(&landing, 1).unwrap();
+        assert_eq!(
+            goals.iter().map(|g| g.event_id).collect::<Vec<_>>(),
+            vec![10, 20]
         );
     }
 }
