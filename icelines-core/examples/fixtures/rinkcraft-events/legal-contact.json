@@ -1,0 +1,104 @@
+{
+  "schema": "rinkcraft.event-episode.0.1",
+  "seed": 20261114,
+  "players": [
+    {
+      "id": "p0",
+      "side": "a",
+      "goalie": false
+    },
+    {
+      "id": "p1",
+      "side": "a",
+      "goalie": false
+    },
+    {
+      "id": "p2",
+      "side": "a",
+      "goalie": false
+    },
+    {
+      "id": "p3",
+      "side": "a",
+      "goalie": false
+    },
+    {
+      "id": "p4",
+      "side": "a",
+      "goalie": false
+    },
+    {
+      "id": "p5",
+      "side": "a",
+      "goalie": true
+    },
+    {
+      "id": "p6",
+      "side": "b",
+      "goalie": false
+    },
+    {
+      "id": "p7",
+      "side": "b",
+      "goalie": false
+    },
+    {
+      "id": "p8",
+      "side": "b",
+      "goalie": false
+    },
+    {
+      "id": "p9",
+      "side": "b",
+      "goalie": false
+    },
+    {
+      "id": "p10",
+      "side": "b",
+      "goalie": false
+    },
+    {
+      "id": "p11",
+      "side": "b",
+      "goalie": true
+    }
+  ],
+  "controller": "p0",
+  "seconds_remaining": 600,
+  "steps": [
+    {
+      "seconds": 1,
+      "action": {
+        "kind": "challenge",
+        "actor": "p6",
+        "victim": "p0",
+        "choices": [
+          {
+            "weight": 10000,
+            "outcome": {
+              "dislodge": true,
+              "ruling": {
+                "kind": "legal"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "seconds": 1,
+      "action": {
+        "kind": "collect",
+        "choices": [
+          {
+            "weight": 10000,
+            "outcome": {
+              "kind": "control",
+              "player": "p6"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
