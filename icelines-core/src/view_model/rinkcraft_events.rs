@@ -4,6 +4,8 @@
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
+pub mod collection;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Side {
@@ -37,6 +39,8 @@ pub struct Request {
     pub controller: String,
     pub seconds_remaining: u16,
     pub steps: Vec<Step>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub profiles: Option<collection::Profiles>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -58,6 +62,10 @@ pub enum Action {
     },
     Collect {
         choices: Vec<Choice<Collection>>,
+    },
+    CollectUnderPressure {
+        collector: String,
+        pressure: String,
     },
     Challenge {
         actor: String,
@@ -172,6 +180,8 @@ pub struct Event {
     pub parent_attempt: Option<u32>,
     pub draw: Option<u16>,
     pub state: State,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub task: Option<collection::Audit>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -235,6 +245,7 @@ impl Engine<'_> {
             parent_attempt: parent,
             draw,
             state: self.state.clone(),
+            task: None,
         });
     }
     fn choose<T: Serialize>(&mut self, choices: &[Choice<T>]) -> Result<(usize, u16), String> {
@@ -254,17 +265,7 @@ impl Engine<'_> {
         if total != 10_000 {
             return Err("choice weights must sum to 10000".into());
         }
-        // SplitMix64 plus rejection sampling: no modulo bias in the 10000 bins.
-        let draw = loop {
-            self.rng = self.rng.wrapping_add(0x9e3779b97f4a7c15);
-            let mut z = self.rng;
-            z = (z ^ (z >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
-            z = (z ^ (z >> 27)).wrapping_mul(0x94d049bb133111eb);
-            z ^= z >> 31;
-            if z >= 10_000u64.wrapping_neg() % 10_000 {
-                break (z % 10_000) as u16;
-            }
-        };
+        let draw = self.below(10_000);
         let mut end = 0u32;
         for (i, c) in choices.iter().enumerate() {
             end += c.weight as u32;
@@ -273,6 +274,21 @@ impl Engine<'_> {
             }
         }
         unreachable!()
+    }
+    // SplitMix64 plus rejection sampling. Keeping the 10000-bin path unchanged
+    // preserves all saved 0.1 RNG draws. Task contests use 400 equiprobable pairs.
+    fn below(&mut self, upper: u16) -> u16 {
+        let modulus = u64::from(upper);
+        loop {
+            self.rng = self.rng.wrapping_add(0x9e3779b97f4a7c15);
+            let mut z = self.rng;
+            z = (z ^ (z >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
+            z = (z ^ (z >> 27)).wrapping_mul(0x94d049bb133111eb);
+            z ^= z >> 31;
+            if z >= modulus.wrapping_neg() % modulus {
+                return (z % modulus) as u16;
+            }
+        }
     }
     fn unresolved(&mut self, step: usize, reason: String) {
         self.state.unresolved = Some(reason);
@@ -550,6 +566,34 @@ impl Engine<'_> {
                     }
                 }
             }
+            Action::CollectUnderPressure {
+                collector,
+                pressure,
+            } => {
+                if self.state.puck != Puck::Loose {
+                    return Err("pressure collection requires loose puck".into());
+                }
+                let a = self.active(collector)?;
+                let b = self.active(pressure)?;
+                if a.side == b.side || a.goalie || b.goalie {
+                    return Err("pressure collection requires opposing active skaters".into());
+                }
+                let pair_index = self.below(400);
+                let profiles = self
+                    .q
+                    .profiles
+                    .as_ref()
+                    .ok_or("task requires 0.2 profiles")?;
+                let audit = collection::resolve(profiles, collector, pressure, pair_index)?;
+                let won = audit.outcome == super::rinkcraft_contest::Outcome::ActorWins;
+                self.emit(i, "collection_contest", Some(collector.clone()), None, None);
+                self.events.last_mut().unwrap().task = Some(audit);
+                if won {
+                    self.control(i, collector.clone(), None)?;
+                } else {
+                    self.emit(i, "collection_denied", Some(pressure.clone()), None, None);
+                }
+            }
             Action::Challenge {
                 actor,
                 victim,
@@ -619,8 +663,8 @@ impl Engine<'_> {
 }
 
 pub fn run(q: &Request) -> Result<ResultSet, String> {
-    if q.schema != "rinkcraft.event-episode.0.1"
-        || q.steps.is_empty()
+    collection::validate(q)?;
+    if q.steps.is_empty()
         || q.steps.len() > 256
         || q.seconds_remaining == 0
         || q.seconds_remaining > 1200
@@ -672,8 +716,8 @@ pub fn run(q: &Request) -> Result<ResultSet, String> {
             break;
         }
     }
-    Ok(ResultSet { schema:"rinkcraft.event-result.0.1".into(),request:q.clone(),events:e.events,goals:e.goals,final_state:e.state,
-        limitations:vec!["Authored contact distributions and declared reachability; no calibrated physics or capability-to-probability mapping.".into(),
+    Ok(ResultSet { schema:if q.profiles.is_some() { "rinkcraft.event-result.0.2" } else { "rinkcraft.event-result.0.1" }.into(),request:q.clone(),events:e.events,goals:e.goals,final_state:e.state,
+        limitations:vec![if q.profiles.is_some() { "Only skater pressure collection maps verified fictional Handling versus Defending through the declared d20 rule; other contacts, reachability and timing remain authored, not NHL-calibrated." } else { "Authored contact distributions and declared reachability; no calibrated physics or capability-to-probability mapping." }.into(),
             "Bounded action script, fixed initial 5v5, one ordinary skater minor, no coaching substitutions or complete NHL adjudication.".into(),
             "Raw contacts and goals only; no official SOG, save, scorer or assist attribution.".into()] })
 }
