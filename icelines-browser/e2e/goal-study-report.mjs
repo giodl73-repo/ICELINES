@@ -68,6 +68,7 @@ await rink.evaluate(n=>n.open=true);
 await rink.locator('svg').waitFor();
 assert.equal(await rink.locator('.rink-mode').inputValue(),'sample');
 await rink.locator('.rink-mode').selectOption('endpoints');
+assert.ok((await rink.locator('.rink-caption').innerText()).includes('Open circle'));
 const tkRecord=review.find(r=>r.target?.game_id===2023020118&&r.target?.event_id===205);
 const tkMotion=tkRecord.goal_event_windows.candidates[0].opposition_sequence_summary.examples[0].phases.find(p=>p.from_frame_index===70&&p.to_frame_index===73).same_identity_motion;
 const assertPoint=async(container,role,endpoint,point)=>{
@@ -110,6 +111,8 @@ await rink.locator('.rink-view').selectOption('focus');
 await rink.screenshot({path:root+'/endpoint-rink.png'});
 await rink.locator('.rink-mode').selectOption('sample');
 await rink.locator('.rink-sample').selectOption('71');
+assert.ok((await rink.locator('.rink-caption').innerText()).includes('Every shown position comes from this one published source sample'));
+assert.ok(!(await rink.locator('.rink-caption').innerText()).includes('Open circle'));
 const scene71=tkMotion.synchronized_scene.frames.find(f=>f.frame_index===71);
 const rawPlayer=(frame,id)=>frame.players.find(p=>p.player_id===id);
 await assertPoint(rink,'puck','current',scene71.puck.marker);
