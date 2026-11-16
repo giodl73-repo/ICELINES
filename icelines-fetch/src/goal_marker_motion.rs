@@ -14,6 +14,11 @@ fn observations(frame: &Value) -> &[Value] {
 fn distance(a: (f64, f64), b: (f64, f64), units: f64) -> f64 {
     (b.0 - a.0).hypot(b.1 - a.1) / units
 }
+fn native_point(v: &Value) -> Value {
+    point(v)
+        .map(|(x, y)| json!({"x":x,"y":y}))
+        .unwrap_or(Value::Null)
+}
 
 /// Compare raw observed endpoints for the scorer and every opposing skater.
 pub fn assess(event: &Value, geometry: &Value, start: usize, end: usize) -> Value {
@@ -62,6 +67,14 @@ pub fn assess(event: &Value, geometry: &Value, start: usize, end: usize) -> Valu
     result["status"] = json!("observed_endpoint_comparison");
     result["scorer_id"] = json!(scorer);
     result["scorer_marker_displacement_feet_derived"] = json!(distance(p0, p1, units));
+    result["scorer_marker_endpoints_native"] =
+        json!({"start":native_point(s0),"end":native_point(s1)});
+    result["puck_endpoints_native"] = json!({"start":native_point(&frames[start]["puck"]),"end":native_point(&frames[end]["puck"])});
+    result["target_goal_reference_native"] = if geometry["status"] == "available" {
+        native_point(&geometry["target_goal_reference"])
+    } else {
+        Value::Null
+    };
     let ids: BTreeSet<_> = a
         .iter()
         .chain(b)
@@ -75,6 +88,7 @@ pub fn assess(event: &Value, geometry: &Value, start: usize, end: usize) -> Valu
         if x["team"].as_str().is_none_or(|t|t.is_empty()) || y["team"].as_str().is_none_or(|t|t.is_empty()) || x["roster"]["goalie"].as_bool().is_none() || y["roster"]["goalie"].as_bool().is_none() {row["status"]=json!("identity_context_unavailable");return Some(row)}
         if x["team"]!=y["team"] || x["roster"]["goalie"]!=y["roster"]["goalie"] {row["status"]=json!("identity_context_conflict");return Some(row)}
         let Some((q0,q1))=point(x).zip(point(y)) else {row["status"]=json!("marker_coordinates_unavailable");return Some(row)};
+        row["marker_endpoints_native"]=json!({"start":native_point(x),"end":native_point(y)});
         let d0=distance(p0,q0,units);let d1=distance(p1,q1,units);
         row["marker_displacement_feet_derived"]=json!(distance(q0,q1,units));
         row["scorer_separation_start_feet_derived"]=json!(d0);row["scorer_separation_end_feet_derived"]=json!(d1);
@@ -105,6 +119,27 @@ mod tests {
         assert_eq!(o["scorer_separation_start_feet_derived"], 10.);
         assert_eq!(o["scorer_separation_end_feet_derived"], 5.);
         assert_eq!(o["same_pair_separation_change_feet_derived"], -5.);
+        assert_eq!(
+            r["scorer_marker_endpoints_native"]["start"],
+            json!({"x":0.,"y":0.})
+        );
+        assert_eq!(o["marker_endpoints_native"]["end"], json!({"x":8.,"y":0.}));
+        assert!(r["puck_endpoints_native"]["start"].is_null());
+        assert!(r["target_goal_reference_native"].is_null());
+    }
+    #[test]
+    fn diagram_coordinates_preserve_samples_and_unknowns() {
+        let (mut e, mut g) = inputs();
+        e["frames"][0]["puck"] = json!({"x":4.,"y":5.});
+        g["status"] = json!("available");
+        g["target_goal_reference"] = json!({"x":132.,"y":510.});
+        let r = assess(&e, &g, 0, 1);
+        assert_eq!(r["puck_endpoints_native"]["start"], json!({"x":4.,"y":5.}));
+        assert!(r["puck_endpoints_native"]["end"].is_null());
+        assert_eq!(
+            r["target_goal_reference_native"],
+            g["target_goal_reference"]
+        );
     }
     #[test]
     fn joint_translation_preserves_gap() {
