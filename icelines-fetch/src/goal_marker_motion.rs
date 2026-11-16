@@ -32,6 +32,7 @@ pub fn assess(event: &Value, geometry: &Value, start: usize, end: usize) -> Valu
     }
     // Keep source points and unknowns; do not interpolate or infer contacts.
     result["synchronized_scene"] = crate::goal_sample_scene::assess(event,start,end);
+    result["synchronized_proximity"] = crate::goal_sample_proximity::assess(&result["synchronized_scene"],geometry);
     result["puck_samples_native"] = json!(frames[start..=end].iter().enumerate().map(|(i,frame)| {
         let marker=native_point(&frame["puck"]);
         json!({"frame_index":start+i,"elapsed_native_ticks":frame["elapsed_native_ticks"],

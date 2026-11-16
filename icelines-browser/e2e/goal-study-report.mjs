@@ -114,6 +114,12 @@ await rink.locator('.rink-sample').selectOption('71');
 assert.ok((await rink.locator('.rink-caption').innerText()).includes('Every shown position comes from this one published source sample'));
 assert.ok(!(await rink.locator('.rink-caption').innerText()).includes('Open circle'));
 const scene71=tkMotion.synchronized_scene.frames.find(f=>f.frame_index===71);
+assert.ok((await rink.locator('.nearest-puck').innerText()).includes('T. Kartye · 1.5 ft'));
+assert.ok((await rink.locator('.nearest-scorer').innerText()).includes('M. Beniers · 3.2 ft'));
+const distances71=tkMotion.synchronized_proximity.frames.find(f=>f.frame_index===71);
+for(const r of distances71.opponents){const tr=rink.locator(`.sample-proximity tr[data-observation-index="${r.source_observation_index}"]`);assert.equal(await tr.locator('td').nth(1).innerText(),r.puck_separation_feet_derived==null?'Unknown':r.puck_separation_feet_derived.toFixed(1));assert.equal(await tr.locator('td').nth(2).innerText(),r.scorer_separation_feet_derived==null?'Unknown':r.scorer_separation_feet_derived.toFixed(1))}
+assert.equal(await rink.locator('.sample-goalie').count(),1);
+
 const rawPlayer=(frame,id)=>frame.players.find(p=>p.player_id===id);
 await assertPoint(rink,'puck','current',scene71.puck.marker);
 await assertPoint(rink,'scorer','current',rawPlayer(scene71,tkMotion.synchronized_scene.scorer_id).marker);
@@ -125,6 +131,7 @@ assert.equal(await rink.locator('[data-kind="endpoint-connector"]').count(),0);
 assert.equal(await rink.locator('.rink-puck-samples').isDisabled(),true);
 assert.ok((await rink.locator('.sample-meta').innerText()).includes('Source sample 71'));
 await rink.locator('.rink-next').click();assert.equal(await rink.locator('.rink-sample').inputValue(),'72');
+assert.ok((await rink.locator('.nearest-scorer').innerText()).includes('M. Beniers · 3.3 ft'));
 await rink.locator('.rink-previous').click();assert.equal(await rink.locator('.rink-sample').inputValue(),'71');
 await rink.locator('.rink-other-players').check();
 const shownIds=new Set([tkMotion.synchronized_scene.scorer_id,8481789,tkMotion.goalie_endpoint_reference.recorded_goalie_id]);
@@ -199,6 +206,11 @@ const duplicateKeeper=structuredClone(missing71.players.find(p=>p.player_id===fi
 duplicateKeeper.source_observation_index=Math.max(...missing71.players.map(p=>p.source_observation_index))+1;
 duplicateKeeper.marker.x+=30;missing71.players.push(duplicateKeeper);
 missing71.puck={coordinate_status:'coordinates_unavailable',marker:null};
+const missingProximity=fixtureMotion.synchronized_proximity.frames.find(f=>f.frame_index===71);
+missingProximity.puck_status='coordinates_unavailable';missingProximity.nearest_puck_skater={status:'unavailable',distance_feet_derived:null,markers:[]};
+missingProximity.opponents=missingProximity.opponents.filter(r=>r.player_id!==8481789);
+for(const r of missingProximity.opponents){r.puck_separation_feet_derived=null;if(r.player_id===fixtureMotion.goalie_endpoint_reference.recorded_goalie_id){r.status='identity_ambiguous';r.scorer_separation_feet_derived=null}}
+
 const escapedFixture=JSON.stringify(fixture).replaceAll('<',String.fromCharCode(92)+'u003c').replaceAll('>',String.fromCharCode(92)+'u003e').replaceAll('&',String.fromCharCode(92)+'u0026');
 await page.setContent(html.replace(embedded,()=>`<script type="application/json" id="data">${escapedFixture}</script>`));
 const synthetic=page.locator('#cases article').first();
@@ -211,11 +223,13 @@ for(const role of ['puck','opponent','goalie'])assert.equal(await syntheticRink.
 assert.equal(await syntheticRink.locator('circle[data-role="scorer"][data-frame-index="71"]').count(),1);
 assert.ok((await syntheticRink.locator('.rink-status').innerText()).includes('no fallback'));
 assert.ok((await syntheticRink.locator('.rink-status').innerText()).includes('Unavailable: puck'));
+assert.ok((await syntheticRink.locator('.nearest-puck').innerText()).includes('Unavailable'));
+for(const cell of await syntheticRink.locator('.sample-proximity tr[data-player-id] td:nth-child(2)').all())assert.equal(await cell.innerText(),'Unknown');
 await syntheticRink.locator('.rink-other-players').check();
 assert.equal(await syntheticRink.locator(`circle[data-role="other-observed"][data-player-id="${fixtureMotion.goalie_endpoint_reference.recorded_goalie_id}"]`).count(),2);
 assert.equal(await syntheticRink.locator('.snapshot-observations li').filter({hasText:'duplicate source ID'}).count(),2);
 await page.goto(native);assert.equal(await page.locator('#ga-report').isVisible(),true);
 assert.ok((await page.locator('#ga-heading').innerText()).includes('Tkachuk'));
 assert.deepEqual(errors,[]);await browser.close();
-const result={status:'passed',planned_cases:summary.planned_cases,captured_cases:summary.captured_cases,checks:['all cases and missing cases','per-player filter','attributed annotation and original shot label','official source link','native sequence link','desktop/mobile','zero page errors','official assist slots','source-supported actions and unresolved secondary contribution','credited touch order and ordered tracking anchors','fixed-goal distance and bearing at candidate intervals','recorded goalie marker reference without a position grade','2D crossing brackets and pre-crossing credited anchors','moving opponent puck-route minimum and separate scorer proximity','candidate sequence summaries and sample boundaries','same-player endpoint motion for both scorer and opponent','native endpoint rink plot; opponent and view controls; goalie and empty-net states','all source puck samples; labels and visibility controls; no interpolated connector','same-source sample selector and stepping; all observed players; no stale endpoint positions','synthetic missing puck/opponent and duplicate goalie IDs render unknown without fallback']};
+const result={status:'passed',planned_cases:summary.planned_cases,captured_cases:summary.captured_cases,checks:['all cases and missing cases','per-player filter','attributed annotation and original shot label','official source link','native sequence link','desktop/mobile','zero page errors','official assist slots','source-supported actions and unresolved secondary contribution','credited touch order and ordered tracking anchors','fixed-goal distance and bearing at candidate intervals','recorded goalie marker reference without a position grade','2D crossing brackets and pre-crossing credited anchors','moving opponent puck-route minimum and separate scorer proximity','candidate sequence summaries and sample boundaries','same-player endpoint motion for both scorer and opponent','native endpoint rink plot; opponent and view controls; goalie and empty-net states','all source puck samples; labels and visibility controls; no interpolated connector','same-source sample selector and stepping; all observed players; no stale endpoint positions','synthetic missing puck/opponent and duplicate goalie IDs render unknown without fallback','Rust same-sample opponent distances and separate tied skater minima']};
 await writeFile(root+'/ui-verification.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result));
