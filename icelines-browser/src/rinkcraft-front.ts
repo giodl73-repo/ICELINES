@@ -100,6 +100,31 @@ export function renderCharacterFront(
     if(feature.detail){const detail=node('span',feature.detail);detail.className='rk-method-detail';item.append(detail);}
     const status=node('small',feature.evidence_type);status.className='rk-method-status';
     status.title=feature.source_ids.join(', ');item.append(status);
+    const evidence=node('details');evidence.className='rk-method-evidence';
+    evidence.append(node('summary','Stats, sources & gaps'));
+    const body=node('div');body.className='rk-method-evidence-body';
+    const contexts=(feature.stat_evidence??[]).flatMap(link=>numerical?.feature_context?.filter(c=>c.attribute_key===link.attribute_key)??[]);
+    body.append(node('p','Related statistics do not establish this method or its effectiveness.'));
+    if(numerical)body.append(node('p',`${Math.floor(numerical.season/10000)}–${String(numerical.season%100).padStart(2,'0')} · ${numerical.situation} · ${numerical.group}`));
+    if(!contexts.length)body.append(node('p',numerical?'No matched statistic in this snapshot.':'No numerical snapshot available.'));
+    for(const context of contexts){
+      body.append(node('p',context.note));
+      for(const m of context.measurements){
+        const row=node('div');row.className='rk-method-measurement';row.dataset.measurementKey=m.key;
+        row.append(node('span',`${m.label} · ${context.relation}`),node('strong',numericalValue(m)),
+          node('small',`${m.percentile==null?'Unranked':`P${m.percentile.toFixed(1)}`} · n=${m.measured_peers}`));
+        if(m.formula)row.append(node('small',m.formula));
+        if(m.numerator!=null&&m.denominator!=null)row.append(node('small',`Numerator ${m.numerator} · denominator ${m.denominator} · scale ${m.scale??1}`));
+        body.append(row);
+      }
+    }
+    for(const gap of feature.unmeasured_stats??[])body.append(node('p',`Need: ${gap}`));
+    for(const id of feature.source_ids){
+      const source=sheet?.sources.find(s=>s.id===id);
+      const p=node('p');if(source){const a=node('a',`${id} · ${source.title}`);a.href=source.url;p.append(a,node('small',`${source.published} · ${source.locator}`));}
+      else p.append(node('span',`${id} · source record unavailable`));body.append(p);
+    }
+    evidence.append(body);item.append(evidence);
   }
   const measured=box('Measured Record','rk-front-record');
   const values=node('dl');values.className='rk-record-values';

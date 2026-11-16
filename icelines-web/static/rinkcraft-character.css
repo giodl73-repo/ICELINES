@@ -177,6 +177,14 @@
 .rk-front-methods li{color:var(--sheet-ink)}
 .rk-front-methods .rk-method-detail{display:block;font-weight:400;margin-top:2px}
 .rk-front-methods .rk-method-status{display:block;font-size:9px;font-weight:400;color:#52687a;margin-top:2px}
+.rk-method-evidence{margin:4px 0 0;font-weight:400;font-size:9px}
+.rk-method-evidence>summary{cursor:pointer;color:var(--sheet-blue);font-weight:650}
+.rk-method-evidence-body{border-top:1px solid var(--sheet-line);margin-top:5px;padding-top:3px}
+.rk-method-evidence-body p{font-size:9px;line-height:1.4}
+.rk-method-evidence-body small{display:block;font-size:8px;font-weight:400;overflow-wrap:anywhere}
+.rk-method-measurement{padding:6px 0;border-bottom:1px solid var(--sheet-line);overflow-wrap:anywhere}
+.rk-method-measurement>span,.rk-method-measurement>strong{display:block;font-size:9px}
+@media print{.rk-method-evidence{display:none!important}}
 .rk-front-footer{color:#4d6069}
 @media screen and (max-width:650px){.rk-front-header::after{display:none}}
 @page{size:letter;margin:.35in}

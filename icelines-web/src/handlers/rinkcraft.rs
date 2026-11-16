@@ -1332,6 +1332,7 @@ struct FeatureCard {
     evidence: String,
     stats: Vec<FeatureReadout>,
     gaps: Vec<String>,
+    sources: Vec<icelines_core::view_model::rinkcraft_character::CharacterSource>,
 }
 struct FeatureReadout {
     key: String,
@@ -1447,6 +1448,11 @@ fn feature_cards(view: &RinkcraftStatProfile, selected: Option<u32>) -> Vec<Feat
             detail: f.detail.clone(),
             evidence: format!("{} · {}", f.evidence_type, f.source_ids.join(", ")),
             gaps: f.unmeasured_stats.clone(),
+            sources: f
+                .source_ids
+                .iter()
+                .filter_map(|id| sheet.sources.iter().find(|s| s.id == *id).cloned())
+                .collect(),
             stats: if let Some(c) = &view.numerical_evidence {
                 f.stat_evidence
                     .iter()

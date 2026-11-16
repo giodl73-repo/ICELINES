@@ -38,6 +38,21 @@ try{
    const item=front.locator('.rk-front-methods li').nth(i);
    await expect(item).toContainText(f.name);await expect(item).toContainText(f.evidence_type);
    if(f.detail)await expect(item).toContainText(f.detail);
+   const evidence=item.locator('.rk-method-evidence');
+   await expect(evidence).not.toHaveAttribute('open','');
+   await evidence.locator('summary').click();
+   await expect(evidence).toContainText('Related statistics do not establish this method');
+   const contexts=(f.stat_evidence??[]).flatMap(link=>n.feature_context?.filter(c=>c.attribute_key===link.attribute_key)??[]);
+   await expect(evidence.locator('[data-measurement-key]')).toHaveCount(contexts.reduce((sum,c)=>sum+c.measurements.length,0));
+   if(!contexts.length)await expect(evidence).toContainText('No matched statistic');
+   for(const gap of f.unmeasured_stats??[])await expect(evidence).toContainText(gap);
+   for(const id of f.source_ids){const source=s.sources.find(v=>v.id===id);if(source)await expect(evidence.getByRole('link',{name:id+' · '+source.title,exact:true})).toHaveAttribute('href',source.url);}
+   if(i===0){
+    await evidence.screenshot({path:resolve(output,key+'-method-evidence.png')});
+    await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    await evidence.screenshot({path:resolve(output,key+'-method-evidence-mobile.png')});await page.setViewportSize({width:1280,height:1100});
+   }
+   await evidence.locator('summary').click();
   }
   await expect(page.locator('.rk-evidence')).not.toHaveAttribute('open','');
   assert.equal(await front.locator('[data-numerical-key]').count(),n.facets.length);
@@ -45,14 +60,16 @@ try{
   await page.screenshot({path:resolve(output,key+'.png'),fullPage:true});
   const html=await page.locator('.rk-profile').evaluate(e=>e.outerHTML);
   await writeFile(resolve(output,key+'.html'),'<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+escape(p.player_name)+' · Rinkcraft</title><style>'+css+'</style>'+html+'</html>');
+  await front.locator('.rk-method-evidence').first().evaluate(e=>e.open=true);
   const pdf=await page.pdf({path:resolve(output,key+'.pdf'),preferCSSPageSize:true});
+  await front.locator('.rk-method-evidence').first().evaluate(e=>e.open=false);
   assert.equal(pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)?.length,1,key+' single Letter page');
   await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await page.screenshot({path:resolve(output,key+'-mobile.png'),fullPage:true});await page.setViewportSize({width:1280,height:1100});
   rows.push({key,name:p.player_name,primary:s.primary.name,secondary:s.secondary.map(c=>c.name),specialty:s.specialty,summary:s.summary,season:n.season,situation:n.situation,group:n.group,games:n.games,minutes:n.minutes,documentary_through:s.evidence_through,methods:s.features,measurements:measures,html});
  }
  assert.deepEqual(errors,[]);
- const result={status:'passed',profiles:rows.length,verified_measurements:verifiedMeasurements,season:20242025,checks:['shared-Rust projections','numerator/denominator formulas','source-attributed method detail','distinct skater/goalie batteries','no invented ability grades','desktop/mobile geometry','one-page PDF per profile','zero page errors']};
+ const result={status:'passed',profiles:rows.length,verified_measurements:verifiedMeasurements,season:20242025,checks:['shared-Rust projections','numerator/denominator formulas','source-attributed method detail','explicit-only method/statistic links and unmatched states','per-method source links and measurement gaps','expanded method evidence on desktop/mobile','distinct skater/goalie batteries','no invented ability grades','desktop/mobile geometry','one-page PDF even with method evidence open','zero page errors']};
  await writeFile(resolve(output,'verification.json'),JSON.stringify(result,null,2));
  await writeFile(resolve(output,'comparison.json'),JSON.stringify(rows.map(({html,...r})=>r),null,2));
  const nav=rows.map(r=>'<a href="#'+r.key+'">'+escape(r.name)+'</a>').join(' · ');

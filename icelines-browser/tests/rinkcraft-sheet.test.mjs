@@ -88,3 +88,23 @@ test('unavailable catalog is distinct from an unscouted player on the front', ()
   assert.match(front.textContent,/Class dossier unavailable/);
   assert.doesNotMatch(front.textContent,/Unscouted|No supported class dossier/);
 });
+
+test('method evidence joins only declared context and keeps missing technique evidence visible', () => {
+  const measurement={key:'primary-assists-per-60',label:'Primary assists /60',unit:'Per60',value:0,percentile:0,measured_peers:20,formula:'assists / seconds * 3600',numerator:0,denominator:3600,scale:3600};
+  const numerical={season:20242025,group:'Forwards',situation:'5on5',games:20,minutes:60,eligible_peers:20,leading:[],unknowns:[],source_credit:'Synthetic',facets:[],metrics:[measurement],feature_context:[{attribute_key:'assist-output',relation:'Outcome context',note:'Assist output does not measure containment.',measurements:[measurement]}]};
+  const dossier={...sheet,features:[
+    {...sheet.features[0],name:'Contain',stat_evidence:[{attribute_key:'assist-output',relation:'outcome_context'}],unmeasured_stats:['Coverage opportunities']},
+    {...sheet.features[0],name:'Carry',stat_evidence:[{attribute_key:'unknown-transport',relation:'measured_aspect'}],unmeasured_stats:['Controlled entry opportunities']},
+  ]};
+  const front=classed(renderCharacterCard('Test',dossier,undefined,undefined,numerical),'rk-front')[0];
+  const evidence=classed(front,'rk-method-evidence');
+  assert.equal(evidence.length,2);
+  assert.match(evidence[0].textContent,/Outcome context.*0\.00 \/60.*P0\.0/);
+  assert.match(evidence[0].textContent,/does not measure containment/);
+  assert.match(evidence[0].textContent,/Need: Coverage opportunities/);
+  assert.match(evidence[1].textContent,/No matched statistic/);
+  assert.doesNotMatch(evidence[1].textContent,/Primary assists/);
+  assert.ok(evidence.every(e=>e.attributes.open===undefined));
+  assert.equal(all(front).filter(e=>e.dataset.measurementKey).length,1);
+  assert.ok(all(front).filter(e=>e.dataset.capabilityIndex!==undefined).every(e=>e.children[1].textContent==='—'));
+});
