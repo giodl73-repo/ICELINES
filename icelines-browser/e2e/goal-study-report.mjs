@@ -49,6 +49,17 @@ assert.ok((await card.locator('.goal-relative-anchors').innerText()).includes('f
 
 
 
+const opposition=card.locator('.opposition-geometry');
+await opposition.evaluate(n=>n.open=true);
+await opposition.locator('select').selectOption('70');
+const kartye=opposition.locator('tr').filter({hasText:'T. Kartye'});
+assert.equal(await kartye.locator('td').nth(1).innerText(),'1.5 ft');
+const beniers=opposition.locator('tr').filter({hasText:'M. Beniers'});
+assert.equal(await beniers.locator('td').nth(2).innerText(),'3.3 ft');
+assert.equal(await opposition.locator('tr').filter({hasText:'J. Daccord'}).count(),0);
+await opposition.locator('select').selectOption('73');
+assert.equal(await opposition.locator('tr').filter({hasText:'M. Beniers'}).locator('td').nth(1).innerText(),'1.2 ft');
+
 const native=await card.getByRole('link',{name:'Open native IceLines sequence'}).getAttribute('href');
 await card.screenshot({path:root+'/assist-card.png'});
 await page.screenshot({path:root+'/study-desktop.png',fullPage:true});
@@ -57,5 +68,5 @@ await page.screenshot({path:root+'/study-mobile.png',fullPage:true});
 await page.goto(native);assert.equal(await page.locator('#ga-report').isVisible(),true);
 assert.ok((await page.locator('#ga-heading').innerText()).includes('Tkachuk'));
 assert.deepEqual(errors,[]);await browser.close();
-const result={status:'passed',planned_cases:summary.planned_cases,captured_cases:summary.captured_cases,checks:['all cases and missing cases','per-player filter','attributed annotation and original shot label','official source link','native sequence link','desktop/mobile','zero page errors','official assist slots','source-supported actions and unresolved secondary contribution','credited touch order and ordered tracking anchors','fixed-goal distance and bearing at candidate intervals','recorded goalie marker reference without a position grade','2D crossing brackets and pre-crossing credited anchors']};
+const result={status:'passed',planned_cases:summary.planned_cases,captured_cases:summary.captured_cases,checks:['all cases and missing cases','per-player filter','attributed annotation and original shot label','official source link','native sequence link','desktop/mobile','zero page errors','official assist slots','source-supported actions and unresolved secondary contribution','credited touch order and ordered tracking anchors','fixed-goal distance and bearing at candidate intervals','recorded goalie marker reference without a position grade','2D crossing brackets and pre-crossing credited anchors','moving opponent puck-route minimum and separate scorer proximity']};
 await writeFile(root+'/ui-verification.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result));
