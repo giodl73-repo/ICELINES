@@ -216,16 +216,19 @@ function showMotionRink(p,parent){
   if(!eligible.length){const option=node('option','No complete opponent endpoints',opponent);option.value='';opponent.disabled=true}
   const viewLabel=node('label','View ',controls),view=node('select','',viewLabel);view.className='rink-view';
   for(const [value,text] of [['focus','Focus on comparison'],['full','Full rink reference']]){const option=node('option',text,view);option.value=value}
+  const samplesLabel=node('label','',controls),samplesToggle=node('input','',samplesLabel);samplesToggle.type='checkbox';samplesToggle.checked=true;samplesToggle.className='rink-puck-samples';samplesLabel.append(document.createTextNode(' Puck samples'));
+  const numbersLabel=node('label','',controls),numbersToggle=node('input','',numbersLabel);numbersToggle.type='checkbox';numbersToggle.className='rink-sample-numbers';numbersLabel.append(document.createTextNode(' Sample numbers'));
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('role','img');svg.setAttribute('aria-label',`Observed endpoints, samples ${p.from_frame_index} and ${p.to_frame_index}`);svg.classList.add('motion-rink-svg');detail.append(svg);
   const legend=node('p','',detail);legend.className='rink-legend';
   for(const [text,color] of [['Scorer','#1764aa'],['Selected opponent','#ad4f00'],['Puck','#242d38'],['Recorded goalie','#8051aa']]){const span=node('span',text,legend);span.style.color=color}
-  node('p',`Open circle = sample ${p.from_frame_index}; filled circle = sample ${p.to_frame_index}. Arrows connect endpoints only. Puck connector is not a pass or shot trajectory. Other players are omitted; active personnel are unverified. Goal line is the derived target reference; no body, stick, facing or puck height is shown.`,detail).className='small';
+  node('p',`Open circle = sample ${p.from_frame_index}; filled circle = sample ${p.to_frame_index}. Arrows connect endpoints only. Puck dots are recorded samples; no in-between path is drawn. Skater and goalie markers remain phase endpoints, not positions at each puck sample. The dashed connector, when shown, joins endpoints only and is not a pass or shot trajectory. Other players are omitted; active personnel are unverified. Goal line is the derived target reference; no body, stick, facing or puck height is shown.`,detail).className='small';
   const status=node('p','',detail);status.className='rink-status small';
   const valid=v=>v&&Number.isFinite(v.x)&&Number.isFinite(v.y);
   function draw(){
    svg.replaceChildren();const chosen=eligible.find(v=>String(v.player_id)===opponent.value),keeper=m.goalie_endpoint_reference;
    const groups=[['scorer',m.scorer_marker_endpoints_native,'#1764aa','S'],['opponent',chosen?.marker_endpoints_native,'#ad4f00','O'],['puck',m.puck_endpoints_native,'#242d38','P'],['goalie',keeper,'#8051aa','G']];
-   const points=groups.flatMap(([,ends])=>[ends?.start,ends?.end]).filter(valid);const goal=m.target_goal_reference_native;if(valid(goal))points.push(goal);
+   const samples=m.puck_samples_native||[];const observedSamples=samples.filter(v=>v.status==='observed'&&valid(v.marker));
+   const points=groups.flatMap(([,ends])=>[ends?.start,ends?.end]).filter(valid);const goal=m.target_goal_reference_native;if(valid(goal))points.push(goal);if(samplesToggle.checked)points.push(...observedSamples.map(v=>v.marker));
    let xmin=Math.min(...points.map(v=>v.x))-96,xmax=Math.max(...points.map(v=>v.x))+96,ymin=Math.min(...points.map(v=>v.y))-96,ymax=Math.max(...points.map(v=>v.y))+96;
    if(view.value==='full'){xmin=Math.min(xmin,0);xmax=Math.max(xmax,2400);ymin=Math.min(ymin,0);ymax=Math.max(ymax,1020)}
    const width=Math.max(480,xmax-xmin),height=Math.max(360,ymax-ymin),cx=(xmin+xmax)/2,cy=(ymin+ymax)/2;
@@ -240,8 +243,8 @@ function showMotionRink(p,parent){
     if(!ends)continue;const a=ends.start,b=ends.end;
     if(valid(a)&&valid(b)){
      const attrs={x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:color,'stroke-width':2,'vector-effect':'non-scaling-stroke','data-role':role,'data-kind':'endpoint-connector'};
-     if(role==='puck')attrs['stroke-dasharray']='5 4';make('line',attrs);
-     const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy);if(len>radius*2){const ux=dx/len,uy=dy/len,tip={x:b.x-ux*radius,y:b.y-uy*radius},base={x:tip.x-ux*radius*1.4,y:tip.y-uy*radius*1.4};make('polygon',{points:`${tip.x},${tip.y} ${base.x-uy*radius*.6},${base.y+ux*radius*.6} ${base.x+uy*radius*.6},${base.y-ux*radius*.6}`,fill:color})}
+     if(role==='puck')attrs['stroke-dasharray']='5 4';if(role!=='puck'||!samplesToggle.checked)make('line',attrs);
+     const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy);if((role!=='puck'||!samplesToggle.checked)&&len>radius*2){const ux=dx/len,uy=dy/len,tip={x:b.x-ux*radius,y:b.y-uy*radius},base={x:tip.x-ux*radius*1.4,y:tip.y-uy*radius*1.4};make('polygon',{points:`${tip.x},${tip.y} ${base.x-uy*radius*.6},${base.y+ux*radius*.6} ${base.x+uy*radius*.6},${base.y-ux*radius*.6}`,fill:color})}
     }
     for(const [endpoint,v] of [['start',a],['end',b]])if(valid(v)){
      const el=make('circle',{cx:v.x,cy:v.y,r:radius,fill:endpoint==='start'?'white':color,stroke:color,'stroke-width':2,'vector-effect':'non-scaling-stroke','data-role':role,'data-endpoint':endpoint});
@@ -249,10 +252,15 @@ function showMotionRink(p,parent){
      make('text',{x:v.x+radius*1.25,y:v.y+(endpoint==='start'?-radius:font),fill:color,'font-size':font,'font-weight':600},letter+(endpoint==='start'?'0':'1'));
     }
    }
+   if(samplesToggle.checked)for(const sample of observedSamples){
+    const v=sample.marker;const circle=make('circle',{cx:v.x,cy:v.y,r:radius*.38,fill:'#242d38','data-role':'puck-sample','data-frame-index':sample.frame_index});
+    const title=document.createElementNS('http://www.w3.org/2000/svg','title');title.textContent=`Recorded puck sample ${sample.frame_index}, native (${v.x.toFixed(1)}, ${v.y.toFixed(1)})`;circle.append(title);
+    if(numbersToggle.checked)make('text',{x:v.x+radius*.55,y:v.y-radius*.6,fill:'#242d38','font-size':font*.8,'data-role':'puck-sample-label'},sample.frame_index);
+   }
    const missing=groups.flatMap(([role,ends])=>['start','end'].filter(key=>!valid(ends?.[key])).map(key=>`${role} ${key}`));
-   status.textContent=`${eligible.length}/${m.markers.length} opponent comparisons have complete endpoints. Selected opponent: ${chosen?.name||'unavailable'}. ${keeper?.status==='inapplicable_empty_net'?'Recorded empty net; goalie endpoints inapplicable.':missing.some(v=>v.startsWith('goalie'))?'Recorded goalie endpoint geometry incomplete.':'Recorded goalie markers shown.'} ${missing.filter(v=>!v.startsWith('goalie')).length?'Other unavailable endpoints: '+missing.filter(v=>!v.startsWith('goalie')).join(', ')+'.':''}`;
+   status.textContent=`Puck samples: ${observedSamples.length}/${samples.length} coordinates available; ${samplesToggle.checked?'dots shown':'dots hidden'}. ${eligible.length}/${m.markers.length} opponent comparisons have complete endpoints. Selected opponent: ${chosen?.name||'unavailable'}. ${keeper?.status==='inapplicable_empty_net'?'Recorded empty net; goalie endpoints inapplicable.':missing.some(v=>v.startsWith('goalie'))?'Recorded goalie endpoint geometry incomplete.':'Recorded goalie markers shown.'} ${missing.filter(v=>!v.startsWith('goalie')).length?'Other unavailable endpoints: '+missing.filter(v=>!v.startsWith('goalie')).join(', ')+'.':''}`;
   }
-  opponent.onchange=draw;view.onchange=draw;draw();
+  opponent.onchange=draw;view.onchange=draw;samplesToggle.onchange=draw;numbersToggle.onchange=draw;draw();
  };
 }
 function showMarkerMotion(p,parent){const m=p.same_identity_motion;if(!m)return;const d=node('details','',parent);d.className='marker-motion';node('summary','Who moved? Compare the same players',d);node('p',m.interpretation,d).className='small';if(m.status!=='observed_endpoint_comparison'){node('p',`Unavailable: ${(m.reason||'unknown').replaceAll('_',' ')}`,d);return}showMotionRink(p,d);const ft=n=>n==null?'unknown':n.toFixed(1)+' ft';node('p',`Scorer marker net displacement: ${ft(m.scorer_marker_displacement_feet_derived)}. This is the straight-line endpoint distance, not distance travelled.`,d).className='scorer-motion';const nearestIds=new Set([...(p.nearest_to_scorer_start?.markers||[]),...(p.nearest_to_scorer_end?.markers||[])].map(v=>v.player_id));const row=(v,parent)=>{const text=v.status==='available'?`${v.name||v.player_id}: opponent net displacement ${ft(v.marker_displacement_feet_derived)}; same-pair separation ${ft(v.scorer_separation_start_feet_derived)} → ${ft(v.scorer_separation_end_feet_derived)}.`:`${v.name||v.player_id}: ${v.status.replaceAll('_',' ')}.`;node('p',text,parent).className='same-pair-motion'};node('p','Opponents nearest the scorer at either endpoint:',d).className='small';const selected=m.markers.filter(v=>nearestIds.has(v.player_id));if(!selected.length)node('p','No eligible nearest opponent identified.',d);for(const v of selected)row(v,d);const others=m.markers.filter(v=>!nearestIds.has(v.player_id));if(others.length){const more=node('details','',d);node('summary','Other observed opposing skaters',more);for(const v of others)row(v,more)}}

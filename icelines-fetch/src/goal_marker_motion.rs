@@ -30,6 +30,12 @@ pub fn assess(event: &Value, geometry: &Value, start: usize, end: usize) -> Valu
         result["reason"] = json!("invalid_sample_range");
         return result;
     }
+    // Keep source points and unknowns; do not interpolate or infer contacts.
+    result["puck_samples_native"] = json!(frames[start..=end].iter().enumerate().map(|(i,frame)| {
+        let marker=native_point(&frame["puck"]);
+        json!({"frame_index":start+i,"elapsed_native_ticks":frame["elapsed_native_ticks"],
+            "status":if marker.is_null(){"coordinates_unavailable"}else{"observed"},"marker":marker})
+    }).collect::<Vec<_>>());
     let Some(units) = geometry["rink_reference"]["native_units_per_foot_derived"]
         .as_f64()
         .filter(|u| u.is_finite() && *u > 0.)
@@ -139,6 +145,28 @@ mod tests {
         assert_eq!(
             r["target_goal_reference_native"],
             g["target_goal_reference"]
+        );
+    }
+    #[test]
+    fn sampled_points_keep_detours_unknowns_and_single_sample_ranges() {
+        let (mut e, g) = inputs();
+        let mut middle = e["frames"][0].clone();
+        e["frames"][0]["puck"] = json!({"x":0.,"y":0.});
+        middle["puck"] = json!({"x":50.,"y":80.});
+        middle["elapsed_native_ticks"] = json!(17);
+        e["frames"].as_array_mut().unwrap().insert(1, middle);
+        let r = assess(&e, &g, 0, 2);
+        let samples = r["puck_samples_native"].as_array().unwrap();
+        assert_eq!(samples.len(), 3);
+        assert_eq!(samples[1]["marker"], json!({"x":50.,"y":80.}));
+        assert_eq!(samples[1]["elapsed_native_ticks"], 17);
+        assert_eq!(samples[2]["status"], "coordinates_unavailable");
+        assert_eq!(
+            assess(&e, &g, 1, 1)["puck_samples_native"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1
         );
     }
     #[test]
