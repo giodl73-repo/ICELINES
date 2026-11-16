@@ -30,7 +30,8 @@ test('compact identity keeps documentary detail and provenance in a closed discl
   const front=classed(profile,'rk-front')[0], evidence=classed(profile,'rk-evidence')[0];
   assert.match(front.textContent,/Edge keeper/);
   assert.match(front.textContent,/Recover/);
-  assert.doesNotMatch(front.textContent,/Detailed recovery account/);
+  assert.match(front.textContent,/Detailed recovery account/);
+  assert.match(front.textContent,/attributed method/);
   assert.match(evidence.textContent,/Detailed recovery account/);
   assert.match(evidence.textContent,/Technique is not measured/);
   assert.match(evidence.textContent,/a{64}/);

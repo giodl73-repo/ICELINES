@@ -94,6 +94,13 @@ export function renderCharacterFront(
   counters.append(counterValues);counterValues.append(field('GP',String(numerical?.games??record?.games??assessment?.games??'—')),
     field('MIN',numerical?numerical.minutes.toFixed(0):'—'));
   const methods=namesBox('Signature Methods','rk-front-methods',sheet?.features.map(f=>f.name)??[]);
+  // Keep the hockey action visible; the same short name can describe different tasks.
+  for(const [index,feature] of (sheet?.features??[]).entries()){
+    const item=methods.children[1].children[index];
+    if(feature.detail){const detail=node('span',feature.detail);detail.className='rk-method-detail';item.append(detail);}
+    const status=node('small',feature.evidence_type);status.className='rk-method-status';
+    status.title=feature.source_ids.join(', ');item.append(status);
+  }
   const measured=box('Measured Record','rk-front-record');
   const values=node('dl');values.className='rk-record-values';
   if(numerical)for(const facet of numerical.facets){

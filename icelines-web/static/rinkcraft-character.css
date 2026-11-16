@@ -175,6 +175,8 @@
 .rk-front-identity .rk-field:first-child{box-shadow:inset 3px 0 0 var(--sheet-blue)}
 .rk-front-methods,.rk-front-distinctive{border-color:var(--sheet-blue)}
 .rk-front-methods li{color:var(--sheet-ink)}
+.rk-front-methods .rk-method-detail{display:block;font-weight:400;margin-top:2px}
+.rk-front-methods .rk-method-status{display:block;font-size:9px;font-weight:400;color:#52687a;margin-top:2px}
 .rk-front-footer{color:#4d6069}
 @media screen and (max-width:650px){.rk-front-header::after{display:none}}
 @page{size:letter;margin:.35in}
@@ -191,6 +193,13 @@
  .rk-record-values{gap:5px}
  .rk-record-values dt{min-height:18px}
  .rk-form-box li{padding:5px 0}
+ .rk-front-methods li{font-size:10px;padding:3px 0}
+ .rk-front-methods .rk-method-detail{font-size:9px;line-height:1.2;margin-top:1px}
+ .rk-front-methods .rk-method-status{font-size:8px;line-height:1.2;margin-top:1px}
+ .rk-front{gap:4px}
+ .rk-front-identity .rk-field{padding-top:5px;padding-bottom:5px}
+ .rk-front-left,.rk-front-center,.rk-front-right,.rk-front-task-column{gap:6px}
+ .rk-form-box>h2,.rk-form-box>h4{margin-bottom:5px}
  .rk-front-questions li{font-size:8px;padding:4px 0}
  .rk-evidence,.rk-history,body:has(.rk-front) nav,body:has(.rk-front) .action-row,dialog::backdrop{display:none!important}
 }
