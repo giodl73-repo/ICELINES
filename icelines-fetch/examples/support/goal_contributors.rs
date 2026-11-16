@@ -3,6 +3,87 @@ use anyhow::{Context, Result};
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
 
+#[derive(Clone)]
+struct Run {
+    player: Option<u64>,
+    first: u64,
+    last: u64,
+}
+
+fn ordered_anchors(frames: &[Value], order: &[u64]) -> Value {
+    let mut runs: Vec<Run> = vec![];
+    for frame in frames {
+        let player = frame["nearest_puck_observation"]["player_id"].as_u64();
+        let index = frame["frame"].as_u64().expect("audited frame index");
+        if let Some(last) = runs.last_mut().filter(|last| last.player == player) {
+            last.last = index;
+        } else {
+            runs.push(Run {
+                player,
+                first: index,
+                last: index,
+            });
+        }
+    }
+    // Count every ordered match, preserving ambiguity instead of choosing a
+    // 'best' contact from body-point proximity. Zero matches do not refute credit.
+    let mut ways = vec![1u64; runs.len() + 1];
+    let mut saturated = false;
+    for player in order {
+        let mut next = vec![0u64; runs.len() + 1];
+        for (i, run) in runs.iter().enumerate() {
+            let extra = if run.player == Some(*player) {
+                ways[i]
+            } else {
+                0
+            };
+            next[i + 1] = next[i].checked_add(extra).unwrap_or_else(|| {
+                saturated = true;
+                u64::MAX
+            });
+        }
+        ways = next;
+    }
+    fn examples(
+        runs: &[Run],
+        order: &[u64],
+        start: usize,
+        path: &mut Vec<usize>,
+        out: &mut Vec<Value>,
+    ) {
+        if out.len() == 16 {
+            return;
+        }
+        if path.len() == order.len() {
+            let anchors:Vec<_>=path.iter().map(|i|json!({"player_id":runs[*i].player,"first_frame":runs[*i].first,"last_frame":runs[*i].last})).collect();
+            let bridges:Vec<_>=path.windows(2).map(|pair|{
+                let middle:Vec<_>=runs[pair[0]+1..pair[1]].iter().map(|r|json!({"player_id":r.player,"first_frame":r.first,"last_frame":r.last})).collect();
+                json!({"from_player_id":runs[pair[0]].player,"to_player_id":runs[pair[1]].player,"intervening_nearest_body_runs":middle})
+            }).collect();
+            out.push(json!({"anchors":anchors,"bridges":bridges}));
+            return;
+        }
+        for i in start..runs.len() {
+            if runs[i].player == Some(order[path.len()]) {
+                path.push(i);
+                examples(runs, order, i + 1, path, out);
+                path.pop();
+                if out.len() == 16 {
+                    return;
+                }
+            }
+        }
+    }
+    let count = *ways.last().unwrap();
+    let mut matches = vec![];
+    if count > 0 {
+        examples(&runs, order, 0, &mut vec![], &mut matches);
+    }
+    json!({"status":if count>0{"ordered_geometry_candidates"}else{"no_complete_nearest_body_alignment"},
+        "candidate_count":count,"count_saturated":saturated,"example_limit":16,"examples":matches,
+        "interpretation":"Official credited touch order constrains the search. These are candidate nearest-body intervals, not contact times or a pass detector. Other nearby players do not establish intervening touches. Missing alignment does not contradict official credits; goal-frame alignment remains unverified."})
+}
+
 pub fn assess(event: &Value, annotation: &Value) -> Result<Value> {
     let scorer = event["goal"]["scorer_id"].as_u64().context("scorer")?;
     let assists = event["goal"]["assists"].as_array().context("assists")?;
@@ -38,6 +119,7 @@ pub fn assess(event: &Value, annotation: &Value) -> Result<Value> {
         slots.push((id, "primary assist", "assist1PlayerId"));
     }
     slots.push((scorer, "goal scorer", "scoringPlayerId"));
+    let touch_order: Vec<_> = slots.iter().map(|(id, _, _)| *id).collect();
     let notes = annotation["contributor_actions"]
         .as_array()
         .cloned()
@@ -81,8 +163,9 @@ pub fn assess(event: &Value, annotation: &Value) -> Result<Value> {
             "observation_interpretation":"Frame presence and nearest body point are not possession, an inferred pass, an assignment or verified ice membership."})
     }).collect();
     Ok(
-        json!({"schema":"icelines.goal-contributors.v0.1","status":"official_credit_order_verified","participants":participants,
-        "interpretation":"Official credit order, not a reconstructed sequence of passes or causal importance ranking. Contributor actions need separate evidence; unassisted does not mean unsupported."}),
+        json!({"schema":"icelines.goal-contributors.v0.2","status":"official_credited_touch_order_verified","credited_touch_order":touch_order,"participants":participants,
+        "ordered_tracking_anchors":ordered_anchors(frames,&touch_order),
+        "interpretation":"Secondary assist precedes primary assist, which precedes the scoring touch in the credited touch order. This does not enumerate every touch or identify each action, exact contact time or creative importance. Unassisted does not mean unsupported."}),
     )
 }
 
@@ -128,5 +211,50 @@ mod tests {
         let a = assess(&e, &Value::Null).unwrap();
         assert_eq!(a["participants"].as_array().unwrap().len(), 1);
         assert_eq!(a["participants"][0]["official_credit"], "goal scorer");
+    }
+    fn frame(i: u64, id: Option<u64>) -> Value {
+        json!({"frame":i,"nearest_puck_observation":{"player_id":id}})
+    }
+    #[test]
+    fn credited_order_preserves_multiple_candidates_and_intervening_proximity() {
+        let frames = vec![
+            frame(0, Some(3)),
+            frame(1, Some(9)),
+            frame(2, Some(3)),
+            frame(3, Some(2)),
+            frame(4, Some(8)),
+            frame(5, Some(1)),
+        ];
+        let a = ordered_anchors(&frames, &[3, 2, 1]);
+        assert_eq!(a["candidate_count"], 2);
+        assert_eq!(a["examples"][1]["anchors"][0]["first_frame"], 2);
+        assert_eq!(
+            a["examples"][1]["bridges"][1]["intervening_nearest_body_runs"][0]["player_id"],
+            8
+        );
+        assert_eq!(ordered_anchors(&frames, &[2, 3, 1])["candidate_count"], 0);
+    }
+    #[test]
+    fn missing_primary_anchor_does_not_invent_a_touch() {
+        let a = ordered_anchors(
+            &[frame(0, Some(3)), frame(1, None), frame(2, Some(1))],
+            &[3, 2, 1],
+        );
+        assert_eq!(a["candidate_count"], 0);
+        assert!(a["examples"].as_array().unwrap().is_empty());
+        assert_eq!(ordered_anchors(&[], &[1])["candidate_count"], 0);
+    }
+    #[test]
+    fn examples_are_bounded_while_all_alternatives_are_counted() {
+        let mut f = vec![];
+        for i in 0..20 {
+            f.push(frame(i * 2, Some(3)));
+            f.push(frame(i * 2 + 1, Some(9)));
+        }
+        f.push(frame(40, Some(2)));
+        f.push(frame(41, Some(1)));
+        let a = ordered_anchors(&f, &[3, 2, 1]);
+        assert_eq!(a["candidate_count"], 20);
+        assert_eq!(a["examples"].as_array().unwrap().len(), 16);
     }
 }

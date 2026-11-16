@@ -78,3 +78,29 @@ source-supported action remains an attributed documentary description, not a
 moving-video observation or a player class. Frame-presence and puck-nearest
 indices are retained as inspection anchors; they do not establish control or
 infer a pass. The original source record and machine audit are unchanged.
+
+
+## Credited touch order as a tracking constraint
+
+Consumer schema `icelines.goal-contributors.v0.2` makes official credited puck-
+touch order explicit: secondary assist, primary assist, scorer (with absent
+assist slots omitted). This is stronger information than an unordered list of
+contributors. It does not identify action type or enumerate every intervening
+or repeated touch. Previous generated packets retain their original schema.
+
+The exploratory ordered-anchor search groups consecutive frames with the same
+nearest observed body point, then finds all chronological subsequences matching
+the credited actors. Dynamic programming counts alternatives; up to16 examples
+are retained, and four displayed in temporal enumeration order. No likelihood,
+physical reach threshold or contact-time estimate is assigned. Intervening
+nearest-body runs are preserved in JSON and do not assert an opposing touch or
+possession change. A missing match retains the official touch order and unknown
+tracking alignment. Native frame/time/goal alignment limitations still apply.
+
+The method was designed after inspecting four cohort cases; the fixed100-case
+sample was not changed. This is hypothesis generation, not a preregistered
+validation of contact detection. It changes neither action definitions nor
+player attributes or simulation probabilities. Seven focused report tests cover
+ordering, multiple matches, missing anchors, bounded examples and the prior
+identity/source/missingness contracts. The linked study records empirical
+coverage and independent enumeration checks separately.
