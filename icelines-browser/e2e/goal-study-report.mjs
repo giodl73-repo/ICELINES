@@ -20,7 +20,7 @@ for(const r of review.filter(r=>r.status==='captured'))assert.equal(r.goal_event
 for(const r of review.filter(r=>r.status==='captured'&&r.goal_event_windows.candidate_count!==1)){
  await page.selectOption('#player',r.selection.player.name);const c=page.locator('#cases article').filter({hasText:r.selection.game_date});await c.locator('.event-windows').evaluate(n=>n.open=true);
  assert.equal(await c.locator('.crossing-candidate').count(),Math.min(4,r.goal_event_windows.candidate_count));
- const full=c.locator('.full-puck-sequence');await full.evaluate(n=>n.open=true);await full.locator('.distance-history-svg rect').first().waitFor();assert.equal(await full.locator('.sequence-end').inputValue(),'full');await full.evaluate(n=>n.open=false);
+ const full=c.locator('.full-puck-sequence');await full.evaluate(n=>n.open=true);await full.locator('.distance-history-svg rect[data-player-id]').first().waitFor();assert.equal(await full.locator('.sequence-end').inputValue(),'full');await full.evaluate(n=>n.open=false);
  if(!r.goal_event_windows.candidate_count){assert.equal(await c.locator('.crossing-diagnostic').count(),1);assert.ok((await c.innerText()).includes('official goal and touch order remain recorded'));}
 }
 await page.selectOption('#player','Matthew Tkachuk');
@@ -38,12 +38,12 @@ assert.ok((await card.locator('.touch-order').innerText()).includes('N. Mikkola 
 const fullRef=annotated.full_puck_sequence;
 assert.ok(fullRef);const fullData=JSON.parse(await readFile(root+'/'+fullRef.file,'utf8'));
 const whole=card.locator('.full-puck-sequence');await whole.evaluate(n=>n.open=true);
-await whole.locator('.distance-history-svg rect').first().waitFor();
+await whole.locator('.distance-history-svg rect[data-player-id]').first().waitFor();
 assert.equal(await whole.locator('.sequence-end').inputValue(),'candidate:0');
 const rosterCount=fullData.distance_history.roster.length;
 assert.equal(await whole.locator('.all-player-distances tr[data-player-id]').count(),rosterCount);
 assert.equal(await whole.locator('.sample-goalie').count(),2);
-assert.equal(await whole.locator('.distance-history-svg rect').count(),rosterCount*84);
+assert.equal(await whole.locator('.distance-history-svg rect[data-player-id]').count(),rosterCount*84);
 const lightness=async id=>Number((await whole.locator(`.distance-history-svg rect[data-player-id="${id}"][data-frame-index="0"]`).getAttribute('fill')).match(/([0-9.]+)%[)]$/)[1]);
 assert.ok(await lightness(8482665)<await lightness(8475683),'Closer must be darker than farther');
 
@@ -52,13 +52,30 @@ await whole.locator('.history-current').filter({hasText:'source sample 71'}).wai
 assert.ok((await whole.locator('.history-current').innerText()).includes('71'));
 assert.equal(await whole.locator('.rink-sample').inputValue(),'71');
 const full71=fullData.distance_history.frames[71];
+assert.equal(await whole.locator('.control-radius').inputValue(),'6');
+assert.equal(await whole.locator('.control-state').getAttribute('data-state'),fullData.control_candidates.frames[71].variants.find(v=>v.distance_screen_feet===6).state);
+assert.ok((await whole.locator('.control-state').innerText()).includes('brief proximity'));
+await whole.locator('.control-radius').selectOption('4');
+assert.equal(await whole.locator('.control-state').getAttribute('data-state'),fullData.control_candidates.frames[71].variants.find(v=>v.distance_screen_feet===4).state);
+await whole.locator('.control-radius').selectOption('6');
+
 for(const p of full71.players){const tr=whole.locator(`.all-player-distances tr[data-player-id="${p.player_id}"]`);assert.equal(await tr.locator('td').nth(1).innerText(),p.puck_separation_feet_derived==null?'Unknown':p.puck_separation_feet_derived.toFixed(1));assert.equal(await tr.locator('td').nth(2).innerText(),p.change_since_previous_sample_feet_derived==null?'Unknown':p.change_since_previous_sample_feet_derived.toFixed(1))}
 await whole.locator('.rink-next').click();assert.ok((await whole.locator('.history-current').innerText()).includes('72'));
+assert.equal(await whole.locator('.control-state').getAttribute('data-state'),'no_nearby_candidate');
+assert.equal(await whole.locator('.control-candidate-name').count(),0);
+assert.equal(await whole.locator('[data-role="control-sample"][data-frame-index="72"]').getAttribute('data-state'),'no_nearby_candidate');
+const positiveControl=fullData.control_candidates.frames.find(f=>f.frame_index<83&&f.variants.some(v=>v.distance_screen_feet===6&&v.candidate_id!=null));
+assert.ok(positiveControl);await whole.locator('.rink-sample').selectOption(String(positiveControl.frame_index));
+assert.equal(await whole.locator('.control-state').getAttribute('data-state'),'sustained_control_geometry_candidate');
+assert.ok((await whole.locator('.control-candidate-name').innerText()).includes(positiveControl.nearest_markers[0].name));
+assert.equal(fullData.control_candidates.possession_verified,false);assert.equal(fullData.control_candidates.carry_verified,false);
+
 await whole.locator('.sequence-end').selectOption('full');
-assert.equal(await whole.locator('.distance-history-svg rect').count(),rosterCount*120);
+assert.equal(await whole.locator('.distance-history-svg rect[data-player-id]').count(),rosterCount*120);
 assert.equal(await whole.locator('.history-labels-svg text[data-player-id]').count(),rosterCount);
 await whole.locator('.rink-sample').selectOption('119');assert.ok((await whole.locator('.history-current').innerText()).includes('119'));
 await whole.locator('.sequence-end').selectOption('candidate:0');assert.equal(await whole.locator('.rink-sample').inputValue(),'83');
+assert.equal(await whole.locator('.control-timing-note').count(),1);
 await whole.screenshot({path:root+'/whole-sequence.png'});
 await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
 const nameBox=await whole.locator('.history-labels-svg').boundingBox(),scrollBox=await whole.locator('.distance-history-scroll').boundingBox();assert.ok(nameBox.x>=0&&nameBox.x+nameBox.width<=scrollBox.x+1);
@@ -266,5 +283,5 @@ await page.unroute('**/'+fullRef.file);
 await page.goto(native);assert.equal(await page.locator('#ga-report').isVisible(),true);
 assert.ok((await page.locator('#ga-heading').innerText()).includes('Tkachuk'));
 assert.deepEqual(errors,[]);await browser.close();
-const result={status:'passed',planned_cases:summary.planned_cases,captured_cases:summary.captured_cases,checks:['all cases and missing cases','per-player filter','attributed annotation and original shot label','official source link','native sequence link','desktop/mobile','zero page errors','official assist slots','source-supported actions and unresolved secondary contribution','credited touch order and ordered tracking anchors','fixed-goal distance and bearing at candidate intervals','recorded goalie marker reference without a position grade','2D crossing brackets and pre-crossing credited anchors','moving opponent puck-route minimum and separate scorer proximity','candidate sequence summaries and sample boundaries','same-player endpoint motion for both scorer and opponent','native endpoint rink plot; opponent and view controls; goalie and empty-net states','all source puck samples; labels and visibility controls; no interpolated connector','same-source sample selector and stepping; all observed players; no stale endpoint positions','synthetic missing puck/opponent and duplicate goalie IDs render unknown without fallback','Rust same-sample opponent distances and separate tied skater minima','whole captured sequence, both teams and goalies; shared-scale heatmap; synchronized click/step; candidate/full scope','closer-is-darker scale, ambiguous timing defaults and corrupted-payload hash rejection']};
+const result={status:'passed',planned_cases:summary.planned_cases,captured_cases:summary.captured_cases,checks:['all cases and missing cases','per-player filter','attributed annotation and original shot label','official source link','native sequence link','desktop/mobile','zero page errors','official assist slots','source-supported actions and unresolved secondary contribution','credited touch order and ordered tracking anchors','fixed-goal distance and bearing at candidate intervals','recorded goalie marker reference without a position grade','2D crossing brackets and pre-crossing credited anchors','moving opponent puck-route minimum and separate scorer proximity','candidate sequence summaries and sample boundaries','same-player endpoint motion for both scorer and opponent','native endpoint rink plot; opponent and view controls; goalie and empty-net states','all source puck samples; labels and visibility controls; no interpolated connector','same-source sample selector and stepping; all observed players; no stale endpoint positions','synthetic missing puck/opponent and duplicate goalie IDs render unknown without fallback','Rust same-sample opponent distances and separate tied skater minima','whole captured sequence, both teams and goalies; shared-scale heatmap; synchronized click/step; candidate/full scope','closer-is-darker scale, ambiguous timing defaults and corrupted-payload hash rejection','experimental control evidence, radius sensitivity and no forced distant holder']};
 await writeFile(root+'/ui-verification.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result));
