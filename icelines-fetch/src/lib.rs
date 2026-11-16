@@ -47,6 +47,7 @@ pub mod goal_visualizer;
 pub mod goal_sequence_audit;
 pub mod goal_analysis;
 pub mod goal_geometry;
+pub mod goalie_geometry;
 pub mod historical_goalie_prediction_edge;
 pub mod historical_official_prediction_edge;
 pub mod historical_prediction_edge;

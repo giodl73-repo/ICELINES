@@ -104,3 +104,33 @@ player attributes or simulation probabilities. Seven focused report tests cover
 ordering, multiple matches, missing anchors, bounded examples and the prior
 identity/source/missingness contracts. The linked study records empirical
 coverage and independent enumeration checks separately.
+
+
+## Goalie-marker geometry: study consumer
+
+Shared Rust `goalie_geometry::assess` supplies schema
+`icelines.goalie-reference-geometry.v0.1`. The study packet is its first consumer;
+this increment does not add the field to the native goal API or standalone WASM.
+The native viewer and its prior fixed-goal model remain available for inspection.
+
+Use only the recorded opposing `goalieInNetId`, matched by frame player ID and
+roster goalie identity. Explicit empty-net goals are inapplicable. Missing keeper,
+role metadata, reference, scale or coordinates stay unknown; conflicting identity
+is separate. A missing frame breaks the displacement comparison rather than
+imputing a stationary or perfectly aligned goalie.
+
+For target G, puck P and observed goalie marker K, projection fraction is
+`dot(K-G,P-G) / |P-G|²`. Perpendicular marker offset from the reference line is
+`abs(cross(P-G,K-G)) / |P-G|`, converted using the existing derived rink scale.
+Report signed goal-line marker depth, projection-between-endpoints, marker/puck
+distance and separate frame-to-frame marker displacement and offset change.
+Undefined ray at P=G remains explicit. Zero line offset behind the net does not
+mean that the marker is between puck and goal.
+
+This is a puck-to-net-centre reference, not the actual shot target, goalie facing,
+body/gear coverage, skate location, gaze, readiness or optimal-position grade.
+Its line changes with the puck: offset can change with zero goalie movement.
+The existing camera-based goalie codebook is not silently relabeled by these
+tracking-point metrics. Frame presence does not verify continuous active occupancy.
+Candidate interval endpoints in the packet show these derived values; final
+release/contact/goal alignment remains a separate task.
