@@ -16,6 +16,12 @@ await page.selectOption('#status','unavailable');
 assert.equal(await page.locator('#cases article').count(),summary.planned_cases-summary.captured_cases);
 await page.selectOption('#status','');
 for(const p of summary.players){await page.selectOption('#player',p.player);assert.equal(await page.locator('#cases article').count(),p.planned_cases);}
+for(const r of review.filter(r=>r.status==='captured'))assert.equal(r.goal_event_windows.exact_goal_frame_verified,false);
+for(const r of review.filter(r=>r.status==='captured'&&r.goal_event_windows.candidate_count!==1)){
+ await page.selectOption('#player',r.selection.player.name);const c=page.locator('#cases article').filter({hasText:r.selection.game_date});await c.locator('.event-windows').evaluate(n=>n.open=true);
+ assert.equal(await c.locator('.crossing-candidate').count(),Math.min(4,r.goal_event_windows.candidate_count));
+ if(!r.goal_event_windows.candidate_count){assert.equal(await c.locator('.crossing-diagnostic').count(),1);assert.ok((await c.innerText()).includes('official goal and touch order remain recorded'));}
+}
 await page.selectOption('#player','Matthew Tkachuk');
 const annotated=review.find(r=>r.selection.player.name==='Matthew Tkachuk'&&r.documentary_annotation);
 assert.ok(annotated);const card=page.locator('#cases article').filter({hasText:annotated.selection.game_date});
@@ -34,6 +40,10 @@ assert.equal(await card.locator('.goal-relative-anchors li:not(.goalie-reference
 assert.equal(await card.locator('.goalie-reference').count(),3);
 assert.ok((await card.locator('.goalie-reference').first().innerText()).includes('J. Daccord'));
 assert.ok((await card.locator('.goalie-reference').first().innerText()).includes('reference line moves with the puck'));
+await card.locator('.event-windows').evaluate(n=>n.open=true);
+assert.ok((await card.locator('.crossing-candidate').first().innerText()).includes('Frames 82 → 83'));
+assert.ok((await card.locator('.pre-crossing-chain').first().innerText()).includes('N. Mikkola 54–67 → D. Kulikov 68–70 → M. Tkachuk 73–73'));
+
 
 assert.ok((await card.locator('.goal-relative-anchors').innerText()).includes('ft from goal'));
 
@@ -47,5 +57,5 @@ await page.screenshot({path:root+'/study-mobile.png',fullPage:true});
 await page.goto(native);assert.equal(await page.locator('#ga-report').isVisible(),true);
 assert.ok((await page.locator('#ga-heading').innerText()).includes('Tkachuk'));
 assert.deepEqual(errors,[]);await browser.close();
-const result={status:'passed',planned_cases:summary.planned_cases,captured_cases:summary.captured_cases,checks:['all cases and missing cases','per-player filter','attributed annotation and original shot label','official source link','native sequence link','desktop/mobile','zero page errors','official assist slots','source-supported actions and unresolved secondary contribution','credited touch order and ordered tracking anchors','fixed-goal distance and bearing at candidate intervals','recorded goalie marker reference without a position grade']};
+const result={status:'passed',planned_cases:summary.planned_cases,captured_cases:summary.captured_cases,checks:['all cases and missing cases','per-player filter','attributed annotation and original shot label','official source link','native sequence link','desktop/mobile','zero page errors','official assist slots','source-supported actions and unresolved secondary contribution','credited touch order and ordered tracking anchors','fixed-goal distance and bearing at candidate intervals','recorded goalie marker reference without a position grade','2D crossing brackets and pre-crossing credited anchors']};
 await writeFile(root+'/ui-verification.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result));

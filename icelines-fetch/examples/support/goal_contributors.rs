@@ -10,7 +10,7 @@ struct Run {
     last: u64,
 }
 
-fn ordered_anchors(frames: &[Value], order: &[u64]) -> Value {
+pub(super) fn ordered_anchors(frames: &[Value], order: &[u64]) -> Value {
     let mut runs: Vec<Run> = vec![];
     for frame in frames {
         let player = frame["nearest_puck_observation"]["player_id"].as_u64();

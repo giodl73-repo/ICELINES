@@ -134,3 +134,18 @@ The existing camera-based goalie codebook is not silently relabeled by these
 tracking-point metrics. Frame presence does not verify continuous active occupancy.
 Candidate interval endpoints in the packet show these derived values; final
 release/contact/goal alignment remains a separate task.
+
+## Candidate event windows
+
+Shared Rust `goal_event_windows::assess` returns
+`icelines.goal-event-windows.v0.1`. All forward sample brackets intersecting the
+fixed reference plane within the regulation-derived opening are candidates.
+Interpolation is linear in2D; height, full-puck passage and true path are not
+observed. Exact goal verification is always false. Multiple candidates and
+missing matches remain explicit, with closest-plane/outside-opening diagnostics.
+
+The study adapter recomputes credited-order anchors from the complete prefix
+ending before each bracket and attaches earlier goalie-marker snapshots. No
+best-event ranking, verified release, contact or reaction-time window is inferred.
+The native API is unchanged. See the dated window validation record for actual
+coverage and exceptions; source clips/criteria were not altered to fit outcomes.
