@@ -54,6 +54,7 @@ pub mod goal_sequence_summary;
 pub mod goal_marker_motion;
 pub mod goal_sample_scene;
 pub mod goal_sample_proximity;
+pub mod goal_puck_distance_history;
 pub mod historical_goalie_prediction_edge;
 pub mod historical_official_prediction_edge;
 pub mod historical_prediction_edge;

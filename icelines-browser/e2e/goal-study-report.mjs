@@ -20,6 +20,7 @@ for(const r of review.filter(r=>r.status==='captured'))assert.equal(r.goal_event
 for(const r of review.filter(r=>r.status==='captured'&&r.goal_event_windows.candidate_count!==1)){
  await page.selectOption('#player',r.selection.player.name);const c=page.locator('#cases article').filter({hasText:r.selection.game_date});await c.locator('.event-windows').evaluate(n=>n.open=true);
  assert.equal(await c.locator('.crossing-candidate').count(),Math.min(4,r.goal_event_windows.candidate_count));
+ const full=c.locator('.full-puck-sequence');await full.evaluate(n=>n.open=true);await full.locator('.distance-history-svg rect').first().waitFor();assert.equal(await full.locator('.sequence-end').inputValue(),'full');await full.evaluate(n=>n.open=false);
  if(!r.goal_event_windows.candidate_count){assert.equal(await c.locator('.crossing-diagnostic').count(),1);assert.ok((await c.innerText()).includes('official goal and touch order remain recorded'));}
 }
 await page.selectOption('#player','Matthew Tkachuk');
@@ -34,6 +35,35 @@ assert.ok((await card.locator('dt[data-credit="primary assist"]').innerText()).i
 assert.ok((await card.locator('.contributors dd').nth(1).innerText()).includes('Shot delivery'));
 assert.ok((await card.locator('.contributors dd').nth(2).innerText()).includes('Receiver redirect'));
 assert.ok((await card.locator('.touch-order').innerText()).includes('N. Mikkola → D. Kulikov → M. Tkachuk'));
+const fullRef=annotated.full_puck_sequence;
+assert.ok(fullRef);const fullData=JSON.parse(await readFile(root+'/'+fullRef.file,'utf8'));
+const whole=card.locator('.full-puck-sequence');await whole.evaluate(n=>n.open=true);
+await whole.locator('.distance-history-svg rect').first().waitFor();
+assert.equal(await whole.locator('.sequence-end').inputValue(),'candidate:0');
+const rosterCount=fullData.distance_history.roster.length;
+assert.equal(await whole.locator('.all-player-distances tr[data-player-id]').count(),rosterCount);
+assert.equal(await whole.locator('.sample-goalie').count(),2);
+assert.equal(await whole.locator('.distance-history-svg rect').count(),rosterCount*84);
+const lightness=async id=>Number((await whole.locator(`.distance-history-svg rect[data-player-id="${id}"][data-frame-index="0"]`).getAttribute('fill')).match(/([0-9.]+)%[)]$/)[1]);
+assert.ok(await lightness(8482665)<await lightness(8475683),'Closer must be darker than farther');
+
+await whole.locator('.distance-history-svg rect[data-player-id="8481789"][data-frame-index="71"]').click();
+await whole.locator('.history-current').filter({hasText:'source sample 71'}).waitFor();
+assert.ok((await whole.locator('.history-current').innerText()).includes('71'));
+assert.equal(await whole.locator('.rink-sample').inputValue(),'71');
+const full71=fullData.distance_history.frames[71];
+for(const p of full71.players){const tr=whole.locator(`.all-player-distances tr[data-player-id="${p.player_id}"]`);assert.equal(await tr.locator('td').nth(1).innerText(),p.puck_separation_feet_derived==null?'Unknown':p.puck_separation_feet_derived.toFixed(1));assert.equal(await tr.locator('td').nth(2).innerText(),p.change_since_previous_sample_feet_derived==null?'Unknown':p.change_since_previous_sample_feet_derived.toFixed(1))}
+await whole.locator('.rink-next').click();assert.ok((await whole.locator('.history-current').innerText()).includes('72'));
+await whole.locator('.sequence-end').selectOption('full');
+assert.equal(await whole.locator('.distance-history-svg rect').count(),rosterCount*120);
+assert.equal(await whole.locator('.history-labels-svg text[data-player-id]').count(),rosterCount);
+await whole.locator('.rink-sample').selectOption('119');assert.ok((await whole.locator('.history-current').innerText()).includes('119'));
+await whole.locator('.sequence-end').selectOption('candidate:0');assert.equal(await whole.locator('.rink-sample').inputValue(),'83');
+await whole.screenshot({path:root+'/whole-sequence.png'});
+await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+const nameBox=await whole.locator('.history-labels-svg').boundingBox(),scrollBox=await whole.locator('.distance-history-scroll').boundingBox();assert.ok(nameBox.x>=0&&nameBox.x+nameBox.width<=scrollBox.x+1);
+await whole.screenshot({path:root+'/whole-sequence-mobile.png'});await page.setViewportSize({width:1400,height:1000});
+await whole.evaluate(n=>n.open=false);
 await card.locator('.touch-anchors').evaluate(n=>n.open=true);
 assert.ok((await card.locator('.anchor-candidate').first().innerText()).includes('N. Mikkola frames 54–67 → D. Kulikov frames 68–70 → M. Tkachuk frames 73–73'));
 assert.equal(await card.locator('.goal-relative-anchors li:not(.goalie-reference)').count(),3);
@@ -228,8 +258,13 @@ for(const cell of await syntheticRink.locator('.sample-proximity tr[data-player-
 await syntheticRink.locator('.rink-other-players').check();
 assert.equal(await syntheticRink.locator(`circle[data-role="other-observed"][data-player-id="${fixtureMotion.goalie_endpoint_reference.recorded_goalie_id}"]`).count(),2);
 assert.equal(await syntheticRink.locator('.snapshot-observations li').filter({hasText:'duplicate source ID'}).count(),2);
+await page.route('**/'+fullRef.file,route=>route.fulfill({status:200,contentType:'application/json',body:'{}'}));
+const badSequence=synthetic.locator('.full-puck-sequence');await badSequence.evaluate(n=>n.open=true);
+await badSequence.locator('p.bad').filter({hasText:'content hash does not match'}).waitFor();
+assert.equal(await badSequence.locator('.distance-history-svg').count(),0);
+await page.unroute('**/'+fullRef.file);
 await page.goto(native);assert.equal(await page.locator('#ga-report').isVisible(),true);
 assert.ok((await page.locator('#ga-heading').innerText()).includes('Tkachuk'));
 assert.deepEqual(errors,[]);await browser.close();
-const result={status:'passed',planned_cases:summary.planned_cases,captured_cases:summary.captured_cases,checks:['all cases and missing cases','per-player filter','attributed annotation and original shot label','official source link','native sequence link','desktop/mobile','zero page errors','official assist slots','source-supported actions and unresolved secondary contribution','credited touch order and ordered tracking anchors','fixed-goal distance and bearing at candidate intervals','recorded goalie marker reference without a position grade','2D crossing brackets and pre-crossing credited anchors','moving opponent puck-route minimum and separate scorer proximity','candidate sequence summaries and sample boundaries','same-player endpoint motion for both scorer and opponent','native endpoint rink plot; opponent and view controls; goalie and empty-net states','all source puck samples; labels and visibility controls; no interpolated connector','same-source sample selector and stepping; all observed players; no stale endpoint positions','synthetic missing puck/opponent and duplicate goalie IDs render unknown without fallback','Rust same-sample opponent distances and separate tied skater minima']};
+const result={status:'passed',planned_cases:summary.planned_cases,captured_cases:summary.captured_cases,checks:['all cases and missing cases','per-player filter','attributed annotation and original shot label','official source link','native sequence link','desktop/mobile','zero page errors','official assist slots','source-supported actions and unresolved secondary contribution','credited touch order and ordered tracking anchors','fixed-goal distance and bearing at candidate intervals','recorded goalie marker reference without a position grade','2D crossing brackets and pre-crossing credited anchors','moving opponent puck-route minimum and separate scorer proximity','candidate sequence summaries and sample boundaries','same-player endpoint motion for both scorer and opponent','native endpoint rink plot; opponent and view controls; goalie and empty-net states','all source puck samples; labels and visibility controls; no interpolated connector','same-source sample selector and stepping; all observed players; no stale endpoint positions','synthetic missing puck/opponent and duplicate goalie IDs render unknown without fallback','Rust same-sample opponent distances and separate tied skater minima','whole captured sequence, both teams and goalies; shared-scale heatmap; synchronized click/step; candidate/full scope','closer-is-darker scale, ambiguous timing defaults and corrupted-payload hash rejection']};
 await writeFile(root+'/ui-verification.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result));
