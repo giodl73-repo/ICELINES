@@ -9,7 +9,9 @@ await page.goto(base+'/goal-analysis');assert.equal(await page.locator('#ga-repo
 await page.goto(base+'/goal-analysis?game_id=2025021167');assert.equal(await page.locator('.ga-choices a').count(),4);
 for(const [game,event,folder] of [[2025021167,907,'offline-907'],[2025021167,996,'offline-996'],[2025021167,154,'offline-154'],[2025021167,607,'offline-607'],[2024020151,172,'new-live-goal']]){
  const target=`${game}/${event}`;await page.goto(base+'/goal-analysis?target='+encodeURIComponent(target));assert.equal(await page.locator('#ga-report').isVisible(),true);
- const api=await page.request.get(base+'/api/v1/goal-analysis?target='+encodeURIComponent(target));assert.equal(api.status(),200);const data=await api.json();const exported=JSON.parse(await readFile(out+'/'+folder+'/analysis.json','utf8'));assert.deepEqual(data.audit,exported.audit);assert.deepEqual(data.summary,exported.summary);assert.deepEqual(data.geometry_changes,exported.geometry_changes);
+ const api=await page.request.get(base+'/api/v1/goal-analysis?target='+encodeURIComponent(target));assert.equal(api.status(),200);const data=await api.json();const exported=JSON.parse(await readFile(out+'/'+folder+'/analysis.json','utf8'));assert.deepEqual(data.audit,exported.audit);assert.deepEqual(data.summary,exported.summary);assert.deepEqual(data.geometry_changes,exported.geometry_changes);assert.deepEqual(data.goal_geometry,exported.goal_geometry);
+ assert.equal(data.goal_geometry.status,'available');assert.equal(await page.locator('[data-goal-reference="attacking"]').count(),1);assert.ok((await page.locator('#ga-goal-geometry').innerText()).includes('ft to the fixed goal reference'));
+
  assert.ok((await page.locator('#ga-comparison').innerText()).includes('no earlier comparison'));
  assert.equal(data.geometry_changes.frames.length,data.audit.events[0].frames.length);
  const max=await page.locator('#ga-frame').getAttribute('max');await page.locator('#ga-frame').evaluate((n,v)=>{n.value=v;n.dispatchEvent(new Event('input'))},max);assert.ok((await page.locator('#ga-clock').innerText()).includes(`Frame ${max}/${max}`));

@@ -165,6 +165,7 @@ pub fn analyze_sources(
         json!({"schema":"icelines.goal-analysis.v0.1","target":target,"audit":audit,
   "summary":{"game_date":landing["gameDate"],"away_team":landing["awayTeam"]["abbrev"],"home_team":landing["homeTeam"]["abbrev"],"goal":e.goal,"goal_modifier":event["goal_modifier"],"goalkeeper_context":goalie,"frame_count":e.frames.len(),"unique_observed_players":e.tracked_player_ids.len(),"attribution_status":"official scorer/assists; no called duties inferred"},
   "geometry_changes":motion::comparisons(event),
+  "goal_geometry":crate::goal_geometry::assess(event,&json!({"home_team":landing["homeTeam"]["abbrev"],"away_team":landing["awayTeam"]["abbrev"]})),
   "nearest_observation_runs":runs,"questions":questions,"assignment_assessment":{"status":"unresolved","reason":"Tracking geometry alone does not establish called duties, possession or execution fault."},
   "source_links":{"visualizer":event["visualizer_url"],"tracking":e.source_url,"video":official_goal["highlightClipSharingUrl"],"landing":format!("https://api-web.nhle.com/v1/gamecenter/{}/landing",target.game_id)},
   "evidence_status":{"game_context":"official_source","native_geometry":"computed_from_published_frames","possession":"unverified","active_ice_membership":"unverified","goal_frame_alignment":"unverified","coordinate_time_scale":"unverified","called_assignments":"unverified"}}),

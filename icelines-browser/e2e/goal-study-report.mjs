@@ -30,6 +30,9 @@ assert.ok((await card.locator('.contributors dd').nth(2).innerText()).includes('
 assert.ok((await card.locator('.touch-order').innerText()).includes('N. Mikkola → D. Kulikov → M. Tkachuk'));
 await card.locator('.touch-anchors').evaluate(n=>n.open=true);
 assert.ok((await card.locator('.anchor-candidate').first().innerText()).includes('N. Mikkola frames 54–67 → D. Kulikov frames 68–70 → M. Tkachuk frames 73–73'));
+assert.equal(await card.locator('.goal-relative-anchors li').count(),3);
+assert.ok((await card.locator('.goal-relative-anchors').innerText()).includes('ft from goal'));
+
 
 
 const native=await card.getByRole('link',{name:'Open native IceLines sequence'}).getAttribute('href');
@@ -40,5 +43,5 @@ await page.screenshot({path:root+'/study-mobile.png',fullPage:true});
 await page.goto(native);assert.equal(await page.locator('#ga-report').isVisible(),true);
 assert.ok((await page.locator('#ga-heading').innerText()).includes('Tkachuk'));
 assert.deepEqual(errors,[]);await browser.close();
-const result={status:'passed',planned_cases:summary.planned_cases,captured_cases:summary.captured_cases,checks:['all cases and missing cases','per-player filter','attributed annotation and original shot label','official source link','native sequence link','desktop/mobile','zero page errors','official assist slots','source-supported actions and unresolved secondary contribution','credited touch order and ordered tracking anchors']};
+const result={status:'passed',planned_cases:summary.planned_cases,captured_cases:summary.captured_cases,checks:['all cases and missing cases','per-player filter','attributed annotation and original shot label','official source link','native sequence link','desktop/mobile','zero page errors','official assist slots','source-supported actions and unresolved secondary contribution','credited touch order and ordered tracking anchors','fixed-goal distance and bearing at candidate intervals']};
 await writeFile(root+'/ui-verification.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result));

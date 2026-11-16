@@ -70,3 +70,19 @@ length, speed, physical reach, possession, coverage or causation. There is no
 automatic open-lane verdict. Post-goal movement can occur anywhere in this
 unaligned clip. The native and exported surface display the shared Rust values
 and optionally connect matching endpoint observations on the plot.
+
+## Fixed attacking-goal reference
+
+The additive `goal_geometry` object uses shared Rust schema
+`icelines.goal-relative-geometry.v0.1`. Official-renderer dimensions and regulation
+rink geometry support a fixed goal-line reference and derived feet. Recorded
+home defending side and scoring-team identity select the attacking goal;
+unknown orientation remains unavailable. A goalie's changing position never
+defines the net location. Preserve the original raw audit and its units.
+
+Show puck distance, goal-relative bearing and front/behind-goal-line state.
+The fixed-reference dashed line is a distance guide, not a shot trajectory.
+Exact contact/release/goal frames and independently calibrated physical accuracy
+remain separate tasks. Do not call this bearing a release-aligned shot angle
+or infer goal probability. The shared study report can use the same geometry
+to inspect candidate credited-touch intervals.

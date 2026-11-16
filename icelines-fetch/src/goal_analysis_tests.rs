@@ -18,6 +18,7 @@ fn evidence_keeps_missing_observations_unknown_and_groups_no_possession() {
     let (t, b, l, x, p) = source();
     let r = analyze_sources(t, &b, &l, &x, &p).unwrap();
     let e = &r["audit"]["events"][0];
+    assert_eq!(r["goal_geometry"]["status"], "unavailable");
     assert_eq!(r["geometry_changes"]["frames"].as_array().unwrap().len(), 2);
     assert!(r["geometry_changes"]["frames"][1]["scorer_displacement"].is_null());
     assert!(e["frames"][0]["scorer_nearest_opposing_skater"].is_null());
@@ -43,6 +44,16 @@ fn evidence_keeps_missing_observations_unknown_and_groups_no_possession() {
         .unwrap()
         .iter()
         .any(|q| q.as_str().unwrap().contains("shorthanded")));
+}
+#[test]
+fn goal_reference_is_additive_and_preserves_raw_units() {
+    let (t, mut b, l, x, p) = source();
+    b.events[0].goal.home_team_defending_side = Some("left".into());
+    let r = analyze_sources(t, &b, &l, &x, &p).unwrap();
+    assert_eq!(r["goal_geometry"]["status"], "available");
+    assert_eq!(r["goal_geometry"]["target_goal_reference"]["x"], 2268.);
+    assert_eq!(r["goal_geometry"]["frames"].as_array().unwrap().len(), 2);
+    assert!(r["audit"]["events"][0]["coordinate_units"].is_null());
 }
 #[test]
 fn keeper_absence_is_not_automatically_empty_net() {
