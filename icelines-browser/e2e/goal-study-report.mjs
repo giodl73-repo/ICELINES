@@ -49,6 +49,14 @@ assert.ok((await card.locator('.goal-relative-anchors').innerText()).includes('f
 
 
 
+const sequence=card.locator('.sequence-summary').first();
+await sequence.evaluate(n=>n.open=true);
+assert.equal(await sequence.locator('.sequence-phase').count(),5);
+assert.ok((await sequence.innerText()).includes('Between D. Kulikov and M. Tkachuk candidates: 70 → 73'));
+assert.ok((await sequence.innerText()).includes('T. Kartye during 70 → 71'));
+assert.ok((await sequence.innerText()).includes('M. Beniers 3.3 ft'));
+assert.ok((await sequence.innerText()).includes('Puck-route comparison unavailable for this interval'));
+
 const opposition=card.locator('.opposition-geometry');
 await opposition.evaluate(n=>n.open=true);
 await opposition.locator('select').selectOption('70');
@@ -68,5 +76,5 @@ await page.screenshot({path:root+'/study-mobile.png',fullPage:true});
 await page.goto(native);assert.equal(await page.locator('#ga-report').isVisible(),true);
 assert.ok((await page.locator('#ga-heading').innerText()).includes('Tkachuk'));
 assert.deepEqual(errors,[]);await browser.close();
-const result={status:'passed',planned_cases:summary.planned_cases,captured_cases:summary.captured_cases,checks:['all cases and missing cases','per-player filter','attributed annotation and original shot label','official source link','native sequence link','desktop/mobile','zero page errors','official assist slots','source-supported actions and unresolved secondary contribution','credited touch order and ordered tracking anchors','fixed-goal distance and bearing at candidate intervals','recorded goalie marker reference without a position grade','2D crossing brackets and pre-crossing credited anchors','moving opponent puck-route minimum and separate scorer proximity']};
+const result={status:'passed',planned_cases:summary.planned_cases,captured_cases:summary.captured_cases,checks:['all cases and missing cases','per-player filter','attributed annotation and original shot label','official source link','native sequence link','desktop/mobile','zero page errors','official assist slots','source-supported actions and unresolved secondary contribution','credited touch order and ordered tracking anchors','fixed-goal distance and bearing at candidate intervals','recorded goalie marker reference without a position grade','2D crossing brackets and pre-crossing credited anchors','moving opponent puck-route minimum and separate scorer proximity','candidate sequence summaries and sample boundaries']};
 await writeFile(root+'/ui-verification.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result));
