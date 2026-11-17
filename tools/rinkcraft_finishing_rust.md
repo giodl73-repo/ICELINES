@@ -2,9 +2,10 @@
 
 Research-only arithmetic port in `icelines-core::view_model::rinkcraft_finishing`.
 The offline batch example consumes a supplied frozen model and historical rows.
-It does not fit a prior, choose position factors, compute interval quantiles,
-bootstrap comparisons, rank players or release capability grades. No network or
-new dependency is required. Existing Python research remains a reference oracle;
+It does not fit a prior, choose position factors, bootstrap comparisons, rank
+players or release capability grades. Optional conditional Gamma intervals use
+pinned statrs with only its std feature; runtime remains offline. Existing Python
+research remains a reference oracle;
 it is not called by the Rust runtime.
 
 ```powershell
@@ -81,6 +82,44 @@ posterior moments against SciPy, process/parameter predictive variances, aggrega
 deviances, F/D totals and negative batches. Authored source inputs and methodological
 decisions belong in Rinkcraft; dated named-player artifacts belong in PUCK.
 Do not transplant legacy candidate 1–20 component scores into the compact sheet.
-Prior fitting, quantile/bootstrap replay and UI/native/WASM integration require
+Prior fitting, bootstrap replay and UI/native/WASM integration require
 separate explicit increments. No change to the existing research model's
 calibration limitations or production policy follows from numerical equivalence.
+
+
+## Optional equal-tailed multiplier intervals
+
+Set top-level `interval_probability` to a finite value strictly between zero and
+one, for example0.9. Requests omitting it retain the earlier point/moment behavior.
+Interval mode emits schema `icelines.fixed-finishing-replay.v0.2` and separate
+`interval_quantiles_computed` / `bootstrap_intervals_computed` flags. The legacy
+combined metadata flag is retained; true means quantiles were computed, never
+that bootstrap work also ran. Prediction values remain unchanged.
+
+Each row's `credible_intervals` contains global multiplier, position residual
+and raw-provider position multiplier intervals. Bounds are inverse-CDF values
+at (1-p)/2 and1-(1-p)/2; they describe parameter uncertainty conditional on fixed
+model inputs. No normal approximation or goal-count prediction interval is used.
+The implementation brackets and bisects the small lower/upper tail at unit rate,
+using statrs CDF/survival evaluation, then divides by the requested **rate**.
+This avoids the generic inverse-CDF routine and upper-tail subtraction. SciPy
+oracle uses1/rate as scale. See pinned [statrs Gamma API](https://docs.rs/statrs/0.19.1/statrs/distribution/struct.Gamma.html).
+
+Quantiles must be finite, positive and ordered. Both lower CDF and upper survival
+probabilities are checked against the requested tail with maximum absolute2e-12
+or relative2e-9 numerical tolerance. Invalid, unrepresentable or failed numerical
+results return an error; the batch runner writes no partial report. These are
+numerical checks, not hockey calibration or evidence that credible intervals
+have the stated frequentist coverage.
+
+The neutral integration fixture records an independent SciPy grid across shapes,
+rates and interval masses. It contains no NHL observations. Run:
+
+```powershell
+cargo test -p icelines-core --test rinkcraft_gamma_intervals --locked
+```
+
+The separate full-cohort replay checks conditional intervals against SciPy while
+preserving all earlier point/deviance/moment fields. Main player cards remain
+unchanged until a separately reviewed integration. No legacy1–20 component
+scores are re-released through these interval fields.

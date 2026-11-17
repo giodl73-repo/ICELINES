@@ -1,5 +1,6 @@
 //! Fixed-prior, conditional finishing replay. No prior fitting or capability grades.
 use serde::{Deserialize, Serialize};
+use statrs::distribution::{ContinuousCDF, Gamma};
 use std::collections::BTreeSet;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -51,6 +52,88 @@ pub struct GammaPosterior {
     pub rate: f64,
     pub mean: f64,
     pub variance: f64,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CredibleInterval {
+    pub probability: f64,
+    pub lower: f64,
+    pub upper: f64,
+    pub lower_cdf_probability: f64,
+    pub upper_survival_probability: f64,
+    pub interpretation: String,
+}
+// Work at unit rate; invert the small tail directly rather than subtracting from
+// a rounded CDF near one. Statrs supplies the special-function evaluation.
+fn gamma_tail_quantile(gamma: &Gamma, tail: f64, upper: bool) -> Result<f64, String> {
+    let probability = |x| if upper { gamma.sf(x) } else { gamma.cdf(x) };
+    let needs_larger = |p: f64| if upper { p > tail } else { p < tail };
+    let mut low = 0.;
+    let mut high = gamma.shape().max(1.);
+    let mut bracketed = false;
+    for _ in 0..128 {
+        let p = probability(high);
+        if !p.is_finite() || !(0. ..=1.).contains(&p) {
+            return Err("Invalid Gamma tail evaluation".into());
+        }
+        if !needs_larger(p) {
+            bracketed = true;
+            break;
+        }
+        high *= 2.;
+        if !high.is_finite() {
+            break;
+        }
+    }
+    if !bracketed {
+        return Err("Gamma tail could not be bracketed".into());
+    }
+    for _ in 0..256 {
+        let mid = low + (high - low) / 2.;
+        if mid == low || mid == high || high - low <= 4e-14 * mid {
+            return Ok(mid);
+        }
+        let p = probability(mid);
+        if !p.is_finite() || !(0. ..=1.).contains(&p) {
+            return Err("Invalid Gamma tail evaluation".into());
+        }
+        if needs_larger(p) {
+            low = mid;
+        } else {
+            high = mid;
+        }
+    }
+    Err("Gamma tail inversion did not converge".into())
+}
+/// Equal-tailed interval for the multiplier, not a goal-count prediction interval.
+pub fn credible_interval(p: &GammaPosterior, probability: f64) -> Result<CredibleInterval, String> {
+    if !probability.is_finite() || probability <= 0. || probability >= 1. {
+        return Err("Credible probability must be strictly between zero and one".into());
+    }
+    let tail = (1. - probability) / 2.;
+    let upper_probability = 1. - tail;
+    if tail <= 0. || upper_probability >= 1. || tail >= upper_probability {
+        return Err("Unrepresentable equal-tail probabilities".into());
+    }
+    let gamma = Gamma::new(p.shape, p.rate).map_err(|e| e.to_string())?;
+    let unit = Gamma::new(p.shape, 1.).map_err(|e| e.to_string())?;
+    let lower = gamma_tail_quantile(&unit, tail, false)? / p.rate;
+    let upper = gamma_tail_quantile(&unit, tail, true)? / p.rate;
+    if !positive(lower) || !positive(upper) || lower >= upper {
+        return Err("Nonfinite, underflowed or unordered Gamma quantiles".into());
+    }
+    let lower_cdf = gamma.cdf(lower);
+    let upper_sf = gamma.sf(upper);
+    let tolerance = 2e-12_f64.max(2e-9 * tail);
+    if !lower_cdf.is_finite()
+        || !upper_sf.is_finite()
+        || (lower_cdf - tail).abs() > tolerance
+        || (upper_sf - tail).abs() > tolerance
+    {
+        return Err("Gamma quantiles failed tail-probability verification".into());
+    }
+    Ok(CredibleInterval { probability, lower, upper, lower_cdf_probability:lower_cdf,
+        upper_survival_probability:upper_sf,
+        interpretation:"Equal-tailed conditional Gamma multiplier interval, not a goal-count prediction interval, all-source uncertainty range or capability grade. Frozen prior/position factors and provider xG are treated as fixed.".into() })
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Policies {
@@ -278,5 +361,27 @@ mod tests {
         assert_eq!(poisson_deviance(2, 2.).unwrap(), Some(0.));
         assert!(poisson_deviance(1, 1e-320).unwrap().unwrap().is_finite());
         assert!(poisson_deviance(0, -1.).is_err());
+    }
+    #[test]
+    fn gamma_interval_matches_exponential_closed_form_and_rate_scaling() {
+        let p = posterior(1., 2.).unwrap();
+        let i = credible_interval(&p, 0.9).unwrap();
+        assert!((i.lower - (-0.95_f64.ln() / 2.)).abs() < 1e-10);
+        assert!((i.upper - (-0.05_f64.ln() / 2.)).abs() < 1e-10);
+        let half = credible_interval(&posterior(1., 4.).unwrap(), 0.9).unwrap();
+        assert!((half.lower * 2. - i.lower).abs() < 1e-10);
+        assert!((half.upper * 2. - i.upper).abs() < 1e-10);
+        let narrow = credible_interval(&p, 0.5).unwrap();
+        assert!(narrow.lower > i.lower && narrow.upper < i.upper);
+    }
+    #[test]
+    fn gamma_interval_rejects_invalid_or_unrepresentable_probability() {
+        let p = posterior(4., 2.).unwrap();
+        for mass in [0., 1., -1., f64::NAN, f64::INFINITY, f64::MIN_POSITIVE] {
+            assert!(credible_interval(&p, mass).is_err());
+        }
+        let mut invalid = p;
+        invalid.rate = 0.;
+        assert!(credible_interval(&invalid, 0.9).is_err());
     }
 }

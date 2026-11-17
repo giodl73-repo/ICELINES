@@ -9,6 +9,8 @@ use std::collections::BTreeSet;
 struct Request {
     model: Model,
     cases: Vec<Case>,
+    #[serde(default)]
+    interval_probability: Option<f64>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -33,10 +35,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             return Err("Duplicate target player-season".into());
         }
     }
-    let rows=r.cases.iter().map(|c|{let p=f::predict(&r.model,&c.target,&c.history)?;
+    let rows=r.cases.iter().map(|c|{let mut p=f::predict(&r.model,&c.target,&c.history)?;
+  let intervals=r.interval_probability.map(|mass|Ok::<_,String>(json!({"global_multiplier":f::credible_interval(&p.global_multiplier,mass)?,"position_residual":f::credible_interval(&p.position_residual,mass)?,"position_multiplier":f::credible_interval(&p.position_multiplier,mass)?}))).transpose()?;
+  p.interval_quantiles_computed=intervals.is_some();
   let dev=json!({"global_baseline":f::poisson_deviance(c.observed_goals,p.policies.global_baseline)?,"global_player":f::poisson_deviance(c.observed_goals,p.policies.global_player)?,"position_baseline":f::poisson_deviance(c.observed_goals,p.policies.position_baseline)?,"position_player":f::poisson_deviance(c.observed_goals,p.policies.position_player)?});
-  Ok::<_,String>(json!({"player_id":c.target.player_id,"season":c.target.season,"prediction":p,"deviance":dev}))}).collect::<Result<Vec<_>,_>>()?;
-    let output = json!({"schema":"icelines.fixed-finishing-replay.v0.1","request_sha256":format!("{:x}",Sha256::digest(&input)),"model":r.model,"rows":rows,"prior_refitted":false,"bootstrap_or_quantile_intervals_computed":false,"headline_scores_released":false,"null_deviance_means":"Infinite deviance for positive observed goals at zero expectation, never zero error."});
+  let mut row=json!({"player_id":c.target.player_id,"season":c.target.season,"prediction":p,"deviance":dev});if let Some(intervals)=intervals{row["credible_intervals"]=intervals;}Ok::<_,String>(row)}).collect::<Result<Vec<_>,_>>()?;
+    let output = json!({"schema":if r.interval_probability.is_some(){"icelines.fixed-finishing-replay.v0.2"}else{"icelines.fixed-finishing-replay.v0.1"},"request_sha256":format!("{:x}",Sha256::digest(&input)),"model":r.model,"rows":rows,"prior_refitted":false,"bootstrap_or_quantile_intervals_computed":r.interval_probability.is_some(),"interval_quantiles_computed":r.interval_probability.is_some(),"bootstrap_intervals_computed":false,"interval_probability":r.interval_probability,"headline_scores_released":false,"null_deviance_means":"Infinite deviance for positive observed goals at zero expectation, never zero error."});
     std::fs::write(&args[1], serde_json::to_vec_pretty(&output)?)?;
     Ok(())
 }
