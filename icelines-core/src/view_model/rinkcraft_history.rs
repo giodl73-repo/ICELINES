@@ -111,11 +111,11 @@ impl NumericalHistory {
             ));
         }
         let (state, note) = match selected_season {
-            None => ("unavailable", exact.map(|s| format!("No player snapshot for {} within the requested window. No fallback used.", period(s)))
-                .unwrap_or_else(|| "No player snapshot within the requested window.".into())),
-            Some(s) if exact.is_some() => ("exact", format!("Selected {} snapshot. Historical request; no fallback used.", period(s))),
-            Some(s) if Some(s) != newest => ("older_fallback", format!("Player missing from latest supplied {} source; showing {}. Latest available player snapshot within the requested window.", period(newest.expect("selected frame implies newest")), period(s))),
-            Some(s) => ("latest", format!("Latest available player snapshot within the requested window: {}.", period(s))),
+            None => ("unavailable", exact.map(|s| format!("No numerical snapshot for {} within the requested window. No fallback used.", period(s)))
+                .unwrap_or_else(|| "No numerical snapshot within the requested window.".into())),
+            Some(s) if exact.is_some() => ("exact", format!("Selected {} numerical snapshot. Historical request; no fallback used.", period(s))),
+            Some(s) if Some(s) != newest => ("older_fallback", format!("No player row in latest supplied {} source; showing {}. Latest available numerical snapshot within the requested window.", period(newest.expect("selected frame implies newest")), period(s))),
+            Some(s) => ("latest", format!("Latest available numerical snapshot within the requested window: {}.", period(s))),
         };
         Ok(SnapshotResult {
             selection: SnapshotSelection {

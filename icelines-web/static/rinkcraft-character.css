@@ -145,6 +145,7 @@
 .rk-front-coverage dt{font-size:8px;text-transform:uppercase;letter-spacing:.025em}
 .rk-front-coverage dd{font-size:10px}
 .rk-front-snapshot{font-size:8px;margin:0;color:#4d6069}
+.rk-front-snapshot[data-snapshot-state="older_fallback"],.rk-front-snapshot[data-snapshot-state="unavailable"]{border-left:3px solid #93672c;padding-left:6px;font-weight:700;color:#65451a}
 .rk-front-footer{font-size:8px;letter-spacing:.025em;border-top:1px solid var(--sheet-line);padding-top:8px;text-transform:uppercase}
 .rk-evidence{max-width:1100px;margin:16px auto;padding:14px;border:1px solid var(--ice-divider,#83949e);border-radius:4px}
 .rk-evidence>summary{font-weight:700;cursor:pointer}

@@ -1,0 +1,82 @@
+// Historical preview and acceptance checks. All selections and estimates come from Rust.
+import {chromium,expect} from '@playwright/test';
+import assert from 'node:assert/strict';
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
+const repo=fileURLToPath(new URL('../../',import.meta.url));
+assert.ok(process.env.ICELINES_PROFILE_FIXTURES,'Supply season-aware Rust projections');
+const fixtures=JSON.parse(await readFile(process.env.ICELINES_PROFILE_FIXTURES,'utf8'));
+const output=resolve(repo,'target/compact-sheet/profile-windows');
+await mkdir(output,{recursive:true});
+const css=await readFile(resolve(repo,'icelines-web/static/rinkcraft-character.css'),'utf8');
+const escape=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+const browser=await chromium.launch({channel:'msedge',headless:true});
+const page=await browser.newPage({viewport:{width:1280,height:1100}}),errors=[],panels=[],results=[];
+page.on('pageerror',e=>errors.push(e.message));
+try{
+ await page.route('http://windows.test/**',async route=>{
+  const path=new URL(route.request().url()).pathname;
+  await route.fulfill({contentType:path==='/'?'text/html':'text/javascript',body:path==='/'?'<!doctype html><meta charset="utf-8"><style>'+css+'</style><main></main>':await readFile(resolve(repo,'icelines-browser/dist'+path))});
+ });
+ await page.goto('http://windows.test/');
+ for(const [selection,{key,mode,profile:p}] of Object.entries(fixtures)){
+  assert.equal(selection,key+':'+mode);assert.match(key,/^[a-z]+$/);
+  const n=p.numerical_evidence,s=p.numerical_snapshot;
+  assert.ok(['20242025','20252026','latest'].includes(mode));
+  if(mode!=='latest')assert.equal(s.requested_season,Number(mode));
+  const status='<p class="window-state" data-state="'+escape(s.state)+'">'+escape(s.note)+'</p>';
+  let html;
+  if(!n){
+   assert.equal(s.state,'unavailable');assert.equal(s.selected_season,null);assert.equal(p.latest_available,null);
+   html='<section class="missing-window"><h2>'+escape(p.player_name)+'</h2><h3>No numerical record in this supplied window</h3>'+status+'<p>This is a data-coverage gap, not evidence of no games played or low ability. No older record is displayed as this season.</p><button type="button" data-use-latest>View latest available</button></section>';
+  }else{
+   assert.equal(n.season,s.selected_season);assert.equal(p.latest_available.season,n.season);
+   if(mode!=='latest')assert.equal(n.season,Number(mode));
+   await page.evaluate(async p=>{const {renderCharacterCard}=await import('/src/rinkcraft-character.js');document.querySelector('main').replaceChildren(renderCharacterCard(p.player_name,p.character_sheet,p.attribute_seasons.at(-1),p.latest_available,p.numerical_evidence,p.numerical_history,p.numerical_snapshot,[],true));},p);
+   const front=page.locator('.rk-front'),note=front.locator('.rk-front-snapshot');
+   await expect(note).toHaveCount(1);await expect(note).toHaveAttribute('data-snapshot-state',s.state);
+   assert.ok(await note.evaluate(e=>e.nextElementSibling?.classList.contains('rk-front-columns')),'Selection note precedes all attribute columns');
+   await expect(front.locator('.rk-front-values dd')).toHaveText(Array(6).fill('—'));
+   const f=n.finishing_research;
+   if(n.group==='Goalies')assert.equal(f.status,'not_applicable');
+   else{
+    assert.equal(f.status,'experimental');assert.ok(f.history_seasons.every(y=>y<n.season));
+    assert.deepEqual(f.history_seasons,n.season===20242025?[20232024]:[20232024,20242025]);
+    await page.locator('.rk-evidence').evaluate(e=>e.open=true);
+    await expect(page.locator('.rk-finishing')).toContainText('not a tested ability change');
+    await page.locator('.rk-evidence').evaluate(e=>e.open=false);
+   }
+   await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.setViewportSize({width:1280,height:1100});
+   html=await page.locator('.rk-profile').evaluate(e=>e.outerHTML);
+   if(mode!=='latest'||s.state==='older_fallback'){
+    const pdf=await page.pdf({path:resolve(output,key+'-'+mode+'.pdf'),preferCSSPageSize:true});
+    assert.equal(pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)?.length,1,selection+' single Letter page');
+   }
+  }
+  const date=p.character_sheet.evidence_through;
+  panels.push('<article data-player="'+key+'" data-mode="'+mode+'" hidden><p class="documentary-date">Documentary identity: evidence through '+escape(date)+'. This numerical selector does not rewind the class or method dossier.</p>'+html+'</article>');
+  results.push({key,mode,state:s.state,selected_season:s.selected_season,history_seasons:n?.finishing_research?.history_seasons??[],mean:n?.finishing_research?.mean??null});
+ }
+ assert.equal(results.length,15);assert.equal(results.filter(r=>r.state==='unavailable').length,1);assert.equal(results.filter(r=>r.state==='older_fallback').length,1);
+ const options=Object.values(fixtures).filter(v=>v.mode==='latest').map(v=>'<option value="'+v.key+'">'+escape(v.profile.player_name)+'</option>').join('');
+ const script=`const player=document.querySelector('#player'),mode=document.querySelector('#mode');function show(){for(const panel of document.querySelectorAll('article[data-player]'))panel.hidden=panel.dataset.player!==player.value||panel.dataset.mode!==mode.value;}player.addEventListener('change',show);mode.addEventListener('change',show);document.querySelectorAll('[data-use-latest]').forEach(b=>b.addEventListener('click',()=>{mode.value='latest';show();}));show();`;
+ const document='<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rinkcraft · Historical profile windows</title><style>'+css+' body{margin:0;background:#eef2f4;color:#18304a;font:14px system-ui}main{max-width:900px;margin:auto;padding:16px}.controls{display:flex;gap:16px;flex-wrap:wrap}label{display:grid;gap:4px}select,button{font:inherit;padding:8px}.documentary-date,.intro p{font-size:12px;line-height:1.5}.missing-window{background:white;border:2px solid #93672c;padding:20px}.window-state{font-weight:bold}article[hidden]{display:none!important}@media print{.intro,.documentary-date{display:none}main{padding:0}}</style><main><header class="intro"><h1>Rinkcraft · Historical profile windows</h1><p>Frozen supplied data through 2025–26, not a live 2026–27 profile. Skaters: 5-on-5; goalies: all strengths. Exact requests never borrow an older numerical record.</p><div class="controls"><label>Player<select id="player">'+options+'</select></label><label>Numerical window<select id="mode"><option value="20242025">2024–25 exactly</option><option value="20252026">2025–26 exactly</option><option value="latest">Latest supplied through 2025–26</option></select></label></div><p>Finishing pools earlier history under a constant multiplier. A revised estimate after adding evidence does not establish that ability changed. Capability attributes remain unrated. Expand the dossier for experimental intervals and source details.</p></header>'+panels.join('')+'<script>'+script+'</script></main></html>';
+ await writeFile(resolve(output,'index.html'),document);
+ await page.unrouteAll();await page.route('http://windows.test/**',r=>r.fulfill({contentType:'text/html',body:document}));await page.goto('http://windows.test/');
+ for(const row of results){
+  await page.locator('#player').selectOption(row.key);await page.locator('#mode').selectOption(row.mode);
+  const active=page.locator('article[data-player]:not([hidden])');await expect(active).toHaveCount(1);
+  if(row.state==='unavailable')await expect(active.locator('.rk-front')).toHaveCount(0);
+  else await expect(active.locator('.rk-front-snapshot')).toHaveAttribute('data-snapshot-state',row.state);
+ }
+ await page.locator('#player').selectOption('barkov');await page.locator('#mode').selectOption('20252026');
+ await page.screenshot({path:resolve(output,'unavailable.png'),fullPage:true});
+ await page.getByRole('button',{name:'View latest available'}).click();await expect(page.locator('#mode')).toHaveValue('latest');
+ await expect(page.locator('article[data-player]:not([hidden]) .rk-front-snapshot')).toHaveAttribute('data-snapshot-state','older_fallback');
+ await page.screenshot({path:resolve(output,'fallback.png'),fullPage:true});
+ await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:resolve(output,'fallback-mobile.png'),fullPage:true});
+ assert.deepEqual(errors,[]);
+ const report={status:'passed',selections:results,checks:['exact missing never renders older sheet','explicit latest action reveals labeled fallback','all controls select one profile','documentary identity date independent of numerical window','prior-only one/two-season history','pooling assumption visible in dossier','six unrated capabilities','ten single-page Letter PDFs','desktop/mobile overflow','zero page errors']};
+ await writeFile(resolve(output,'verification.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));
+}finally{await browser.close();}

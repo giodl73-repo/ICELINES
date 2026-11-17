@@ -64,6 +64,7 @@ export function renderCharacterFront(
     ?`${Math.floor(numerical.season/10000)}–${String(numerical.season%100).padStart(2,'0')} · ${numerical.situation} · ${numerical.group}`
     :season?`${Math.floor(season/10000)}–${String(season%100).padStart(2,'0')} · all strengths`:'Statistical window unavailable');
   scope.className='rk-front-scope';front.append(header,fields,scope);
+  if(snapshot){const note=node('p',snapshot.note);note.className='rk-front-snapshot';note.dataset.snapshotState=snapshot.state;front.append(note);}
 
   const columns=node('div');columns.className='rk-front-columns';
   const left=node('div');left.className='rk-front-left';
@@ -166,7 +167,6 @@ export function renderCharacterFront(
     field('Open Questions',sheet?String(sheet.unknowns.length):'Unknown'),
     field('Evidence Through',sheet?.evidence_through??'Unknown'),field('Assessed',sheet?.assessed??'Unknown'));
   front.append(sources);
-  if(snapshot){const note=node('p',snapshot.note);note.className='rk-front-snapshot';note.dataset.snapshotState=snapshot.state;front.append(note);}
   const footer=node('footer',sheet?'Provisional documentary class · capability ratings unassessed · evidence below':catalogAvailable===false?'Class dossier unavailable · statistics do not assign a class':'No supported class dossier · statistics do not assign a class');
   footer.className='rk-front-footer';front.append(footer);return front;
 }

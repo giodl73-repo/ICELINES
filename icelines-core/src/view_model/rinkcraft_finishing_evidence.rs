@@ -90,6 +90,7 @@ pub fn project(raw: &Value, card: &EvidenceCard, catalogs: &[NumericalCatalog]) 
             "Experimental conditional finishing component, not a complete Shooting attribute or a 1–20 grade.".into(),
             "Position-relative baseline = 1. Equal-tailed parameter interval, not a goal-count prediction interval.".into(),
             "Frozen prior/factors/provider xG; excludes their estimation/model error, context confounding and game/team dependence.".into(),
+            "Earlier seasons are pooled under a constant finishing multiplier. Updated estimates reflect added evidence, not a tested ability change.".into(),
         ],
     };
     if card.group == "Goalies" {
