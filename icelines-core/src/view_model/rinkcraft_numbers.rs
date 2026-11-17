@@ -250,6 +250,8 @@ pub fn build(
 /// Presentation projection over already computed measures; no new hockey score.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EvidenceCard {
+    #[serde(default,skip_serializing_if="Option::is_none")]
+    pub finishing_research: Option<super::rinkcraft_finishing_evidence::Readout>,
     #[serde(default)]
     pub context_evidence: Option<super::rinkcraft_context::ContextEvidence>,
     #[serde(default)]
@@ -419,6 +421,7 @@ impl NumericalCatalog {
             .map(|(_, key, _)| key.to_string())
             .collect();
         Ok(Some(EvidenceCard {
+            finishing_research: None,
             context_evidence: Some(super::rinkcraft_context::build(p)),
             feature_context: super::rinkcraft_attribute_evidence::feature_context(&p.metrics),
             style_evidence: p.style_evidence.clone(),

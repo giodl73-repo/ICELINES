@@ -1,5 +1,6 @@
 // Documentary identity is supplied by the shared Rust catalog selector, never bands.
 import {renderCharacterFront} from './rinkcraft-front.js';
+import {renderFinishing} from './rinkcraft-finishing.js';
 import type {AttributeSeason} from './rinkcraft-attributes.js';
 import {attributeValue} from './rinkcraft-attributes.js';
 import {renderNumericalPanel,renderStyleEvidence,numericalValue} from './rinkcraft-numbers.js';
@@ -45,6 +46,8 @@ export function renderCharacterCard(...args:Parameters<typeof renderDetailedChar
   const profile=node('article');profile.className='rk-profile';
   profile.append(renderCharacterFront(name,sheet,assessment,record,numerical,snapshot,available));
   const evidence=node('details');evidence.className='rk-evidence';
-  evidence.append(node('summary','Dossier, measures & history'),renderDetailedCharacterCard(...args));
+  evidence.append(node('summary','Dossier, measures & history'));
+  if(numerical?.finishing_research)evidence.append(renderFinishing(numerical.finishing_research));
+  evidence.append(renderDetailedCharacterCard(...args));
   profile.append(evidence);return profile;
 }

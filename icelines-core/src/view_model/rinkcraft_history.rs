@@ -5,6 +5,8 @@ use std::collections::BTreeSet;
 pub const SCHEMA: &str = "icelines.rinkcraft-numerical-history.v1";
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct NumericalHistory {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub finishing_research: Option<serde_json::Value>,
     pub schema: String,
     pub catalogs: Vec<NumericalCatalog>,
 }
@@ -100,7 +102,14 @@ impl NumericalHistory {
             exact.is_none_or(|s| c.season == s) && c.profiles.iter().any(|p| p.player_id == pid)
         });
         let selected_season = selected.map(|c| c.season);
-        let card = selected.map(|c| c.card(pid, last)).transpose()?.flatten();
+        let mut card = selected.map(|c| c.card(pid, last)).transpose()?.flatten();
+        if let (Some(raw), Some(card)) = (&self.finishing_research, &mut card) {
+            card.finishing_research = Some(super::rinkcraft_finishing_evidence::project(
+                raw,
+                card,
+                &self.catalogs,
+            ));
+        }
         let (state, note) = match selected_season {
             None => ("unavailable", exact.map(|s| format!("No player snapshot for {} within the requested window. No fallback used.", period(s)))
                 .unwrap_or_else(|| "No player snapshot within the requested window.".into())),
@@ -266,6 +275,7 @@ pub fn parse_source(text: &str) -> Result<NumericalHistory, String> {
     }
     let catalog = super::rinkcraft_numbers::parse_catalog(text)?;
     Ok(NumericalHistory {
+        finishing_research: None,
         schema: SCHEMA.into(),
         catalogs: vec![catalog],
     })
@@ -294,6 +304,7 @@ mod tests {
         let mut c = rinkcraft_numbers::build(&rows, 20252026, &[], vec![]).unwrap();
         c.profiles.retain(|p| p.player_id != 25);
         let mut h = NumericalHistory {
+            finishing_research: None,
             schema: SCHEMA.into(),
             catalogs: vec![c, a, b],
         };

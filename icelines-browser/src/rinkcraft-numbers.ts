@@ -6,6 +6,7 @@ export interface NumericalMeasurement {
 }
 export interface ContextEvidence {schema:string;title:string;note:string;facet_count:number;measured_facets:number;ranked_facets:number;groups:{label:string;note:string;facets:{key:string;label:string;measurement:NumericalMeasurement|null;explanation:{question:string;related_keys:string[];limit:string}}[]}[];}
 export interface NumericalEvidence {
+  finishing_research?:import('./rinkcraft-finishing.js').FinishingReadout|null;
   context_evidence?:ContextEvidence|null;
   feature_context?:{attribute_key:string;relation:string;note:string;measurements:NumericalMeasurement[]}[];
   style_evidence?:StyleEvidence|null;

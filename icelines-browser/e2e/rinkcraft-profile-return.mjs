@@ -58,13 +58,26 @@ try{
    await evidence.locator('summary').click();
   }
   await expect(page.locator('.rk-evidence')).not.toHaveAttribute('open','');
+  if(n.finishing_research){
+   const f=n.finishing_research;await expect(front.locator('.rk-finishing')).toHaveCount(0);
+   await page.locator('.rk-evidence > summary').click();const component=page.locator('.rk-finishing');await expect(component).toBeVisible();
+   await expect(component).toHaveAttribute('data-finishing-state',f.status);await expect(component).toContainText(f.note);
+   if(f.mean!==null){await expect(component).toContainText(f.mean.toFixed(3));await expect(component).toContainText(f.lower.toFixed(3)+' – '+f.upper.toFixed(3));await expect(component).toContainText('Position baseline');}
+   else await expect(component.locator('.rk-finishing-values')).toHaveCount(0);
+   if(f.model_id){await component.locator('details > summary').click();await expect(component).toContainText(f.model_config_sha256);await expect(component).toContainText(f.input_sha256);await component.locator('details > summary').click();}
+   await component.screenshot({path:resolve(output,key+'-finishing.png')});
+   await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await component.screenshot({path:resolve(output,key+'-finishing-mobile.png')});await page.setViewportSize({width:1280,height:1100});
+   await page.locator('.rk-evidence > summary').click();
+  }
   assert.equal(await front.locator('[data-numerical-key]').count(),n.facets.length);
   const bounds=await front.boundingBox();assert.ok(bounds.width<=816);
   await page.screenshot({path:resolve(output,key+'.png'),fullPage:true});
   const html=await page.locator('.rk-profile').evaluate(e=>e.outerHTML);
   await writeFile(resolve(output,key+'.html'),'<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+escape(p.player_name)+' · Rinkcraft</title><style>'+css+'</style>'+html+'</html>');
   await front.locator('.rk-method-evidence').first().evaluate(e=>e.open=true);
+  if(n.finishing_research)await page.locator('.rk-evidence').evaluate(e=>e.open=true);
   const pdf=await page.pdf({path:resolve(output,key+'.pdf'),preferCSSPageSize:true});
+  if(n.finishing_research)await page.locator('.rk-evidence').evaluate(e=>e.open=false);
   await front.locator('.rk-method-evidence').first().evaluate(e=>e.open=false);
   assert.equal(pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)?.length,1,key+' single Letter page');
   await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
@@ -72,7 +85,7 @@ try{
   rows.push({key,name:p.player_name,primary:s.primary.name,secondary:s.secondary.map(c=>c.name),specialty:s.specialty,summary:s.summary,season:n.season,situation:n.situation,group:n.group,games:n.games,minutes:n.minutes,documentary_through:s.evidence_through,methods:s.features,measurements:measures,html});
  }
  assert.deepEqual(errors,[]);
- const result={status:'passed',profiles:rows.length,verified_measurements:verifiedMeasurements,season:20242025,checks:['shared-Rust projections','numerator/denominator formulas','source-attributed method detail','explicit-only method/statistic links and unmatched states','per-method source links and measurement gaps','expanded method evidence on desktop/mobile','distinct skater/goalie batteries','no invented ability grades','desktop/mobile geometry','one-page PDF even with method evidence open','zero page errors']};
+ const result={status:'passed',profiles:rows.length,verified_measurements:verifiedMeasurements,season:20242025,checks:['optional finishing stays in dossier with model/history scope and fingerprints','dossier-open single-page printing','shared-Rust projections','numerator/denominator formulas','source-attributed method detail','explicit-only method/statistic links and unmatched states','per-method source links and measurement gaps','expanded method evidence on desktop/mobile','distinct skater/goalie batteries','no invented ability grades','desktop/mobile geometry','one-page PDF even with method evidence open','zero page errors']};
  await writeFile(resolve(output,'verification.json'),JSON.stringify(result,null,2));
  await writeFile(resolve(output,'comparison.json'),JSON.stringify(rows.map(({html,...r})=>r),null,2));
  const nav=rows.map(r=>'<a href="#'+r.key+'">'+escape(r.name)+'</a>').join(' · ');

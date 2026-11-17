@@ -217,6 +217,7 @@ mod tests {
             })
             .collect::<Vec<_>>();
         NumericalHistory {
+            finishing_research: None,
             schema: SCHEMA.into(),
             catalogs: [20232024, 20242025, 20252026]
                 .into_iter()
@@ -309,6 +310,7 @@ mod tests {
             })
             .collect::<Vec<_>>();
         let mut h = NumericalHistory {
+            finishing_research: None,
             schema: SCHEMA.into(),
             catalogs: [20232024, 20242025, 20252026]
                 .into_iter()

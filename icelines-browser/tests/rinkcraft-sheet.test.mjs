@@ -127,3 +127,17 @@ test('observed season maximum is movement detail, never a capability or mixed-se
   const zero=render({...numerical,style_evidence:{...numerical.style_evidence,measured:[{...speed,value:0,numerator:0}]}});
   assert.match(classed(zero,'rk-front-movement')[0].textContent,/0\.00 mph/);
 });
+
+test('experimental finishing stays in the dossier, with history scope and no capability promotion', () => {
+  const finishing={status:'experimental',note:'Earlier history only.',input_sha256:'b'.repeat(64),model_id:'Neutral model',model_config_sha256:'c'.repeat(64),target_season:20242025,calibration_season:20232024,history_seasons:[20232024],history_goals:0,history_xg:1,mean:0,lower:0,upper:1,probability:.9,sources:[],limits:['Not a complete Shooting grade.']};
+  const numerical={season:20242025,group:'Forwards',situation:'5on5',games:20,minutes:60,eligible_peers:20,leading:[],unknowns:[],source_credit:'Synthetic',facets:[],metrics:[],finishing_research:finishing};
+  const p=renderCharacterCard('Test',sheet,undefined,undefined,numerical),front=classed(p,'rk-front')[0],dossier=classed(p,'rk-evidence')[0];
+  assert.equal(classed(front,'rk-finishing').length,0);
+  const section=classed(dossier,'rk-finishing')[0];
+  assert.match(section.textContent,/0\.000.*90% conditional interval.*0\.000 – 1\.000/);
+  assert.match(section.textContent,/Player history: 2023–24 · 0 goals/);
+  assert.match(section.textContent,/Not a complete Shooting grade/);
+  assert.ok(all(front).filter(e=>e.dataset.capabilityIndex!==undefined).every(e=>e.children[1].textContent==='—'));
+  const unavailable=renderCharacterCard('Test',undefined,undefined,undefined,{...numerical,finishing_research:{...finishing,status:'unavailable',note:'No exact source match.',mean:null,lower:null,upper:null}});
+  const missing=classed(unavailable,'rk-finishing')[0];assert.match(missing.textContent,/No exact source match/);assert.equal(classed(missing,'rk-finishing-values').length,0);
+});
