@@ -88,7 +88,14 @@ export function renderCharacterFront(
   const center=node('div');center.className='rk-front-center';
   const responses=node('div');responses.className='rk-response-row';
   for(const title of ['Threat Denial','Response Timing',goalie?'Movement Detail':'Skating Detail']){
-    const response=box(title,'rk-front-response');response.append(node('strong','—'),node('small','Unassessed'));responses.append(response);
+    const response=box(title,'rk-front-response');
+    const movement=title==='Skating Detail'||title==='Movement Detail';
+    if(movement){response.className+=' rk-front-movement';response.dataset.movementState='unassessed';}
+    const speed=!goalie&&title==='Skating Detail'&&['Forwards','Defense'].includes(numerical?.group??'')&&numerical?.style_evidence?.season===numerical?.season
+      ?numerical?.style_evidence?.measured.find(m=>m.key==='max-skating-speed'&&m.unit==='Mph'&&Number.isFinite(m.value)&&m.value>=0&&typeof m.scope==='string'&&m.scope.startsWith('All strengths')):undefined;
+    if(speed){response.dataset.movementState='observed_maximum';response.append(node('strong',`${speed.value.toFixed(2)} mph`),node('small','Season max · all strengths'));response.title=`${speed.scope}. Observed maximum; not puck-carrying speed, acceleration or a capability grade.`;}
+    else response.append(node('strong','—'),node('small','Unassessed'));
+    responses.append(response);
   }
   const counters=box('Record Counters','rk-front-counters'),counterValues=node('dl');counterValues.className='rk-counter-values';
   counters.append(counterValues);counterValues.append(field('GP',String(numerical?.games??record?.games??assessment?.games??'—')),

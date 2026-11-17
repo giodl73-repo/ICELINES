@@ -871,6 +871,7 @@ struct ProfileTemplate {
     absent_json: String,
 }
 struct EvidenceView {
+    front_maximum_speed: Option<String>,
     context: Option<ContextView>,
     sources: Vec<icelines_core::view_model::rinkcraft_numbers::Source>,
     season: u32,
@@ -1116,6 +1117,12 @@ fn measurement_value(m: &icelines_core::view_model::rinkcraft_numbers::Measureme
 }
 fn evidence_view(c: &icelines_core::view_model::rinkcraft_numbers::EvidenceCard) -> EvidenceView {
     EvidenceView {
+        front_maximum_speed: c.style_evidence.as_ref()
+            .filter(|s| s.season == c.season && matches!(c.group.as_str(), "Forwards" | "Defense"))
+            .and_then(|s| s.measured.iter().find(|m| m.key == "max-skating-speed"
+                && m.unit == "Mph" && m.value.is_finite() && m.value >= 0.
+                && m.scope.starts_with("All strengths")))
+            .map(|m| format!("{:.2} mph", m.value)),
         context: c.context_evidence.as_ref().map(context_view),
         sources: c.sources.clone(),
         season: c.season,

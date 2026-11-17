@@ -108,3 +108,22 @@ test('method evidence joins only declared context and keeps missing technique ev
   assert.equal(all(front).filter(e=>e.dataset.measurementKey).length,1);
   assert.ok(all(front).filter(e=>e.dataset.capabilityIndex!==undefined).every(e=>e.children[1].textContent==='—'));
 });
+
+test('observed season maximum is movement detail, never a capability or mixed-season fallback', () => {
+  const speed={key:'max-skating-speed',label:'Maximum speed',value:23.969,unit:'Mph',numerator:23.969,denominator:1,scope:'All strengths · 67 GP',meaning:'Observed maximum',sources:[]};
+  const numerical={season:20242025,group:'Forwards',situation:'5on5',games:67,minutes:1000,eligible_peers:20,leading:[],unknowns:[],source_credit:'Synthetic',facets:[],metrics:[],style_evidence:{season:20242025,measured:[speed],gaps:[],limitations:[]}};
+  const render=n=>classed(renderCharacterCard('Test',sheet,undefined,undefined,n),'rk-front')[0];
+  const front=render(numerical),detail=classed(front,'rk-front-movement')[0];
+  assert.match(detail.textContent,/23\.97 mph.*Season max · all strengths/);
+  assert.equal(detail.dataset.movementState,'observed_maximum');
+  assert.match(detail.title,/not puck-carrying speed/);
+  assert.ok(all(front).filter(e=>e.dataset.capabilityIndex!==undefined).every(e=>e.children[1].textContent==='—'));
+  for(const n of [
+    {...numerical,group:'Goalies'},
+    {...numerical,style_evidence:{...numerical.style_evidence,season:20232024}},
+    {...numerical,style_evidence:{...numerical.style_evidence,measured:[{...speed,unit:'Count'}]}},
+    {...numerical,style_evidence:{...numerical.style_evidence,measured:[{...speed,scope:'Unknown'}]}},
+  ])assert.equal(classed(render(n),'rk-front-movement')[0].dataset.movementState,'unassessed');
+  const zero=render({...numerical,style_evidence:{...numerical.style_evidence,measured:[{...speed,value:0,numerator:0}]}});
+  assert.match(classed(zero,'rk-front-movement')[0].textContent,/0\.00 mph/);
+});

@@ -32,6 +32,9 @@ try{
   await page.evaluate(async p=>{const {renderCharacterCard}=await import('/src/rinkcraft-character.js');document.querySelector('main').replaceChildren(renderCharacterCard(p.player_name,p.character_sheet,p.attribute_seasons.at(-1),p.latest_available,p.numerical_evidence,p.numerical_history,p.numerical_snapshot,[],true));},p);
   const front=page.locator('.rk-front');await expect(front).toBeVisible();
   await expect(front.locator('.rk-front-values dd')).toHaveText(Array(6).fill('—'));
+  const speed=n.style_evidence?.measured.find(m=>m.key==='max-skating-speed');
+  if(speed){await expect(front.locator('.rk-front-movement')).toContainText(speed.value.toFixed(2)+' mph');await expect(front.locator('.rk-front-movement')).toContainText('all strengths');}
+  else await expect(front.locator('.rk-front-movement')).toContainText('Unassessed');
   await expect(front.locator('.rk-front-scope')).toContainText(n.situation);
   await expect(front.locator('.rk-front-methods li')).toHaveCount(s.features.length);
   for(const [i,f] of s.features.entries()){

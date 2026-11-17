@@ -123,6 +123,7 @@
 .rk-front-response{padding:7px 4px;text-align:center;background:#eaf3f8}
 .rk-front-response>h2,.rk-front-response>h4{font-size:8px;min-height:25px;letter-spacing:0}
 .rk-front-response strong{display:block;font-size:20px}
+.rk-front-movement[data-movement-state="observed_maximum"] strong{font-size:14px}
 .rk-front-response small{font-size:7px}
 .rk-counter-values{display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center}
 .rk-counter-values dd{font-family:Consolas,"Cascadia Mono",monospace;font-weight:800;font-size:18px;font-variant-numeric:tabular-nums}
