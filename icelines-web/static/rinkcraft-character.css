@@ -363,3 +363,14 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 .rk-fact-evidence p{margin:3px 0}
 .rk-field[data-fact-field]>small{display:block;font-size:9px;line-height:1.2}
 @media print{.rk-fact-evidence{display:none}}
+
+/* Source-scoped workload, not a tactical assignment. */
+.rk-usage>small{display:block;font-size:9px;line-height:1.2}
+.rk-usage-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;margin:5px 0}
+.rk-usage-grid>div{min-width:0}
+.rk-usage-grid dt{font-size:9px;line-height:1.2}
+.rk-usage-grid dd{font-size:14px;font-weight:700;margin:1px 0}
+.rk-usage-evidence{font-size:9px;line-height:1.25;overflow-wrap:anywhere;margin-top:3px}
+.rk-usage-evidence summary{cursor:pointer}
+.rk-usage-evidence p{margin:4px 0}
+@media print{.rk-usage-evidence{display:none}}

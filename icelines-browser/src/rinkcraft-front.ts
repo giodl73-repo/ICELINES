@@ -6,8 +6,11 @@ import {attributeValue} from './rinkcraft-attributes.js';
 import type {NumericalEvidence, SnapshotSelection} from './rinkcraft-numbers.js';
 import {numericalValue} from './rinkcraft-numbers.js';
 import {renderRepertoire} from './rinkcraft-repertoire.js';
+import {renderDeploymentUsage} from './rinkcraft-deployment.js';
+import type {DeploymentEvidence} from './rinkcraft-deployment.js';
 
 interface SeasonRecord {
+  season?:number;
   games:number;
   position:string;
   metrics:{key:string;unit:string;value:number|null}[];
@@ -59,10 +62,12 @@ function namesBox(title:string,className:string,names:readonly string[],empty="U
 export function renderCharacterFront(
   name:string,sheet:CharacterSheet|undefined,assessment:AttributeSeason|undefined,
   record:SeasonRecord|undefined,numerical:NumericalEvidence|undefined,
-  snapshot:SnapshotSelection|undefined,catalogAvailable:boolean|undefined,
+  snapshot:SnapshotSelection|undefined,catalogAvailable:boolean|undefined,deploymentEvidence?:DeploymentEvidence,usageRequest?:{player_id?:number;season_type:string},
 ):HTMLElement {
   const position=record?.position??numerical?.group??assessment?.group??'Unknown';
   const goalie=['Goalie','Goalies','G'].includes(position);
+  const targetSeason=numerical?.season??record?.season??assessment?.season;
+  const usage=deploymentEvidence&&deploymentEvidence.season===targetSeason&&deploymentEvidence.goalie===goalie&&deploymentEvidence.player_id===(usageRequest?.player_id??sheet?.player_id)&&deploymentEvidence.season_type===usageRequest?.season_type?deploymentEvidence:undefined;
   const front=node('section');front.className='rk-front';front.dataset.layout='rinkcraft-profile-v2';front.dataset.class=sheet?.primary.id??'unscouted';front.dataset.profileKind='nhl_evidence';
   front.setAttribute('aria-label',`${name} compact player sheet`);
   const header=node('header');header.className='rk-front-header';
@@ -102,7 +107,9 @@ export function renderCharacterFront(
     taskBox('Read & React','rk-front-reading',['Anticipation']));
   split.append(attributes,tasks);left.append(split);
   const coverage=box('Role Coverage','rk-front-role-coverage');
-  const positions=node('dl');positions.className='rk-task-list';positions.append(field('Position',position),field('Special Teams','Undocumented'));coverage.append(positions);left.append(coverage);
+  const positions=node('dl');positions.className='rk-task-list';
+  const pp=usage?.rows.find(r=>r.key==='pp'),sh=usage?.rows.find(r=>r.key==='sh');
+  positions.append(field('Position',position),field('Special Teams',usage?(goalie?'See goalie workload':`PP ${pp?.per_game_display??'—'} / SH ${sh?.per_game_display??'—'} per GP`):'Undocumented'));coverage.append(positions);left.append(coverage);
 
   const center=node('div');center.className='rk-front-center';
   const responses=node('div');responses.className='rk-response-row';
@@ -165,7 +172,8 @@ export function renderCharacterFront(
   else values.append(field('Coverage','Unavailable'));
   measured.append(values,node('p','P = raw-value percentile; position peers. Rates and outcomes, not capability grades.'));
   const deployment=box('Deployment','rk-front-deployment'),assignment=node('dl');assignment.className='rk-task-list';
-  assignment.append(field('Unit','Undocumented'),field('Station','Undocumented'));deployment.append(assignment);
+  if(usage)deployment.append(renderDeploymentUsage(usage));
+  else {assignment.append(field('Unit','Undocumented'),field('Station','Undocumented'));deployment.append(assignment);}
   center.append(responses,counters,methods,measured,deployment);
 
   const right=node('div');right.className='rk-front-right';

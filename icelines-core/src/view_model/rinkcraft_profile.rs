@@ -101,6 +101,8 @@ pub struct ProfileJobFamily {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RinkcraftStatProfile {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub deployment_evidence: Option<super::rinkcraft_deployment::DeploymentEvidence>,
     /// Authored reading help; never counted as evidence about this player.
     #[serde(default)]
     pub evidence_guide: Vec<super::rinkcraft_evidence_guide::EvidenceGuideTopic>,
@@ -416,6 +418,7 @@ pub fn build_rinkcraft_stat_profile_from_views<R: SeasonStatsRead>(
         })
         .unwrap_or_default();
     Ok(RinkcraftStatProfile {
+        deployment_evidence:views.last().and_then(|v|super::rinkcraft_deployment::from_read(&v.stats)),
         evidence_guide:super::rinkcraft_evidence_guide::topics(),
         schema:RINKCRAFT_PROFILE_SCHEMA.into(),request,player_name:player_name.into(),
         scope:if request.first_season.is_none() && request.last_season.is_none(){"available_career"}else{"selected_seasons"}.into(),

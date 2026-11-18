@@ -95,7 +95,7 @@ export async function mountThemeStudio(root:HTMLElement):Promise<void>{
   if(specimen){stage.replaceChildren(specimenCard(specimen));notice.textContent=specimens.notice;notice.dataset.kind='fictional';}
   else {
    const p=profiles[sample.value];if(!p)throw Error('Unknown local example.');
-   stage.replaceChildren(renderCharacterCard(p.player_name,p.character_sheet,p.attribute_seasons?.at(-1),p.latest_available??undefined,p.numerical_evidence,p.numerical_history,p.numerical_snapshot,p.numerical_comparison_choices,p.documentary_catalog_available,p.evidence_guide));
+   stage.replaceChildren(renderCharacterCard(p.player_name,p.character_sheet,p.attribute_seasons?.at(-1),p.latest_available??undefined,p.numerical_evidence,p.numerical_history,p.numerical_snapshot,p.numerical_comparison_choices,p.documentary_catalog_available,p.evidence_guide,p.deployment_evidence,p.request));
    const repertoire=(p.character_sheet?.under_pressure?.length??0)+(p.character_sheet?.task_skills?.length??0);
    notice.textContent=repertoire
     ?'NHL record: 2024–25. Repertoire entries are provisional interpretations of dated historical accounts and examples, not current-season measurements. Capability scores remain unrated.'

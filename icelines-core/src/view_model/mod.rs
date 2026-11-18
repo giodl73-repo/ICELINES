@@ -2352,3 +2352,4 @@ pub mod rinkcraft_goalie_readiness;
 pub mod rinkcraft_readiness_followup;
 pub mod rinkcraft_finishing;
 pub mod rinkcraft_finishing_evidence;
+pub mod rinkcraft_deployment;

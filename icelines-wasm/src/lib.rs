@@ -232,6 +232,12 @@ impl BrowserEngine {
         serde_json::to_vec(&active.package).map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
+    /// Stateless workload projection; never mutates resident packages or ratings.
+    pub fn deployment_report(&self, bytes: &[u8], player: u32, season: u32, game_type: u8, goalie: bool, source_url: &str) -> Result<String, JsValue> {
+        let card=icelines_sources::nhl::deployment::parse(bytes,player,season,game_type,goalie,source_url).map_err(|e|JsValue::from_str(&e))?;
+        serde_json::to_string(&card).map_err(|e|JsValue::from_str(&e.to_string()))
+    }
+
     pub fn current_season(&self) -> u32 {
         icelines_core::CURRENT_SEASON
     }

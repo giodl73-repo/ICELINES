@@ -846,6 +846,7 @@ pub async fn get_json(
 #[derive(Template)]
 #[template(path = "rinkcraft.html")]
 struct ProfileTemplate {
+    deployment: Option<icelines_core::view_model::rinkcraft_deployment::DeploymentEvidence>,
     front_position: String,
     documentary_catalog_available: bool,
     brief_gaps: Vec<String>,
@@ -1661,6 +1662,11 @@ pub async fn get_html(
         Vec::new()
     };
     let template = ProfileTemplate {
+        deployment: view.deployment_evidence.as_ref().filter(|d|
+            d.player_id==view.request.player_id && d.season_type==view.request.season_type
+            && Some(d.season.0)==view.numerical_evidence.as_ref().map(|n|n.season).or_else(||view.latest_available.as_ref().map(|s|s.season.0))
+            && d.goalie==view.latest_available.as_ref().is_some_and(|s|s.position==icelines_core::model::Position::Goalie)
+        ).cloned(),
         front_position: view.latest_available.as_ref()
             .map(|s| s.position.abbreviation().to_owned())
             .or_else(|| view.numerical_evidence.as_ref().map(|n| n.group.clone()))
