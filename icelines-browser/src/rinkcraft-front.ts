@@ -22,6 +22,23 @@ const field=(label:string,value:string):HTMLElement=>{
   cell.append(node('dt',label),node('dd',value));
   return cell;
 };
+function factField(label:string,key:'development'|'experience',sheet:CharacterSheet|undefined):HTMLElement {
+  const fact=sheet?.card_facts?.find(f=>f.field===key);
+  const cell=field(label,fact?.name??'Undocumented');
+  cell.dataset.factField=key;
+  if(!fact)return cell;
+  cell.append(node('small',fact.context));
+  const evidence=node('details');evidence.className='rk-fact-evidence';
+  evidence.append(node('summary','Record source'),node('p',fact.detail));
+  for(const id of fact.source_ids){
+    const source=sheet?.sources.find(s=>s.id===id);
+    const p=node('p');
+    if(source){const a=node('a',`${id} · ${source.title}`);a.href=source.url;p.append(a,node('small',`${source.published} · ${source.locator}`));}
+    else p.append(node('span',`${id} · source record unavailable`));
+    evidence.append(p);
+  }
+  cell.append(evidence);return cell;
+}
 const box=(title:string,className:string):HTMLElement=>{
   const section=node('section');section.className=`rk-form-box ${className}`;
   section.append(node('h4',title));
@@ -58,8 +75,8 @@ export function renderCharacterFront(
 
   const classCell=fields.children[0];classCell.className+=' rk-class-field';
   if(sheet){const emblem=node('span',sheet.primary.name.slice(0,2).toUpperCase());emblem.className='rk-class-emblem';emblem.setAttribute('aria-hidden','true');classCell.append(emblem);const identityNote=node('small',`${sheet.primary.analogy} · ${sheet.primary.purpose}`);identityNote.className='rk-class-note';classCell.append(identityNote);}
-  const development=field('Development','Undocumented');development.className+=' rk-development-field';
-  fields.append(development,field('Experience','Undocumented'));
+  const development=factField('Development','development',sheet);development.className+=' rk-development-field';
+  fields.append(development,factField('Experience','experience',sheet));
   const season=numerical?.season??assessment?.season;
   const scope=node('p',numerical
     ?`${Math.floor(numerical.season/10000)}–${String(numerical.season%100).padStart(2,'0')} · ${numerical.situation} · ${numerical.group}`

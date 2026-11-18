@@ -102,3 +102,7 @@ with extras expandable. Missing curation remains unknown. Attributes, methods,
 style and supporting measurements retain their separate meanings. See
 [repertoire contract](rinkcraft-player-repertoires.md); this refines presentation,
 not the attribute rubric, action taxonomy or simulator.
+
+## Factual identity — 2026-11-18
+
+Development and Experience now accept optional source/date-selected factual records. They retain visible context and inspectable citations, independent of quality ratings. See [factual identity contract](rinkcraft-card-facts.md). Missing facts remain Undocumented.

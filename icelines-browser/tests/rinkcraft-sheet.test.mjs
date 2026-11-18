@@ -25,6 +25,19 @@ const sheet = {
   protocol:'experimental',catalog_sha256:'a'.repeat(64),as_of_season:20252026,
 };
 
+test('factual background is explicit, source-linked and separate from capability ratings',()=>{
+  const dossier={...sheet,card_facts:[{...sheet.features[0],field:'development',name:'Example college (NCAA)',context:'Selected pre-NHL pathway'},{...sheet.features[0],field:'experience',name:'NHL debut 2019',context:'2019-04-15 · postseason'}]};
+  const front=classed(renderCharacterCard('Example',dossier),'rk-front')[0];
+  const facts=all(front).filter(n=>n.dataset.factField);
+  assert.equal(facts.length,2);
+  assert.match(facts[0].textContent,/Example college.*Selected pre-NHL pathway.*Evidence account/);
+  assert.match(facts[1].textContent,/NHL debut 2019.*postseason/);
+  assert.equal(all(facts[0]).find(n=>n.tag==='a').href,'https://example.com');
+  assert.ok(all(front).filter(n=>n.dataset.capabilityIndex!==undefined).every(n=>n.dataset.ratingState==='unassessed'));
+  const missing=all(renderCharacterCard('Legacy',sheet)).filter(n=>n.dataset.factField);
+  assert.ok(missing.every(n=>n.textContent.includes('Undocumented')));
+});
+
 test('compact identity keeps documentary detail and provenance in a closed disclosure', () => {
   const profile=renderCharacterCard('<img src=x>',sheet);
   const front=classed(profile,'rk-front')[0], evidence=classed(profile,'rk-evidence')[0];

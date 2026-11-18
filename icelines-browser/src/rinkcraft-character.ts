@@ -17,6 +17,7 @@ export interface CharacterSheet {
   schema:string;protocol:string;catalog_sha256:string;player_name:string;assessed:string;evidence_through:string;
   primary:Class;secondary:Class[];specialty:string;summary:string;traits:Feature[];features:Feature[];
   under_pressure?:Feature[];task_skills?:Feature[];
+  card_facts?:(Feature & {field:'development'|'experience';context:string;through_season?:number})[];
   sources:{id:string;title:string;url:string;published:string;locator:string}[];unknowns:string[];
 }
 let catalogPromise:Promise<unknown|undefined>|undefined;

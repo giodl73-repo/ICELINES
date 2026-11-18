@@ -5,7 +5,10 @@
 {% match profile.character_sheet %}{% when Some with (c) %}
 <div class="rk-field rk-class-field"><dt>Class</dt><dd>{{ c.primary.name }}</dd><span class="rk-class-emblem" aria-hidden="true">{{ c.primary.name }}</span><small class="rk-class-note">{{ c.primary.analogy }} · {{ c.primary.purpose }}</small></div><div class="rk-field"><dt>Specialty</dt><dd>{{ c.specialty }}</dd></div><div class="rk-field"><dt>Secondary</dt><dd>{% if c.secondary.is_empty() %}—{% else %}{% for other in c.secondary %}{{ other.name }}{% if !loop.last %} / {% endif %}{% endfor %}{% endif %}</dd></div>
 {% when None %}<div class="rk-field"><dt>Class</dt><dd>{% if documentary_catalog_available %}Unscouted{% else %}Class dossier unavailable{% endif %}</dd></div><div class="rk-field"><dt>Specialty</dt><dd>Unknown</dd></div><div class="rk-field"><dt>Secondary</dt><dd>—</dd></div>{% endmatch %}
-<div class="rk-field rk-development-field"><dt>Development</dt><dd>Undocumented</dd></div><div class="rk-field"><dt>Experience</dt><dd>Undocumented</dd></div>
+{% for (key, label) in [("development", "Development"), ("experience", "Experience")] %}
+<div class="rk-field{% if loop.index0 == 0 %} rk-development-field{% endif %}" data-fact-field="{{ key }}"><dt>{{ label }}</dt>
+{% match profile.character_sheet %}{% when Some with (c) %}{% match c.card_fact(key) %}{% when Some with (fact) %}<dd>{{ fact.feature.name }}</dd><small>{{ fact.context }}</small><details class="rk-fact-evidence"><summary>Record source</summary><p>{{ fact.feature.detail }}</p>{% for id in fact.feature.source_ids %}{% for source in c.sources %}{% if source.id.as_str() == id.as_str() %}<p><a href="{{ source.url }}">{{ source.id }} · {{ source.title }}</a><small>{{ source.published }} · {{ source.locator }}</small></p>{% endif %}{% endfor %}{% endfor %}</details>{% when None %}<dd>Undocumented</dd>{% endmatch %}{% when None %}<dd>Undocumented</dd>{% endmatch %}</div>
+{% endfor %}
 </dl>
 <p class="rk-front-scope">{% match numerical %}{% when Some with (n) %}{{ n.scope }}{% when None %}{{ card_stats_context }}{% endmatch %}</p>
 {% match profile.numerical_snapshot %}{% when Some with (s) %}<p class="rk-front-snapshot" data-snapshot-state="{{ s.state }}">{{ s.note }}</p>{% when None %}{% endmatch %}

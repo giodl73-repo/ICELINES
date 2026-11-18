@@ -39,6 +39,8 @@ pub struct CharacterAssessment {
     pub under_pressure: Vec<CharacterFeature>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub task_skills: Vec<CharacterFeature>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub card_facts: Vec<CharacterFact>,
     pub sources: Vec<CharacterSource>,
     pub unknowns: Vec<String>,
 }
@@ -59,6 +61,30 @@ pub struct CharacterFeature {
     pub stat_evidence: Vec<FeatureStatLink>,
     #[serde(default)]
     pub unmeasured_stats: Vec<String>,
+}
+/// Source-bound factual background; no ability score or inferred biography.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CardFactField {
+    Development,
+    Experience,
+}
+impl CardFactField {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Development => "development",
+            Self::Experience => "experience",
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CharacterFact {
+    pub field: CardFactField,
+    pub context: String,
+    #[serde(flatten)]
+    pub feature: CharacterFeature,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub through_season: Option<Season>,
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FeatureStatLink {
@@ -113,8 +139,15 @@ pub struct CharacterSheet {
     pub under_pressure: Vec<CharacterFeature>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub task_skills: Vec<CharacterFeature>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub card_facts: Vec<CharacterFact>,
     pub sources: Vec<CharacterSource>,
     pub unknowns: Vec<String>,
+}
+impl CharacterSheet {
+    pub fn card_fact(&self, field: &str) -> Option<&CharacterFact> {
+        self.card_facts.iter().find(|f| f.field.as_str() == field)
+    }
 }
 impl CharacterCatalog {
     pub fn validate(&self) -> Result<(), String> {
@@ -168,7 +201,23 @@ impl CharacterCatalog {
                     return Err("unsupported character class assignment".into());
                 }
             }
-            for f in a.under_pressure.iter().chain(&a.task_skills) {
+            let mut fact_fields = HashSet::new();
+            for fact in &a.card_facts {
+                if !fact_fields.insert(fact.field)
+                    || fact.context.trim().is_empty()
+                    || fact
+                        .through_season
+                        .is_some_and(|end| end < fact.feature.from_season)
+                {
+                    return Err("duplicate, unscoped or reversed character fact".into());
+                }
+            }
+            for f in a
+                .under_pressure
+                .iter()
+                .chain(&a.task_skills)
+                .chain(a.card_facts.iter().map(|f| &f.feature))
+            {
                 if f.name.trim().is_empty()
                     || f.detail.trim().is_empty()
                     || f.evidence_type.trim().is_empty()
@@ -182,6 +231,7 @@ impl CharacterCatalog {
                 .chain(&a.features)
                 .chain(&a.under_pressure)
                 .chain(&a.task_skills)
+                .chain(a.card_facts.iter().map(|f| &f.feature))
             {
                 if !supported(f.from_season, &f.source_ids) {
                     return Err("unsupported character feature".into());
@@ -239,6 +289,14 @@ impl CharacterCatalog {
             .filter(|f| f.from_season <= season)
             .cloned()
             .collect();
+        let card_facts: Vec<_> = a
+            .card_facts
+            .iter()
+            .filter(|f| {
+                f.feature.from_season <= season && f.through_season.is_none_or(|end| season <= end)
+            })
+            .cloned()
+            .collect();
         let secondaries: Vec<_> = a
             .secondary
             .iter()
@@ -255,6 +313,7 @@ impl CharacterCatalog {
                     .chain(&features)
                     .chain(&under_pressure)
                     .chain(&task_skills)
+                    .chain(card_facts.iter().map(|f| &f.feature))
                     .flat_map(|f| f.source_ids.iter()),
             )
             .collect();
@@ -287,6 +346,7 @@ impl CharacterCatalog {
             features,
             under_pressure,
             task_skills,
+            card_facts,
             sources,
             unknowns: a.unknowns.clone(),
         }))
@@ -380,6 +440,42 @@ mod tests {
         assert!(c.validate().is_err());
         c.assessments[0].under_pressure[0].source_ids = vec!["S2".into()];
         c.assessments[0].task_skills[0].name.clear();
+        assert!(c.validate().is_err());
+    }
+
+    #[test]
+    fn card_facts_have_explicit_context_dates_and_deduplicated_sources() {
+        let mut c = catalog();
+        let fact = CharacterFact {
+            field: CardFactField::Development,
+            context: "Synthetic historical fact".into(),
+            feature: c.assessments[0].features[0].clone(),
+            through_season: Some(Season(20262027)),
+        };
+        c.assessments[0].card_facts.push(fact);
+        assert!(c
+            .sheet(PlayerId(1), Season(20232024))
+            .unwrap()
+            .unwrap()
+            .card_facts
+            .is_empty());
+        let s = c.sheet(PlayerId(1), Season(20252026)).unwrap().unwrap();
+        assert_eq!(s.card_facts.len(), 1);
+        assert_eq!(s.sources.len(), 2);
+        assert!(c
+            .sheet(PlayerId(1), Season(20272028))
+            .unwrap()
+            .unwrap()
+            .card_facts
+            .is_empty());
+        c.assessments[0].card_facts[0].context.clear();
+        assert!(c.validate().is_err());
+        c.assessments[0].card_facts[0].context = "Synthetic".into();
+        let duplicate = c.assessments[0].card_facts[0].clone();
+        c.assessments[0].card_facts.push(duplicate);
+        assert!(c.validate().is_err());
+        c.assessments[0].card_facts.pop();
+        c.assessments[0].card_facts[0].feature.source_ids = vec!["missing".into()];
         assert!(c.validate().is_err());
     }
 }
