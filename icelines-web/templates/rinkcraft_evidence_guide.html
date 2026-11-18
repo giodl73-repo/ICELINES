@@ -1,0 +1,11 @@
+{% if !profile.evidence_guide.is_empty() %}
+<details class="rk-evidence-guide"><summary>How to read this profile</summary>
+<p>Definition guide · not player observations. Capability attributes remain unrated.</p>
+<div class="rk-guide-topics">
+{% for topic in profile.evidence_guide %}
+{% if topic.scope == "all" || (topic.scope == "goalie" && (front_position == "G" || front_position == "Goalie" || front_position == "Goalies")) || (topic.scope == "skater" && (front_position == "C" || front_position == "L" || front_position == "R" || front_position == "D" || front_position == "LW" || front_position == "RW" || front_position == "F" || front_position == "Center" || front_position == "LeftWing" || front_position == "RightWing" || front_position == "Defenseman" || front_position == "Forwards" || front_position == "Defense")) %}
+<section data-guide-topic="{{ topic.key }}"><h4>{{ topic.title }}</h4><p>{{ topic.question }}</p><p>{{ topic.evidence }}</p><small>{{ topic.boundary }}</small></section>
+{% endif %}
+{% endfor %}
+</div></details>
+{% endif %}

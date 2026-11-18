@@ -101,6 +101,9 @@ pub struct ProfileJobFamily {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RinkcraftStatProfile {
+    /// Authored reading help; never counted as evidence about this player.
+    #[serde(default)]
+    pub evidence_guide: Vec<super::rinkcraft_evidence_guide::EvidenceGuideTopic>,
     #[serde(default)]
     pub numerical_history: Option<super::rinkcraft_history::HistoryCard>,
     #[serde(default)]
@@ -413,6 +416,7 @@ pub fn build_rinkcraft_stat_profile_from_views<R: SeasonStatsRead>(
         })
         .unwrap_or_default();
     Ok(RinkcraftStatProfile {
+        evidence_guide:super::rinkcraft_evidence_guide::topics(),
         schema:RINKCRAFT_PROFILE_SCHEMA.into(),request,player_name:player_name.into(),
         scope:if request.first_season.is_none() && request.last_season.is_none(){"available_career"}else{"selected_seasons"}.into(),
         league_current_season:Season(crate::CURRENT_SEASON),current_season_available:seasons.contains(&Season(crate::CURRENT_SEASON)),source_windows:Vec::new(),
@@ -626,6 +630,22 @@ mod tests {
             metric(&p, StatId::Goals).status,
             ProfileMetricStatus::NotApplicable
         );
+    }
+
+    #[test]
+    fn rinkcraft_profile_reading_guide_is_additive_to_legacy_records() {
+        let mut r = repo();
+        repo_row(&mut r, Season(crate::CURRENT_SEASON), 10, 2, 3);
+        let p = build_rinkcraft_stat_profile(&r, request()).unwrap();
+        assert!(!p.evidence_guide.is_empty());
+        let mut legacy = serde_json::to_value(&p).unwrap();
+        legacy.as_object_mut().unwrap().remove("evidence_guide");
+        let restored: RinkcraftStatProfile = serde_json::from_value(legacy).unwrap();
+        assert!(restored.evidence_guide.is_empty());
+        assert_eq!(restored.summary, p.summary);
+        assert_eq!(restored.timeline, p.timeline);
+        assert_eq!(restored.character_sheet, p.character_sheet);
+        assert_eq!(restored.attribute_seasons, p.attribute_seasons);
     }
     #[test]
     fn rinkcraft_profile_empty_unknown_and_reversed_windows_are_explicit() {

@@ -12,6 +12,7 @@
 {% block content %}
 <nav class="action-row" aria-label="Profile navigation"><a href="/rinkcraft/game?player_id={{ id }}">Create inspired game character</a><a href="/rinkcraft/numbers">Numerical assessments</a><a href="/rinkcraft">← Player atlas</a><a href="/player/{{ id }}">← Player overview</a><a href="/api/v1/player/{{ id }}/rinkcraft?type={{ season_type }}&amp;first_season={{ first }}&amp;last_season={{ last }}">Profile JSON</a><a href="/player/8481789/rinkcraft">Kartye</a><a href="/player/8479323/rinkcraft">Fox</a><a href="/player/8478048/rinkcraft">Shesterkin</a></nav>
 {% include "rinkcraft_compact_sheet.html" %}
+{% include "rinkcraft_evidence_guide.html" %}
 <details class="rk-evidence"><summary>Dossier, measures &amp; history</summary>{% include "rinkcraft_brief.html" %}{% include "rinkcraft_finishing.html" %}
 {% match profile.character_sheet %}{% when Some with (c) %}
 <article id="rc-attributes-title" class="rk-sheet rk-{{ c.primary.id }}" aria-label="{{ profile.player_name }} Rinkcraft character card">

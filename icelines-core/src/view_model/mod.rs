@@ -92,6 +92,7 @@ pub mod rinkcraft_measurement_plan;
 pub mod rinkcraft_annotation_agreement;
 pub mod rinkcraft_numbers;
 pub mod rinkcraft_profile;
+pub mod rinkcraft_evidence_guide;
 pub mod rinkcraft_style;
 pub mod scenario_development_calibration;
 pub mod scenario_registry;
