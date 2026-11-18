@@ -73,12 +73,29 @@ test('capabilities stay unrated while statistics remain in Measured Record', () 
   assert.match(classed(profile,'rk-front-questions')[0].textContent,/Technique is not measured/);
 });
 
-test('goalie capability and task fields use the goalie branch', () => {
+test('goalie capabilities remain separate and uncurated repertoires stay unknown', () => {
   const profile=renderCharacterCard('Test goalie',sheet,undefined,{position:'Goalie',games:20,metrics:[]});
   const rail=classed(profile,'rk-front-attributes')[0];
   assert.deepEqual(all(rail).filter(n=>n.dataset.capabilityIndex!==undefined).map(s=>s.children[0].textContent),['Tracking','Positioning','Movement','Rebounds','Recovery','Puck Play']);
-  assert.match(classed(profile,'rk-front-skills')[0].textContent,/Rebound Direction/);
+  assert.match(classed(profile,'rk-front-skills')[0].textContent,/Repertoire not yet catalogued/);
+  assert.doesNotMatch(classed(profile,'rk-front-skills')[0].textContent,/Retrieval|Rebound Direction|Unassessed/);
   assert.doesNotMatch(rail.textContent,/Shooting|Defending/);
+});
+
+test('pressure and task repertoires use only their explicit curated entries and never scores or methods',()=>{
+  const f=name=>({...sheet.features[0],name,detail:'When the lane closes, use the supported option.'});
+  const dossier={...sheet,under_pressure:['Draw & slip','Reverse escape','Hold & scan','Early rim'].map(f),task_skills:['Seam feeds','PP distribution','Entry denial','Rim retrieval','Outlet reception','Point setup'].map(f)};
+  const front=classed(renderCharacterCard('Test',dossier),'rk-front')[0];
+  const pressure=classed(front,'rk-front-pressure')[0],skills=classed(front,'rk-front-skills')[0];
+  assert.match(pressure.textContent,/Draw & slip/);assert.doesNotMatch(pressure.textContent,/Seam feeds|Recover|\/ 20|Unassessed/);
+  assert.match(skills.textContent,/Seam feeds/);assert.doesNotMatch(skills.textContent,/Draw & slip|Recover|\/ 20|Unassessed/);
+  assert.equal(classed(pressure,'rk-repertoire-list')[0].children.length,3);
+  assert.equal(classed(skills,'rk-repertoire-list')[0].children.length,5);
+  assert.match(classed(pressure,'rk-repertoire-more')[0].textContent,/\+1 more/);
+  assert.match(classed(skills,'rk-repertoire-more')[0].textContent,/\+1 more/);
+  assert.equal(classed(pressure,'rk-repertoire-more')[0].attributes.open,undefined);
+  assert.match(pressure.textContent,/Evidence account/);
+  assert.match(classed(front,'rk-front-methods')[0].textContent,/Recover/);
 });
 
 

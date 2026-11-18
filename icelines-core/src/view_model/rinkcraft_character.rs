@@ -35,6 +35,10 @@ pub struct CharacterAssessment {
     pub summary: String,
     pub traits: Vec<CharacterFeature>,
     pub features: Vec<CharacterFeature>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub under_pressure: Vec<CharacterFeature>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub task_skills: Vec<CharacterFeature>,
     pub sources: Vec<CharacterSource>,
     pub unknowns: Vec<String>,
 }
@@ -105,6 +109,10 @@ pub struct CharacterSheet {
     pub summary: String,
     pub traits: Vec<CharacterFeature>,
     pub features: Vec<CharacterFeature>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub under_pressure: Vec<CharacterFeature>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub task_skills: Vec<CharacterFeature>,
     pub sources: Vec<CharacterSource>,
     pub unknowns: Vec<String>,
 }
@@ -160,7 +168,21 @@ impl CharacterCatalog {
                     return Err("unsupported character class assignment".into());
                 }
             }
-            for f in a.traits.iter().chain(&a.features) {
+            for f in a.under_pressure.iter().chain(&a.task_skills) {
+                if f.name.trim().is_empty()
+                    || f.detail.trim().is_empty()
+                    || f.evidence_type.trim().is_empty()
+                {
+                    return Err("unnamed or unexplained character specialization".into());
+                }
+            }
+            for f in a
+                .traits
+                .iter()
+                .chain(&a.features)
+                .chain(&a.under_pressure)
+                .chain(&a.task_skills)
+            {
                 if !supported(f.from_season, &f.source_ids) {
                     return Err("unsupported character feature".into());
                 }
@@ -205,6 +227,18 @@ impl CharacterCatalog {
             .filter(|f| f.from_season <= season)
             .cloned()
             .collect();
+        let under_pressure: Vec<_> = a
+            .under_pressure
+            .iter()
+            .filter(|f| f.from_season <= season)
+            .cloned()
+            .collect();
+        let task_skills: Vec<_> = a
+            .task_skills
+            .iter()
+            .filter(|f| f.from_season <= season)
+            .cloned()
+            .collect();
         let secondaries: Vec<_> = a
             .secondary
             .iter()
@@ -219,6 +253,8 @@ impl CharacterCatalog {
                 traits
                     .iter()
                     .chain(&features)
+                    .chain(&under_pressure)
+                    .chain(&task_skills)
                     .flat_map(|f| f.source_ids.iter()),
             )
             .collect();
@@ -249,6 +285,8 @@ impl CharacterCatalog {
             summary: a.summary.clone(),
             traits,
             features,
+            under_pressure,
+            task_skills,
             sources,
             unknowns: a.unknowns.clone(),
         }))
@@ -301,6 +339,47 @@ mod tests {
         assert!(c.validate().is_ok());
         let duplicate = c.assessments[0].features[0].stat_evidence[0].clone();
         c.assessments[0].features[0].stat_evidence.push(duplicate);
+        assert!(c.validate().is_err());
+    }
+
+    #[test]
+    fn repertoires_preserve_legacy_fingerprints_and_never_borrow_methods() {
+        let c = catalog();
+        let legacy = serde_json::to_string(&c).unwrap();
+        assert!(!legacy.contains("under_pressure"));
+        assert!(!legacy.contains("task_skills"));
+        let s = c.sheet(PlayerId(1), Season(20252026)).unwrap().unwrap();
+        assert!(s.under_pressure.is_empty() && s.task_skills.is_empty());
+        assert_eq!(s.features.len(), 1);
+        assert_eq!(
+            s.catalog_sha256,
+            format!("{:x}", Sha256::digest(legacy.as_bytes()))
+        );
+    }
+
+    #[test]
+    fn repertoires_are_source_validated_and_date_gated_independently() {
+        let mut c = catalog();
+        let mut f = c.assessments[0].features[0].clone();
+        f.name = "Synthetic pressure response".into();
+        c.assessments[0].under_pressure.push(f.clone());
+        f.name = "Synthetic task specialty".into();
+        c.assessments[0].task_skills.push(f);
+        let early = c.sheet(PlayerId(1), Season(20232024)).unwrap().unwrap();
+        assert!(early.under_pressure.is_empty() && early.task_skills.is_empty());
+        let later = c.sheet(PlayerId(1), Season(20252026)).unwrap().unwrap();
+        assert_eq!(
+            (
+                later.under_pressure.len(),
+                later.task_skills.len(),
+                later.sources.len()
+            ),
+            (1, 1, 2)
+        );
+        c.assessments[0].under_pressure[0].source_ids = vec!["missing".into()];
+        assert!(c.validate().is_err());
+        c.assessments[0].under_pressure[0].source_ids = vec!["S2".into()];
+        c.assessments[0].task_skills[0].name.clear();
         assert!(c.validate().is_err());
     }
 }

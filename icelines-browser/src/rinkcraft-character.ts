@@ -11,11 +11,12 @@ import type {NumericalEvidence} from './rinkcraft-numbers.js';
 import {renderNumericalHistory} from './rinkcraft-history.js';
 import type {HistoryCard} from './rinkcraft-history.js';
 interface Class {id:string;name:string;analogy:string;purpose:string;}
-interface Feature {name:string;detail:string;evidence_type:string;source_ids:string[];stat_evidence?:{attribute_key:string;relation:string}[];unmeasured_stats?:string[];}
+export interface Feature {name:string;detail:string;evidence_type:string;source_ids:string[];stat_evidence?:{attribute_key:string;relation:string}[];unmeasured_stats?:string[];}
 export interface CharacterSheet {
   as_of_season:number;
   schema:string;protocol:string;catalog_sha256:string;player_name:string;assessed:string;evidence_through:string;
   primary:Class;secondary:Class[];specialty:string;summary:string;traits:Feature[];features:Feature[];
+  under_pressure?:Feature[];task_skills?:Feature[];
   sources:{id:string;title:string;url:string;published:string;locator:string}[];unknowns:string[];
 }
 let catalogPromise:Promise<unknown|undefined>|undefined;

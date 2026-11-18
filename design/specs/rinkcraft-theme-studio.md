@@ -19,8 +19,8 @@ copied links reproduce the selection. No automatic cycling or external fonts.
 
 ## Data boundary
 
-The example selector offers explicit retained NHL fixtures and two authored
-fictional design specimens, a defender and goalie. The default fictional card
+The example selector offers explicit retained NHL fixtures and three authored
+fictional design specimens, a defender, forechecking winger and goalie. The default fictional card
 fills ratings, task fields, counters, methods, tendencies, deployment and record
 panels to exercise the design with dense data. Every number, percentile, duty
 and relationship is illustrative; no reference cohort or calibrated game value
@@ -49,7 +49,7 @@ directory. It records the input SHA256 and copies local render modules/assets;
 no fetch, data refresh, app-server restart or hosted publication. The browser
 loads only these local files. `ICELINES_THEME_URL` can select the served preview.
 
-Acceptance covers six themes × seven samples (42 desktop cases), 18 mobile
+Acceptance covers six themes × eight samples (48 desktop cases), 24 mobile
 cases, all profile text preserved during theme changes, six correct rating
 states, horizontal-versus-vertical attribute geometry, controls and query reload.
 Print normalizes ink/background and compacts type to retain a Letter sheet.

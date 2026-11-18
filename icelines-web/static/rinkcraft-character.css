@@ -120,6 +120,15 @@
 .rk-task-list dt{font-size:10px;font-weight:650;color:var(--sheet-ink)}
 .rk-task-list dd{font-size:8px;color:#61717a;font-weight:450;margin-top:1px}
 .rk-front-skills{flex:1}
+.rk-repertoire .rk-repertoire-list{list-style:none;margin:0;padding:0}
+.rk-repertoire .rk-repertoire-list>li{font-size:10px;font-weight:400;padding:6px 0;line-height:1.3}
+.rk-repertoire-list>li>strong{display:block;font-size:10px;font-weight:750;color:var(--sheet-ink)}
+.rk-repertoire-detail{display:block;margin-top:2px;font-size:9px;font-weight:400;color:var(--sheet-ink);line-height:1.35}
+.rk-repertoire .rk-repertoire-status{display:block;margin-top:3px;font-size:7px;font-weight:500;color:var(--sheet-ink);opacity:.75}
+.rk-repertoire-more{font-size:9px;margin-top:6px;border-top:1px solid var(--sheet-line);padding-top:5px}
+.rk-repertoire-more>summary{cursor:pointer;font-weight:650;color:var(--sheet-blue)}
+.rk-repertoire>small{display:block;font-size:8px;margin-top:5px;font-weight:400}
+@media print{.rk-repertoire-more{display:none!important}.rk-repertoire .rk-repertoire-list>li{padding:3px 0}.rk-repertoire-list>li>strong{font-size:9px;line-height:1.1}.rk-repertoire-detail{font-size:7.5px;line-height:1.15}.rk-repertoire .rk-repertoire-status{font-size:6px;margin-top:1px}}
 .rk-front-role-coverage .rk-task-list,.rk-front-deployment .rk-task-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .rk-front-role-coverage .rk-task-list .rk-field,.rk-front-deployment .rk-task-list .rk-field{border:0;padding:0}
 .rk-response-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}

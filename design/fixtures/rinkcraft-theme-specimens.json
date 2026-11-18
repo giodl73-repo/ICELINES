@@ -1,5 +1,5 @@
 {
-  "schema": "rinkcraft.theme-specimens.v1",
+  "schema": "rinkcraft.theme-specimens.v2",
   "kind": "fictional_design_sample",
   "notice": "Entirely fictional design specimens. All ratings, records, duties and relationships are illustrative, not NHL assessments or calibrated game values.",
   "players": [
@@ -9,8 +9,22 @@
       "purpose": "Moves the defense, then moves the puck.",
       "development": "Puck-moving defender", "experience": "7 seasons · 486 GP",
       "attributes": [16, 17, 19, 14, 18, 16],
-      "pressure": ["17 / 20", "16 / 20", "15 / 20"],
-      "skills": ["16 / 20", "18 / 20", "15 / 20", "17 / 20", "11 / 20"],
+      "pressure": [
+        {"name":"Draw & slip","detail":"When the forechecker commits, releases behind the first pressure."},
+        {"name":"Reverse escape","detail":"Against wall pressure, pivots toward the reverse outlet."},
+        {"name":"Hold & scan","detail":"When lanes close, holds below the goal line for support."},
+        {"name":"Early rim","detail":"When the middle is sealed, sends around the wall before contact."}
+      ],
+      "skills": [
+        {"name":"PP distribution","detail":"Finds the next touch from the high point."},
+        {"name":"Controlled exits","detail":"Links a low retrieval to a controlled advance."},
+        {"name":"Seam feeds","detail":"Delivers through the middle to a moving target."},
+        {"name":"Entry denial","detail":"Challenges the receiver at the defensive blue line."},
+        {"name":"Weak-side support","detail":"Offers the far-side outlet behind the first pressure."},
+        {"name":"Outlet reception","detail":"Receives on the move with a forward option available."},
+        {"name":"Point-shot setup","detail":"Creates a release lane from a high puck reception."},
+        {"name":"Rim retrieval","detail":"Collects a wall puck with the next outlet in view."}
+      ],
       "reading": "18 / 20", "responses": ["16 / 20", "18 / 20", "23.1 mph"],
       "games": 78, "minutes": 1846,
       "methods": [
@@ -41,8 +55,22 @@
       "purpose": "Stays available for the next threat.",
       "development": "Technical hybrid", "experience": "6 seasons · 294 GP",
       "attributes": [18, 18, 16, 17, 18, 14],
-      "pressure": ["18 / 20", "17 / 20", "16 / 20"],
-      "skills": ["18 / 20", "18 / 20", "17 / 20", "16 / 20", "14 / 20"],
+      "pressure": [
+        {"name":"Lateral patience","detail":"Against a cross-slot threat, delays the push until release."},
+        {"name":"Traffic windows","detail":"When screened, changes the sightline before the shot."},
+        {"name":"Second-shot reset","detail":"After a loose save, resets toward the next live threat."},
+        {"name":"Safe wall leave","detail":"With a forechecker closing, leaves to visible defensive support."}
+      ],
+      "skills": [
+        {"name":"Rebound placement","detail":"Directs a playable save away from the immediate second threat."},
+        {"name":"Behind-net exchanges","detail":"Sets the puck for a defender's low retrieval."},
+        {"name":"Post integration","detail":"Connects the post seal to the next puck angle."},
+        {"name":"Screen tracking","detail":"Tracks the release through changing traffic."},
+        {"name":"Lateral recovery","detail":"Re-establishes a usable set after crossing the crease."},
+        {"name":"Rim interception","detail":"Stops a wall puck before it reaches the retrieval corner."},
+        {"name":"Outlet receiving","detail":"Controls a return puck before a short exchange."},
+        {"name":"Rush depth","detail":"Sets depth for the visible rush options."}
+      ],
       "reading": "18 / 20", "responses": ["18 / 20", "17 / 20", "16 / 20"],
       "games": 54, "minutes": 3120,
       "methods": [
@@ -66,6 +94,40 @@
       "questions": ["Is the receiver visible before the exchange?", "Can the defense clear the second shot?"],
       "deployment": ["Starter / PK", "Crease / retrieval exchange"],
       "coverage": "5v5 · PK · puck exchange"
+    },
+    {
+      "key":"design-forward", "name":"Ellis Rook", "position":"LW",
+      "class":"Hunter", "specialty":"Wall-work catalyst", "secondary":"Vanguard",
+      "purpose":"Turns pressure and retrievals into a second attack.",
+      "development":"Forechecking winger", "experience":"4 seasons · 238 GP",
+      "attributes":[17,14,12,14,16,15],
+      "pressure":[
+        {"name":"Wall shield","detail":"Against close contact, protects the puck on the outside hip."},
+        {"name":"One-touch release","detail":"As the outlet window closes, redirects to nearby support."},
+        {"name":"Chip & pursue","detail":"Against a sealed carry route, sends to space and follows."},
+        {"name":"Inside recovery","detail":"After a lost puck, recovers inside before closing again."}
+      ],
+      "skills":[
+        {"name":"First pressure","detail":"Angles the retrieval toward the unit's support."},
+        {"name":"Wall retrievals","detail":"Converts a contested wall puck into a playable outlet."},
+        {"name":"Counterpressure","detail":"Re-engages a loose exchange before the opponent can reset."},
+        {"name":"Net-front screens","detail":"Times the lane occupation to a teammate's release."},
+        {"name":"Short support","detail":"Offers a close continuation under a forecheck."},
+        {"name":"PK pursuit","detail":"Closes the next exchange while keeping the inside lane."},
+        {"name":"Defensive wall work","detail":"Helps a low retrieval reach the next support option."},
+        {"name":"Change-time advances","detail":"Sends deep to permit a supported line change."}
+      ],
+      "reading":"16 / 20", "responses":["15 / 20","17 / 20","23.4 mph"],
+      "games":76,"minutes":1084,
+      "methods":[["Angle & close","Arrives from inside to shape the next outlet."],["Pin & release","Frees the puck for nearby support."],["Arrive late","Joins the net-front lane as the shot develops."]],
+      "record":[["Shot volume","7.1 /60","Illustrative · P72"],["Recorded contact","13.8 /60","Illustrative record"],["Puck retrievals","18.2 /60","Illustrative · P91"],["Primary assists","0.48 /60","Illustrative · P61"],["Expected-goal share","53.4%","Illustrative · P74"],["Forecheck recoveries","4.7 /60","Illustrative · P89"]],
+      "tendencies":["North–south pressure","Contact & recovery","Short continuations"],
+      "assignment":"F1 on the selected forecheck; recover inside when pressure is beaten.",
+      "links":"Center supplies the short outlet; weak-side winger protects the middle.",
+      "limitations":"Less reliable on long seam deliveries from a standing start.",
+      "distinctive":"Keeps a broken play alive long enough for the unit to reconnect.",
+      "questions":["Who takes F1 after the handoff?","Is there support for the second pursuit?"],
+      "deployment":["Middle six / PK2","F1 pursuit / low support"],"coverage":"5v5 · PK2"
     }
   ]
 }

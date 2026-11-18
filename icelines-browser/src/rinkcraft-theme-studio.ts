@@ -14,11 +14,11 @@ const themes=[
 ] as const;
 interface Specimen {
  key:string;name:string;position:string;class:string;specialty:string;secondary:string;purpose:string;
- development:string;experience:string;attributes:number[];pressure:string[];skills:string[];reading:string;responses:string[];
+ development:string;experience:string;attributes:number[];pressure:{name:string;detail:string}[];skills:{name:string;detail:string}[];reading:string;responses:string[];
  games:number;minutes:number;methods:string[][];record:string[][];tendencies:string[];assignment:string;links:string;
  limitations:string;distinctive:string;questions:string[];deployment:string[];coverage:string;
 }
-interface Specimens {kind:string;notice:string;players:Specimen[];}
+interface Specimens {schema:string;kind:string;notice:string;players:Specimen[];}
 const node=<K extends keyof HTMLElementTagNameMap>(tag:K,text?:string):HTMLElementTagNameMap[K]=>{
  const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e;
 };
@@ -31,7 +31,9 @@ function specimenCard(s:Specimen):HTMLElement {
   primary:{id:s.class.toLowerCase(),name:s.class,analogy:s.class==='Warden'?'Paladin':'Wizard',purpose:s.purpose},
   secondary:[{id:s.secondary.toLowerCase(),name:s.secondary,analogy:'',purpose:''}],specialty:s.specialty,summary:s.distinctive,
   features:s.methods.map(([name,detail])=>({name,detail,evidence_type:'Fictional design sample',source_ids:[]})),
-  traits:s.tendencies.map(name=>({name,detail:'',evidence_type:'Fictional design sample',source_ids:[]})),sources:[],unknowns:s.questions};
+  traits:s.tendencies.map(name=>({name,detail:'',evidence_type:'Fictional design sample',source_ids:[]})),sources:[],unknowns:s.questions,
+  under_pressure:s.pressure.map(f=>({...f,evidence_type:'Fictional repertoire',source_ids:[]})),
+  task_skills:s.skills.map(f=>({...f,evidence_type:'Fictional repertoire',source_ids:[]}))};
  const front=renderCharacterFront(s.name,sheet,undefined,{position:s.position,games:s.games,metrics:[]},undefined,undefined,true);
  front.dataset.profileKind='fictional_design_sample';
  setText(front,'.rk-front-header>div:first-child>small','RINKCRAFT / FICTIONAL DESIGN SAMPLE');
@@ -43,7 +45,7 @@ function specimenCard(s:Specimen):HTMLElement {
   field.querySelector('small')!.textContent='Illustrative';
  });
  for(const [selector,values] of [
-  ['.rk-front-pressure',s.pressure],['.rk-front-skills',s.skills],['.rk-front-reading',[s.reading]],
+  ['.rk-front-reading',[s.reading]],
   ['.rk-front-deployment',s.deployment],
  ] as const)front.querySelectorAll(`${selector} dd`).forEach((e,i)=>e.textContent=values[i]??'Illustrative');
  front.querySelectorAll('.rk-front-response').forEach((e,i)=>{
@@ -65,7 +67,7 @@ export async function mountThemeStudio(root:HTMLElement):Promise<void>{
  if(responses.some(r=>!r.ok))throw Error('The local profile examples could not be loaded.');
  const profiles=await responses[0].json() as Record<string,RinkcraftProfile>;
  const specimens=await responses[1].json() as Specimens;
- if(specimens.kind!=='fictional_design_sample'||specimens.players.some(s=>s.attributes.length!==6))throw Error('Invalid design specimens.');
+ if(specimens.schema!=='rinkcraft.theme-specimens.v2'||specimens.kind!=='fictional_design_sample'||specimens.players.some(s=>s.attributes.length!==6))throw Error('Invalid design specimens.');
  const query=new URLSearchParams(location.search);
  let index=themes.findIndex(t=>t.id===query.get('theme'));if(index<0)index=0;
  const sample=root.querySelector<HTMLSelectElement>('#sample')!,stage=root.querySelector<HTMLElement>('#profile-stage')!;

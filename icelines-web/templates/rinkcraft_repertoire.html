@@ -1,0 +1,9 @@
+{% if repertoire.is_empty() %}<p class="rk-repertoire-empty">Repertoire not yet catalogued.</p><small>A missing entry does not imply missing ability.</small>
+{% else %}<ul class="rk-repertoire-list">
+{% for item in repertoire %}{% if loop.index0 < visible %}
+<li data-repertoire-name="{{ item.name }}"><strong>{{ item.name }}</strong><span class="rk-repertoire-detail">{{ item.detail }}</span><small class="rk-repertoire-status">{{ item.evidence_type }}</small>
+<details class="rk-method-evidence"><summary>Sources &amp; gaps</summary><p>Related records provide context; they are not a specialty score.</p>{% for id in item.source_ids %}{% for source in c.sources %}{% if source.id.as_str() == id.as_str() %}<p><a href="{{ source.url }}">{{ source.id }} · {{ source.title }}</a><small>{{ source.published }} · {{ source.locator }}</small></p>{% endif %}{% endfor %}{% endfor %}{% for gap in item.unmeasured_stats %}<p>Need: {{ gap }}</p>{% endfor %}</details></li>
+{% endif %}{% endfor %}</ul>
+{% if repertoire.len() > visible %}<details class="rk-repertoire-more"><summary>+{{ repertoire.len() - visible }} more</summary><ul class="rk-repertoire-list">
+{% for item in repertoire %}{% if loop.index0 >= visible %}<li data-repertoire-name="{{ item.name }}"><strong>{{ item.name }}</strong><span class="rk-repertoire-detail">{{ item.detail }}</span><small class="rk-repertoire-status">{{ item.evidence_type }}</small><details class="rk-method-evidence"><summary>Sources &amp; gaps</summary>{% for id in item.source_ids %}{% for source in c.sources %}{% if source.id.as_str() == id.as_str() %}<p><a href="{{ source.url }}">{{ source.id }} · {{ source.title }}</a><small>{{ source.published }} · {{ source.locator }}</small></p>{% endif %}{% endfor %}{% endfor %}{% for gap in item.unmeasured_stats %}<p>Need: {{ gap }}</p>{% endfor %}</details></li>{% endif %}{% endfor %}
+</ul></details>{% endif %}{% endif %}

@@ -6,11 +6,11 @@ const output=resolve('target/compact-sheet/theme-studio-check');await mkdir(outp
 const browser=await chromium.launch({channel:'msedge',headless:true}),page=await browser.newPage({viewport:{width:1440,height:1100}}),errors=[];
 page.on('pageerror',e=>errors.push(e.message));
 const base=process.env.ICELINES_THEME_URL??'http://127.0.0.1:8771/theme-studio/';
-const themes=['ice','ledger','bureau','tactics','broadcast','editorial'],samples=['design-defense','design-goalie','fox','mcdavid','barkov','makar','shesterkin'];
+const themes=['ice','ledger','bureau','tactics','broadcast','editorial'],samples=['design-defense','design-goalie','design-forward','fox','mcdavid','barkov','makar','shesterkin'];
 const results=[];
 try{
  await page.goto(base);await expect(page.locator('[data-theme-studio]')).toHaveAttribute('data-ready','true');
- await expect(page.locator('.theme-choice')).toHaveCount(6);await expect(page.locator('#sample option')).toHaveCount(7);
+ await expect(page.locator('.theme-choice')).toHaveCount(6);await expect(page.locator('#sample option')).toHaveCount(8);
  for(const sample of samples){
   await page.locator('#sample').selectOption(sample);
   const front=page.locator('#profile-stage .rk-front');await expect(front).toHaveCount(1);
@@ -18,6 +18,12 @@ try{
   await expect(front.locator('[data-capability-index]')).toHaveCount(6);
   await expect(front).toHaveAttribute('data-profile-kind',sample.startsWith('design-')?'fictional_design_sample':'nhl_evidence');
   await expect(front.locator('[data-rating-state="'+(sample.startsWith('design-')?'illustrative':'unassessed')+'"]')).toHaveCount(6);
+  await expect(front.locator('.rk-front-pressure dd,.rk-front-skills dd')).toHaveCount(0);
+  if(sample.startsWith('design-')){
+   await expect(front.locator('.rk-front-pressure [data-repertoire-name]')).toHaveCount(4);
+   await expect(front.locator('.rk-front-skills [data-repertoire-name]')).toHaveCount(8);
+   assert.ok(!(await front.locator('.rk-front-pressure,.rk-front-skills').allTextContents()).join(' ').includes('/ 20'));
+  }else await expect(front.locator('.rk-repertoire-empty')).toHaveCount(2);
   for(const theme of themes){
    await page.locator(`.theme-choice[data-theme="${theme}"]`).click();
    await expect(page.locator('html')).toHaveAttribute('data-rinkcraft-theme',theme);
@@ -28,6 +34,11 @@ try{
    if(sample==='design-defense')await page.screenshot({path:resolve(output,theme+'-desktop.png'),fullPage:true});
    results.push({sample,theme,content_unchanged:true,horizontal_attributes:theme==='tactics'});
   }
+  if(sample.startsWith('design-')){
+   const more=front.locator('.rk-front-skills .rk-repertoire-more');await more.locator('summary').click();
+   await expect(more.locator('[data-repertoire-name]')).toHaveCount(3);await expect(more.locator('li').first()).toBeVisible();
+   await more.locator('summary').click();
+  }
  }
  // Actual differences include type, panel treatment and attribute geometry.
  await page.locator('#sample').selectOption('design-defense');
@@ -37,7 +48,7 @@ try{
  await page.locator('body').click({position:{x:2,y:2}});await page.keyboard.press('ArrowRight');await expect(page.locator('html')).toHaveAttribute('data-rinkcraft-theme','broadcast');
  await page.reload();await expect(page.locator('[data-theme-studio]')).toHaveAttribute('data-ready','true');await expect(page.locator('html')).toHaveAttribute('data-rinkcraft-theme','broadcast');await expect(page.locator('#sample')).toHaveValue('design-defense');
  await page.setViewportSize({width:390,height:844});
- for(const sample of ['design-defense','design-goalie','fox']){
+ for(const sample of ['design-defense','design-goalie','design-forward','fox']){
   await page.locator('#sample').selectOption(sample);
   for(const theme of themes){await page.locator(`.theme-choice[data-theme="${theme}"]`).click();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),sample+' '+theme+' mobile');}
  }
@@ -45,6 +56,6 @@ try{
  await page.setViewportSize({width:1440,height:1100});
  for(const theme of themes){await page.locator(`.theme-choice[data-theme="${theme}"]`).click();await page.pdf({path:resolve(output,theme+'.pdf'),format:'Letter',printBackground:true});}
  assert.deepEqual(errors,[]);
- await writeFile(resolve(output,'verification.json'),JSON.stringify({status:'passed',desktop_cases:results,mobile_cases:18,controls:['buttons','previous/next','range','keyboard','URL reload'],print_exports:6,page_errors:errors},null,2));
- console.log('Theme studio: 42 desktop / 18 mobile cases, controls, URL state and six print exports passed.');
+ await writeFile(resolve(output,'verification.json'),JSON.stringify({status:'passed',desktop_cases:results,mobile_cases:24,controls:['buttons','previous/next','range','keyboard','URL reload','expanded repertoire'],specialties:'three distinct fictional repertoires, no task scores; uncurated NHL fields stay unknown',print_exports:6,page_errors:errors},null,2));
+ console.log('Theme studio: 48 desktop / 24 mobile cases, distinct repertoires, controls and six print exports passed.');
 }finally{await browser.close();}

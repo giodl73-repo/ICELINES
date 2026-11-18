@@ -5,6 +5,7 @@ import type {AttributeSeason} from './rinkcraft-attributes.js';
 import {attributeValue} from './rinkcraft-attributes.js';
 import type {NumericalEvidence, SnapshotSelection} from './rinkcraft-numbers.js';
 import {numericalValue} from './rinkcraft-numbers.js';
+import {renderRepertoire} from './rinkcraft-repertoire.js';
 
 interface SeasonRecord {
   games:number;
@@ -79,8 +80,8 @@ export function renderCharacterFront(
   }
   attributes.append(scores);
   const tasks=node('div');tasks.className='rk-front-task-column';
-  tasks.append(taskBox('Under Pressure','rk-front-pressure',goalie?['Screened Shot','Rebound Threat','Lateral Rush']:['Escape','Retain','Recover']),
-    taskBox('Task Skills','rk-front-skills',goalie?['Set Depth','Track Traffic','Save Selection','Rebound Direction','Puck Exchange']:['Retrieval','Zone Exit','Zone Entry','Coverage','Screening']),
+  tasks.append(renderRepertoire('Under Pressure','rk-front-pressure',sheet?.under_pressure,3,sheet),
+    renderRepertoire('Task Skills','rk-front-skills',sheet?.task_skills,5,sheet),
     taskBox('Read & React','rk-front-reading',['Anticipation']));
   split.append(attributes,tasks);left.append(split);
   const coverage=box('Role Coverage','rk-front-role-coverage');

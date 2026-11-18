@@ -91,3 +91,14 @@ populate Known Limitations. The class, methods and tendencies still come from
 the dated documentary selector. Raw numerical values and percentiles are retained
 in Measured Record; the complete source-linked dossier remains expandable.
 Native Askama and browser rendering share the stylesheet and category semantics.
+
+## Player repertoires — 2026-11-18
+
+Owner clarified that Under Pressure and Task Skills should differentiate players
+through named characteristics. They now use optional source/date-bound repertoire
+arrays rather than fixed task rows or numeric scores. Pressure entries name a
+conditional response; skills name a task specialty. First3/5 entries are shown,
+with extras expandable. Missing curation remains unknown. Attributes, methods,
+style and supporting measurements retain their separate meanings. See
+[repertoire contract](rinkcraft-player-repertoires.md); this refines presentation,
+not the attribute rubric, action taxonomy or simulator.

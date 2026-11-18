@@ -1,6 +1,4 @@
 {% let goalie_attributes = ["Tracking", "Positioning", "Movement", "Rebounds", "Recovery", "Puck Play"] %}
-{% let goalie_skills = ["Set Depth", "Track Traffic", "Save Selection", "Rebound Direction", "Puck Exchange"] %}
-{% let goalie_pressure = ["Screened Shot", "Rebound Threat", "Lateral Rush"] %}
 <section class="rk-front" data-profile-kind="nhl_evidence" data-class="{% match profile.character_sheet %}{% when Some with (c) %}{{ c.primary.id }}{% when None %}unscouted{% endmatch %}" data-layout="rinkcraft-profile-v2" aria-label="{{ profile.player_name }} compact player sheet">
 <header class="rk-front-header"><div><small>ICELINES / RINKCRAFT</small><h1>{{ profile.player_name }}</h1></div><div class="rk-front-position"><small>Position</small><strong>{{ front_position }}</strong></div></header>
 <dl class="rk-front-identity">
@@ -18,8 +16,8 @@
 <div class="rk-field" data-capability-index="{{ loop.index0 }}" data-rating-state="unassessed"><dt>{% if front_position == "G" || front_position == "Goalies" || front_position == "Goalie" %}{{ goalie_attributes[loop.index0] }}{% else %}{{ label }}{% endif %}</dt><dd>—</dd><small>Unrated</small></div>
 {% endfor %}</dl></section>
 <div class="rk-front-task-column">
-<section class="rk-form-box rk-front-pressure"><h2>Under Pressure</h2><dl class="rk-task-list">{% for label in ["Escape", "Retain", "Recover"] %}<div class="rk-field"><dt>{% if front_position == "G" || front_position == "Goalies" || front_position == "Goalie" %}{{ goalie_pressure[loop.index0] }}{% else %}{{ label }}{% endif %}</dt><dd>Unassessed</dd></div>{% endfor %}</dl></section>
-<section class="rk-form-box rk-front-skills"><h2>Task Skills</h2><dl class="rk-task-list">{% for label in ["Retrieval", "Zone Exit", "Zone Entry", "Coverage", "Screening"] %}<div class="rk-field"><dt>{% if front_position == "G" || front_position == "Goalies" || front_position == "Goalie" %}{{ goalie_skills[loop.index0] }}{% else %}{{ label }}{% endif %}</dt><dd>Unassessed</dd></div>{% endfor %}</dl></section>
+<section class="rk-form-box rk-repertoire rk-front-pressure"><h2>Under Pressure</h2>{% match profile.character_sheet %}{% when Some with (c) %}{% let repertoire = c.under_pressure.as_slice() %}{% let visible = 3 %}{% include "rinkcraft_repertoire.html" %}{% when None %}<p class="rk-repertoire-empty">Repertoire not yet catalogued.</p><small>A missing entry does not imply missing ability.</small>{% endmatch %}</section>
+<section class="rk-form-box rk-repertoire rk-front-skills"><h2>Task Skills</h2>{% match profile.character_sheet %}{% when Some with (c) %}{% let repertoire = c.task_skills.as_slice() %}{% let visible = 5 %}{% include "rinkcraft_repertoire.html" %}{% when None %}<p class="rk-repertoire-empty">Repertoire not yet catalogued.</p><small>A missing entry does not imply missing ability.</small>{% endmatch %}</section>
 <section class="rk-form-box rk-front-reading"><h2>Read &amp; React</h2><dl class="rk-task-list"><div class="rk-field"><dt>Anticipation</dt><dd>Unassessed</dd></div></dl></section>
 </div></div>
 <section class="rk-form-box rk-front-role-coverage"><h2>Role Coverage</h2><dl class="rk-task-list"><div class="rk-field"><dt>Position</dt><dd>{{ front_position }}</dd></div><div class="rk-field"><dt>Special Teams</dt><dd>Undocumented</dd></div></dl></section>
