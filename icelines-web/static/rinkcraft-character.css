@@ -337,3 +337,5 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 }
 
 .rk-finishing-support{border-top:1px solid #a8bcc8;padding-top:10px}.rk-finishing-scroll{max-width:100%;overflow:auto}.rk-finishing-scroll table{border-collapse:collapse;min-width:480px;width:100%;font-size:12px;font-variant-numeric:tabular-nums}.rk-finishing-scroll th,.rk-finishing-scroll td{padding:6px;text-align:right;border-bottom:1px solid #cad7e3}.rk-finishing-scroll th:first-child,.rk-finishing-scroll td:first-child{text-align:left}
+
+.rh-changes{padding:10px 0;border-top:1px solid #a8bcc8}.rh-changes h5{font-size:14px;margin:14px 0 6px}.rh-changes p{font-size:12px;line-height:1.5}.rh-changes td{font-variant-numeric:tabular-nums}.rh-changes td details{min-width:150px;max-width:240px}

@@ -154,3 +154,14 @@ test('finishing ledger displays shared support including zero and withholds unav
   const empty=classed(renderFinishing({...f,status:'baseline_only',support:{...f.support,rows:[],history_weight:0,adjusted_history_xg:0}}),'rk-finishing-support')[0];
   assert.match(empty.textContent,/0\.0%/);assert.match(empty.textContent,/No earlier player rows/);
 });
+
+test('snapshot differences preserve zero, signed percentage points and unavailable states', async () => {
+ const {renderSeasonChanges}=await import('../dist/src/rinkcraft-history.js');
+ const row={key:'test',label:'Test',unit:'Pct',state:'descriptive',from_value:.1,to_value:0,difference:-.1,percentile_point_difference:20,note:'Descriptive only'};
+ const render=r=>renderSeasonChanges([{from_season:20242025,to_season:20252026,from_games:20,to_games:30,from_minutes:100,to_minutes:200,rows:[r]}]);
+ const view=render(row);assert.match(view.textContent,/20 → 30 GP.*100\.0 → 200\.0 minutes/);
+ assert.match(view.textContent,/10\.00% 0\.00% -10\.00 pp \+20\.0 percentile points/);
+ assert.match(view.textContent,/do not establish ability changes/);assert.equal(view.attributes.open,undefined);
+ const missing=render({...row,state:'unavailable',from_value:null,to_value:null,difference:null,percentile_point_difference:null});
+ assert.match(missing.textContent,/— — — Unavailable/);assert.doesNotMatch(missing.textContent,/0\.00%/);
+});

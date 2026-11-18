@@ -883,6 +883,7 @@ struct EvidenceView {
     credit: String,
 }
 struct HistoryView {
+    changes: Vec<HistoryChangeView>,
     assessment: Option<AssessmentView>,
     sources: Vec<icelines_core::view_model::rinkcraft_numbers::Source>,
     scope: String,
@@ -891,6 +892,8 @@ struct HistoryView {
     coverage: Vec<String>,
     limits: Vec<String>,
 }
+struct HistoryChangeView { scope: String, exposure: String, rows: Vec<HistoryChangeRowView> }
+struct HistoryChangeRowView { key: String, label: String, earlier: String, later: String, difference: String, peer: String, state: String, note: String }
 struct HistoryRowView {
     key: String,
     label: String,
@@ -1004,7 +1007,26 @@ fn assessment_view(
     })
 }
 fn history_view(h: &icelines_core::view_model::rinkcraft_history::HistoryCard) -> HistoryView {
+    let change_value = |unit: &str, value: Option<f64>, signed: bool| -> String {
+        value.map(|v| {
+            let n = if unit == "Pct" {v * 100.} else {v};
+            let n = if n.abs() < 0.005 {0.} else {n};
+            let prefix = if signed && n > 0. {"+"} else {""};
+            let suffix = match unit {"Pct" if signed => " pp", "Pct" => "%", "Per60" => " /60", _ => ""};
+            format!("{prefix}{n:.2}{suffix}")
+        }).unwrap_or_else(|| "—".into())
+    };
     HistoryView {
+        changes: h.changes.iter().map(|c| HistoryChangeView {
+            scope: format!("{} → {}",season_label(c.from_season),season_label(c.to_season)),
+            exposure: format!("Exposure: {} → {} GP · {} → {} minutes. Adjacent supplied snapshots; no missing-year interpolation.",
+                c.from_games.map(|g|g.to_string()).unwrap_or_else(||"—".into()),c.to_games.map(|g|g.to_string()).unwrap_or_else(||"—".into()),
+                c.from_minutes.map(|m|format!("{m:.1}")).unwrap_or_else(||"—".into()),c.to_minutes.map(|m|format!("{m:.1}")).unwrap_or_else(||"—".into())),
+            rows: c.rows.iter().map(|r|HistoryChangeRowView {
+                key:r.key.clone(),label:r.label.clone(),earlier:change_value(&r.unit,r.from_value,false),later:change_value(&r.unit,r.to_value,false),difference:change_value(&r.unit,r.difference,true),
+                peer:r.percentile_point_difference.map(|v|{let v=if v.abs()<0.05{0.}else{v};format!("{}{v:.1} percentile points",if v>0.{"+"}else{""})}).unwrap_or_else(||"Unavailable".into()),state:r.state.clone(),note:r.note.clone(),
+            }).collect(),
+        }).collect(),
         assessment: assessment_view(h),
         sources: h.seasons.iter().flat_map(|s| s.sources.clone()).collect(),
         scope: format!(

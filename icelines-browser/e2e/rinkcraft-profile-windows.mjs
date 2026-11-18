@@ -38,6 +38,19 @@ try{
    await expect(note).toHaveCount(1);await expect(note).toHaveAttribute('data-snapshot-state',s.state);
    assert.ok(await note.evaluate(e=>e.nextElementSibling?.classList.contains('rk-front-columns')),'Selection note precedes all attribute columns');
    await expect(front.locator('.rk-front-values dd')).toHaveText(Array(6).fill('—'));
+   if(process.env.ICELINES_REQUIRE_HISTORY_CHANGES==='1'){
+    const h=p.numerical_history;assert.ok(h&&h.changes.length);assert.ok(h.seasons.every(s=>s.season<=n.season),'No later history in an earlier selected profile');
+    await page.locator('.rk-evidence').evaluate(e=>e.open=true);
+    const history=page.locator('.rh-history');await history.evaluate(e=>e.open=true);
+    const changes=history.locator('.rh-changes');await changes.locator(':scope > summary').click();
+    await expect(changes.locator('[data-change-window]')).toHaveCount(h.changes.length);
+    for(const c of h.changes){const window=changes.locator('[data-change-window="'+c.to_season+'"]');for(const r of c.rows){const row=window.locator('[data-change-key="'+r.key+'"]');await expect(row).toHaveAttribute('data-change-state',r.state);if(r.state==='unavailable'||r.state==='incompatible')assert.equal(r.difference,null);}}
+    if(mode==='20252026'){
+     await changes.screenshot({path:resolve(output,key+'-changes.png')});
+     await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await changes.screenshot({path:resolve(output,key+'-changes-mobile.png')});await page.setViewportSize({width:1280,height:1100});
+    }
+    await changes.locator(':scope > summary').click();await history.evaluate(e=>e.open=false);await page.locator('.rk-evidence').evaluate(e=>e.open=false);
+   }
    const f=n.finishing_research;
    if(n.group==='Goalies'){assert.equal(f.status,'not_applicable');assert.ok(!f.support);}
    else{
@@ -72,7 +85,7 @@ try{
   }
   const date=p.character_sheet.evidence_through;
   panels.push('<article data-player="'+key+'" data-mode="'+mode+'" hidden><p class="documentary-date">Documentary identity: evidence through '+escape(date)+'. This numerical selector does not rewind the class or method dossier.</p>'+html+'</article>');
-  results.push({key,mode,state:s.state,selected_season:s.selected_season,history_seasons:n?.finishing_research?.history_seasons??[],mean:n?.finishing_research?.mean??null,support:n?.finishing_research?.support??null});
+  results.push({key,mode,state:s.state,selected_season:s.selected_season,history_seasons:n?.finishing_research?.history_seasons??[],mean:n?.finishing_research?.mean??null,support:n?.finishing_research?.support??null,changes:p.numerical_history?.changes??[]});
  }
  assert.equal(results.length,15);assert.equal(results.filter(r=>r.state==='unavailable').length,1);assert.equal(results.filter(r=>r.state==='older_fallback').length,1);
  const options=Object.values(fixtures).filter(v=>v.mode==='latest').map(v=>'<option value="'+v.key+'">'+escape(v.profile.player_name)+'</option>').join('');
@@ -94,5 +107,7 @@ try{
  await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:resolve(output,'fallback-mobile.png'),fullPage:true});
  assert.deepEqual(errors,[]);
  const report={status:'passed',selections:results,checks:['exact missing never renders older sheet','explicit latest action reveals labeled fallback','all controls select one profile','documentary identity date independent of numerical window','prior-only one/two-season history','pooling assumption visible in dossier','six unrated capabilities','ten single-page Letter PDFs','desktop/mobile overflow','zero page errors']};
- await writeFile(resolve(output,'verification.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));
+ if(process.env.ICELINES_REQUIRE_HISTORY_CHANGES==='1')report.checks.push('Rust snapshot differences and context gates','history stops at selected numerical season','expanded difference table desktop/mobile');
+ if(process.env.ICELINES_REQUIRE_FINISHING_SUPPORT==='1')report.checks.push('posterior support ledger and algebraic identities');
+ await writeFile(resolve(output,'verification.json'),JSON.stringify(report,null,2));console.log(JSON.stringify({status:report.status,selections:results.length,checks:report.checks}));
 }finally{await browser.close();}

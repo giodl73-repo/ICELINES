@@ -20,11 +20,11 @@ try{
  for(const [key,id]of [['mcdavid',8478402],['barkov',8477493],['fox',8479323],['makar',8480069],['shesterkin',8478048]]){
   for(const mode of ['20242025','20252026','latest']){
    const selected=JSON.parse(e.numerical_snapshot(history,id,undefined,20252026,mode==='latest'?undefined:Number(mode)));
-   const year=selected.selection.selected_season??Number(mode);
+   const year=selected.selection.selected_season??selected.selection.requested_season??20252026;
    const p=JSON.parse(e.rinkcraft_profile(JSON.stringify({player_id:id,season_type:'regular',first_season:year,last_season:year})));
    p.character_sheet=JSON.parse(e.character_sheet(chars,id,20262027));
    p.numerical_evidence=selected.card;p.numerical_snapshot=selected.selection;
-   p.numerical_history=JSON.parse(e.numerical_history(history,id,undefined,20252026));
+   p.numerical_history=JSON.parse(e.numerical_history(history,id,undefined,year));
    fixtures[key+':'+mode]={key,id,mode,profile:p};
   }
  }
