@@ -42,3 +42,13 @@ Named-player input/output hashes and retained engine artifacts belong to PUCK's
 dated research packet. Research interpretation and producer-applied review belong
 to Rinkcraft. Native template compilation is checked separately; this studio
 renders the browser component, not a running native application.
+
+
+Set `ICELINES_PROFILE_WINDOW_OUTPUT` to a separate preview directory to preserve
+an earlier generated run. When the supplied engine exposes optional posterior
+support, acceptance also checks the season ledger, posterior mean/weight
+identities, and expanded ledger geometry at390px. It saves desktop/mobile ledger
+screenshots for exact2025–26 skater selections. No hockey math runs in the UI.
+
+Set `ICELINES_REQUIRE_FINISHING_SUPPORT=1` to require the support-enabled engine
+instead of treating absent support as a legacy-compatible projection.

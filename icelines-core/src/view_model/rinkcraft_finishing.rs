@@ -11,7 +11,7 @@ pub enum Position {
     D,
 }
 impl Position {
-    fn factor(self, m: &Model) -> f64 {
+    pub(super) fn factor(self, m: &Model) -> f64 {
         if self == Self::D {
             m.defense_factor
         } else {

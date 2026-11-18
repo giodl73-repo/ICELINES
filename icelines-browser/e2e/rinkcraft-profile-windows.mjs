@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 const repo=fileURLToPath(new URL('../../',import.meta.url));
 assert.ok(process.env.ICELINES_PROFILE_FIXTURES,'Supply season-aware Rust projections');
 const fixtures=JSON.parse(await readFile(process.env.ICELINES_PROFILE_FIXTURES,'utf8'));
-const output=resolve(repo,'target/compact-sheet/profile-windows');
+const output=resolve(process.env.ICELINES_PROFILE_WINDOW_OUTPUT??resolve(repo,'target/compact-sheet/profile-windows'));
 await mkdir(output,{recursive:true});
 const css=await readFile(resolve(repo,'icelines-web/static/rinkcraft-character.css'),'utf8');
 const escape=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
@@ -39,12 +39,28 @@ try{
    assert.ok(await note.evaluate(e=>e.nextElementSibling?.classList.contains('rk-front-columns')),'Selection note precedes all attribute columns');
    await expect(front.locator('.rk-front-values dd')).toHaveText(Array(6).fill('—'));
    const f=n.finishing_research;
-   if(n.group==='Goalies')assert.equal(f.status,'not_applicable');
+   if(n.group==='Goalies'){assert.equal(f.status,'not_applicable');assert.ok(!f.support);}
    else{
     assert.equal(f.status,'experimental');assert.ok(f.history_seasons.every(y=>y<n.season));
     assert.deepEqual(f.history_seasons,n.season===20242025?[20232024]:[20232024,20242025]);
     await page.locator('.rk-evidence').evaluate(e=>e.open=true);
     await expect(page.locator('.rk-finishing')).toContainText('not a tested ability change');
+    if(process.env.ICELINES_REQUIRE_FINISHING_SUPPORT==='1')assert.ok(f.support,'Require the rebuilt support-enabled engine');
+    if(f.support){
+     const support=f.support;
+     assert.deepEqual(support.rows.map(r=>r.season),f.history_seasons);
+     assert.ok(Math.abs(support.posterior_shape/support.posterior_rate-f.mean)<1e-12);
+     assert.ok(Math.abs(support.adjusted_history_xg/support.posterior_rate-support.history_weight)<1e-12);
+     const ledger=page.locator('.rk-finishing-support');await ledger.locator('summary').click();
+     await expect(ledger.locator('tbody tr')).toHaveCount(support.rows.length);
+     await expect(ledger).toContainText((support.history_weight*100).toFixed(1)+'%');
+     if(mode==='20252026'){
+      await ledger.screenshot({path:resolve(output,key+'-support.png')});
+      await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+      await ledger.screenshot({path:resolve(output,key+'-support-mobile.png')});await page.setViewportSize({width:1280,height:1100});
+     }
+     await ledger.locator('summary').click();
+    }
     await page.locator('.rk-evidence').evaluate(e=>e.open=false);
    }
    await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.setViewportSize({width:1280,height:1100});
@@ -56,7 +72,7 @@ try{
   }
   const date=p.character_sheet.evidence_through;
   panels.push('<article data-player="'+key+'" data-mode="'+mode+'" hidden><p class="documentary-date">Documentary identity: evidence through '+escape(date)+'. This numerical selector does not rewind the class or method dossier.</p>'+html+'</article>');
-  results.push({key,mode,state:s.state,selected_season:s.selected_season,history_seasons:n?.finishing_research?.history_seasons??[],mean:n?.finishing_research?.mean??null});
+  results.push({key,mode,state:s.state,selected_season:s.selected_season,history_seasons:n?.finishing_research?.history_seasons??[],mean:n?.finishing_research?.mean??null,support:n?.finishing_research?.support??null});
  }
  assert.equal(results.length,15);assert.equal(results.filter(r=>r.state==='unavailable').length,1);assert.equal(results.filter(r=>r.state==='older_fallback').length,1);
  const options=Object.values(fixtures).filter(v=>v.mode==='latest').map(v=>'<option value="'+v.key+'">'+escape(v.profile.player_name)+'</option>').join('');

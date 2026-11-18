@@ -141,3 +141,16 @@ test('experimental finishing stays in the dossier, with history scope and no cap
   const unavailable=renderCharacterCard('Test',undefined,undefined,undefined,{...numerical,finishing_research:{...finishing,status:'unavailable',note:'No exact source match.',mean:null,lower:null,upper:null}});
   const missing=classed(unavailable,'rk-finishing')[0];assert.match(missing.textContent,/No exact source match/);assert.equal(classed(missing,'rk-finishing-values').length,0);
 });
+
+test('finishing ledger displays shared support including zero and withholds unavailable ledgers', async () => {
+  const {renderFinishing}=await import('../dist/src/rinkcraft-finishing.js');
+  const f={status:'experimental',note:'Earlier only',input_sha256:'a',model_id:'',model_config_sha256:'',target_season:20252026,calibration_season:20232024,history_seasons:[20242025],history_goals:0,history_xg:1,mean:.8,lower:.2,upper:2,probability:.9,sources:[],limits:[],support:{rows:[{season:20242025,position:'D',goals:0,provider_xg:1,position_factor:1,adjusted_xg:1}],prior_shape:4,prior_rate:4,posterior_shape:4,posterior_rate:5,adjusted_history_xg:1,history_weight:.2}};
+  const ledger=classed(renderFinishing(f),'rk-finishing-support')[0];
+  assert.match(ledger.textContent,/20\.0%.*not confidence, reliability or a capability score/);
+  assert.match(ledger.textContent,/2024–25 D 0 1\.00 1\.000 1\.00/);
+  assert.match(ledger.textContent,/shape 4\.000, rate 5\.000/);
+  assert.equal(ledger.attributes.open,undefined);
+  for(const variant of [{...f,support:undefined},{...f,status:'unavailable'},{...f,status:'not_applicable'}])assert.equal(classed(renderFinishing(variant),'rk-finishing-support').length,0);
+  const empty=classed(renderFinishing({...f,status:'baseline_only',support:{...f.support,rows:[],history_weight:0,adjusted_history_xg:0}}),'rk-finishing-support')[0];
+  assert.match(empty.textContent,/0\.0%/);assert.match(empty.textContent,/No earlier player rows/);
+});

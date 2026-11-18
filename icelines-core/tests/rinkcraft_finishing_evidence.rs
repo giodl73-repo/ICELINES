@@ -88,6 +88,39 @@ fn read(h: &NumericalHistory) -> n::EvidenceCard {
         .unwrap()
 }
 #[test]
+fn support_uses_residual_prior_and_each_historical_position() {
+    let (mut h, mut input) = setup();
+    // Unequal global shape/rate catches accidental use of the global prior.
+    input.model.rate = 2.;
+    input.records[0].history[0].position = f::Position::D;
+    h.catalogs[0].profiles[0].group = "Defense".into();
+    h.finishing_research = Some(serde_json::to_value(&input).unwrap());
+    let card = read(&h);
+    let f = card.finishing_research.unwrap();
+    assert_eq!(f.status, "experimental");
+    let s = f.support.unwrap();
+    assert_eq!(s.prior_shape, 4.);
+    assert_eq!(s.prior_rate, 4.);
+    assert_eq!(s.rows[0].position_factor, 1.2);
+    assert_eq!(s.rows[0].adjusted_xg, 9.6);
+    assert_eq!(s.posterior_shape, 14.);
+    assert_eq!(s.posterior_rate, 13.6);
+    assert!((s.history_weight - 9.6 / 13.6).abs() < 1e-14);
+    assert!((f.mean.unwrap() - s.posterior_shape / s.posterior_rate).abs() < 1e-14);
+    assert!((f.mean.unwrap() - ((1. - s.history_weight) + s.history_weight * 10. / 9.6)).abs() < 1e-14);
+}
+
+#[test]
+fn absent_support_deserializes_and_unavailable_has_no_ledger() {
+    let (mut h, _) = setup();
+    let f = read(&h).finishing_research.unwrap();
+    let mut legacy = serde_json::to_value(&f).unwrap();
+    legacy.as_object_mut().unwrap().remove("support");
+    assert!(serde_json::from_value::<e::Readout>(legacy).unwrap().support.is_none());
+    h.finishing_research = Some(json!({"invalid": true}));
+    assert!(read(&h).finishing_research.unwrap().support.is_none());
+}
+#[test]
 fn exact_snapshot_is_source_bound_and_ordinary_metrics_unchanged() {
     let (mut h, _) = setup();
     let with = read(&h);

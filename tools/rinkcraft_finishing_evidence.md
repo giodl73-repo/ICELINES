@@ -67,3 +67,25 @@ target qualification and90% intervals. These are inherited research settings,
 not independently established reliability thresholds. Prior/provider/context and
 game/team uncertainty remain outside the conditional interval. No hosted build,
 model-policy replacement or numerical ability release follows from integration.
+
+
+## Inspectable posterior support
+
+Optional `support` exposes a sorted ledger of earlier-season goals/provider xG,
+historical position/factor and adjusted exposure. Shared Rust also supplies the
+position-residual prior/posterior shape and **rate**, adjusted history exposure,
+and history weight in the posterior mean. Old readouts without support still
+load. Invalid/missing research and goalie non-applicability have no support ledger.
+
+For residual prior shape/rate `a,a`, earlier goals `G` and adjusted exposure `E`:
+posterior is Gamma(`a+G`,`a+E`), mean `(a+G)/(a+E)`; history weight is `E/(a+E)`.
+For `E>0`, the mean equals `(1-weight)*1 + weight*(G/E)`. For no exposure the
+weight is zero and the baseline remains1. This is an algebraic model weight,
+not an empirical reliability/confidence measure, independent evidence fraction,
+validated talent estimate, whole Shooting score or1–20 mapping. The global
+Gamma rate is not the position-residual prior rate when they differ. Each
+historical position determines its own factor; target goals remain excluded.
+
+The collapsed ledger is in the closed dossier in both native and browser
+presentations. It does not change the compact front, original prediction or
+interval calculation. Frozen/model/context uncertainty and release gates remain.

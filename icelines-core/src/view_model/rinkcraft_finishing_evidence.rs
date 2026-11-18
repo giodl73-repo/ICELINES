@@ -33,6 +33,26 @@ pub struct ResearchInput {
     pub sources: Vec<SourceRecord>,
     pub records: Vec<Record>,
 }
+/// Auditable inputs to the position-residual posterior, not a reliability score.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SupportRow {
+    pub season: u32,
+    pub position: f::Position,
+    pub goals: u32,
+    pub provider_xg: f64,
+    pub position_factor: f64,
+    pub adjusted_xg: f64,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Support {
+    pub rows: Vec<SupportRow>,
+    pub prior_shape: f64,
+    pub prior_rate: f64,
+    pub posterior_shape: f64,
+    pub posterior_rate: f64,
+    pub adjusted_history_xg: f64,
+    pub history_weight: f64,
+}
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Readout {
     pub status: String,
@@ -52,6 +72,8 @@ pub struct Readout {
     pub probability: Option<f64>,
     pub sources: Vec<SourceRecord>,
     pub limits: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub support: Option<Support>,
 }
 fn hash(s: &str) -> bool {
     s.len() == 64 && s.bytes().all(|b| b.is_ascii_hexdigit())
@@ -86,6 +108,7 @@ pub fn project(raw: &Value, card: &EvidenceCard, catalogs: &[NumericalCatalog]) 
         upper: None,
         probability: None,
         sources: vec![],
+        support: None,
         limits: vec![
             "Experimental conditional finishing component, not a complete Shooting attribute or a 1–20 grade.".into(),
             "Position-relative baseline = 1. Equal-tailed parameter interval, not a goal-count prediction interval.".into(),
@@ -236,6 +259,20 @@ pub fn project(raw: &Value, card: &EvidenceCard, catalogs: &[NumericalCatalog]) 
         out.history_seasons.sort_unstable();
         out.history_goals = Some(record.history.iter().map(|h| h.goals as u64).sum());
         out.history_xg = Some(record.history.iter().map(|h| h.xg).sum());
+        let mut rows = record.history.iter().map(|h| SupportRow {
+            season: h.season, position: h.position, goals: h.goals,
+            provider_xg: h.xg, position_factor: h.position.factor(&input.model),
+            adjusted_xg: h.xg * h.position.factor(&input.model),
+        }).collect::<Vec<_>>();
+        rows.sort_by_key(|h| h.season);
+        let adjusted_history_xg: f64 = rows.iter().map(|h| h.adjusted_xg).sum();
+        out.support = Some(Support {
+            rows, prior_shape: input.model.shape, prior_rate: input.model.shape,
+            posterior_shape: prediction.position_residual.shape,
+            posterior_rate: prediction.position_residual.rate,
+            adjusted_history_xg,
+            history_weight: adjusted_history_xg / prediction.position_residual.rate,
+        });
         out.mean = Some(prediction.position_residual.mean);
         out.lower = Some(interval.lower);
         out.upper = Some(interval.upper);
