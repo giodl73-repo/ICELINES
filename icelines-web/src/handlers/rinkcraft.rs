@@ -848,6 +848,8 @@ pub async fn get_json(
 struct ProfileTemplate {
     front_position: String,
     documentary_catalog_available: bool,
+    brief_gaps: Vec<String>,
+    brief_history_matches: bool,
     comparison_choices: Vec<NumberChoice>,
     history: Option<HistoryView>,
     numerical: Option<EvidenceView>,
@@ -1665,6 +1667,13 @@ pub async fn get_html(
             .unwrap_or_else(|| "Unknown".into()),
         documentary_catalog_available: comparison_character_catalog().0.is_some(),
         comparison_choices,
+        brief_gaps: view.character_sheet.as_ref().map(|c| {
+            let mut gaps=Vec::new();
+            for f in &c.features { for gap in &f.unmeasured_stats { if !gaps.contains(gap) {gaps.push(gap.clone());} } }
+            gaps
+        }).unwrap_or_default(),
+        brief_history_matches: view.numerical_evidence.as_ref().zip(view.numerical_history.as_ref()).is_some_and(|(n,h)|
+            h.player_id==n.player_id && h.seasons.last().is_some_and(|s|s.season==n.season) && h.assessment.as_ref().is_some_and(|a|a.last_season==n.season)),
         history: view.numerical_history.as_ref().map(history_view),
         numerical: view.numerical_evidence.as_ref().map(evidence_view),
         stat_line: stat_line(&view, p.season),

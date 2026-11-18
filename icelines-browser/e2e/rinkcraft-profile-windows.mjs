@@ -51,6 +51,21 @@ try{
     }
     await changes.locator(':scope > summary').click();await history.evaluate(e=>e.open=false);await page.locator('.rk-evidence').evaluate(e=>e.open=false);
    }
+   if(process.env.ICELINES_REQUIRE_EVIDENCE_BRIEF==='1'){
+    await page.locator('.rk-evidence').evaluate(e=>e.open=true);
+    const brief=page.locator('.rk-brief');await expect(brief).toHaveCount(1);await expect(brief).toBeVisible();
+    await expect(front.locator('.rk-brief')).toHaveCount(0);
+    await expect(brief.locator('[data-brief-key]')).toHaveCount(n.leading.length);
+    await expect(brief.locator('[data-brief-history]')).toHaveAttribute('data-brief-history','matched');
+    for(const key of n.leading){const m=n.metrics.find(m=>m.key===key);await expect(brief.locator('[data-brief-key="'+key+'"]')).toContainText(m.label);}
+    for(const gap of new Set(p.character_sheet.features.flatMap(f=>f.unmeasured_stats??[])))await expect(brief).toContainText(gap);
+    if(n.finishing_research)await expect(brief.locator('[data-brief-finishing]')).toHaveAttribute('data-brief-finishing',n.finishing_research.status);
+    if(mode==='20252026'||key==='barkov'&&mode==='latest'){
+     await brief.screenshot({path:resolve(output,key+'-brief.png')});
+     await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await brief.screenshot({path:resolve(output,key+'-brief-mobile.png')});await page.setViewportSize({width:1280,height:1100});
+    }
+    await page.locator('.rk-evidence').evaluate(e=>e.open=false);
+   }
    const f=n.finishing_research;
    if(n.group==='Goalies'){assert.equal(f.status,'not_applicable');assert.ok(!f.support);}
    else{
@@ -79,7 +94,9 @@ try{
    await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.setViewportSize({width:1280,height:1100});
    html=await page.locator('.rk-profile').evaluate(e=>e.outerHTML);
    if(mode!=='latest'||s.state==='older_fallback'){
+    if(process.env.ICELINES_REQUIRE_EVIDENCE_BRIEF==='1')await page.locator('.rk-evidence').evaluate(e=>e.open=true);
     const pdf=await page.pdf({path:resolve(output,key+'-'+mode+'.pdf'),preferCSSPageSize:true});
+    if(process.env.ICELINES_REQUIRE_EVIDENCE_BRIEF==='1')await page.locator('.rk-evidence').evaluate(e=>e.open=false);
     assert.equal(pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)?.length,1,selection+' single Letter page');
    }
   }
@@ -107,6 +124,7 @@ try{
  await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:resolve(output,'fallback-mobile.png'),fullPage:true});
  assert.deepEqual(errors,[]);
  const report={status:'passed',selections:results,checks:['exact missing never renders older sheet','explicit latest action reveals labeled fallback','all controls select one profile','documentary identity date independent of numerical window','prior-only one/two-season history','pooling assumption visible in dossier','six unrated capabilities','ten single-page Letter PDFs','desktop/mobile overflow','zero page errors']};
+ if(process.env.ICELINES_REQUIRE_EVIDENCE_BRIEF==='1')report.checks.push('brief preserves supplied Rust selection and source-catalogue gaps','brief matched to player and selected season','brief desktop/mobile with unchanged compact front');
  if(process.env.ICELINES_REQUIRE_HISTORY_CHANGES==='1')report.checks.push('Rust snapshot differences and context gates','history stops at selected numerical season','expanded difference table desktop/mobile');
  if(process.env.ICELINES_REQUIRE_FINISHING_SUPPORT==='1')report.checks.push('posterior support ledger and algebraic identities');
  await writeFile(resolve(output,'verification.json'),JSON.stringify(report,null,2));console.log(JSON.stringify({status:report.status,selections:results.length,checks:report.checks}));

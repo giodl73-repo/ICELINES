@@ -165,3 +165,17 @@ test('snapshot differences preserve zero, signed percentage points and unavailab
  const missing=render({...row,state:'unavailable',from_value:null,to_value:null,difference:null,percentile_point_difference:null});
  assert.match(missing.textContent,/— — — Unavailable/);assert.doesNotMatch(missing.textContent,/0\.00%/);
 });
+
+test('evidence brief preserves Rust-selected order, zero, catalogue gaps and exact history matching', async () => {
+ const {renderEvidenceBrief}=await import('../dist/src/rinkcraft-brief.js');
+ const n={player_id:1,season:20242025,group:'Defense',situation:'5on5',games:20,minutes:400,leading:['b','a'],metrics:[{key:'a',label:'A',unit:'Per60',value:1,percentile:99,measured_peers:20},{key:'b',label:'B',unit:'Per60',value:0,percentile:0,measured_peers:20}]};
+ const h={player_id:1,seasons:[{season:20242025}],assessment:{first_season:20232024,last_season:20242025,reported_seasons:2,supplied_seasons:2,repeated:[],repeated_reason:'No qualifying repeated signal.'}};
+ const dossier={...sheet,features:[{...sheet.features[0],unmeasured_stats:['Passing attempts','Passing attempts','Release timing']}]};
+ const b=renderEvidenceBrief(n,h,dossier);assert.deepEqual(all(b).filter(e=>e.dataset.briefKey).map(e=>e.dataset.briefKey),['b','a']);
+ assert.match(b.textContent,/0\.00 \/60 · P0\.0/);assert.equal(b.textContent.match(/Passing attempts/g).length,1);
+ assert.equal(all(b).find(e=>e.dataset.briefHistory).dataset.briefHistory,'matched');
+ for(const history of [undefined,{...h,player_id:2},{...h,seasons:[{season:20252026}]},{...h,assessment:{...h.assessment,last_season:20252026}}]){
+  const view=renderEvidenceBrief(n,history,dossier);assert.match(view.textContent,/No history summary matched/);assert.doesNotMatch(view.textContent,/No qualifying repeated signal/);
+ }
+ const absent=renderEvidenceBrief({...n,leading:[]});assert.match(absent.textContent,/No selected measured signals/);assert.match(absent.textContent,/No task-specific gap list/);
+});
