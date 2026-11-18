@@ -1,0 +1,71 @@
+{
+  "schema": "rinkcraft.theme-specimens.v1",
+  "kind": "fictional_design_sample",
+  "notice": "Entirely fictional design specimens. All ratings, records, duties and relationships are illustrative, not NHL assessments or calibrated game values.",
+  "players": [
+    {
+      "key": "design-defense", "name": "Rowan Vale", "position": "Defense",
+      "class": "Conductor", "specialty": "Blue-line architect", "secondary": "Warden",
+      "purpose": "Moves the defense, then moves the puck.",
+      "development": "Puck-moving defender", "experience": "7 seasons · 486 GP",
+      "attributes": [16, 17, 19, 14, 18, 16],
+      "pressure": ["17 / 20", "16 / 20", "15 / 20"],
+      "skills": ["16 / 20", "18 / 20", "15 / 20", "17 / 20", "11 / 20"],
+      "reading": "18 / 20", "responses": ["16 / 20", "18 / 20", "23.1 mph"],
+      "games": 78, "minutes": 1846,
+      "methods": [
+        ["Look-off", "Shows the wall; finds the middle."],
+        ["Lateral walk", "Changes the shooting and passing lane."],
+        ["Quick outlet", "Feeds the center before pressure arrives."]
+      ],
+      "record": [
+        ["Primary assists", "0.74 /60", "Illustrative · P94"],
+        ["Shot volume", "5.20 /60", "Illustrative · P81"],
+        ["Shot assists", "12.4 /60", "Illustrative · P93"],
+        ["Controlled exits", "8.6 /60", "Illustrative · P89"],
+        ["Expected-goal share", "56.8%", "Illustrative · P88"],
+        ["Entry denials", "42%", "Illustrative · P76"]
+      ],
+      "tendencies": ["East–west creator", "Controlled exits", "Delay & distribute"],
+      "assignment": "D1 · PP1 point. Activate when the weak side covers.",
+      "links": "Partner holds the middle; center offers the low outlet.",
+      "limitations": "Less effective shooting through heavy traffic.",
+      "distinctive": "Changes the angle before the defense resets.",
+      "questions": ["Does the first forechecker take away the middle?", "Who covers the weak-side pinch?"],
+      "deployment": ["D1 / PP1", "Right point / low retrieval"],
+      "coverage": "5v5 · PP1 · PK2"
+    },
+    {
+      "key": "design-goalie", "name": "Mika North", "position": "Goalie",
+      "class": "Warden", "specialty": "Patient angle keeper", "secondary": "Connector",
+      "purpose": "Stays available for the next threat.",
+      "development": "Technical hybrid", "experience": "6 seasons · 294 GP",
+      "attributes": [18, 18, 16, 17, 18, 14],
+      "pressure": ["18 / 20", "17 / 20", "16 / 20"],
+      "skills": ["18 / 20", "18 / 20", "17 / 20", "16 / 20", "14 / 20"],
+      "reading": "18 / 20", "responses": ["18 / 20", "17 / 20", "16 / 20"],
+      "games": 54, "minutes": 3120,
+      "methods": [
+        ["Hold the edge", "Delays commitment on lateral attacks."],
+        ["Quiet reset", "Finds the next threat after first contact."],
+        ["Short exchange", "Leaves a clean puck for the retrieval."]
+      ],
+      "record": [
+        ["Save percentage", ".918", "Illustrative · P91"],
+        ["Goals saved / xG", "+18.4", "Illustrative · P90"],
+        ["Shots faced", "29.8 /60", "Illustrative record"],
+        ["High-danger saves", ".842", "Illustrative · P86"],
+        ["Rebounds retained", "72%", "Illustrative · P83"],
+        ["Playable exchanges", "87%", "Illustrative · P74"]
+      ],
+      "tendencies": ["Patient depth", "Compact movement", "Short outlets"],
+      "assignment": "Starter. Set depth to the puck; delay before lateral commitment.",
+      "links": "Near defender retrieves the leave; far defender provides the reverse.",
+      "limitations": "Long outlets under pressure are less reliable.",
+      "distinctive": "Recovers into the next play with minimal extra movement.",
+      "questions": ["Is the receiver visible before the exchange?", "Can the defense clear the second shot?"],
+      "deployment": ["Starter / PK", "Crease / retrieval exchange"],
+      "coverage": "5v5 · PK · puck exchange"
+    }
+  ]
+}

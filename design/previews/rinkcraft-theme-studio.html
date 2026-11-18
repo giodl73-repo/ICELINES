@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en" data-rinkcraft-theme="ice">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rinkcraft · Theme studio</title>
+<link rel="stylesheet" href="./rinkcraft-character.css"><link rel="stylesheet" href="./rinkcraft-themes.css"><link rel="stylesheet" href="./theme-studio.css"></head>
+<body><main data-theme-studio>
+<header class="studio-header"><a class="studio-brand" href="./">RINKCRAFT <span>THEME STUDIO</span></a><div class="studio-actions"><button id="copy-link" type="button">Keep this look ↗</button><button id="print-profile" type="button">Print sheet</button><span id="link-status" role="status"></span></div></header>
+<div class="studio-workspace"><aside class="studio-controls" aria-label="Theme controls">
+<p class="studio-eyebrow">ONE PROFILE. SIX DIRECTIONS.</p><h1>Find your<br>rinkcraft.</h1><p class="studio-intro">Different type, shapes, textures and layouts. Same player underneath.</p>
+<label class="sample-label" for="sample">Put some data on it</label><select id="sample" aria-describedby="data-notice"></select>
+<div class="theme-dial"><div class="dial-heading"><span id="theme-number">01 / 06</span><span>DRAG TO EXPLORE</span></div><input id="theme-dial" aria-label="Theme dial" type="range" min="0" max="5" step="1" value="0"><div class="dial-buttons"><button id="previous-theme" type="button" aria-label="Previous theme">←</button><strong id="theme-name" aria-live="polite">Ice Sheet</strong><button id="next-theme" type="button" aria-label="Next theme">→</button></div></div>
+<div id="theme-choices" class="theme-choices" aria-label="Theme choices"></div><p id="theme-description" class="theme-description"></p><p class="keyboard-hint">Use ← → or [ ] to dial through.<br>“Keep this look” copies your selection.</p>
+</aside><section class="studio-stage" aria-label="Player profile preview"><div id="data-notice" class="data-notice" role="status">Loading local examples…</div><div id="profile-stage"></div></section></div>
+<footer class="studio-footer">Rinkcraft / local design playground · Fictional specimens are labeled on the sheet. NHL records keep their original evidence boundaries.</footer>
+</main><script type="module" src="./src/rinkcraft-theme-studio.js"></script></body></html>
