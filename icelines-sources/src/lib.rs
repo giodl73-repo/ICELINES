@@ -35,3 +35,6 @@ pub use adapter::{
     AdapterVersion, AdditiveFieldPolicy, ContentHash, HistoricalAvailability, SourceAdapter,
     SourceDescriptor, SourceId, SourceInput, ValidationError,
 };
+
+/// Bounded raw JSON/CSV field receipts, without task-semantic inference.
+pub mod raw_inventory;
