@@ -10,6 +10,7 @@ const themes=['ice','ledger','bureau','tactics','broadcast','editorial'],samples
 const results=[];
 try{
  await page.goto(base);await expect(page.locator('[data-theme-studio]')).toHaveAttribute('data-ready','true');
+ const response=await page.request.get(new URL('fixtures.json',base).href);assert.ok(response.ok());const fixtures=await response.json();
  await expect(page.locator('.theme-choice')).toHaveCount(6);await expect(page.locator('#sample option')).toHaveCount(8);
  for(const sample of samples){
   await page.locator('#sample').selectOption(sample);
@@ -23,7 +24,16 @@ try{
    await expect(front.locator('.rk-front-pressure [data-repertoire-name]')).toHaveCount(4);
    await expect(front.locator('.rk-front-skills [data-repertoire-name]')).toHaveCount(8);
    assert.ok(!(await front.locator('.rk-front-pressure,.rk-front-skills').allTextContents()).join(' ').includes('/ 20'));
-  }else await expect(front.locator('.rk-repertoire-empty')).toHaveCount(2);
+  }else{
+   const sheet=fixtures[sample].character_sheet;let empty=0;
+   for(const [selector,field]of [['.rk-front-pressure','under_pressure'],['.rk-front-skills','task_skills']]){
+    const expected=sheet?.[field]??[];if(!expected.length)empty++;
+    assert.deepEqual(await front.locator(selector+' [data-repertoire-name]').evaluateAll(es=>es.map(e=>e.dataset.repertoireName)),expected.map(f=>f.name));
+    for(const f of expected){const item=front.locator(selector+' [data-repertoire-name]').filter({has:page.getByText(f.name,{exact:true})});await expect(item).toHaveCount(1);await expect(item.locator('dd')).toHaveCount(0);}
+   }
+   await expect(front.locator('.rk-repertoire-empty')).toHaveCount(empty);
+   if(empty<2)await expect(page.locator('#data-notice')).toContainText('dated historical accounts');
+  }
   for(const theme of themes){
    await page.locator(`.theme-choice[data-theme="${theme}"]`).click();
    await expect(page.locator('html')).toHaveAttribute('data-rinkcraft-theme',theme);
