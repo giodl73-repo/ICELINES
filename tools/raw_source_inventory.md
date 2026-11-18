@@ -41,3 +41,24 @@ Named retained source audits, hashes and generated reports belong to PUCK.
 Authored task/source requirements belong to Rinkcraft. Only neutral parsing,
 validation and fixtures live here. No real observation importer, automatic
 possession/duty/class/capability inference, source refresh or simulator change.
+
+## Explicit CSV category census
+
+`raw_inventory::csv_categories(raw, group_column)` adds literal per-category row
+and field-presence counts. Offline usage:
+
+```text
+csv_category_inventory INPUT_CSV GROUP_COLUMN OUTPUT_JSON
+```
+
+Build with `cargo build -p icelines-sources --example csv_category_inventory --locked`.
+The column name must match exactly; documentation aliases are never guessed.
+Empty category labels remain categories; zero, whitespace and `null` strings
+remain nonempty. Groups are sorted deterministically. The existing CSV validation
+and 32MiB limit apply, with at most 512 categories and 100,000 category/column
+slots. Exceeding a bound fails rather than returning a truncated receipt.
+
+Provider categories are not normalized into hockey outcomes. Nonempty targets
+do not establish identity, intent, control, completeness, position or goalie
+presence. This census is not an observation importer, completion-rate estimator
+or permission to transfer a non-NHL sample to NHL capability scores.

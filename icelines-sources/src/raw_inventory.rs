@@ -153,3 +153,62 @@ pub fn inventory(format: &str, raw: &str) -> Result<Inventory, String> {
     }
     Ok(out)
 }
+
+#[derive(Debug, Serialize)]
+pub struct CategoryGroup {
+    pub value: String,
+    pub rows: usize,
+    pub columns: Vec<Column>,
+}
+#[derive(Debug, Serialize)]
+pub struct CategoryInventory {
+    pub schema: String,
+    pub input_sha256: String,
+    pub bytes: usize,
+    pub group_column: String,
+    pub total_rows: usize,
+    pub groups: Vec<CategoryGroup>,
+    pub limit: String,
+}
+/// Explicit-column literal census, not provider-label normalization or a task importer.
+pub fn csv_categories(raw: &str, group_column: &str) -> Result<CategoryInventory, String> {
+    let base = inventory("csv", raw)?;
+    let Some(index) = base.csv_columns.iter().position(|c| c.name == group_column) else {
+        return Err("Grouping column absent; no alias inference".into());
+    };
+    let mut groups = BTreeMap::<String, CategoryGroup>::new();
+    let mut reader = csv::Reader::from_reader(raw.as_bytes());
+    for record in reader.records() {
+        let record = record.map_err(|e| e.to_string())?;
+        let value = record[index].to_string();
+        if !groups.contains_key(&value)
+            && (groups.len() >= 512 || (groups.len() + 1) * base.csv_columns.len() > 100_000)
+        {
+            return Err("CSV category/column budget exceeded; no partial receipt".into());
+        }
+        let g = groups
+            .entry(value.clone())
+            .or_insert_with(|| CategoryGroup {
+                value,
+                rows: 0,
+                columns: base
+                    .csv_columns
+                    .iter()
+                    .map(|c| Column {
+                        name: c.name.clone(),
+                        empty: 0,
+                        nonempty: 0,
+                    })
+                    .collect(),
+            });
+        g.rows += 1;
+        for (i, v) in record.iter().enumerate() {
+            if v.is_empty() {
+                g.columns[i].empty += 1;
+            } else {
+                g.columns[i].nonempty += 1;
+            }
+        }
+    }
+    Ok(CategoryInventory{schema:"icelines.csv-category-inventory.v1".into(),input_sha256:base.input_sha256,bytes:base.bytes,group_column:group_column.into(),total_rows:base.csv_rows.expect("CSV row count"),groups:groups.into_values().collect(),limit:"Literal group/field-presence counts only. Empty labels remain distinct; nonempty is not verified identity or observability. Provider success/incomplete labels are not Rinkcraft execution/choice/receiver outcomes. No completion-rate, completeness, goalie/league/role, capability or population-transfer inference.".into()})
+}

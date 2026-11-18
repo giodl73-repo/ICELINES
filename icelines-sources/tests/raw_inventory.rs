@@ -61,3 +61,40 @@ fn missing_event_tags_and_empty_arrays_are_explicit() {
     assert_eq!(r.rows, 0);
     assert!(r.type_counts.is_empty());
 }
+
+#[test]
+fn explicit_csv_groups_preserve_empty_category_and_zero_presence() {
+    let r = icelines_sources::raw_inventory::csv_categories(
+        "kind,target\nA,0\nB,\n,unknown\nA,x\n",
+        "kind",
+    )
+    .unwrap();
+    assert_eq!(r.total_rows, 4);
+    assert_eq!(r.groups.len(), 3);
+    let a = r.groups.iter().find(|g| g.value == "A").unwrap();
+    assert_eq!(a.rows, 2);
+    assert_eq!(a.columns[1].nonempty, 2);
+    let b = r.groups.iter().find(|g| g.value == "B").unwrap();
+    assert_eq!(b.columns[1].empty, 1);
+    assert!(r.groups.iter().any(|g| g.value.is_empty()));
+    assert_eq!(r.groups.iter().map(|g| g.rows).sum::<usize>(), r.total_rows);
+}
+#[test]
+fn csv_grouping_never_guesses_documentation_aliases() {
+    assert!(icelines_sources::raw_inventory::csv_categories(
+        "game_date,kind\n2021-01-01,A\n",
+        "Date"
+    )
+    .is_err());
+}
+
+#[test]
+fn csv_category_budget_fails_instead_of_truncating() {
+    let mut raw = String::from("kind\n");
+    for i in 0..513 {
+        raw.push_str(&format!("category-{i}\n"));
+    }
+    let error = icelines_sources::raw_inventory::csv_categories(&raw, "kind")
+        .unwrap_err();
+    assert!(error.contains("budget exceeded"));
+}
