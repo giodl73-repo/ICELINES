@@ -10,6 +10,8 @@ const fixtures=JSON.parse(await readFile(process.env.ICELINES_PROFILE_FIXTURES,'
 const output=resolve(process.env.ICELINES_PROFILE_WINDOW_OUTPUT??resolve(repo,'target/compact-sheet/profile-windows'));
 await mkdir(output,{recursive:true});
 const css=await readFile(resolve(repo,'icelines-web/static/rinkcraft-character.css'),'utf8');
+const planUrl=process.env.ICELINES_MEASUREMENT_PLAN_URL;
+if(planUrl)assert.match(planUrl,/^\/[a-z0-9-]+\/$/);
 const escape=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 const browser=await chromium.launch({channel:'msedge',headless:true});
 const page=await browser.newPage({viewport:{width:1280,height:1100}}),errors=[],panels=[],results=[];
@@ -20,7 +22,7 @@ try{
   await route.fulfill({contentType:path==='/'?'text/html':'text/javascript',body:path==='/'?'<!doctype html><meta charset="utf-8"><style>'+css+'</style><main></main>':await readFile(resolve(repo,'icelines-browser/dist'+path))});
  });
  await page.goto('http://windows.test/');
- for(const [selection,{key,mode,profile:p}] of Object.entries(fixtures)){
+ for(const [selection,{key,id,mode,profile:p}] of Object.entries(fixtures)){
   assert.equal(selection,key+':'+mode);assert.match(key,/^[a-z]+$/);
   const n=p.numerical_evidence,s=p.numerical_snapshot;
   assert.ok(['20242025','20252026','latest'].includes(mode));
@@ -101,18 +103,20 @@ try{
    }
   }
   const date=p.character_sheet.evidence_through;
+  if(planUrl)html='<p class="rk-next-measurements"><a href="'+planUrl+'?player='+id+'">Authored next measurements · current research plan</a></p>'+html;
   panels.push('<article data-player="'+key+'" data-mode="'+mode+'" hidden><p class="documentary-date">Documentary identity: evidence through '+escape(date)+'. This numerical selector does not rewind the class or method dossier.</p>'+html+'</article>');
   results.push({key,mode,state:s.state,selected_season:s.selected_season,history_seasons:n?.finishing_research?.history_seasons??[],mean:n?.finishing_research?.mean??null,support:n?.finishing_research?.support??null,changes:p.numerical_history?.changes??[]});
  }
  assert.equal(results.length,15);assert.equal(results.filter(r=>r.state==='unavailable').length,1);assert.equal(results.filter(r=>r.state==='older_fallback').length,1);
  const options=Object.values(fixtures).filter(v=>v.mode==='latest').map(v=>'<option value="'+v.key+'">'+escape(v.profile.player_name)+'</option>').join('');
  const script=`const player=document.querySelector('#player'),mode=document.querySelector('#mode');function show(){for(const panel of document.querySelectorAll('article[data-player]'))panel.hidden=panel.dataset.player!==player.value||panel.dataset.mode!==mode.value;}player.addEventListener('change',show);mode.addEventListener('change',show);document.querySelectorAll('[data-use-latest]').forEach(b=>b.addEventListener('click',()=>{mode.value='latest';show();}));show();`;
- const document='<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rinkcraft · Historical profile windows</title><style>'+css+' body{margin:0;background:#eef2f4;color:#18304a;font:14px system-ui}main{max-width:900px;margin:auto;padding:16px}.controls{display:flex;gap:16px;flex-wrap:wrap}label{display:grid;gap:4px}select,button{font:inherit;padding:8px}.documentary-date,.intro p{font-size:12px;line-height:1.5}.missing-window{background:white;border:2px solid #93672c;padding:20px}.window-state{font-weight:bold}article[hidden]{display:none!important}@media print{.intro,.documentary-date{display:none}main{padding:0}}</style><main><header class="intro"><h1>Rinkcraft · Historical profile windows</h1><p>Frozen supplied data through 2025–26, not a live 2026–27 profile. Skaters: 5-on-5; goalies: all strengths. Exact requests never borrow an older numerical record.</p><div class="controls"><label>Player<select id="player">'+options+'</select></label><label>Numerical window<select id="mode"><option value="20242025">2024–25 exactly</option><option value="20252026">2025–26 exactly</option><option value="latest">Latest supplied through 2025–26</option></select></label></div><p>Finishing pools earlier history under a constant multiplier. A revised estimate after adding evidence does not establish that ability changed. Capability attributes remain unrated. Expand the dossier for experimental intervals and source details.</p></header>'+panels.join('')+'<script>'+script+'</script></main></html>';
+ const document='<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rinkcraft · Historical profile windows</title><style>'+css+' body{margin:0;background:#eef2f4;color:#18304a;font:14px system-ui}main{max-width:900px;margin:auto;padding:16px}.controls{display:flex;gap:16px;flex-wrap:wrap}label{display:grid;gap:4px}select,button{font:inherit;padding:8px}.documentary-date,.intro p{font-size:12px;line-height:1.5}.missing-window{background:white;border:2px solid #93672c;padding:20px}.window-state{font-weight:bold}article[hidden]{display:none!important}@media print{.intro,.documentary-date,.rk-next-measurements{display:none}main{padding:0}}</style><main><header class="intro"><h1>Rinkcraft · Historical profile windows</h1><p>Frozen supplied data through 2025–26, not a live 2026–27 profile. Skaters: 5-on-5; goalies: all strengths. Exact requests never borrow an older numerical record.</p><div class="controls"><label>Player<select id="player">'+options+'</select></label><label>Numerical window<select id="mode"><option value="20242025">2024–25 exactly</option><option value="20252026">2025–26 exactly</option><option value="latest">Latest supplied through 2025–26</option></select></label></div><p>Finishing pools earlier history under a constant multiplier. A revised estimate after adding evidence does not establish that ability changed. Capability attributes remain unrated. Expand the dossier for experimental intervals and source details.</p></header>'+panels.join('')+'<script>'+script+'</script></main></html>';
  await writeFile(resolve(output,'index.html'),document);
  await page.unrouteAll();await page.route('http://windows.test/**',r=>r.fulfill({contentType:'text/html',body:document}));await page.goto('http://windows.test/');
  for(const row of results){
   await page.locator('#player').selectOption(row.key);await page.locator('#mode').selectOption(row.mode);
   const active=page.locator('article[data-player]:not([hidden])');await expect(active).toHaveCount(1);
+  if(planUrl)await expect(active.locator('.rk-next-measurements a')).toHaveAttribute('href',planUrl+'?player='+fixtures[row.key+':'+row.mode].id);
   if(row.state==='unavailable')await expect(active.locator('.rk-front')).toHaveCount(0);
   else await expect(active.locator('.rk-front-snapshot')).toHaveAttribute('data-snapshot-state',row.state);
  }

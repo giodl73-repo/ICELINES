@@ -88,6 +88,7 @@ pub mod rinkcraft_context;
 pub mod rinkcraft_contrast;
 pub mod rinkcraft_history;
 pub mod rinkcraft_history_changes;
+pub mod rinkcraft_measurement_plan;
 pub mod rinkcraft_numbers;
 pub mod rinkcraft_profile;
 pub mod rinkcraft_style;
