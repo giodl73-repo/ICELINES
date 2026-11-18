@@ -53,3 +53,36 @@ belong here. No live-app asset loader or native/WASM runtime integration is clai
 Current acceptance uses retained named-player plans plus frozen Rust profile
 projections. No new observations, goal-animation detector, rating, model change,
 hosted build, workflow trigger or simulation parameter is part of this increment.
+
+
+## Unfilled observation worksheet drafts
+
+`worksheet(registry,queue,priorities,player_id)` first runs the same bound-plan
+validation, then preserves all declared required-record fields and full parent
+observation/evidence policies. It requires definition version, essential record
+identifiers and consistent parent outcome/accounting rules. Unknown players and
+missing contracts fail without fallback. Native offline export:
+
+```text
+rinkcraft_observation_draft REGISTRY_JSON QUEUE_JSON PRIORITIES_JSON PLAYER_ID OUTPUT_JSON
+```
+
+Each selected task has a **template**, not an observation. Only player/task/
+attribute/component/definition identifiers are prefilled. All other record
+fields and all proposed protocol fields are JSON null. `observations` is an
+empty fixed-length array in the output type. This API does not accept, import,
+validate or score completed observations. Editing a downloaded draft does not
+make it valid evidence. Sampling/task envelopes, source rights, coding rules,
+review and reliability still need a separate registered protocol.
+
+The companion accepts `ICELINES_MEASUREMENT_WORKSHEETS` pointing to a directory
+of native-exported `PLAYER_ID.json` files. Set
+`ICELINES_MEASUREMENT_PROFILE_URL` to its linked profile preview path. Downloads
+are exposed only for matching player/source bindings and an empty observation
+list; mismatched or populated drafts show no link. The renderer is read-only,
+with no capture, upload, import, reconciliation or scoring workflow. The harness
+checks all source fields/task contracts, download paths, null results, stale/
+wrong-player/nonblank rejection, and desktop/mobile layout.
+
+These are research drafts, not approved sampling protocols. No real player
+observations, inferred failures, success rates, grades or simulation changes.

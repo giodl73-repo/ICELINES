@@ -78,3 +78,74 @@ fn rejects_duplicate_players_and_unknown_input_fields() {
     bad["tasks"][0]["ability_score"] = json!(18);
     assert!(run(&r, &bad, &p).is_err());
 }
+
+fn draft_inputs() -> (String, Value, Value) {
+    let (r, mut q, mut p) = inputs();
+    let mut r: Value = serde_json::from_str(&r).unwrap();
+    r["version"] = "0.1.0-draft".into();
+    r["observation_policy"] = json!({"failure_states":q["tasks"][0]["primary_outcomes"].clone(),"denominator_accounting":"Eligible includes censored; no invented failures."});
+    r["evidence_policy"] = json!({"required_record":["player_id","attribute_id","component_id","definition_version","task_id","opportunity_id","result","visibility","source_lineage_id"]});
+    let r = r.to_string();
+    q["parent_registry_sha256"] = hash(&r).into();
+    p["research_queue_sha256"] = hash(&q.to_string()).into();
+    (r, q, p)
+}
+#[test]
+fn worksheet_is_blank_and_preserves_all_required_fields_and_policies() {
+    let (r, q, p) = draft_inputs();
+    let d = icelines_core::view_model::rinkcraft_measurement_plan::worksheet(
+        &r,
+        &q.to_string(),
+        &p.to_string(),
+        1,
+    )
+    .unwrap();
+    assert!(d.observations.is_empty());
+    assert!(d.protocol_to_define.values().all(Value::is_null));
+    let t = &d.tasks[0].record_template;
+    assert_eq!(t.len(), d.required_record_fields.len());
+    assert_eq!(t["player_id"], json!(1));
+    assert_eq!(t["task_id"], json!("test-task"));
+    for key in [
+        "opportunity_id",
+        "result",
+        "visibility",
+        "source_lineage_id",
+    ] {
+        assert!(t[key].is_null());
+    }
+    assert_eq!(
+        d.observation_policy,
+        serde_json::from_str::<Value>(&r).unwrap()["observation_policy"]
+    );
+    assert_eq!(d.definition_version, "0.1.0-draft");
+}
+#[test]
+fn worksheet_never_substitutes_player_or_missing_parent_contract() {
+    let (r, q, p) = draft_inputs();
+    assert!(
+        icelines_core::view_model::rinkcraft_measurement_plan::worksheet(
+            &r,
+            &q.to_string(),
+            &p.to_string(),
+            2
+        )
+        .is_err()
+    );
+    let mut r: Value = serde_json::from_str(&r).unwrap();
+    r["evidence_policy"]["required_record"] = json!(["player_id"]);
+    let r = r.to_string();
+    let mut q = q;
+    q["parent_registry_sha256"] = hash(&r).into();
+    let mut p = p;
+    p["research_queue_sha256"] = hash(&q.to_string()).into();
+    assert!(
+        icelines_core::view_model::rinkcraft_measurement_plan::worksheet(
+            &r,
+            &q.to_string(),
+            &p.to_string(),
+            1
+        )
+        .is_err()
+    );
+}
