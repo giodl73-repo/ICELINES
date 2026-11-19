@@ -11,6 +11,7 @@ for(const [source,target]of [
  ['design/previews/rinkcraft-theme-studio.html','index.html'],['design/previews/theme-studio.css','theme-studio.css'],
  ['icelines-web/static/rinkcraft-character.css','rinkcraft-character.css'],['icelines-web/static/rinkcraft-themes.css','rinkcraft-themes.css'],
  ['design/fixtures/rinkcraft-theme-specimens.json','specimens.json'],
+ ['icelines-core/src/view_model/rinkcraft_capability_rules.json','capability-rules.json'],
 ])await writeFile(resolve(out,target),await readFile(resolve(root,source)));
 await writeFile(resolve(out,'fixtures.json'),raw);
 await cp(resolve(root,'icelines-browser/dist/src'),resolve(out,'src'),{recursive:true});

@@ -18,6 +18,7 @@ if (result.status !== 0) process.exit(result.status ?? 1);
 await mkdir(new URL('./dist/', import.meta.url), { recursive: true });
 for (const name of ['index.html', 'style.css']) await cp(new URL(name, import.meta.url), new URL('dist/' + name, import.meta.url));
 await cp(new URL('../icelines-web/static/rinkcraft-character.css',import.meta.url),new URL('dist/rinkcraft-character.css',import.meta.url));
+await cp(new URL('../icelines-core/src/view_model/rinkcraft_capability_rules.json',import.meta.url),new URL('dist/capability-rules.json',import.meta.url));
 await cp(new URL('../icelines-web/static/rinkcraft-game.js',import.meta.url),new URL('dist/rinkcraft-game.js',import.meta.url));
 await cp(new URL('../icelines-web/static/rinkcraft-possession.js',import.meta.url),new URL('dist/rinkcraft-possession.js',import.meta.url));
 await cp(new URL('../icelines-web/static/rinkcraft-unit-studio.js',import.meta.url),new URL('dist/rinkcraft-unit-studio.js',import.meta.url));

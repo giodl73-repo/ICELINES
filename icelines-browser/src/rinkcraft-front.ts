@@ -7,6 +7,7 @@ import type {NumericalEvidence, SnapshotSelection} from './rinkcraft-numbers.js'
 import {numericalValue} from './rinkcraft-numbers.js';
 import {renderStatFeats} from './rinkcraft-achievements.js';
 import {renderObservations} from './rinkcraft-observations.js';
+import {openCapability} from './rinkcraft-capability.js';
 import type {AchievementProfile} from './rinkcraft-achievements.js';
 import {renderRepertoire} from './rinkcraft-repertoire.js';
 import {renderDeploymentUsage} from './rinkcraft-deployment.js';
@@ -103,6 +104,7 @@ export function renderCharacterFront(
   const labels=goalie?['Tracking','Positioning','Movement','Rebounds','Recovery','Puck Play']:['Skating','Handling','Passing','Shooting','Reading','Defending'];
   for(const [index,label] of labels.entries()){
     const score=field(label,'—');score.dataset.capabilityIndex=String(index);score.dataset.ratingState='unassessed';
+    const rule=node('button',label);rule.type='button';rule.className='rk-capability-trigger';rule.setAttribute('aria-label',`How ${label} is scored`);rule.onclick=()=>{void openCapability(label,goalie,name);};score.children[0].textContent='';score.children[0].append(rule);
     score.append(node('small','Unrated'));scores.append(score);
   }
   attributes.append(scores);

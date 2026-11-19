@@ -14,6 +14,7 @@ await writeFile(resolve(out,'catalog.json'),raw);
 for(const [from,to] of [
  ['icelines-browser/rinkcraft-preview.html','index.html'],['icelines-browser/rinkcraft-preview.css','rinkcraft-preview.css'],
  ['icelines-web/static/rinkcraft-character.css','rinkcraft-character.css'],['icelines-web/static/rinkcraft-themes.css','rinkcraft-themes.css'],
+ ['icelines-core/src/view_model/rinkcraft_capability_rules.json','capability-rules.json'],
 ])await writeFile(resolve(out,to),await readFile(resolve(from)));
 await cp(resolve('icelines-browser/dist/src'),resolve(out,'src'),{recursive:true});
 await writeFile(resolve(out,'build.json'),JSON.stringify({schema:'rinkcraft.preview-build.v1',catalog_sha256:createHash('sha256').update(raw).digest('hex'),windows:catalog.windows.map(w=>({season:w.season,players:w.players.length,captured_through:w.captured_through})),models:'Shared Rust feat and workload builders; all-strength records. No 1–20 capability estimates or inferred classes.'},null,2));

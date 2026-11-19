@@ -1,0 +1,398 @@
+{
+  "schema": "rinkcraft.capability-rules.v1",
+  "status": "unvalidated_candidate",
+  "source_registry_version": "0.1.0-draft",
+  "source_registry_sha256": "53dee7e65caa2efaa67c1268c4d63d33c246aeca0e563e08153a5b47dd3a7805",
+  "reference_scope": "5-on-5 with both goalies present. Special teams, extra-attacker and empty-net evidence are distinct strata; physical test results require demonstrated transfer before informing this game-performance headline.",
+  "quantile_knots": [
+    0,
+    0.05,
+    0.25,
+    0.5,
+    0.7,
+    0.9,
+    0.97,
+    0.995,
+    1
+  ],
+  "score_knots": [
+    1,
+    4,
+    8,
+    10,
+    12,
+    16,
+    18,
+    20,
+    20
+  ],
+  "release_gates": [
+    "all_required_components_measured",
+    "target_scope_and_opportunities_complete",
+    "source_lineages_and_vintages_verified",
+    "measurement_reliability_passed",
+    "context_and_position_support_passed",
+    "frozen_reference_calibrated",
+    "joint_uncertainty_calibrated",
+    "heldout_task_validation_passed",
+    "composite_construct_validation_passed",
+    "weight_sensitivity_passed",
+    "independent_methods_review_recorded"
+  ],
+  "attributes": [
+    {
+      "id": "CAP-SKATING",
+      "name": "Skating",
+      "branch": "skater",
+      "construct": "Repeatable ability to generate, change and redirect on-ice movement while preserving task-relevant balance and control on a standardized movement battery.",
+      "current_coverage": "One saved historical EDGE profile supplies maximum/burst context. Population acceleration, agility and transition evidence are absent.",
+      "components": [
+        {
+          "id": "SKA-SPEED",
+          "name": "Speed",
+          "weight": 0.25,
+          "measure": "Context-adjusted robust upper-quantile speed and repeated-burst distribution; keep a single maximum descriptive."
+        },
+        {
+          "id": "SKA-ACCEL",
+          "name": "Acceleration",
+          "weight": 0.25,
+          "measure": "Time over first 6 m in a registered stationary-start test, or separately calibrated game speed-band time. Do not pool unbridged protocols."
+        },
+        {
+          "id": "SKA-AGILITY",
+          "name": "Agility",
+          "weight": 0.25,
+          "measure": "Geometry-adjusted turn/braking completion and exit-speed loss, jointly retaining path compliance."
+        },
+        {
+          "id": "SKA-TRANS",
+          "name": "Transitions",
+          "weight": 0.25,
+          "measure": "Transition latency and speed retained conditional on correct exit orientation."
+        }
+      ]
+    },
+    {
+      "id": "CAP-HANDLING",
+      "name": "Handling",
+      "branch": "skater",
+      "construct": "Repeatable execution of receiving, controlling, protecting and escaping with the puck while preserving an intentional next action under specified pressure.",
+      "current_coverage": "Annual losses/takeaways lack touches, playable-arrival and pressure-challenge denominators. No direct complete Handling estimate.",
+      "components": [
+        {
+          "id": "HAN-RECEPTION",
+          "name": "Reception",
+          "weight": 0.25,
+          "measure": "Controlled receptions per resolved playable arrivals; retain unplayable/ambiguous arrivals separately."
+        },
+        {
+          "id": "HAN-CONTROL",
+          "name": "Control",
+          "weight": 0.25,
+          "measure": "Controlled completions and puck-separation errors per resolved control task."
+        },
+        {
+          "id": "HAN-PROTECT",
+          "name": "Protection",
+          "weight": 0.25,
+          "measure": "Control-preserving outcomes per protection challenge, stratified wall/open ice/contact."
+        },
+        {
+          "id": "HAN-ESCAPE",
+          "name": "Pressure execution",
+          "weight": 0.25,
+          "measure": "Controlled escapes per resolved evasion task; code choice quality separately."
+        }
+      ]
+    },
+    {
+      "id": "CAP-PASSING",
+      "name": "Passing",
+      "branch": "skater",
+      "construct": "Repeatable delivery of a selected puck exchange to a usable target with required range, execution synchronization and supported disguise.",
+      "current_coverage": "Assists/shot links lack complete pass attempts, arrival difficulty and option sets. No direct complete Passing estimate.",
+      "components": [
+        {
+          "id": "PAS-DELIVERY",
+          "name": "Delivery",
+          "weight": 0.25,
+          "measure": "Playable deliveries per resolved attempts; link actual controlled completion separately."
+        },
+        {
+          "id": "PAS-RANGE",
+          "name": "Range",
+          "weight": 0.25,
+          "measure": "Standardized target success across short/medium/long, side, bank and loft strata; register actual distance boundaries with rink geometry before fit."
+        },
+        {
+          "id": "PAS-TIMING",
+          "name": "Timing",
+          "weight": 0.25,
+          "measure": "Window-aligned deliveries and arrival timing margin per synchronization task; separate decision latency."
+        },
+        {
+          "id": "PAS-DISGUISE",
+          "name": "Deception",
+          "weight": 0.25,
+          "measure": "Conditional usable-delivery contrast under matched contexts; record response and execution separately, without sole causal credit from one play."
+        }
+      ]
+    },
+    {
+      "id": "CAP-SHOOTING",
+      "name": "Shooting",
+      "branch": "skater",
+      "construct": "Repeatable execution of a selected shot or attacking redirection: functional placement, timely release, usable velocity and conditional finishing.",
+      "current_coverage": "Existing finishing experiment covers one facet with wide/vintage/position limits. One old speed maximum cannot supply accuracy, release or repeated velocity.",
+      "components": [
+        {
+          "id": "SHO-FINISH",
+          "name": "Finishing",
+          "weight": 0.25,
+          "measure": "Conditional conversion effect with shrinkage; baseline cannot circularly embed the same shooter-skill parameter. Aggregate Gamma-Poisson is a restricted approximation."
+        },
+        {
+          "id": "SHO-ACCURACY",
+          "name": "Accuracy",
+          "weight": 0.25,
+          "measure": "Placement error and target-hit probability conditioned on chosen target/interference; distinguish intentional wide exchanges and tips."
+        },
+        {
+          "id": "SHO-RELEASE",
+          "name": "Release",
+          "weight": 0.25,
+          "measure": "Quality-preserving release latency and window-completion probability, separate from decision latency."
+        },
+        {
+          "id": "SHO-VELOCITY",
+          "name": "Velocity",
+          "weight": 0.25,
+          "measure": "Repeated shot-type-adjusted speed distribution; retain a maximum only as descriptive context."
+        }
+      ]
+    },
+    {
+      "id": "CAP-READING",
+      "name": "Reading",
+      "branch": "skater",
+      "construct": "Observable effectiveness of information use, anticipation and decision timing among feasible hockey options. This assesses perception-action behavior, not hidden thoughts or general intelligence.",
+      "current_coverage": "Annual summaries lack cue visibility, feasible alternatives and decision timestamps. Interviews/scan descriptions are contextual evidence, not direct grades.",
+      "components": [
+        {
+          "id": "REA-RECOGNITION",
+          "name": "Recognition",
+          "weight": 0.3333333333333333,
+          "measure": "Pre-outcome option-quality judgments and conditional decision regret; scans remain supporting behavior only."
+        },
+        {
+          "id": "REA-ANTICIPATION",
+          "name": "Anticipation",
+          "weight": 0.3333333333333333,
+          "measure": "Cue-conditioned preparation quality and correct/false commitment tradeoff; separate timing from raw movement speed."
+        },
+        {
+          "id": "REA-TIMING",
+          "name": "Decision timing",
+          "weight": 0.3333333333333333,
+          "measure": "Context-adjusted commitment-window alignment with early-action costs; raw reaction milliseconds are insufficient."
+        }
+      ]
+    },
+    {
+      "id": "CAP-DEFENDING",
+      "name": "Defending",
+      "branch": "skater",
+      "construct": "Repeatable legal containment, coverage, denial and recovery execution against named threats, conditioned on support, geometry and any documented assignment.",
+      "current_coverage": "Hits, takeaways, blocks and on-ice threat lack complete individual threat/duty denominators. No complete individual Defending estimate.",
+      "components": [
+        {
+          "id": "DEF-GAP",
+          "name": "Gap control",
+          "weight": 0.25,
+          "measure": "Matched containment/bypass probability and gap evolution; smallest distance is not automatically best."
+        },
+        {
+          "id": "DEF-COVER",
+          "name": "Coverage",
+          "weight": 0.25,
+          "measure": "Contested coverage outcomes per resolved tested threat/duty interval; count untested occupancy separately."
+        },
+        {
+          "id": "DEF-DENIAL",
+          "name": "Denial",
+          "weight": 0.25,
+          "measure": "Denial probability per attributable intervention, adjusted for difficulty and registered penalty costs."
+        },
+        {
+          "id": "DEF-RECOVERY",
+          "name": "Recovery execution",
+          "weight": 0.25,
+          "measure": "Restoration probability and time margin per resolved recovery task; mere touches are not control."
+        }
+      ]
+    },
+    {
+      "id": "CAP-G-TRACKING",
+      "name": "Tracking",
+      "branch": "goalie",
+      "construct": "Observable acquisition and continuous updating of puck information through release, flight and visual interruption; internal gaze and awareness remain unknown without valid measurement.",
+      "current_coverage": "Annual save/GSAx summaries lack acquisition, visibility and gaze evidence. No complete Tracking grade.",
+      "components": [
+        {
+          "id": "GTR-ACQUIRE",
+          "name": "Acquisition",
+          "weight": 0.3333333333333333,
+          "measure": "Acquisition latency and cue-conditioned response quality."
+        },
+        {
+          "id": "GTR-CONTINUE",
+          "name": "Continuity",
+          "weight": 0.3333333333333333,
+          "measure": "Trajectory-update error and loss rate per observable segment."
+        },
+        {
+          "id": "GTR-REACQUIRE",
+          "name": "Reacquisition",
+          "weight": 0.3333333333333333,
+          "measure": "Reacquisition latency and successful response-window alignment."
+        }
+      ]
+    },
+    {
+      "id": "CAP-G-POSITIONING",
+      "name": "Positioning",
+      "branch": "goalie",
+      "construct": "Maintain task-appropriate angle, alignment, depth and post relation given the puck, possible pass threats, available movement and team support.",
+      "current_coverage": "Summary stats do not provide goalie/puck/net geometry or threat envelopes. No complete Positioning grade.",
+      "components": [
+        {
+          "id": "GPO-ALIGN",
+          "name": "Alignment",
+          "weight": 0.3333333333333333,
+          "measure": "Angle/alignment error relative to a preregistered threat-conditioned target envelope."
+        },
+        {
+          "id": "GPO-DEPTH",
+          "name": "Depth",
+          "weight": 0.3333333333333333,
+          "measure": "Depth-envelope compliance and subsequent task margin."
+        },
+        {
+          "id": "GPO-POST",
+          "name": "Post integration",
+          "weight": 0.3333333333333333,
+          "measure": "Post-relation task success with seal and exit costs."
+        }
+      ]
+    },
+    {
+      "id": "CAP-G-MOVEMENT",
+      "name": "Movement",
+      "branch": "goalie",
+      "construct": "Execute controlled lateral, vertical and orientation transitions while preserving task-appropriate balance and response readiness.",
+      "current_coverage": "Public aggregate records lack task starts, paths and readiness endpoints. No complete Movement grade.",
+      "components": [
+        {
+          "id": "GMO-LATERAL",
+          "name": "Lateral execution",
+          "weight": 0.3333333333333333,
+          "measure": "Travel time and endpoint error conditional on distance/initial stance."
+        },
+        {
+          "id": "GMO-SET",
+          "name": "Set readiness",
+          "weight": 0.3333333333333333,
+          "measure": "Time-to-ready and available response envelope."
+        },
+        {
+          "id": "GMO-TRANS",
+          "name": "Orientation changes",
+          "weight": 0.3333333333333333,
+          "measure": "Transition time, end-state control and task completion."
+        }
+      ]
+    },
+    {
+      "id": "CAP-G-REBOUNDS",
+      "name": "Rebounds",
+      "branch": "goalie",
+      "construct": "Control the first-contact disposition of a save attempt through absorption, directed deflection and usable subsequent containment, conditional on incoming difficulty and feasible technique.",
+      "current_coverage": "Aggregate rebound counts and GSAx do not resolve feasibility, direction or support. No complete Rebounds grade.",
+      "components": [
+        {
+          "id": "GRE-ABSORB",
+          "name": "Absorption",
+          "weight": 0.3333333333333333,
+          "measure": "Secure/deaden probability per eligible contact."
+        },
+        {
+          "id": "GRE-STEER",
+          "name": "Steering",
+          "weight": 0.3333333333333333,
+          "measure": "Threat-conditioned outgoing direction/energy error."
+        },
+        {
+          "id": "GRE-CONTAIN",
+          "name": "Containment",
+          "weight": 0.3333333333333333,
+          "measure": "Containment probability and outgoing access advantage."
+        }
+      ]
+    },
+    {
+      "id": "CAP-G-RECOVERY",
+      "name": "Recovery",
+      "branch": "goalie",
+      "construct": "Restore information, useful position and response readiness after a save, collision or scramble, given the actual feasible next threat.",
+      "current_coverage": "Season summaries cannot reconstruct post-save starting states and deadlines. No complete Recovery grade.",
+      "components": [
+        {
+          "id": "GRC-ORIENT",
+          "name": "Reorientation",
+          "weight": 0.3333333333333333,
+          "measure": "Reorientation time and correct/false orientation tradeoff."
+        },
+        {
+          "id": "GRC-REPOSITION",
+          "name": "Repositioning",
+          "weight": 0.3333333333333333,
+          "measure": "Restoration success and time margin conditional on initial disadvantage."
+        },
+        {
+          "id": "GRC-READY",
+          "name": "Follow-up readiness",
+          "weight": 0.3333333333333333,
+          "measure": "Readiness and response-option preservation per recovery sequence."
+        }
+      ]
+    },
+    {
+      "id": "CAP-G-PUCK",
+      "name": "Puck Play",
+      "branch": "goalie",
+      "construct": "Execute retrieval, control and delivery while making supported possession choices and coordinating exchanges under goalie-specific rules and risk.",
+      "current_coverage": "Public season summaries do not contain complete retrieval, options and exchange denominators. No complete Puck Play grade.",
+      "components": [
+        {
+          "id": "GPU-CONTROL",
+          "name": "Retrieval and control",
+          "weight": 0.3333333333333333,
+          "measure": "Task completion and control margin under pressure."
+        },
+        {
+          "id": "GPU-DELIVERY",
+          "name": "Delivery",
+          "weight": 0.3333333333333333,
+          "measure": "Target-conditioned delivery success with pressure/risk."
+        },
+        {
+          "id": "GPU-CHOICE",
+          "name": "Possession decisions",
+          "weight": 0.3333333333333333,
+          "measure": "Outcome-blinded decision quality and coordinated-exchange success."
+        }
+      ]
+    }
+  ]
+}

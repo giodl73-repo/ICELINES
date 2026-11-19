@@ -2357,3 +2357,4 @@ pub mod rinkcraft_achievements;
 pub mod rinkcraft_record_milestones;
 
 pub mod rinkcraft_whistle;
+pub mod rinkcraft_capability_index;
