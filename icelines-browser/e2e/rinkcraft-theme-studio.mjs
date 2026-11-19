@@ -32,7 +32,7 @@ try{
     for(const f of expected){const item=front.locator(selector+' [data-repertoire-name]').filter({has:page.getByText(f.name,{exact:true})});await expect(item).toHaveCount(1);await expect(item.locator('dd')).toHaveCount(0);}
    }
    await expect(front.locator('.rk-repertoire-empty')).toHaveCount(empty);
-   if(fixtures[sample].achievements)await expect(page.locator('#data-notice')).toContainText('Experimental stat feats');else if(empty<2)await expect(page.locator('#data-notice')).toContainText('dated historical accounts');
+   if(fixtures[sample].profile_window)await expect(page.locator('#data-notice')).toContainText('governs the whole profile');else if(fixtures[sample].achievements)await expect(page.locator('#data-notice')).toContainText('Experimental stat feats');else if(empty<2)await expect(page.locator('#data-notice')).toContainText('dated historical accounts');
   }
   for(const theme of themes){
    await page.locator(`.theme-choice[data-theme="${theme}"]`).click();

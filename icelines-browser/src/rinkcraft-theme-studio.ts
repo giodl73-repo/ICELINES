@@ -95,13 +95,14 @@ export async function mountThemeStudio(root:HTMLElement):Promise<void>{
   if(specimen){stage.replaceChildren(specimenCard(specimen));notice.textContent=specimens.notice;notice.dataset.kind='fictional';}
   else {
    const p=profiles[sample.value];if(!p)throw Error('Unknown local example.');
-   stage.replaceChildren(renderCharacterCard(p.player_name,p.character_sheet,p.attribute_seasons?.at(-1),p.latest_available??undefined,p.numerical_evidence,p.numerical_history,p.numerical_snapshot,p.numerical_comparison_choices,p.documentary_catalog_available,p.evidence_guide,p.deployment_evidence,p.request,p.achievements));
+   stage.replaceChildren(renderCharacterCard(p.player_name,p.character_sheet,p.attribute_seasons?.at(-1),p.latest_available??undefined,p.numerical_evidence,p.numerical_history,p.numerical_snapshot,p.numerical_comparison_choices,p.documentary_catalog_available,p.evidence_guide,p.deployment_evidence,p.request,p.achievements,p.profile_window,p.experimental_patterns));
    const repertoire=(p.character_sheet?.under_pressure?.length??0)+(p.character_sheet?.task_skills?.length??0);
    notice.textContent=p.achievements
     ?`NHL record: 2024–25. Experimental stat feats use all-strength season records; Measured Record uses ${p.numerical_evidence?.group==='Goalies'?'all strengths':'5v5'}. Scouted accounts retain their dates. Capability ratings remain unrated.`
     :repertoire
     ?'NHL record: 2024–25. Repertoire entries are provisional interpretations of dated historical accounts and examples, not current-season measurements. Capability scores remain unrated.'
     :'Historical NHL evidence · 2024–25. Measured records and documentary methods are populated; unvalidated 1–20 capability scores remain unrated.';notice.dataset.kind='nhl';
+   if(p.profile_window)notice.textContent=`${p.profile_window.label} governs the whole profile. Career and current need additional coverage. Experimental patterns use this season’s eligible peers; earlier seasons stay in disclosures. Capabilities remain unrated.`;
   }
   remember();
  }
