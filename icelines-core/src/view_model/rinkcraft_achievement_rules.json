@@ -1,0 +1,424 @@
+[
+  {
+    "id": "scoring-hitter",
+    "name": "Scoring hitter",
+    "branch": "skater",
+    "metrics": [
+      "hits",
+      "points"
+    ],
+    "placements": [
+      "distinctive_features"
+    ],
+    "note": "All listed conditions must pass. Correlated production/activity stats do not provide independent evidence or establish causation."
+  },
+  {
+    "id": "shot-shield",
+    "name": "Shot shield",
+    "branch": "skater",
+    "metrics": [
+      "hits",
+      "blocks"
+    ],
+    "placements": [
+      "task_skills"
+    ],
+    "note": "All listed conditions must pass. Correlated production/activity stats do not provide independent evidence or establish causation."
+  },
+  {
+    "id": "triple-threat",
+    "name": "Triple threat",
+    "branch": "skater",
+    "metrics": [
+      "hits",
+      "blocks",
+      "points"
+    ],
+    "placements": [
+      "distinctive_features"
+    ],
+    "note": "All listed conditions must pass. Correlated production/activity stats do not provide independent evidence or establish causation."
+  },
+  {
+    "id": "scoring-shield",
+    "name": "Scoring shield",
+    "branch": "skater",
+    "metrics": [
+      "points",
+      "blocks"
+    ],
+    "placements": [
+      "task_skills"
+    ],
+    "note": "All listed conditions must pass. Correlated production/activity stats do not provide independent evidence or establish causation."
+  },
+  {
+    "id": "contact-disruptor",
+    "name": "Contact disruptor",
+    "branch": "skater",
+    "metrics": [
+      "hits",
+      "takeaways"
+    ],
+    "placements": [
+      "playing_tendencies"
+    ],
+    "note": "All listed conditions must pass. Correlated production/activity stats do not provide independent evidence or establish causation."
+  },
+  {
+    "id": "disrupting-scorer",
+    "name": "Disrupting scorer",
+    "branch": "skater",
+    "metrics": [
+      "takeaways",
+      "points"
+    ],
+    "placements": [
+      "task_skills"
+    ],
+    "note": "All listed conditions must pass. Correlated production/activity stats do not provide independent evidence or establish causation."
+  },
+  {
+    "id": "shooting-scorer",
+    "name": "Shooting scorer",
+    "branch": "skater",
+    "metrics": [
+      "shots",
+      "goals"
+    ],
+    "placements": [
+      "task_skills"
+    ],
+    "note": "All listed conditions must pass. Correlated production/activity stats do not provide independent evidence or establish causation."
+  },
+  {
+    "id": "dual-creator",
+    "name": "Dual creator",
+    "branch": "skater",
+    "metrics": [
+      "shots",
+      "assists"
+    ],
+    "placements": [
+      "task_skills"
+    ],
+    "note": "All listed conditions must pass. Correlated production/activity stats do not provide independent evidence or establish causation."
+  },
+  {
+    "id": "triple-offense",
+    "name": "Triple offense",
+    "branch": "skater",
+    "metrics": [
+      "shots",
+      "goals",
+      "assists"
+    ],
+    "placements": [
+      "distinctive_features"
+    ],
+    "note": "All listed conditions must pass. Correlated production/activity stats do not provide independent evidence or establish causation."
+  },
+  {
+    "id": "busy-starter",
+    "name": "Busy starter",
+    "branch": "goalie",
+    "metrics": [
+      "starts",
+      "shots-faced"
+    ],
+    "placements": [
+      "role_coverage"
+    ],
+    "note": "All listed conditions must pass. Correlated production/activity stats do not provide independent evidence or establish causation."
+  },
+  {
+    "id": "shutout-starter",
+    "name": "Shutout starter",
+    "branch": "goalie",
+    "metrics": [
+      "starts",
+      "shutouts"
+    ],
+    "placements": [
+      "distinctive_features"
+    ],
+    "note": "All listed conditions must pass. Correlated production/activity stats do not provide independent evidence or establish causation."
+  },
+  {
+    "id": "high-save-workload",
+    "name": "High-save workload",
+    "branch": "goalie",
+    "metrics": [
+      "shots-faced",
+      "save-fraction"
+    ],
+    "placements": [
+      "task_skills"
+    ],
+    "note": "All listed conditions must pass. Correlated production/activity stats do not provide independent evidence or establish causation."
+  },
+  {
+    "id": "volume-producer",
+    "name": "Volume producer",
+    "branch": "skater",
+    "metrics": [
+      "shots",
+      "points"
+    ],
+    "placements": [
+      "playing_tendencies"
+    ],
+    "note": "All listed conditions must pass. Correlated production/activity stats do not provide independent evidence or establish causation."
+  },
+  {
+    "id": "hit-parade",
+    "name": "Hit parade",
+    "branch": "skater",
+    "metrics": [
+      "hits"
+    ],
+    "placements": [
+      "task_skills"
+    ]
+  },
+  {
+    "id": "shot-blocker",
+    "name": "Shot blocker",
+    "branch": "skater",
+    "metrics": [
+      "blocks"
+    ],
+    "placements": [
+      "task_skills"
+    ]
+  },
+  {
+    "id": "puck-thief",
+    "name": "Puck thief",
+    "branch": "skater",
+    "metrics": [
+      "takeaways"
+    ],
+    "placements": [
+      "task_skills"
+    ]
+  },
+  {
+    "id": "penalty-magnet",
+    "name": "Penalty magnet",
+    "branch": "skater",
+    "metrics": [
+      "drawn"
+    ],
+    "placements": [
+      "task_skills"
+    ],
+    "note": "Recorded penalties drawn; offsetting calls and penalty types mean this is not a count of power plays created."
+  },
+  {
+    "id": "penalty-load",
+    "name": "Penalty load",
+    "branch": "skater",
+    "metrics": [
+      "taken"
+    ],
+    "placements": [
+      "risk_flags"
+    ],
+    "note": "Context-dependent event volume. Puck involvement, ice time, scorer practices and penalty type affect these rates; this is not an ability or discipline diagnosis. PIM is not penalty count."
+  },
+  {
+    "id": "giveaway-load",
+    "name": "Giveaway load",
+    "branch": "skater",
+    "metrics": [
+      "giveaways"
+    ],
+    "placements": [
+      "risk_flags"
+    ],
+    "note": "Context-dependent event volume. Puck involvement, ice time, scorer practices and penalty type affect these rates; this is not an ability or discipline diagnosis. PIM is not penalty count."
+  },
+  {
+    "id": "costly-events",
+    "name": "Costly events",
+    "branch": "skater",
+    "metrics": [
+      "taken",
+      "giveaways"
+    ],
+    "placements": [
+      "risk_flags"
+    ],
+    "note": "Context-dependent event volume. Puck involvement, ice time, scorer practices and penalty type affect these rates; this is not an ability or discipline diagnosis. PIM is not penalty count."
+  },
+  {
+    "id": "physical-draws",
+    "name": "Contact & draws",
+    "branch": "skater",
+    "metrics": [
+      "hits",
+      "drawn"
+    ],
+    "placements": [
+      "playing_tendencies"
+    ],
+    "note": "Recorded penalties drawn; offsetting calls and penalty types mean this is not a count of power plays created."
+  },
+  {
+    "id": "eventful-contact",
+    "name": "Eventful contact",
+    "branch": "skater",
+    "metrics": [
+      "hits",
+      "taken"
+    ],
+    "placements": [
+      "playing_tendencies"
+    ],
+    "note": "Context-dependent event volume. Puck involvement, ice time, scorer practices and penalty type affect these rates; this is not an ability or discipline diagnosis. PIM is not penalty count."
+  },
+  {
+    "id": "pim-load",
+    "name": "PIM load",
+    "branch": "skater",
+    "metrics": [
+      "pim"
+    ],
+    "placements": [
+      "risk_flags"
+    ],
+    "note": "Context-dependent event volume. Puck involvement, ice time, scorer practices and penalty type affect these rates; this is not an ability or discipline diagnosis. PIM is not penalty count."
+  },
+  {
+    "id": "shot-generator",
+    "name": "Shot generator",
+    "branch": "skater",
+    "metrics": [
+      "shots"
+    ],
+    "placements": [
+      "playing_tendencies"
+    ]
+  },
+  {
+    "id": "goal-output",
+    "name": "Goal output",
+    "branch": "skater",
+    "metrics": [
+      "goals"
+    ],
+    "placements": [
+      "task_skills"
+    ]
+  },
+  {
+    "id": "assist-output",
+    "name": "Assist output",
+    "branch": "skater",
+    "metrics": [
+      "assists"
+    ],
+    "placements": [
+      "task_skills"
+    ]
+  },
+  {
+    "id": "production",
+    "name": "Point production",
+    "branch": "skater",
+    "metrics": [
+      "points"
+    ],
+    "placements": [
+      "distinctive_features"
+    ]
+  },
+  {
+    "id": "disruption-triple",
+    "name": "Disruption triple",
+    "branch": "skater",
+    "metrics": [
+      "hits",
+      "takeaways",
+      "blocks"
+    ],
+    "placements": [
+      "distinctive_features"
+    ],
+    "note": "All listed conditions must pass. Correlated production/activity stats do not provide independent evidence or establish causation."
+  },
+  {
+    "id": "pp-striker",
+    "name": "PP striker",
+    "branch": "skater",
+    "metrics": [
+      "pp-goals"
+    ],
+    "placements": [
+      "role_coverage"
+    ],
+    "note": "Season special-teams production, not efficiency per PP/PK minute, a fixed unit or a system duty."
+  },
+  {
+    "id": "pp-helper",
+    "name": "PP helper",
+    "branch": "skater",
+    "metrics": [
+      "pp-assists"
+    ],
+    "placements": [
+      "task_skills"
+    ],
+    "note": "Season special-teams production, not efficiency per PP/PK minute, a fixed unit or a system duty."
+  },
+  {
+    "id": "pp-producer",
+    "name": "PP producer",
+    "branch": "skater",
+    "metrics": [
+      "pp-points"
+    ],
+    "placements": [
+      "role_coverage"
+    ],
+    "note": "Season special-teams production, not efficiency per PP/PK minute, a fixed unit or a system duty."
+  },
+  {
+    "id": "pp-dual-threat",
+    "name": "PP dual threat",
+    "branch": "skater",
+    "metrics": [
+      "pp-goals",
+      "pp-assists"
+    ],
+    "placements": [
+      "distinctive_features"
+    ],
+    "note": "Season special-teams production, not efficiency per PP/PK minute, a fixed unit or a system duty."
+  },
+  {
+    "id": "sh-goals",
+    "name": "Shorthanded goals",
+    "branch": "skater",
+    "metrics": [
+      "sh-goals"
+    ],
+    "placements": [
+      "role_coverage"
+    ],
+    "note": "Season special-teams production, not efficiency per PP/PK minute, a fixed unit or a system duty."
+  },
+  {
+    "id": "sh-points",
+    "name": "Shorthanded points",
+    "branch": "skater",
+    "metrics": [
+      "sh-points"
+    ],
+    "placements": [
+      "role_coverage"
+    ],
+    "note": "Season special-teams production, not efficiency per PP/PK minute, a fixed unit or a system duty."
+  }
+]

@@ -846,6 +846,11 @@ pub async fn get_json(
 #[derive(Template)]
 #[template(path = "rinkcraft.html")]
 struct ProfileTemplate {
+    role_feats: Option<FeatSectionView>,
+    skills_feats: Option<FeatSectionView>,
+    tendency_feats: Option<FeatSectionView>,
+    distinctive_feats: Option<FeatSectionView>,
+    risk_feats: Option<FeatSectionView>,
     deployment: Option<icelines_core::view_model::rinkcraft_deployment::DeploymentEvidence>,
     front_position: String,
     documentary_catalog_available: bool,
@@ -884,6 +889,19 @@ struct EvidenceView {
     facets: Vec<FacetView>,
     metrics: Vec<NumberRow>,
     credit: String,
+}
+struct FeatSectionView {earned:usize,total:usize,visible:Vec<FeatRowView>,other:Vec<FeatRowView>,context:String,notes:Vec<String>,rules:String,source:String}
+struct FeatRowView {id:String,name:String,state:String,tier:String,trigger:String,conditions:Vec<String>,note:String}
+fn feat_section(view:&RinkcraftStatProfile,placement:&str,limit:usize)->Option<FeatSectionView>{
+    let a=view.achievements.as_ref()?;
+    let target=view.numerical_evidence.as_ref().map(|n|n.season).or_else(||view.latest_available.as_ref().map(|s|s.season.0));
+    let group=view.latest_available.as_ref().map(|s|match s.position{icelines_core::model::Position::Goalie=>"Goalies",icelines_core::model::Position::Defense=>"Defense",_=>"Forwards"});
+    if a.player_id!=view.request.player_id.0||Some(a.season)!=target||a.season_type!=view.request.season_type.label()||Some(a.group.as_str())!=group{return None;}
+    let mut feats:Vec<_>=a.feats.iter().filter(|f|f.placements.iter().any(|p|p==placement)).collect();
+    feats.sort_by(|a,b|{let score=|f:&icelines_core::view_model::rinkcraft_achievements::Feat|f.conditions.iter().filter_map(|c|c.percentile).fold(100.,f64::min);(b.state=="earned").cmp(&(a.state=="earned")).then_with(||b.required.cmp(&a.required)).then_with(||score(b).total_cmp(&score(a))).then_with(||a.id.cmp(&b.id))});
+    let earned=feats.iter().filter(|f|f.state=="earned").count();let total=feats.len();let mut visible=Vec::new();let mut other=Vec::new();
+    for f in feats{let row=FeatRowView{id:f.id.clone(),name:f.name.clone(),state:f.state.clone(),tier:f.tier.clone().unwrap_or_else(||if f.state=="unavailable"{"Needs data".into()}else if f.state=="ineligible"{"Needs GP".into()}else{format!("{}/{} conditions",f.matched,f.required)}),note:f.note.clone().unwrap_or_default(),trigger:f.conditions.iter().map(|c|format!("{}: {}",c.label.replace(" / GP",""),c.percentile.map(|p|format!("P{p:.0}")).unwrap_or_else(||"—".into()))).collect::<Vec<_>>().join(" · "),conditions:f.conditions.iter().map(|c|format!("{}: {} · {} · n={} · {} / {} · Reference {}",c.label,c.value.map(|v|if c.unit=="Pct"{format!("{:.2}%",v*100.)}else{format!("{v:.3}")}).unwrap_or_else(||"Unavailable".into()),c.percentile.map(|p|format!("P{p:.1}")).unwrap_or_else(||"Unranked".into()),c.peers,c.numerator.map(|v|v.to_string()).unwrap_or_else(||"unknown".into()),c.denominator.map(|v|v.to_string()).unwrap_or_else(||"unknown".into()),c.reference_sha256)).collect()};if f.state=="earned"&&visible.len()<limit{visible.push(row)}else{other.push(row)}}
+    Some(FeatSectionView{earned,total,visible,other,context:format!("{} · {} · all strengths · {} · {} GP",a.season,a.season_type,a.group,a.games),notes:a.notes.clone(),rules:a.rules_sha256.clone(),source:a.source_sha256.clone()})
 }
 struct HistoryView {
     changes: Vec<HistoryChangeView>,
@@ -1662,6 +1680,11 @@ pub async fn get_html(
         Vec::new()
     };
     let template = ProfileTemplate {
+        role_feats:feat_section(&view,"role_coverage",2),
+        skills_feats:feat_section(&view,"task_skills",3),
+        tendency_feats:feat_section(&view,"playing_tendencies",2),
+        distinctive_feats:feat_section(&view,"distinctive_features",2),
+        risk_feats:feat_section(&view,"risk_flags",2),
         deployment: view.deployment_evidence.as_ref().filter(|d|
             d.player_id==view.request.player_id && d.season_type==view.request.season_type
             && Some(d.season.0)==view.numerical_evidence.as_ref().map(|n|n.season).or_else(||view.latest_available.as_ref().map(|s|s.season.0))

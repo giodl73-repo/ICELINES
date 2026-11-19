@@ -241,6 +241,13 @@ impl BrowserEngine {
     pub fn current_season(&self) -> u32 {
         icelines_core::CURRENT_SEASON
     }
+    /// Versioned one/two/three-stat conjunctions, separate from classes and abilities.
+    pub fn achievement_catalog(&self, reports: &[u8], rules: &str) -> Result<String, JsValue> {
+        let input=icelines_sources::nhl::achievements::parse(reports).map_err(|e|JsValue::from_str(&e))?;
+        let rules:Vec<icelines_core::view_model::rinkcraft_achievements::Rule>=serde_json::from_str(rules).map_err(|e|JsValue::from_str(&e.to_string()))?;
+        let catalog=icelines_core::view_model::rinkcraft_achievements::evaluate(&input,&rules).map_err(|e|JsValue::from_str(&e))?;
+        serde_json::to_string(&catalog).map_err(|e|JsValue::from_str(&e.to_string()))
+    }
 
     /// Select an already validated window by exact revision; never fetch or save.
     pub fn select_resident(&mut self, revision: &str) -> Result<(), JsValue> {
@@ -447,6 +454,7 @@ impl BrowserEngine {
                 missing_reports:vec!["Package v1: realtime, MoneyPuck, time-on-ice, goals-for-against and goalie advanced reports are not included".into()],
             }).collect();
         profile.limitations.push("Browser profile covers resident prepared packages only (at most eight windows), not a fetched or verified complete career. Package v1 omits optional realtime, MoneyPuck, TOI and advanced reports; those metrics remain unavailable. Eviction can shorten this profile.".into());
+        if request.season_type==SeasonType::Regular {if let Some(s)=profile.latest_available.as_ref(){if let Some(w)=windows.iter().find(|w|w.package.season==s.season.0&&w.package.season_type==request.season_type){profile.achievements=icelines_core::view_model::rinkcraft_achievements::from_league(w.repository.read_league(s.season,request.season_type).collect(),s.season.0,request.player_id.0).ok().flatten();}}}
         profile.attribute_seasons = profile
             .included_seasons
             .iter()

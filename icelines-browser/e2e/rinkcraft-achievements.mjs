@@ -1,0 +1,15 @@
+import {chromium,expect} from '../node_modules/@playwright/test/index.mjs';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import assert from 'node:assert/strict';
+const out=resolve('target/compact-sheet/achievements/ui');await mkdir(out,{recursive:true});const base=process.env.ICELINES_THEME_URL??'http://127.0.0.1:8771/theme-studio/';
+const browser=await chromium.launch({channel:'msedge',headless:true}),page=await browser.newPage({viewport:{width:1440,height:1100}}),errors=[];page.on('pageerror',e=>errors.push(e.message));let placements=0;
+try{await page.goto(base);await expect(page.locator('[data-theme-studio]')).toHaveAttribute('data-ready','true');const response=await page.request.get(new URL('fixtures.json',base).href);assert.ok(response.ok());const fixtures=await response.json();
+ for(const [key,p]of Object.entries(fixtures)){
+  await page.locator('#sample').selectOption(key);await page.locator('.theme-choice[data-theme="ice"]').click();const front=page.locator('#profile-stage .rk-front');await expect(front.locator('[data-rating-state="unassessed"]')).toHaveCount(6);await expect(front.locator('.rk-front-pressure .rk-stat-feat')).toHaveCount(0);
+  for(const slot of ['task_skills','playing_tendencies','distinctive_features','risk_flags','role_coverage']){const section=front.locator(`[data-feat-placement="${slot}"]`);await expect(section).toHaveCount(1);const expected=p.achievements.feats.filter(f=>f.placements.includes(slot));assert.deepEqual((await section.locator('[data-feat-id]').evaluateAll(es=>es.map(e=>e.dataset.featId))).sort(),expected.map(f=>f.id).sort());placements++;}
+  const first=front.locator('.rk-front-skills .rk-stat-feats > .rk-stat-feat').first();await first.locator(':scope > summary').click();await expect(first).toContainText('Every condition must pass');await expect(first).toContainText('Reference');await expect(first).toContainText('Rules');await first.locator(':scope > summary').click();
+  await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:resolve(out,key+'.png'),fullPage:true});await page.pdf({path:resolve(out,key+'.pdf'),format:'Letter',printBackground:true});await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await first.locator(':scope > summary').click();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await first.locator(':scope > summary').click();await page.setViewportSize({width:1440,height:1100});
+ }
+ assert.equal(placements,25);assert.deepEqual(errors,[]);await writeFile(resolve(out,'verification.json'),JSON.stringify({status:'passed',profiles:5,placements,headline_capabilities_unrated:30,pressure_not_inferred:true,source_and_formula_disclosures:true,mobile_cases:5,print_exports:5,page_errors:errors},null,2));console.log('Five profiles / twenty-five feat placements / formulas / long lists / mobile / print passed.');
+}finally{await browser.close();}

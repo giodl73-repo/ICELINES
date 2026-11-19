@@ -2353,3 +2353,4 @@ pub mod rinkcraft_readiness_followup;
 pub mod rinkcraft_finishing;
 pub mod rinkcraft_finishing_evidence;
 pub mod rinkcraft_deployment;
+pub mod rinkcraft_achievements;

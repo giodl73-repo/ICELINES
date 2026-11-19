@@ -102,6 +102,8 @@ pub struct ProfileJobFamily {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RinkcraftStatProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub achievements: Option<super::rinkcraft_achievements::AchievementProfile>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub deployment_evidence: Option<super::rinkcraft_deployment::DeploymentEvidence>,
     /// Authored reading help; never counted as evidence about this player.
     #[serde(default)]
@@ -326,7 +328,9 @@ pub fn build_rinkcraft_stat_profile(
         })
         .filter_map(|s| repo.view(request.player_id, s.season, s.season_type))
         .collect();
-    build_rinkcraft_stat_profile_from_views(&identity.full_name, request, views)
+    let mut profile=build_rinkcraft_stat_profile_from_views(&identity.full_name, request, views)?;
+    if request.season_type==SeasonType::Regular {if let Some(s)=profile.latest_available.as_ref(){profile.achievements=super::rinkcraft_achievements::from_league(repo.read_league(s.season,request.season_type).collect(),s.season.0,request.player_id.0).ok().flatten();}}
+    Ok(profile)
 }
 
 /// Storage-independent builder for prepared native and browser windows.
@@ -418,6 +422,7 @@ pub fn build_rinkcraft_stat_profile_from_views<R: SeasonStatsRead>(
         })
         .unwrap_or_default();
     Ok(RinkcraftStatProfile {
+        achievements:None,
         deployment_evidence:views.last().and_then(|v|super::rinkcraft_deployment::from_read(&v.stats)),
         evidence_guide:super::rinkcraft_evidence_guide::topics(),
         schema:RINKCRAFT_PROFILE_SCHEMA.into(),request,player_name:player_name.into(),

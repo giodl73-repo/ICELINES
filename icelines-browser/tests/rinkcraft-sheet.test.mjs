@@ -25,6 +25,15 @@ const sheet = {
   protocol:'experimental',catalog_sha256:'a'.repeat(64),as_of_season:20252026,
 };
 
+test('stat feats populate five slots, retain the long list and gate actor/window/group',()=>{
+ const f=(id,placement,state='earned')=>({id,name:id,state,tier:state==='earned'?'Gold':null,placements:[placement],matched:state==='earned'?2:1,required:2,conditions:[{key:'hits',label:'Hits / GP',value:2,unit:'PerGame',numerator:100,denominator:50,percentile:95,peers:100,reference_sha256:'ref',qualifies:true}]});
+ const a={player_id:1,season:20242025,season_type:'regular',group:'Forwards',games:50,minimum_games:20,rules_sha256:'rules',source_sha256:'input',source_urls:[],earned:4,notes:['Experimental stat patterns, not abilities.'],feats:[f('Hitter','task_skills'),f('Locked','task_skills','not_earned'),f('Volume','playing_tendencies'),f('Triple','distinctive_features'),f('Flag','risk_flags')]};
+ const render=feat=>renderCharacterCard('Example',{...sheet,player_id:1},undefined,{season:20242025,position:'Center',games:50,metrics:[]},undefined,undefined,undefined,undefined,true,undefined,undefined,{player_id:1,season_type:'regular'},feat);
+ const card=render(a),front=classed(card,'rk-front')[0];assert.equal(classed(front,'rk-stat-feats').length,5);assert.match(classed(front,'rk-front-skills')[0].textContent,/Hitter.*Hits \/ GP.*95.0.*Locked/);assert.match(classed(front,'rk-front-limitations')[0].textContent,/Flag/);assert.equal(classed(front,'rk-front-pressure')[0].textContent.includes('Hitter'),false);
+ assert.ok(all(front).filter(n=>n.dataset.capabilityIndex!==undefined).every(n=>n.dataset.ratingState==='unassessed'));
+ for(const wrong of [{...a,player_id:2},{...a,season:20252026},{...a,season_type:'playoff'},{...a,group:'Goalies'}])assert.equal(classed(render(wrong),'rk-stat-feats').length,0);
+});
+
 test('workload requires matching actor, season, season type and position group',()=>{
   const usage={player_id:1,season:20242025,season_type:'regular',games:2,goalie:false,starts:null,
     rows:[{key:'total',label:'All strengths',per_game_display:'20:00',minutes_display:'40.0',seconds:2400,share_display:'100.0%'},{key:'pp',label:'Power play',per_game_display:'3:00',minutes_display:'6.0',seconds:360,share_display:'15.0%'},{key:'sh',label:'Shorthanded',per_game_display:'0:00',minutes_display:'0.0',seconds:0,share_display:'0.0%'}],source_label:'NHL source',source_url:'https://api.nhle.com/stats/rest/en/skater/timeonice',source_sha256:'a'.repeat(64),notes:['Even strength is not exclusively 5v5.']};

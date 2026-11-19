@@ -374,3 +374,20 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 .rk-usage-evidence summary{cursor:pointer}
 .rk-usage-evidence p{margin:4px 0}
 @media print{.rk-usage-evidence{display:none}}
+
+/* Deterministic stat-feat registry; one feat can have multiple placements. */
+.rk-stat-feats{margin-top:4px;font-size:10px;line-height:1.25;overflow-wrap:anywhere}
+.rk-stat-feats>small{display:block;font-size:8px;text-transform:uppercase;letter-spacing:.04em}
+.rk-stat-feat{border-bottom:1px solid var(--rk-line,#c6d2d8);padding:4px 0}
+.rk-stat-feat>summary{cursor:pointer;display:flex;justify-content:space-between;gap:4px}
+.rk-stat-feat>summary strong{font-size:10px}
+.rk-stat-feat>summary small{font-size:8px;font-weight:bold}
+.rk-stat-feat p{margin:4px 0}
+.rk-stat-feat>small{font-size:8px;display:block;overflow-wrap:anywhere}
+.rk-feat-library,.rk-scouted-tasks{margin-top:5px;font-size:9px}
+@media print{.rk-feat-library,.rk-scouted-tasks{display:none}.rk-stat-feat>p,.rk-stat-feat>small,.rk-stat-feat>a{display:none}}
+
+.rk-stat-feat>summary{display:grid;grid-template-columns:1fr auto}
+.rk-feat-trigger{grid-column:1 / -1;font-size:8px;line-height:1.2;font-weight:400}
+
+@media print{.rk-stat-feat{padding:2px 0}.rk-stat-feats{margin-top:2px}.rk-feat-trigger{font-size:7px}.rk-front-footer{margin-top:0!important}}

@@ -5,6 +5,8 @@ import type {AttributeSeason} from './rinkcraft-attributes.js';
 import {attributeValue} from './rinkcraft-attributes.js';
 import type {NumericalEvidence, SnapshotSelection} from './rinkcraft-numbers.js';
 import {numericalValue} from './rinkcraft-numbers.js';
+import {renderStatFeats} from './rinkcraft-achievements.js';
+import type {AchievementProfile} from './rinkcraft-achievements.js';
 import {renderRepertoire} from './rinkcraft-repertoire.js';
 import {renderDeploymentUsage} from './rinkcraft-deployment.js';
 import type {DeploymentEvidence} from './rinkcraft-deployment.js';
@@ -62,12 +64,14 @@ function namesBox(title:string,className:string,names:readonly string[],empty="U
 export function renderCharacterFront(
   name:string,sheet:CharacterSheet|undefined,assessment:AttributeSeason|undefined,
   record:SeasonRecord|undefined,numerical:NumericalEvidence|undefined,
-  snapshot:SnapshotSelection|undefined,catalogAvailable:boolean|undefined,deploymentEvidence?:DeploymentEvidence,usageRequest?:{player_id?:number;season_type:string},
+  snapshot:SnapshotSelection|undefined,catalogAvailable:boolean|undefined,deploymentEvidence?:DeploymentEvidence,usageRequest?:{player_id?:number;season_type:string},achievements?:AchievementProfile,
 ):HTMLElement {
   const position=record?.position??numerical?.group??assessment?.group??'Unknown';
   const goalie=['Goalie','Goalies','G'].includes(position);
   const targetSeason=numerical?.season??record?.season??assessment?.season;
   const usage=deploymentEvidence&&deploymentEvidence.season===targetSeason&&deploymentEvidence.goalie===goalie&&deploymentEvidence.player_id===(usageRequest?.player_id??sheet?.player_id)&&deploymentEvidence.season_type===usageRequest?.season_type?deploymentEvidence:undefined;
+  const featGroup=goalie?'Goalies':['D','Defense'].includes(position)?'Defense':'Forwards';
+  const statFeats=achievements&&achievements.player_id===(usageRequest?.player_id??sheet?.player_id)&&achievements.season===targetSeason&&achievements.season_type===usageRequest?.season_type&&achievements.group===featGroup?achievements:undefined;
   const front=node('section');front.className='rk-front';front.dataset.layout='rinkcraft-profile-v2';front.dataset.class=sheet?.primary.id??'unscouted';front.dataset.profileKind='nhl_evidence';
   front.setAttribute('aria-label',`${name} compact player sheet`);
   const header=node('header');header.className='rk-front-header';
@@ -102,14 +106,15 @@ export function renderCharacterFront(
   }
   attributes.append(scores);
   const tasks=node('div');tasks.className='rk-front-task-column';
-  tasks.append(renderRepertoire('Under Pressure','rk-front-pressure',sheet?.under_pressure,3,sheet),
-    renderRepertoire('Task Skills','rk-front-skills',sheet?.task_skills,5,sheet),
-    taskBox('Read & React','rk-front-reading',['Anticipation']));
+  tasks.append(renderRepertoire('Under Pressure','rk-front-pressure',sheet?.under_pressure,3,sheet));
+  if(statFeats){const skills=box('Task Skills','rk-front-skills');skills.append(renderStatFeats(statFeats,'task_skills',3));const scouted=node('details');scouted.className='rk-scouted-tasks';scouted.append(node('summary','Scouted specialties'),renderRepertoire('Scouted tasks','rk-scouted-task-list',sheet?.task_skills,5,sheet));skills.append(scouted);tasks.append(skills);}
+  else tasks.append(renderRepertoire('Task Skills','rk-front-skills',sheet?.task_skills,5,sheet));
+  tasks.append(taskBox('Read & React','rk-front-reading',['Anticipation']));
   split.append(attributes,tasks);left.append(split);
   const coverage=box('Role Coverage','rk-front-role-coverage');
   const positions=node('dl');positions.className='rk-task-list';
   const pp=usage?.rows.find(r=>r.key==='pp'),sh=usage?.rows.find(r=>r.key==='sh');
-  positions.append(field('Position',position),field('Special Teams',usage?(goalie?'See goalie workload':`PP ${pp?.per_game_display??'—'} / SH ${sh?.per_game_display??'—'} per GP`):'Undocumented'));coverage.append(positions);left.append(coverage);
+  positions.append(field('Position',position),field('Special Teams',usage?(goalie?'See goalie workload':`PP ${pp?.per_game_display??'—'} / SH ${sh?.per_game_display??'—'} per GP`):'Undocumented'));coverage.append(positions);if(statFeats)coverage.append(renderStatFeats(statFeats,'role_coverage',2));left.append(coverage);
 
   const center=node('div');center.className='rk-front-center';
   const responses=node('div');responses.className='rk-response-row';
@@ -177,21 +182,22 @@ export function renderCharacterFront(
   center.append(responses,counters,methods,measured,deployment);
 
   const right=node('div');right.className='rk-front-right';
-  right.append(namesBox('Playing Tendencies','rk-front-traits',sheet?.traits.map(t=>t.name)??[]));
+  const tendencies=statFeats?box('Playing Tendencies','rk-front-traits'):namesBox('Playing Tendencies','rk-front-traits',sheet?.traits.map(t=>t.name)??[]);if(statFeats){tendencies.append(renderStatFeats(statFeats,'playing_tendencies',2));if(sheet?.traits.length){const scouted=node('details');scouted.append(node('summary','Scouted tendencies'),namesBox('Accounts','rk-scouted-traits',sheet.traits.map(t=>t.name)));tendencies.append(scouted);}}right.append(tendencies);
   for(const [title,className,text] of [
     ['Assigned Role','rk-front-role','Undocumented'],['Unit Links','rk-front-links','Undocumented'],
     ['Known Limitations','rk-front-limitations','Unassessed'],
-  ]){const section=box(title,className);section.append(node('p',text));right.append(section);}
+  ]){const section=box(title,className);section.append(node('p',text));if(statFeats&&className==='rk-front-limitations'){section.append(node('small','Stat flags · contextual, not diagnosed weaknesses.'),renderStatFeats(statFeats,'risk_flags',2));}right.append(section);}
   const distinctive=box('Distinctive Features','rk-front-distinctive');
   distinctive.append(node('strong',sheet?.specialty??'Undocumented'));
   if(sheet)distinctive.append(node('p',sheet.summary));
+  if(statFeats)distinctive.append(renderStatFeats(statFeats,'distinctive_features',2));
   const questions=namesBox('Open Questions','rk-front-questions',sheet?.unknowns??[],sheet?'None recorded':'Undocumented');
   right.append(distinctive,questions);columns.append(left,center,right);front.append(columns);
 
   const sources=node('dl');sources.className='rk-front-coverage';
-  sources.append(field('Sources',sheet?String(sheet.sources.length):'Unknown'),
+  sources.append(field('Dossier Sources',sheet?String(sheet.sources.length):'Unknown'),
     field('Open Questions',sheet?String(sheet.unknowns.length):'Unknown'),
-    field('Evidence Through',sheet?.evidence_through??'Unknown'),field('Assessed',sheet?.assessed??'Unknown'));
+    field('Dossier Through',sheet?.evidence_through??'Unknown'),field('Assessed',sheet?.assessed??'Unknown'));
   front.append(sources);
   const footer=node('footer',sheet?'Provisional documentary class · capability ratings unassessed · evidence below':catalogAvailable===false?'Class dossier unavailable · statistics do not assign a class':'No supported class dossier · statistics do not assign a class');
   footer.className='rk-front-footer';front.append(footer);return front;

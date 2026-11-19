@@ -26,7 +26,7 @@ export function readCharacterCatalog():Promise<unknown|undefined>{
   catalogPromise??=(async()=>{let response:Response;try{response=await fetch(new URL('../rinkcraft-characters.json',import.meta.url));}catch{return undefined;}if(response.status===404)return undefined;if(!response.ok)throw new Error('Character dossier could not be loaded.');const text=await response.text();if(text.length>128*1024)throw new Error('Character catalog too large');return JSON.parse(text) as unknown;})();return catalogPromise;
 }
 const node=<K extends keyof HTMLElementTagNameMap>(tag:K,text?:string):HTMLElementTagNameMap[K]=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e;};
-function renderDetailedCharacterCard(name:string,sheet:CharacterSheet|undefined,assessment:AttributeSeason|undefined,record?:{games:number;position:string;metrics:{key:string;unit:string;value:number|null}[]},numerical?:NumericalEvidence,history?:HistoryCard,snapshot?:import('./rinkcraft-numbers.js').SnapshotSelection,comparisonChoices?:import('./rinkcraft-numbers.js').ComparisonChoice[],documentaryCatalogAvailable?:boolean,_guide?:EvidenceGuideTopic[],_deployment?:import('./rinkcraft-deployment.js').DeploymentEvidence,_usageRequest?:{player_id?:number;season_type:string}):HTMLElement {
+function renderDetailedCharacterCard(name:string,sheet:CharacterSheet|undefined,assessment:AttributeSeason|undefined,record?:{games:number;position:string;metrics:{key:string;unit:string;value:number|null}[]},numerical?:NumericalEvidence,history?:HistoryCard,snapshot?:import('./rinkcraft-numbers.js').SnapshotSelection,comparisonChoices?:import('./rinkcraft-numbers.js').ComparisonChoice[],documentaryCatalogAvailable?:boolean,_guide?:EvidenceGuideTopic[],_deployment?:import('./rinkcraft-deployment.js').DeploymentEvidence,_usageRequest?:{player_id?:number;season_type:string},_achievements?:import('./rinkcraft-achievements.js').AchievementProfile):HTMLElement {
   const card=node('article');card.className=`rk-sheet rk-${sheet?.primary.id??'unscouted'}`;card.setAttribute('aria-label',`${name} Rinkcraft character card`);
   const snapshotNote=():HTMLElement=>{const p=node('p',snapshot?.note);p.className='rk-snapshot-note';p.dataset.snapshotState=snapshot?.state;return p;};
   if(!sheet){card.append(node('small','Rinkcraft · Player character sheet'),node('h3',name),node('h4',documentaryCatalogAvailable===false?'Class dossier unavailable':'Unscouted'),node('p',documentaryCatalogAvailable===false?'Documentary class catalog unavailable. Numerical evidence remains available; statistics do not assign a class.':'No supported class dossier for this player and loaded period. Statistics do not automatically assign a class.'));if(snapshot)card.append(snapshotNote());if(numerical)card.append(renderNumericalPanel(numerical,comparisonChoices));if(numerical?.style_evidence)card.append(renderStyleEvidence(numerical.style_evidence));if(history)card.append(renderNumericalHistory(history));return card;}
@@ -48,9 +48,9 @@ function renderDetailedCharacterCard(name:string,sheet:CharacterSheet|undefined,
 
 // A compact Rinkcraft profile, with full evidence retained in its disclosure.
 export function renderCharacterCard(...args:Parameters<typeof renderDetailedCharacterCard>):HTMLElement {
-  const [name,sheet,assessment,record,numerical,history,snapshot,,available,guideTopics,deployment,usageRequest]=args;
+  const [name,sheet,assessment,record,numerical,history,snapshot,,available,guideTopics,deployment,usageRequest,achievements]=args;
   const profile=node('article');profile.className='rk-profile';
-  profile.append(renderCharacterFront(name,sheet,assessment,record,numerical,snapshot,available,deployment,usageRequest));
+  profile.append(renderCharacterFront(name,sheet,assessment,record,numerical,snapshot,available,deployment,usageRequest,achievements));
   const guide=renderEvidenceGuide(guideTopics,record?.position??numerical?.group??assessment?.group??'Unknown');
   if(guide)profile.append(guide);
   const evidence=node('details');evidence.className='rk-evidence';
