@@ -1,0 +1,18 @@
+{
+ "schema":"rinkcraft.record-milestones.v1",
+ "status":"authored_record_markers_not_ability_tiers",
+ "tracks":[
+  {"id":"points","name":"Points","metric":"points","branch":"skater","unit":"points","divisor":1,"priority":10,"steps":[250,500,750,1000,1500,2000]},
+  {"id":"goals","name":"Goals","metric":"goals","branch":"skater","unit":"goals","divisor":1,"priority":20,"steps":[100,250,500,750,900]},
+  {"id":"assists","name":"Assists","metric":"assists","branch":"skater","unit":"assists","divisor":1,"priority":30,"steps":[100,250,500,750,1000,1250]},
+  {"id":"games","name":"Appearances","metric":"games","branch":"all","unit":"games","divisor":1,"priority":40,"steps":[100,250,500,750,1000,1250,1500]},
+  {"id":"pp-points","name":"PP points","metric":"pp_points","branch":"skater","unit":"PP points","divisor":1,"priority":50,"steps":[100,250,500]},
+  {"id":"sh-points","name":"SH points","metric":"sh_points","branch":"skater","unit":"SH points","divisor":1,"priority":60,"steps":[10,25,50]},
+  {"id":"hits","name":"Recorded hits","metric":"hits","branch":"skater","unit":"hits","divisor":1,"priority":70,"steps":[500,1000,2000]},
+  {"id":"blocks","name":"Recorded blocks","metric":"blocks","branch":"skater","unit":"blocks","divisor":1,"priority":80,"steps":[500,1000,2000]},
+  {"id":"starts","name":"Goalie starts","metric":"starts","branch":"goalie","unit":"starts","divisor":1,"priority":30,"steps":[100,250,500,750]},
+  {"id":"wins","name":"Goalie wins","metric":"wins","branch":"goalie","unit":"wins","divisor":1,"priority":10,"steps":[50,100,200,300,500]},
+  {"id":"shutouts","name":"Shutouts","metric":"shutouts","branch":"goalie","unit":"shutouts","divisor":1,"priority":20,"steps":[10,25,50,75,100]},
+  {"id":"minutes","name":"Recorded workload","metric":"time_seconds","branch":"all","unit":"minutes","divisor":60,"priority":90,"steps":[10000,25000,50000]}
+ ]
+}

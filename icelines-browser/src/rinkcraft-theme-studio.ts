@@ -99,7 +99,7 @@ export async function mountThemeStudio(root:HTMLElement):Promise<void>{
    const original=profiles[sample.value];if(!original)throw Error('Unknown local example.');
    const p=selectedScope==='season'?original:selectedScope==='current'?original.scope_variants?.current:original.scope_variants?.career;
    if(!p)throw Error('The requested scope is not loaded for this example.');
-   stage.replaceChildren(renderCharacterCard(p.player_name,p.character_sheet,p.attribute_seasons?.at(-1),p.latest_available??undefined,p.numerical_evidence,p.numerical_history,p.numerical_snapshot,p.numerical_comparison_choices,p.documentary_catalog_available,p.evidence_guide,p.deployment_evidence,p.request,p.achievements,p.profile_window,p.experimental_patterns,kind=>{selectedScope=kind;showSample();}));
+   stage.replaceChildren(renderCharacterCard(p.player_name,p.character_sheet,p.attribute_seasons?.at(-1),p.latest_available??undefined,p.numerical_evidence,p.numerical_history,p.numerical_snapshot,p.numerical_comparison_choices,p.documentary_catalog_available,p.evidence_guide,p.deployment_evidence,p.request,p.achievements,p.profile_window,p.experimental_patterns,kind=>{selectedScope=kind;showSample();},p.record_milestones));
    const repertoire=(p.character_sheet?.under_pressure?.length??0)+(p.character_sheet?.task_skills?.length??0);
    notice.textContent=p.achievements
     ?`NHL record: 2024–25. Experimental stat feats use all-strength season records; Measured Record uses ${p.numerical_evidence?.group==='Goalies'?'all strengths':'5v5'}. Scouted accounts retain their dates. Capability ratings remain unrated.`
