@@ -2355,3 +2355,5 @@ pub mod rinkcraft_finishing_evidence;
 pub mod rinkcraft_deployment;
 pub mod rinkcraft_achievements;
 pub mod rinkcraft_record_milestones;
+
+pub mod rinkcraft_whistle;

@@ -1,6 +1,7 @@
 // Rust supplies scopes, states and ranks. Presentation never pools seasonal stats.
 export interface ProfileTimeWindow {player_id:number;kind:'season'|'current'|'career';first_season?:number;season:number;season_type:string;as_of:string|null;label:string;coverage:string;choices:{kind:string;label:string;available:boolean}[];note:string;}
-export interface ExperimentalPattern {id:string;name:string;placement:string;state:string;reference_mode:string;reference_label:string;eligible_peers:number;threshold:number;conditions:{key:string;value:number;percentile:number;direction:string}[];opportunities:Record<string,number|null>;minimums:Record<string,number>;history:{season:number;state:string;eligible_peers:number;conditions:{key:string;value:number;percentile:number}[]}[];note:string;}
+export interface WhistleRecord {schema:string;drawn:number;taken:number;net:number;sign:string;display:string;note:string;}
+export interface ExperimentalPattern {whistle_record?:WhistleRecord|null;id:string;name:string;placement:string;state:string;reference_mode:string;reference_label:string;eligible_peers:number;threshold:number;conditions:{key:string;value:number;percentile:number;direction:string}[];opportunities:Record<string,number|null>;minimums:Record<string,number>;history:{season:number;state:string;eligible_peers:number;conditions:{key:string;value:number;percentile:number}[]}[];note:string;}
 export interface ExperimentalPatterns {schema:string;player_id:number;season:number;season_type:string;group:string;status:string;patterns:ExperimentalPattern[];scope_note:string;source_urls?:string[];source_sha256?:string;screen_sha256?:string;}
 const node=<K extends keyof HTMLElementTagNameMap>(tag:K,text?:string):HTMLElementTagNameMap[K]=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e;};
 const season=(s:number)=>`${Math.floor(s/10000)}–${String(s%100).padStart(2,'0')}`;
@@ -17,10 +18,18 @@ export function renderProfileWindow(window:ProfileTimeWindow,onChange?:(kind:str
  select.onchange=()=>{if(onChange&&window.choices.some(c=>c.kind===select.value&&c.available))onChange(select.value);else select.value=window.kind;};label.append(select);root.append(label);
  const why=node('details');why.append(node('summary','Scope & coverage'),node('p',window.note),node('p','A reference population is separate from the player’s time scope. Career comparisons require an appropriate peer cohort; reconciled totals alone do not establish one.'));if(window.as_of)why.append(node('p',`Captured through ${window.as_of}. Reports may lag games; this is not a live feed.`));root.append(why);return root;
 }
+export function whistlePresentation(pattern:ExperimentalPattern):{name:string;record?:WhistleRecord;note?:string}{
+ if(pattern.id!=='penalty-balance')return {name:pattern.name};
+ const r=pattern.whistle_record;
+ const valid=!!r&&r.schema==='rinkcraft.whistle-record.v1'&&Number.isSafeInteger(r.drawn)&&Number.isSafeInteger(r.taken)&&r.drawn>=0&&r.taken>=0&&r.drawn===pattern.opportunities.penalties_drawn&&r.taken===pattern.opportunities.penalties_taken;
+ return {name:'Relative Whistle Record',record:valid?r:undefined,note:valid?r.note:'Signed record unavailable; relative qualification does not establish positive net or a power play gained.'};
+}
 function patternRow(pattern:ExperimentalPattern,scope:ProfileTimeWindow,evidence:ExperimentalPatterns):HTMLElement{
  const d=node('details');d.className='rk-stat-feat rk-experimental-pattern';d.dataset.candidateId=pattern.id;d.dataset.candidateState=pattern.state;
- const summary=node('summary');summary.append(node('strong',pattern.name),node('small',`Experimental · ${stateLabel(pattern.state)}`));
- const trigger=node('span',pattern.conditions.length?pattern.conditions.map(c=>`${labels[c.key]??c.key} P${c.percentile.toFixed(0)}`).join(' · '):'Opportunity gate not met');trigger.className='rk-feat-trigger';summary.append(trigger);d.append(summary);
+ const whistle=whistlePresentation(pattern);const summary=node('summary');summary.append(node('strong',whistle.name),node('small',`Experimental · ${stateLabel(pattern.state)}`));
+ const trigger=node('span',pattern.conditions.length?pattern.conditions.map(c=>`${labels[c.key]??c.key} P${c.percentile.toFixed(0)}`).join(' · '):'Opportunity gate not met');trigger.className='rk-feat-trigger';summary.append(trigger);
+ if(pattern.id==='penalty-balance'){const signed=node('span',whistle.record?.display??'Signed record unavailable');signed.className='rk-whistle-record';signed.dataset.whistleSign=whistle.record?.sign??'unavailable';summary.append(signed);}
+ d.append(summary);if(whistle.note)d.append(node('p',whistle.note));
  d.append(node('p',`${scope.label} · ${scope.season_type} · ${pattern.id==='pp-efficiency'?'power play':'all strengths'} · Reference: ${pattern.reference_label}, n=${pattern.eligible_peers}. Every condition must reach P${pattern.threshold}.`));
  for(const c of pattern.conditions){const value=c.key==='conversion'?`${(c.value*100).toFixed(2)}%`:c.key==='pp_seconds'?`${(c.value/60).toFixed(1)} min`:c.value.toFixed(3);d.append(node('p',`${labels[c.key]??c.key}: ${value} · P${c.percentile.toFixed(1)}`));}
  d.append(node('p',`Opportunities: ${Object.entries(pattern.opportunities).map(([key,value])=>`${key.replaceAll('_',' ')} ${value??'unavailable'}`).join(' · ')}`),node('p',pattern.note),node('p','Seasonal descriptive pattern; not an ability grade or simulation bonus. Thresholds and exposure gates are experimental.'));

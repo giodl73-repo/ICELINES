@@ -41,7 +41,11 @@ fn project(mut profiles: Value, input: &Value) -> Result<Value, String> {
     let names = [
         ("accuracy-ledger", "Shooting Conversion", "task_skills"),
         ("pp-efficiency", "PP Production Rate", "task_skills"),
-        ("penalty-balance", "Whistle Balance", "playing_tendencies"),
+        (
+            "penalty-balance",
+            icelines_core::view_model::rinkcraft_whistle::RELATIVE_NAME,
+            "playing_tendencies",
+        ),
     ];
     for profile in profiles
         .as_object_mut()
@@ -185,7 +189,20 @@ fn project(mut profiles: Value, input: &Value) -> Result<Value, String> {
                         opportunities["penalties_taken"] = row["penalties"].clone();
                     }
                 }
-                patterns.push(json!({"id":id,"name":name,"placement":placement,"state":state,"reference_mode":"same_season","reference_label":format!("{} eligible {} peers",season_label(season),group),"eligible_peers":g["eligible"],"threshold":60,"conditions":conditions,"opportunities":opportunities,"minimums":result["definition"]["minimums"],"history":bounded_history(&history,season),"note":result["definition"]["meaning"]}));
+                let whistle_record = if id == "penalty-balance" {
+                    let count = |key: &str| {
+                        opportunities[key]
+                            .as_u64()
+                            .and_then(|n| u32::try_from(n).ok())
+                    };
+                    icelines_core::view_model::rinkcraft_whistle::record(
+                        count("penalties_drawn"),
+                        count("penalties_taken"),
+                    )
+                } else {
+                    None
+                };
+                patterns.push(json!({"id":id,"name":name,"whistle_record":whistle_record,"placement":placement,"state":state,"reference_mode":"same_season","reference_label":format!("{} eligible {} peers",season_label(season),group),"eligible_peers":g["eligible"],"threshold":60,"conditions":conditions,"opportunities":opportunities,"minimums":result["definition"]["minimums"],"history":bounded_history(&history,season),"note":result["definition"]["meaning"]}));
             }
         }
         let selected_window = windows
