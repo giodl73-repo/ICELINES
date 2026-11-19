@@ -1,5 +1,5 @@
 export interface StatFeat {id:string;name:string;state:string;tier:string|null;placements:string[];note?:string|null;matched:number;required:number;conditions:{key:string;label:string;value:number|null;unit:string;numerator:number|null;denominator:number|null;percentile:number|null;peers:number;reference_sha256:string;qualifies:boolean|null}[];}
-export interface AchievementProfile {player_id:number;season:number;season_type:string;group:string;games:number;minimum_games:number;rules_sha256:string;source_sha256:string;source_urls:string[];earned:number;feats:StatFeat[];notes:string[];}
+export interface AchievementProfile {profile_observations?:import('./rinkcraft-observations.js').ProfileObservations;player_id:number;season:number;season_type:string;group:string;games:number;minimum_games:number;rules_sha256:string;source_sha256:string;source_urls:string[];earned:number;feats:StatFeat[];notes:string[];}
 const node=<K extends keyof HTMLElementTagNameMap>(tag:K,text?:string):HTMLElementTagNameMap[K]=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e;};
 export function renderStatFeats(profile:AchievementProfile,placement:string,limit=3):HTMLElement {
  const root=node('div');root.className='rk-stat-feats';root.dataset.featPlacement=placement;

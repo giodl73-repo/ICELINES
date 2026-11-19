@@ -377,6 +377,14 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 
 /* Deterministic stat-feat registry; one feat can have multiple placements. */
 .rk-stat-feats{margin-top:4px;font-size:10px;line-height:1.25;overflow-wrap:anywhere}
+.rk-profile-observations{font-size:9px;line-height:1.25;overflow-wrap:anywhere}
+.rk-profile-observations .rk-observation-counts{font-weight:700;font-size:9px;margin:3px 0}
+.rk-low-observation{border-bottom:1px solid var(--rk-line,#c6d2d8);padding:3px 0}
+.rk-low-observation>summary{display:flex;justify-content:space-between;gap:5px;cursor:pointer}
+.rk-low-observation>summary small{font-weight:700;white-space:nowrap}
+.rk-low-observation>small{display:block;font-size:8px}
+.rk-observation-gaps,.rk-observation-library{margin-top:3px}
+@media print{.rk-observation-gaps,.rk-observation-library{display:none}.rk-low-observation>p,.rk-low-observation>small{display:none}.rk-front-limitations:has(.rk-profile-observations)>small{display:none}.rk-front-limitations:has(.rk-profile-observations)>p{font-size:7px;margin:2px 0}.rk-profile-observations .rk-observation-counts{font-size:8px;margin:1px 0}.rk-low-observation{padding:1px 0}}
 .rk-stat-feats>small{display:block;font-size:8px;text-transform:uppercase;letter-spacing:.04em}
 .rk-stat-feat{border-bottom:1px solid var(--rk-line,#c6d2d8);padding:4px 0}
 .rk-stat-feat>summary{cursor:pointer;display:flex;justify-content:space-between;gap:4px}
