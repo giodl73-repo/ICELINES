@@ -234,10 +234,13 @@ fn scenario(measures: &[Measurement], minimum: u64, gp: u64, mult: f64) -> Value
     json!({"exposure_multiplier":mult,"minimum_opportunities":gate,"minimum_gp":gp,"eligible_before_validation":exposed.len(),"measured":n,"minimum_peers_met":n>=20,"awards_p55_p60_p65":if n>=20{Some(awards)}else{None},"nonpositive_awards_p55_p60_p65":if n>=20{Some(nonpositive)}else{None},"conflicted_player_ids":exposed.iter().filter(|p|!p.issues.is_empty()).map(|p|p.id).collect::<Vec<_>>(),"players":players})
 }
 fn run(input: &Value) -> Result<Value, String> {
-    if input["schema"] != "rinkcraft.task-batch-two-input.v1" || input["season"] != 20242025 {
+    if input["schema"] != "rinkcraft.task-batch-two-input.v1" {
         return Err("wrong study/schema".into());
     }
-    let season = 20242025;
+    let season = num(input, "season")?;
+    if !(1900..=2200).contains(&(season / 10000)) || season / 10000 + 1 != season % 10000 {
+        return Err("invalid season".into());
+    }
     let mut hashes = BTreeMap::new();
     let read = |key: &str| -> Result<(Value, String), String> {
         let b = fs::read(input[key]["path"].as_str().ok_or("missing path")?)
