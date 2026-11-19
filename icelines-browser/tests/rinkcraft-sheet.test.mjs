@@ -81,7 +81,7 @@ test('front-sheet signals retain zero, missing values and unranked measurements'
   const numerical={season:20252026,group:'Goalies',situation:'all strengths',games:20,minutes:700,eligible_peers:12,facets:metrics.map(measurement=>({label:measurement.label,measurement})),metrics,leading:[],unknowns:[],source_credit:'Source'};
   const profile=renderCharacterCard('Test goalie',sheet,undefined,undefined,numerical);
   const front=classed(profile,'rk-front')[0];
-  assert.match(front.textContent,/0\.00.*P0\.0/);
+ assert.match(front.textContent,/Zero 0 P0\.0/);
   assert.match(front.textContent,/Missing.*—.*Unranked/);
   assert.equal(all(front).filter(n=>n.dataset.numericalKey).length,2);
   assert.match(classed(front,'rk-front-attributes')[0].textContent,/Tracking.*Positioning.*Movement.*Rebounds.*Recovery.*Puck Play/);
@@ -236,4 +236,10 @@ test('current NHL panels use their own source and peer rules rather than histori
  const {renderNumericalPanel}=await import('../dist/src/rinkcraft-numbers.js');
  const panel=renderNumericalPanel({season:20262027,situation:'all strengths',games:2,minutes:30,eligible_peers:100,source_label:'NHL public reports',source_credit:'Captured public NHL rows',peer_rules:'20 skater GP and 20 measured peers',leading:[],facets:[],metrics:[],sources:[]});
  assert.match(panel.textContent,/NHL public reports/);assert.match(panel.textContent,/20 skater GP/);assert.doesNotMatch(panel.textContent,/MoneyPuck|Skaters: 5-on-5|Source CSV/);
+});
+test('career audit preserves source conflict without manufacturing a saving value',async()=>{
+ const {renderCareerAudit}=await import('../dist/src/rinkcraft-career.js');
+ const view=renderCareerAudit({same_provider:true,seasons:[{season:20232024,games:55,seconds:1,teams:'AAA',state:'reconciled'}],fields:[{key:'saves',state:'conflicting_sources',rest_seasons:8840,derived_from_published:8839,conflict_seasons:[{season:20232024,reported_saves:1466,shots_against:1606,goals_against:141,published_save_fraction:.9122}]}]});
+ assert.match(view.textContent,/8840.*8839/);assert.match(view.textContent,/1466.*1606.*141/);assert.match(view.textContent,/same official provider/);assert.match(view.textContent,/No resolution inferred/);
+ const {numericalValue}=await import('../dist/src/rinkcraft-numbers.js');assert.equal(numericalValue({value:0,unit:'Count'}),'0');assert.equal(numericalValue({value:0,unit:'PerGame'}),'0.00');
 });

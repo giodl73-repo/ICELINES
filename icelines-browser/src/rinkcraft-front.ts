@@ -88,7 +88,7 @@ export function renderCharacterFront(
   fields.append(development,factField('Experience','experience',sheet));
   const season=numerical?.season??assessment?.season;
   const scope=node('p',numerical
-    ?`${Math.floor(numerical.season/10000)}–${String(numerical.season%100).padStart(2,'0')} · ${numerical.situation} · ${numerical.group}`
+    ?`${numerical.scope_label??`${Math.floor(numerical.season/10000)}–${String(numerical.season%100).padStart(2,'0')}`} · ${numerical.situation} · ${numerical.group}`
     :season?`${Math.floor(season/10000)}–${String(season%100).padStart(2,'0')} · all strengths`:'Statistical window unavailable');
   scope.className='rk-front-scope';front.append(header,fields,scope);
   if(snapshot){const note=node('p',snapshot.note);note.className='rk-front-snapshot';note.dataset.snapshotState=snapshot.state;front.append(note);}
@@ -167,8 +167,8 @@ export function renderCharacterFront(
   const measured=box('Measured Record','rk-front-record');
   const values=node('dl');values.className='rk-record-values';
   if(numerical)for(const facet of numerical.facets){
-    const m=facet.measurement,cell=field(facet.label,numericalValue(m));cell.dataset.numericalKey=m.key;
-    cell.append(node('small',m.percentile==null?'Unranked':`P${m.percentile.toFixed(1)} · n=${m.measured_peers}`));values.append(cell);
+    const m=facet.measurement,cell=field(facet.label,numericalValue(m));cell.dataset.numericalKey=m.key;cell.title=m.interpretation;
+    cell.append(node('small',m.state==='conflicting_sources'?'Source conflict':m.percentile==null?'Unranked':`P${m.percentile.toFixed(1)} · n=${m.measured_peers}`));values.append(cell);
   }
   else if(assessment)for(const a of assessment.attributes){
     const cell=field(a.label,attributeValue(a));

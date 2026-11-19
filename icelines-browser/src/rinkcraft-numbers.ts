@@ -1,4 +1,5 @@
 // Display only: Rust selects facets/leaders and computes comparison differences.
+import {renderCareerAudit} from './rinkcraft-career.js';
 export interface NumericalMeasurement {
   numerator?:number|null;denominator?:number|null;scale?:number;formula?:string;reference_sha256?:string;
   key:string;label:string;domain:string;unit:string;value:number|null;percentile:number|null;
@@ -6,7 +7,8 @@ export interface NumericalMeasurement {
 }
 export interface ContextEvidence {schema:string;title:string;note:string;facet_count:number;measured_facets:number;ranked_facets:number;groups:{label:string;note:string;facets:{key:string;label:string;measurement:NumericalMeasurement|null;explanation:{question:string;related_keys:string[];limit:string}}[]}[];}
 export interface NumericalEvidence {
-  source_label?:string;peer_rules?:string;
+  career_audit?:import('./rinkcraft-career.js').CareerAudit;
+  source_label?:string;peer_rules?:string;scope_label?:string;scope_kind?:string;
   finishing_research?:import('./rinkcraft-finishing.js').FinishingReadout|null;
   context_evidence?:ContextEvidence|null;
   feature_context?:{attribute_key:string;relation:string;note:string;measurements:NumericalMeasurement[]}[];
@@ -48,7 +50,7 @@ export function readNumericalCatalog():Promise<NumericalCatalog|undefined>{
 const node=<K extends keyof HTMLElementTagNameMap>(tag:K,text?:string):HTMLElementTagNameMap[K]=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e;};
 const period=(s:number):string=>`${Math.floor(s/10000)}–${String(s%100).padStart(2,'0')}`;
 const rank=(v:number|null):string=>v===null?'Unranked':`P${(Math.round(v*10)/10).toFixed(1)}`;
-const value=(unit:string,v:number|null,signed=false):string=>v===null?'—':`${signed&&v>=0?'+':''}${(v*(unit==='Pct'?100:1)).toFixed(2)}${unit==='Pct'?(signed?' pp':'%'):''}`;
+const value=(unit:string,v:number|null,signed=false):string=>v===null?'—':`${signed&&v>=0?'+':''}${(v*(unit==='Pct'?100:1)).toFixed(unit==='Count'?0:2)}${unit==='Pct'?(signed?' pp':'%'):''}`;
 export const numericalValue=(m:NumericalMeasurement):string=>`${value(m.unit,m.value)}${m.unit==='Per60'?' /60':m.unit==='Goals'?' goals':''}`;
 const styleValue=(unit:string,v:number|null,signed=false):string=>v===null?'—':`${value(unit,v,signed)}${({Per60:' /60',Mph:' mph',PerGame:' /game',MilesPerGame:' mi/game'} as Record<string,string>)[unit]??''}`;
 function renderStyleComparison(c:NumericalComparison):HTMLElement {
@@ -69,7 +71,7 @@ function renderContextComparison(c:NumericalComparison):HTMLElement {
 }
 export function renderNumericalPanel(card:NumericalEvidence,choices?:ComparisonChoice[]):HTMLElement {
   const section=node('section');section.className='rk-panel rn-integrated';section.append(node('h4','Measured attributes'));
-  const scope=node('p',`${period(card.season)} · ${card.situation} · ${card.games} GP · ${card.minutes.toFixed(1)} minutes · ${card.eligible_peers} peers · ${card.source_label??card.source_credit??'Source not supplied'}`);scope.className='rk-stat-period';section.append(scope);
+  const scope=node('p',`${card.scope_label??period(card.season)} · ${card.situation} · ${card.games} GP · ${card.minutes.toFixed(1)} minutes · ${card.eligible_peers} peers · ${card.source_label??card.source_credit??'Source not supplied'}`);scope.className='rk-stat-period';section.append(scope);
   const leading=node('p');leading.className='rn-leading';leading.append(node('small','Leading recorded signals'),document.createTextNode(card.leading.map(key=>card.facets.find(f=>f.measurement.key===key)?.label??key).join(' · ')));section.append(leading);
   const facets=node('div');facets.className='rn-facets';facets.dataset.facetCount=String(card.facets.length);for(const f of card.facets){const m=f.measurement;const tile=node('div');tile.className='rn-facet';tile.setAttribute('data-numerical-key',m.key);tile.title=m.interpretation;
     tile.append(node('span',f.label),node('strong',rank(m.percentile)),node('b',`${value(m.unit,m.value)}${m.unit==='Per60'?' /60':''}`));
@@ -81,6 +83,7 @@ export function renderNumericalPanel(card:NumericalEvidence,choices?:ComparisonC
   if(card.context_evidence)section.append(renderContext(card.context_evidence));
   const details=node('details');details.append(node('summary',`All ${card.metrics.length} numerical measures`));const table=node('table');table.className='rn-inline-table';const body=node('tbody');for(const m of card.metrics){const row=node('tr');const label=node('td',m.label);label.title=m.interpretation;row.append(label,node('td',value(m.unit,m.value)),node('td',rank(m.percentile)));body.append(row);}table.append(body);details.append(table);section.append(details);
   const rules=node('details');rules.className='rn-source-rules';rules.append(node('summary','Peer rules, source files & limits'),node('p',card.peer_rules??'Same season, position group and situation. Skaters: 5-on-5, at least 300 minutes and 10 games. Goalies: all strengths, at least 600 minutes and 5 games. Percentiles are midranks among eligible measured peers, not class probabilities.'),node('p',card.source_credit));for(const src of card.sources??[]){const p=node('p');const a=node('a','Source report');a.href=src.url;p.append(a,document.createTextNode(` · SHA256 ${src.sha256}`));rules.append(p);}section.append(rules);
+  if(card.career_audit)section.append(renderCareerAudit(card.career_audit));
   const dispatch=(right_id?:number):void=>{document.dispatchEvent(new CustomEvent('rinkcraft-numerical-compare',{detail:{player_id:card.player_id,season:card.season,right_id}}));};
   if(choices?.length){const form=node('form');form.className='rn-card-comparison';form.setAttribute('aria-label','Choose a comparison player');const label=node('label','Compare with');const select=node('select');select.required=true;select.setAttribute('aria-label','Compare numerical profile with');const placeholder=node('option','Choose a player…');placeholder.value='';placeholder.disabled=true;placeholder.selected=true;select.append(placeholder);for(const p of choices){const o=node('option',p.name);o.value=String(p.player_id);select.append(o);}label.append(select);const compare=node('button','Compare this numerical profile');compare.type='submit';form.append(label,compare,node('small','Available same-season showcase players in this position group.'));form.onsubmit=e=>{e.preventDefault();if(form.reportValidity())dispatch(Number(select.value));};section.append(form);}
   else if(choices){section.append(node('p','No other showcase player is available in this source season and position group.'));}

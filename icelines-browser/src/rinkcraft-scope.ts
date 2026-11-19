@@ -1,5 +1,5 @@
 // Rust supplies scopes, states and ranks. Presentation never pools seasonal stats.
-export interface ProfileTimeWindow {player_id:number;kind:'season'|'current';season:number;season_type:string;as_of:string|null;label:string;coverage:string;choices:{kind:string;label:string;available:boolean}[];note:string;}
+export interface ProfileTimeWindow {player_id:number;kind:'season'|'current'|'career';first_season?:number;season:number;season_type:string;as_of:string|null;label:string;coverage:string;choices:{kind:string;label:string;available:boolean}[];note:string;}
 export interface ExperimentalPattern {id:string;name:string;placement:string;state:string;reference_mode:string;reference_label:string;eligible_peers:number;threshold:number;conditions:{key:string;value:number;percentile:number;direction:string}[];opportunities:Record<string,number|null>;minimums:Record<string,number>;history:{season:number;state:string;eligible_peers:number;conditions:{key:string;value:number;percentile:number}[]}[];note:string;}
 export interface ExperimentalPatterns {schema:string;player_id:number;season:number;season_type:string;group:string;status:string;patterns:ExperimentalPattern[];scope_note:string;source_urls?:string[];source_sha256?:string;screen_sha256?:string;}
 const node=<K extends keyof HTMLElementTagNameMap>(tag:K,text?:string):HTMLElementTagNameMap[K]=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e;};
@@ -7,7 +7,7 @@ const season=(s:number)=>`${Math.floor(s/10000)}–${String(s%100).padStart(2,'0
 const labels:Record<string,string>={conversion:'Goals / shots',shots_pg:'Shots / GP',pp_points_per60:'PP points / 60',pp_seconds:'PP minutes',net_penalties_pg:'Net penalties / GP',drawn_pg:'Drawn penalties / GP'};
 const stateLabel=(state:string)=>({earned:'Qualifies',not_earned:'Below threshold',insufficient_exposure:'Needs opportunities',missing_inputs:'Needs data',insufficient_reference_population:'Needs reference peers'}[state]??'Unavailable');
 export function matchesProfileWindow(window:ProfileTimeWindow|undefined,patterns:ExperimentalPatterns|undefined,actor:number|undefined,selectedSeason:number|undefined,type:string|undefined,group:string|undefined):boolean {
- const validScope=!!window&&((window.kind==='season'&&window.coverage==='selected_season')||(window.kind==='current'&&window.coverage==='season_to_date'&&!!window.as_of&&Number.isFinite(Date.parse(window.as_of))));
+ const validScope=!!window&&((window.kind==='season'&&window.coverage==='selected_season')||((window.kind==='current'&&window.coverage==='season_to_date'||window.kind==='career'&&window.coverage==='career_reconciled'&&!!window.first_season&&window.first_season<=window.season)&&!!window.as_of&&Number.isFinite(Date.parse(window.as_of))));
  return !!window&&!!patterns&&validScope&&window.player_id===actor&&patterns.player_id===actor&&window.season===selectedSeason&&patterns.season===selectedSeason&&window.season_type===type&&patterns.season_type===type&&patterns.group===group&&patterns.schema==='rinkcraft.scoped-patterns.v1';
 }
 export function renderProfileWindow(window:ProfileTimeWindow,onChange?:(kind:string)=>void):HTMLElement{
@@ -15,7 +15,7 @@ export function renderProfileWindow(window:ProfileTimeWindow,onChange?:(kind:str
  const label=node('label','Profile scope '),select=node('select');select.setAttribute('aria-label','Whole profile time scope');
  for(const choice of window.choices){const option=node('option',choice.label);option.value=choice.kind;option.disabled=!choice.available||(!onChange&&choice.kind!==window.kind);select.append(option);}select.value=window.kind;
  select.onchange=()=>{if(onChange&&window.choices.some(c=>c.kind===select.value&&c.available))onChange(select.value);else select.value=window.kind;};label.append(select);root.append(label);
- const why=node('details');why.append(node('summary','Scope & coverage'),node('p',window.note),node('p','A reference population is separate from the player’s time scope. Career remains unavailable until complete coverage is verified.'));if(window.as_of)why.append(node('p',`Captured through ${window.as_of}. Reports may lag games; this is not a live feed.`));root.append(why);return root;
+ const why=node('details');why.append(node('summary','Scope & coverage'),node('p',window.note),node('p','A reference population is separate from the player’s time scope. Career comparisons require an appropriate peer cohort; reconciled totals alone do not establish one.'));if(window.as_of)why.append(node('p',`Captured through ${window.as_of}. Reports may lag games; this is not a live feed.`));root.append(why);return root;
 }
 function patternRow(pattern:ExperimentalPattern,scope:ProfileTimeWindow,evidence:ExperimentalPatterns):HTMLElement{
  const d=node('details');d.className='rk-stat-feat rk-experimental-pattern';d.dataset.candidateId=pattern.id;d.dataset.candidateState=pattern.state;
@@ -33,8 +33,9 @@ function patternRow(pattern:ExperimentalPattern,scope:ProfileTimeWindow,evidence
 }
 export function applyScopedPatterns(front:HTMLElement,scope:ProfileTimeWindow,patterns:ExperimentalPatterns):void{
  front.dataset.windowKind=scope.kind;front.dataset.windowSeason=String(scope.season);
- const scopeLine=front.querySelector('.rk-front-scope');if(scopeLine)scopeLine.textContent=`${scope.kind==='current'?'Current':'Season'} profile · ${scopeLine.textContent}${scope.as_of?` · Captured ${new Date(scope.as_of).toISOString().slice(0,16).replace('T',' ')} UTC`:''}`;
- if(scope.kind==='current'){const classNote=front.querySelector('.rk-class-note');if(classNote)classNote.textContent=`Historical dossier · ${classNote.textContent}`;const snapshot=front.querySelector('.rk-front-snapshot');if(snapshot)snapshot.textContent='Season-to-date records · historical dossier retained; current task continuity unverified.';}
+ const scopeLine=front.querySelector('.rk-front-scope');if(scopeLine)scopeLine.textContent=`${scope.kind==='current'?'Current':scope.kind==='career'?'Career':'Season'} profile · ${scopeLine.textContent}${scope.as_of?` · Captured ${new Date(scope.as_of).toISOString().slice(0,16).replace('T',' ')} UTC`:''}`;
+ if(scope.kind==='current'||scope.kind==='career'){const classNote=front.querySelector('.rk-class-note');if(classNote)classNote.textContent=`Historical dossier · ${classNote.textContent}`;const snapshot=front.querySelector('.rk-front-snapshot');if(snapshot)snapshot.textContent=scope.kind==='career'?'Pooled NHL regular-season career records · no career peer ranks or seasonal feat conversion.':'Season-to-date records · historical dossier retained; current task continuity unverified.';}
+ if(scope.kind==='career'){const recordNote=front.querySelector('.rk-front-record>p');if(recordNote)recordNote.textContent='Pooled NHL regular-season counts and rates. Career peer ranks and feats await a suitable reference.';}
  for(const [placement,selector,limit]of [['task_skills','.rk-front-skills',3],['playing_tendencies','.rk-front-traits',2]] as const){
   const box=front.querySelector(selector);if(!box)continue;
   const candidates=patterns.patterns.filter(p=>p.placement===placement),earned=candidates.filter(p=>p.state==='earned').slice(0,limit);

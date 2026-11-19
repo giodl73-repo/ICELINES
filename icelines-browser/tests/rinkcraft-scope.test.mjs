@@ -24,3 +24,10 @@ test('current requires a dated season-to-date frame and a callback to switch sco
  let selected='';const available={...window,choices:window.choices.map(c=>({...c,available:c.kind!=='career'}))};
  const root=renderProfileWindow(available,k=>selected=k),select=root.children[0].children[0];select.value='current';select.onchange();assert.equal(selected,'current');
 });
+test('career scope requires a reconciled range, dated endpoint and compatible actor window',()=>{
+ const career={...window,kind:'career',coverage:'career_reconciled',first_season:20132014,as_of:'2026-11-19T12:00:00Z'};
+ assert.equal(matchesProfileWindow(career,patterns,1,20242025,'regular','Forwards'),true);
+ assert.equal(matchesProfileWindow({...career,first_season:20252026},patterns,1,20242025,'regular','Forwards'),false);
+ assert.equal(matchesProfileWindow({...career,coverage:'partial'},patterns,1,20242025,'regular','Forwards'),false);
+ assert.equal(matchesProfileWindow({...career,as_of:null},patterns,1,20242025,'regular','Forwards'),false);
+});

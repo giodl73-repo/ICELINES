@@ -7,7 +7,7 @@ const node=<K extends keyof HTMLElementTagNameMap>(tag:K,text?:string):HTMLEleme
 const period=(s:number)=>`${Math.floor(s/10000)}–${String(s%100).padStart(2,'0')}`;
 export function renderEvidenceBrief(n:NumericalEvidence,h?:HistoryCard,sheet?:CharacterSheet):HTMLElement {
  const brief=node('section');brief.className='rk-brief';brief.setAttribute('aria-label','Evidence at a glance');
- brief.append(node('h4','Evidence at a glance'),node('p',`${period(n.season)} · ${n.group} · ${n.situation==='all'?'all strengths':n.situation} · ${n.games} GP · ${n.minutes.toFixed(1)} minutes. Documentary identity has its own evidence date${sheet?`: ${sheet.evidence_through}`:': unavailable'}.`));
+ brief.append(node('h4','Evidence at a glance'),node('p',`${n.scope_label??period(n.season)} · ${n.group} · ${n.situation==='all'?'all strengths':n.situation} · ${n.games} GP · ${n.minutes.toFixed(1)} minutes. Documentary identity has its own evidence date${sheet?`: ${sheet.evidence_through}`:': unavailable'}.`));
  const grid=node('div');grid.className='rk-brief-grid';
  const signature=node('section');signature.append(node('h5','Measured signature'));const list=node('ul');
  for(const key of n.leading){const m=n.metrics.find(m=>m.key===key);if(!m)continue;const item=node('li');item.dataset.briefKey=key;item.append(node('b',m.label),node('span',`${numericalValue(m)} · ${m.percentile===null?'Unranked':`P${m.percentile.toFixed(1)}`} · n=${m.measured_peers}`));list.append(item);}

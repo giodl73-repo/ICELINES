@@ -69,7 +69,7 @@ export async function mountThemeStudio(root:HTMLElement):Promise<void>{
  const specimens=await responses[1].json() as Specimens;
  if(specimens.schema!=='rinkcraft.theme-specimens.v2'||specimens.kind!=='fictional_design_sample'||specimens.players.some(s=>s.attributes.length!==6))throw Error('Invalid design specimens.');
  const query=new URLSearchParams(location.search);
- const requestedScope=query.get('scope')??'season';if(!['season','current'].includes(requestedScope))throw Error('The requested scope is not loaded. Career requires verified complete coverage.');
+ const requestedScope=query.get('scope')??'season';if(!['season','current','career'].includes(requestedScope))throw Error('Unsupported profile scope. Choose an available Season, Current or Career scope.');
  let selectedScope=requestedScope;
  let index=themes.findIndex(t=>t.id===query.get('theme'));if(index<0)index=0;
  const sample=root.querySelector<HTMLSelectElement>('#sample')!,stage=root.querySelector<HTMLElement>('#profile-stage')!;
@@ -97,8 +97,8 @@ export async function mountThemeStudio(root:HTMLElement):Promise<void>{
   if(specimen){selectedScope='season';stage.replaceChildren(specimenCard(specimen));notice.textContent=specimens.notice;notice.dataset.kind='fictional';}
   else {
    const original=profiles[sample.value];if(!original)throw Error('Unknown local example.');
-   if(selectedScope==='current'&&!original.scope_variants?.current)throw Error('Current scope is not loaded for this example.');
-   const p=selectedScope==='current'?original.scope_variants!.current:original;
+   const p=selectedScope==='season'?original:selectedScope==='current'?original.scope_variants?.current:original.scope_variants?.career;
+   if(!p)throw Error('The requested scope is not loaded for this example.');
    stage.replaceChildren(renderCharacterCard(p.player_name,p.character_sheet,p.attribute_seasons?.at(-1),p.latest_available??undefined,p.numerical_evidence,p.numerical_history,p.numerical_snapshot,p.numerical_comparison_choices,p.documentary_catalog_available,p.evidence_guide,p.deployment_evidence,p.request,p.achievements,p.profile_window,p.experimental_patterns,kind=>{selectedScope=kind;showSample();}));
    const repertoire=(p.character_sheet?.under_pressure?.length??0)+(p.character_sheet?.task_skills?.length??0);
    notice.textContent=p.achievements
@@ -106,7 +106,8 @@ export async function mountThemeStudio(root:HTMLElement):Promise<void>{
     :repertoire
     ?'NHL record: 2024–25. Repertoire entries are provisional interpretations of dated historical accounts and examples, not current-season measurements. Capability scores remain unrated.'
     :'Historical NHL evidence · 2024–25. Measured records and documentary methods are populated; unvalidated 1–20 capability scores remain unrated.';notice.dataset.kind='nhl';
-   if(p.profile_window)notice.textContent=p.profile_window.kind==='current'?`${p.profile_window.label} · captured ${new Date(p.profile_window.as_of!).toISOString().slice(0,16).replace('T',' ')} UTC. All primary statistics and workload use this window. Class/method accounts remain historical; capabilities are unrated.`:`${p.profile_window.label} governs the whole profile. ${original.scope_variants?'Choose Current for the captured season-to-date frame.':'Current needs a dated capture.'} Career needs complete coverage. Capabilities remain unrated.`;
+   if(p.profile_window?.kind==='career')notice.textContent=`${p.profile_window.label} · captured ${new Date(p.profile_window.as_of!).toISOString().slice(0,16).replace('T',' ')} UTC. NHL regular-season counts reconcile across the official ledger and totals. Career peer ranks and feats remain gated; the dossier is historical.`;
+   else if(p.profile_window)notice.textContent=p.profile_window.kind==='current'?`${p.profile_window.label} · captured ${new Date(p.profile_window.as_of!).toISOString().slice(0,16).replace('T',' ')} UTC. All primary statistics and workload use this window. Class/method accounts remain historical; capabilities are unrated.`:`${p.profile_window.label} governs the whole profile. ${original.scope_variants?'Choose Current for the captured season-to-date frame.':'Current needs a dated capture.'} ${original.scope_variants?.career?'Career records are also available; career ranks remain gated.':'Career needs complete coverage.'} Capabilities remain unrated.`;
   }
   remember();
  }

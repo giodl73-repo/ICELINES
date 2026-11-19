@@ -1,13 +1,13 @@
 // Rust supplies workload values, denominators and display strings.
 export interface DeploymentEvidence {
- player_id:number;season:number;season_type:string;games:number;goalie:boolean;starts:number|null;
+ scope_label?:string;scope_kind?:string;player_id:number;season:number;season_type:string;games:number;goalie:boolean;starts:number|null;
  rows:{key:string;label:string;seconds:number;seconds_per_game:number;share:number|null;per_game_display:string;minutes_display:string;share_display:string}[];
  source_label:string;source_url:string|null;source_sha256:string|null;notes:string[];
 }
 const node=<K extends keyof HTMLElementTagNameMap>(tag:K,text?:string):HTMLElementTagNameMap[K]=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e;};
 export function renderDeploymentUsage(card:DeploymentEvidence):HTMLElement {
  const section=node('div');section.className='rk-usage';section.dataset.usageSeason=String(card.season);
- section.append(node('small',`${Math.floor(card.season/10000)}–${String(card.season%100).padStart(2,'0')} · ${card.season_type} · TOI / appearance`));
+ section.append(node('small',`${card.scope_label??`${Math.floor(card.season/10000)}–${String(card.season%100).padStart(2,'0')}`} · ${card.season_type} · TOI / appearance`));
  const grid=node('dl');grid.className='rk-usage-grid';
  for(const row of card.rows){const field=node('div');field.dataset.usageKey=row.key;field.append(node('dt',row.label),node('dd',row.per_game_display));grid.append(field);}
  if(card.goalie){const f=node('div');f.append(node('dt','Starts / GP'),node('dd',`${card.starts??'—'} / ${card.games}`));grid.append(f);}
