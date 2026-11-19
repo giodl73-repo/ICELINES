@@ -64,6 +64,16 @@ fn project(mut profiles: Value, input: &Value) -> Result<Value, String> {
         let current = profile["league_current_season"]
             .as_u64()
             .ok_or("missing league current season")?;
+        let current_scope = input["current_season"].as_u64() == Some(season) && season == current;
+        let as_of = if current_scope {
+            let stamp = input["current_as_of"]
+                .as_str()
+                .ok_or("current scope requires a capture date")?;
+            chrono::DateTime::parse_from_rfc3339(stamp).map_err(|e| e.to_string())?;
+            Some(stamp)
+        } else {
+            None
+        };
         let group = profile["numerical_evidence"]["group"]
             .as_str()
             .ok_or("missing group")?
@@ -87,6 +97,12 @@ fn project(mut profiles: Value, input: &Value) -> Result<Value, String> {
             return Err("profile/source actor or GP mismatch".into());
         }
         profile["profile_window"] = json!({"player_id":actor,"kind":"season","season":season,"season_type":"regular","as_of":null,"label":format!("Season · {}",season_label(season)),"coverage":"selected_season","choices":[{"kind":"season","label":format!("Season · {}",season_label(season)),"available":true},{"kind":"career","label":"Career · complete coverage not loaded","available":false},{"kind":"current","label":format!("Current · {} not loaded",season_label(current)),"available":false}],"note":"One selected time window governs the whole profile. Source accounts retain their dates; biographical facts retain their historical meaning. Current requires dated season-to-date records. Career requires verified complete coverage and pooled opportunities, not averaged seasonal percentiles."});
+        if current_scope {
+            let historical = input["historical_season"]
+                .as_u64()
+                .ok_or("current preview requires its historical alternative")?;
+            profile["profile_window"] = json!({"player_id":actor,"kind":"current","season":season,"season_type":"regular","as_of":as_of,"label":format!("Current · {}",season_label(season)),"coverage":"season_to_date","choices":[{"kind":"season","label":format!("Season · {}",season_label(historical)),"available":true},{"kind":"career","label":"Career · complete coverage not loaded","available":false},{"kind":"current","label":format!("Current · {}",season_label(season)),"available":true}],"note":"Current season-to-date through the declared capture time, not a live feed. All primary statistics and opportunities use this window. Historical class/method accounts retain their dates; current continuity is unverified. Career coverage is not established."});
+        }
         let mut patterns = Vec::new();
         if group != "Goalies" {
             for (id, name, placement) in names {
@@ -141,7 +157,7 @@ fn project(mut profiles: Value, input: &Value) -> Result<Value, String> {
                 let conditions = observation
                     .map(|p| p["conditions"].clone())
                     .unwrap_or(json!([]));
-                let opportunities = match id {
+                let mut opportunities = match id {
                     "accuracy-ledger" => {
                         json!({"games":rows[0]["gamesPlayed"],"shots":rows[0]["shots"],"minimum_shots":100})
                     }
@@ -150,6 +166,25 @@ fn project(mut profiles: Value, input: &Value) -> Result<Value, String> {
                     }
                     _ => json!({"games":rows[0]["gamesPlayed"],"minimum_games":20}),
                 };
+                if id == "pp-efficiency"
+                    && profile["deployment_evidence"]["season"].as_u64() == Some(season)
+                    && profile["deployment_evidence"]["player_id"].as_u64() == Some(actor)
+                {
+                    if let Some(row) = profile["deployment_evidence"]["rows"]
+                        .as_array()
+                        .and_then(|rows| rows.iter().find(|r| r["key"] == "pp"))
+                    {
+                        opportunities["pp_seconds"] = row["seconds"].clone();
+                    }
+                }
+                if id == "penalty-balance" {
+                    if let Some(row) = source["penalties"]["data"].as_array().and_then(|rows| {
+                        rows.iter().find(|r| r["playerId"].as_u64() == Some(actor))
+                    }) {
+                        opportunities["penalties_drawn"] = row["penaltiesDrawn"].clone();
+                        opportunities["penalties_taken"] = row["penalties"].clone();
+                    }
+                }
                 patterns.push(json!({"id":id,"name":name,"placement":placement,"state":state,"reference_mode":"same_season","reference_label":format!("{} eligible {} peers",season_label(season),group),"eligible_peers":g["eligible"],"threshold":60,"conditions":conditions,"opportunities":opportunities,"minimums":result["definition"]["minimums"],"history":bounded_history(&history,season),"note":result["definition"]["meaning"]}));
             }
         }

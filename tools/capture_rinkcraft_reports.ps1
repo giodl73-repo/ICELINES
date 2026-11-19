@@ -22,7 +22,7 @@ foreach($season in $Seasons) {
    $url="https://api.nhle.com/stats/rest/en/${route}?isAggregate=false&isGame=false&start=$offset&limit=100&sort=$sort&cayenneExp=$filter"
    $path=Join-Path $raw "$offset.json"
    Invoke-WebRequest $url -UseBasicParsing -OutFile $path -TimeoutSec 30
-   $page=Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+   $page=Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json
    if($null -eq $total) {$total=$page.total}
    if($total -ne $page.total -or $page.data.Count -eq 0) {throw 'Inconsistent or empty pagination'}
    $rows+=$page.data

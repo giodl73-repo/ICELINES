@@ -227,8 +227,13 @@ test('evidence brief preserves Rust-selected order, zero, catalogue gaps and exa
  const b=renderEvidenceBrief(n,h,dossier);assert.deepEqual(all(b).filter(e=>e.dataset.briefKey).map(e=>e.dataset.briefKey),['b','a']);
  assert.match(b.textContent,/0\.00 \/60 · P0\.0/);assert.equal(b.textContent.match(/Passing attempts/g).length,1);
  assert.equal(all(b).find(e=>e.dataset.briefHistory).dataset.briefHistory,'matched');
- for(const history of [undefined,{...h,player_id:2},{...h,seasons:[{season:20252026}]},{...h,assessment:{...h.assessment,last_season:20252026}}]){
+ for(const history of [undefined,null,{...h,player_id:2},{...h,seasons:[{season:20252026}]},{...h,assessment:{...h.assessment,last_season:20252026}}]){
   const view=renderEvidenceBrief(n,history,dossier);assert.match(view.textContent,/No history summary matched/);assert.doesNotMatch(view.textContent,/No qualifying repeated signal/);
  }
  const absent=renderEvidenceBrief({...n,leading:[]});assert.match(absent.textContent,/No selected measured signals/);assert.match(absent.textContent,/No task-specific gap list/);
+});
+test('current NHL panels use their own source and peer rules rather than historical provider defaults',async()=>{
+ const {renderNumericalPanel}=await import('../dist/src/rinkcraft-numbers.js');
+ const panel=renderNumericalPanel({season:20262027,situation:'all strengths',games:2,minutes:30,eligible_peers:100,source_label:'NHL public reports',source_credit:'Captured public NHL rows',peer_rules:'20 skater GP and 20 measured peers',leading:[],facets:[],metrics:[],sources:[]});
+ assert.match(panel.textContent,/NHL public reports/);assert.match(panel.textContent,/20 skater GP/);assert.doesNotMatch(panel.textContent,/MoneyPuck|Skaters: 5-on-5|Source CSV/);
 });

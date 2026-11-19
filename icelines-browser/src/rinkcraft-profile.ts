@@ -13,6 +13,7 @@ export interface ProfileMetric {
 }
 export interface ProfileSeason { season: number; games: number; position: string; teams: string[]; traded: boolean; metrics: ProfileMetric[]; }
 export interface RinkcraftProfile {
+  scope_variants?:{current:RinkcraftProfile};
   profile_window?:import('./rinkcraft-scope.js').ProfileTimeWindow;
   experimental_patterns?:import('./rinkcraft-scope.js').ExperimentalPatterns;
   achievements?:import('./rinkcraft-achievements.js').AchievementProfile;

@@ -14,7 +14,7 @@ export function renderEvidenceBrief(n:NumericalEvidence,h?:HistoryCard,sheet?:Ch
  if(!list.children.length)list.append(node('li','No selected measured signals.'));
  signature.append(list,node('small','Selected from a fixed involvement/output shortlist. High raw values are not always better; these are not class or ability scores.'));grid.append(signature);
  const history=node('section');history.append(node('h5','History support'));
- const a=h?.assessment,matched=h!==undefined&&h.player_id===n.player_id&&h.seasons.at(-1)?.season===n.season&&a?.last_season===n.season;
+ const a=h?.assessment,matched=h!=null&&h.player_id===n.player_id&&h.seasons.at(-1)?.season===n.season&&a?.last_season===n.season;
  history.dataset.briefHistory=matched?'matched':'unavailable';
  if(matched&&a){history.append(node('p',`${period(a.first_season)} → ${period(a.last_season)} · ${a.reported_seasons}/${a.supplied_seasons} supplied seasons reported.`));for(const r of a.repeated){history.append(node('p',`${r.label}: ${r.seasons} seasons at or above P80; annual range P${r.minimum_percentile.toFixed(1)}–P${r.maximum_percentile.toFixed(1)}.`));}if(!a.repeated.length)history.append(node('p',a.repeated_reason));}
  else history.append(node('p','No history summary matched to this player and selected season. Other supplied history retains its own dates.'));

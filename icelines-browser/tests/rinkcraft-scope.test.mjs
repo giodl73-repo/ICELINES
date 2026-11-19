@@ -16,3 +16,11 @@ test('incomplete career and current options cannot relabel seasonal numbers',()=
  assert.equal(select.children[0].disabled,false);assert.equal(select.children[1].disabled,true);assert.equal(select.children[2].disabled,true);
  select.value='career';select.onchange();assert.equal(select.value,'season');
 });
+test('current requires a dated season-to-date frame and a callback to switch scopes',()=>{
+ const current={...window,kind:'current',coverage:'season_to_date',as_of:'2026-11-19T02:28:15Z'};
+ assert.equal(matchesProfileWindow(current,patterns,1,20242025,'regular','Forwards'),true);
+ assert.equal(matchesProfileWindow({...current,as_of:null},patterns,1,20242025,'regular','Forwards'),false);
+ assert.equal(matchesProfileWindow({...current,as_of:'unknown'},patterns,1,20242025,'regular','Forwards'),false);
+ let selected='';const available={...window,choices:window.choices.map(c=>({...c,available:c.kind!=='career'}))};
+ const root=renderProfileWindow(available,k=>selected=k),select=root.children[0].children[0];select.value='current';select.onchange();assert.equal(selected,'current');
+});
