@@ -56,6 +56,54 @@ fn qualify(percentiles: &Value, stored: bool) -> Result<bool, String> {
     }
     Ok(q)
 }
+// Lower-tail observations are descriptive annotations, never negative feat awards.
+// Whitelist excludes penalties/giveaways (low may be favorable) and raw PP/SH
+// production (zero without deployment is not evidence of poor performance).
+fn low_callouts(profile: &Value) -> Result<Vec<Value>, String> {
+    let mut metrics = BTreeMap::<String, Value>::new();
+    for feat in profile["feats"].as_array().ok_or("feat rows missing")? {
+        for c in feat["conditions"].as_array().ok_or("conditions missing")? {
+            let key = c["key"].as_str().ok_or("metric key missing")?;
+            if !matches!(
+                key,
+                "points" | "goals" | "assists" | "shots" | "hits" | "blocks" | "takeaways"
+            ) {
+                continue;
+            }
+            if let Some(prior) = metrics.insert(key.to_owned(), c.clone()) {
+                if prior != *c {
+                    return Err("repeated metric evidence differs".into());
+                }
+            }
+        }
+    }
+    let mut lows = Vec::new();
+    for (key, c) in metrics {
+        if profile["games"].as_u64().unwrap_or(0) < 20 || c["peers"].as_u64().unwrap_or(0) < 20 {
+            continue;
+        }
+        let Some(p) = c["percentile"]
+            .as_f64()
+            .filter(|p| p.is_finite() && (0.0..=20.0).contains(p))
+        else {
+            continue;
+        };
+        if c["value"]
+            .as_f64()
+            .filter(|v| v.is_finite() && *v >= 0.)
+            .is_none()
+        {
+            return Err("ranked low metric lacks a valid value".into());
+        }
+        let kind = if matches!(key.as_str(), "points" | "goals" | "assists") {
+            "low_output"
+        } else {
+            "low_activity"
+        };
+        lows.push(json!({"id":format!("low-{key}"),"kind":kind,"label":format!("Low recorded {}",c["label"].as_str().unwrap_or(&key)),"condition":c,"percentile":p,"reference_group":profile["group"],"source_sha256":profile["source_sha256"],"source_urls":profile["source_urls"],"interpretation":if kind=="low_output"{"Low recorded per-game production; deployment and teammates affect output. Not a capability rating."}else{"Low recorded event volume; style and opportunities affect activity. Not proof of poor defending or effort."}}));
+    }
+    Ok(lows)
+}
 fn actor(
     id: u64,
     reports: &Value,
@@ -147,6 +195,7 @@ fn actor(
     if a["earned"].as_u64() != Some(matched) {
         return Err("catalog earned counter differs".into());
     }
+    let mut lows = low_callouts(a)?;
     let mut experimental = Vec::new();
     for (fid, name) in [
         ("accuracy-ledger", "Shooting Conversion"),
@@ -207,6 +256,21 @@ fn actor(
         } else {
             "insufficient_exposure"
         };
+        if let Some(p) = p.filter(|_| matches!(state, "earned" | "not_earned")) {
+            let metric = match fid {
+                "accuracy-ledger" => Some("conversion"),
+                "pp-efficiency" => Some("pp_points_per60"),
+                _ => None,
+            };
+            if let Some(c) = p["conditions"].as_array().unwrap().iter().find(|c| {
+                Some(c["key"].as_str().unwrap_or("")) == metric
+                    && c["percentile"]
+                        .as_f64()
+                        .is_some_and(|v| (0.0..=20.0).contains(&v))
+            }) {
+                lows.push(json!({"id":format!("low-{fid}"),"kind":"low_opportunity_conditioned_output","label":format!("Low {name}"),"condition":c,"percentile":c["percentile"],"reference_group":group,"eligible_peers":g["eligible"],"minimums":r[0]["definition"]["minimums"],"source":"old_screen","interpretation":"Low measured outcome after the existing candidate exposure gate; not latent ability or an automatic gameplay penalty."}));
+            }
+        }
         experimental
             .push(json!({"id":fid,"name":name,"state":state,"qualifies":q&&state=="earned"}));
     }
@@ -280,6 +344,7 @@ fn actor(
         .cloned()
         .collect::<Vec<_>>();
     let total = positive.len() + experimental_awards.len();
+    let observation_count = total + cautions.len() + lows.len();
     let seconds = n(t, "timeOnIce")?;
     let pp = n(t, "ppTimeOnIce")?;
     let sh = n(t, "shTimeOnIce")?;
@@ -287,9 +352,12 @@ fn actor(
     if seconds != pp + sh + ev {
         return Err("TOI partition mismatch".into());
     }
-    Ok(
-        json!({"player_id":id,"name":name,"position":position,"group":group,"games":gp,"teams":source["teamAbbrevs"],"positive_registry_count":positive.len(),"qualifying_experimental_count":experimental_awards.len(),"positive_total":total,"caution_count":cautions.len(),"positive_registry":positive,"experimental_awards":experimental_awards,"experimental_all":experimental,"cautions":cautions,"usage":{"all_seconds":seconds,"pp_seconds":pp,"sh_seconds":sh,"toi_per_game":seconds as f64/gp as f64,"toi_display":clock(seconds as f64/gp as f64),"pp_display":clock(pp as f64/gp as f64),"sh_display":clock(sh as f64/gp as f64)}}),
-    )
+    let mut row = json!({"player_id":id,"name":name,"position":position,"group":group,"games":gp,"teams":source["teamAbbrevs"],"positive_registry_count":positive.len(),"qualifying_experimental_count":experimental_awards.len(),"positive_total":total,"caution_count":cautions.len(),"positive_registry":positive,"experimental_awards":experimental_awards,"experimental_all":experimental,"cautions":cautions,"usage":{"all_seconds":seconds,"pp_seconds":pp,"sh_seconds":sh,"toi_per_game":seconds as f64/gp as f64,"toi_display":clock(seconds as f64/gp as f64),"pp_display":clock(pp as f64/gp as f64),"sh_display":clock(sh as f64/gp as f64)}});
+    row["low_callouts"] = json!(lows);
+    row["observation_count"] = json!(observation_count);
+    row["five_observation_target_met"] = json!(observation_count >= 5);
+    row["coverage_note"] = json!("Entries overlap and are not independent skills. Unmeasured here: entry denial, exits, retrievals, gap/lane protection, net-front coverage, rotations, pressure decisions and PK prevention. Missing assessment is not a limitation.");
+    Ok(row)
 }
 fn run(input: &Value) -> Result<Value, String> {
     if input["schema"] != "rinkcraft.feat-salary-contrast-input.v1" || input["season"] != 20242025 {
@@ -436,7 +504,7 @@ fn markdown(v: &Value) -> String {
             r["positive_total"]
         ));
     }
-    s.push_str("\nThis sample was selected before feat counts were inspected. Contract cells were producer-read from linked PuckPedia historical tables; they are reported figures, not independent NHL registry verification. TOI is all strengths, not a coaching line/pair assignment. Goalies are outside this count comparison because their feat coverage differs.\n");
+    s.push_str("\nThis sample was selected before feat counts were inspected. Contract cells were producer-read from linked PuckPedia historical tables; they are reported figures, not independent NHL registry verification. TOI is all strengths, not a coaching line/pair assignment. Goalies are outside this count comparison because their feat coverage differs.\n\n## Balanced profile observations\n\nExperimental lower-tail policy: at or below P20, at least 20 games and 20 measured same-position-group peers. Per-game production and event volume are distinguished. Raw PP/SH counts, low penalties and low giveaways are excluded. PP-rate and conversion observations retain the existing candidate exposure gates and conditional reference populations. Positive feat thresholds are unchanged. Five observations is a coverage target, not five independent abilities; overlapping feats and cautions remain overlapping. No gameplay penalties are inferred.\n");
     for r in v["rows"].as_array().unwrap() {
         s.push_str(&format!("\n## {}\n\n", r["name"].as_str().unwrap()));
         let names = r["positive_registry"]
@@ -447,6 +515,36 @@ fn markdown(v: &Value) -> String {
             .map(|f| f["name"].as_str().unwrap())
             .collect::<Vec<_>>();
         s.push_str(&format!("Qualifying records: {}.\n", names.join("; ")));
+        let cautions = r["cautions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|f| f["name"].as_str().unwrap())
+            .collect::<Vec<_>>();
+        s.push_str(&format!(
+            "\nCaution flags: {}.\n",
+            if cautions.is_empty() {
+                "None qualified".into()
+            } else {
+                cautions.join("; ")
+            }
+        ));
+        s.push_str("\nLower-tail observations:\n\n");
+        let lows = r["low_callouts"].as_array().unwrap();
+        if lows.is_empty() {
+            s.push_str("- None met this annotation policy.\n");
+        }
+        for c in lows {
+            s.push_str(&format!(
+                "- **{}**: {:.4}, P{:.1} among {} peers. {}\n",
+                c["label"].as_str().unwrap(),
+                c["condition"]["value"].as_f64().unwrap(),
+                c["percentile"].as_f64().unwrap(),
+                r["group"].as_str().unwrap(),
+                c["interpretation"].as_str().unwrap()
+            ));
+        }
+        s.push_str(&format!("\nSupported entries: {} positive + {} caution + {} lower-tail = {}. Five-entry coverage target: {}.\n\n{}\n",r["positive_total"],r["caution_count"],lows.len(),r["observation_count"],if r["five_observation_target_met"]==true{"met"}else{"not met; additional assessment needed"},r["coverage_note"].as_str().unwrap()));
     }
     s
 }
@@ -520,5 +618,34 @@ mod tests {
     fn empty_group_is_not_zero_average() {
         assert!(summary(&[])["mean"].is_null());
         assert_eq!(clock(580.86), "9:41");
+    }
+    #[test]
+    fn low_output_activity_and_favorable_lows_are_distinct() {
+        let p = json!({"games":60,"group":"Defense","feats":[{"conditions":[
+            {"key":"shots","label":"Shots","value":0.5,"peers":100,"percentile":20},
+            {"key":"goals","label":"Goals","value":0.01,"peers":100,"percentile":10},
+            {"key":"taken","value":0,"peers":100,"percentile":1},
+            {"key":"giveaways","value":0,"peers":100,"percentile":1},
+            {"key":"pp-goals","value":0,"peers":100,"percentile":1},
+            {"key":"blocks","value":null,"peers":100,"percentile":null}
+        ]}]});
+        let lows = low_callouts(&p).unwrap();
+        assert_eq!(lows.len(), 2);
+        assert_eq!(lows[0]["kind"], "low_output");
+        assert_eq!(lows[1]["kind"], "low_activity");
+        let mut gated = p.clone();
+        gated["games"] = json!(19);
+        assert!(low_callouts(&gated).unwrap().is_empty());
+        gated = p.clone();
+        gated["feats"][0]["conditions"][0]["peers"] = json!(19);
+        assert_eq!(low_callouts(&gated).unwrap().len(), 1);
+    }
+    #[test]
+    fn repeated_stats_do_not_multiply_callouts_or_hide_conflicts() {
+        let c = json!({"key":"blocks","value":0.1,"peers":100,"percentile":5});
+        let mut p = json!({"games":60,"feats":[{"conditions":[c.clone()]},{"conditions":[c]}]});
+        assert_eq!(low_callouts(&p).unwrap().len(), 1);
+        p["feats"][1]["conditions"][0]["percentile"] = json!(6);
+        assert!(low_callouts(&p).is_err());
     }
 }
