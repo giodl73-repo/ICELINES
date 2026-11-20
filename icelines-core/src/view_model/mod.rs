@@ -2359,3 +2359,4 @@ pub mod rinkcraft_record_milestones;
 pub mod rinkcraft_whistle;
 pub mod rinkcraft_capability_index;
 pub mod rinkcraft_edge;
+pub mod rinkcraft_edge_exposure;
