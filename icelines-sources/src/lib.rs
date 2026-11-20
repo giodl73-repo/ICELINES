@@ -17,6 +17,7 @@ pub mod draft_pick_ownership_csv;
 pub mod fragment;
 pub mod identity_review;
 pub mod moneypuck;
+pub mod moneypuck_finishing;
 pub mod moneypuck_goalie_game;
 pub mod moneypuck_line_game;
 pub mod moneypuck_skater_game;
