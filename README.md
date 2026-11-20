@@ -21,6 +21,17 @@ database, or initial data download.
 
 ## What you can do
 
+Compute a source-aware career/season profile and numeric season changes:
+
+```bash
+icelines profile "Adam Fox" --json
+icelines profile "Igor Shesterkin" --first-season 20232024 --last-season 20252026 --json
+```
+
+Catalog metrics retain missingness. Six job families organize evidence; they are
+not validated classes or error grades. See the
+[stat-profile contract](design/specs/rinkcraft-stat-profile.md).
+
 - Explore current and historical player rankings with composable filters.
 - Inspect team depth charts, line combinations, and player deployment.
 - Compare career arcs and find historical player similarities.

@@ -1,0 +1,8 @@
+<div class="rn-comparison-identities" aria-label="Documentary class comparison">
+{% for v in c.identities %}<section class="rk-sheet rk-{% match v.sheet %}{% when Some with (s) %}{{ s.primary.id }}{% when None %}unscouted{% endmatch %} rn-identity">
+<h4>{{ v.name }}</h4>
+{% match v.sheet %}{% when Some with (s) %}<p class="rn-identity-class">{{ s.primary.name }} <span>· {{ s.primary.analogy }} archetype</span></p><p><b>Specialty:</b> {{ s.specialty }}</p><p>{{ s.primary.purpose }}</p>
+{% if !s.secondary.is_empty() %}<p class="rn-identity-secondary">Also: {% for secondary in s.secondary %}{{ secondary.name }} · {{ secondary.analogy }}{% if !loop.last %}; {% endif %}{% endfor %}</p>{% endif %}
+<details><summary>Class evidence and dates</summary><p>Documentary hypothesis selected for {{ period }}. Evidence through {{ s.evidence_through }}; assessed {{ s.assessed }}. These accounts may be retrospective.</p><p>Protocol {{ s.protocol }} · Catalog SHA256 {{ s.catalog_sha256 }}</p><ul>{% for source in s.sources %}<li><a href="{{ source.url }}">{{ source.title }}</a> · {{ source.published }} · {{ source.locator }}</li>{% endfor %}</ul></details>
+{% when None %}<p class="rn-identity-class">{{ v.unavailable_label }}</p><p>Numerical evidence does not assign a class.</p>{% endmatch %}
+</section>{% endfor %}</div><p class="rn-identity-note">{{ c.identity_note }}</p>

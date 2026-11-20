@@ -1,0 +1,2892 @@
+{
+  "schema": "rinkcraft.unit-possession-replay.v1",
+  "input": {
+    "schema": "rinkcraft.unit-possession-input.v1",
+    "character_rules": {
+      "schema": "rinkcraft.game-rules.v1",
+      "version": "0.1.0-playtest",
+      "title": "Rinkcraft character creation — authored playtest rules",
+      "standard_array": [
+        17,
+        16,
+        15,
+        13,
+        11,
+        9
+      ],
+      "templates": [
+        {
+          "id": "conductor",
+          "branch": "skater",
+          "class_id": "conductor",
+          "class_name": "Conductor",
+          "specialty": "Lane weaver",
+          "description": "Fictional lane weaver build. These authored values and training choices are game rules, not measurements of an NHL player.",
+          "priority": [
+            2,
+            4,
+            1,
+            0,
+            5,
+            3
+          ],
+          "task_skills": [
+            "Outlet",
+            "Zone Entry",
+            "Support"
+          ],
+          "methods": [
+            "Disguise",
+            "Quick exchange",
+            "Seam pass"
+          ],
+          "tendencies": [
+            "See the next option",
+            "Move the defense"
+          ],
+          "playbook_options": [
+            "F2 support",
+            "Power-play flank"
+          ]
+        },
+        {
+          "id": "hunter",
+          "branch": "skater",
+          "class_id": "hunter",
+          "class_name": "Hunter",
+          "specialty": "Puck pursuer",
+          "description": "Fictional puck pursuer build. These authored values and training choices are game rules, not measurements of an NHL player.",
+          "priority": [
+            0,
+            5,
+            4,
+            1,
+            2,
+            3
+          ],
+          "task_skills": [
+            "Retrieval",
+            "Pressure",
+            "Recovery"
+          ],
+          "methods": [
+            "Angle pursuit",
+            "Stick pressure",
+            "Second effort"
+          ],
+          "tendencies": [
+            "Close space",
+            "Pursue loose pucks"
+          ],
+          "playbook_options": [
+            "F1 pressure",
+            "F2 recovery"
+          ]
+        },
+        {
+          "id": "warden-skater",
+          "branch": "skater",
+          "class_id": "warden",
+          "class_name": "Warden",
+          "specialty": "Interior guardian",
+          "description": "Fictional interior guardian build. These authored values and training choices are game rules, not measurements of an NHL player.",
+          "priority": [
+            5,
+            4,
+            2,
+            1,
+            0,
+            3
+          ],
+          "task_skills": [
+            "Coverage",
+            "Denial",
+            "Outlet"
+          ],
+          "methods": [
+            "Hold inside",
+            "Stick lane",
+            "Safe release"
+          ],
+          "tendencies": [
+            "Protect the middle",
+            "Preserve cover"
+          ],
+          "playbook_options": [
+            "F3 cover",
+            "Low support"
+          ]
+        },
+        {
+          "id": "vanguard",
+          "branch": "skater",
+          "class_id": "vanguard",
+          "class_name": "Vanguard",
+          "specialty": "Space contender",
+          "description": "Fictional space contender build. These authored values and training choices are game rules, not measurements of an NHL player.",
+          "priority": [
+            1,
+            5,
+            3,
+            0,
+            4,
+            2
+          ],
+          "task_skills": [
+            "Protection",
+            "Screening",
+            "Retrieval"
+          ],
+          "methods": [
+            "Wall seal",
+            "Net-front hold",
+            "Contact exit"
+          ],
+          "tendencies": [
+            "Contest space",
+            "Retain possession"
+          ],
+          "playbook_options": [
+            "Net front",
+            "Wall recovery"
+          ]
+        },
+        {
+          "id": "marksman",
+          "branch": "skater",
+          "class_id": "marksman",
+          "class_name": "Marksman",
+          "specialty": "Release specialist",
+          "description": "Fictional release specialist build. These authored values and training choices are game rules, not measurements of an NHL player.",
+          "priority": [
+            3,
+            4,
+            1,
+            0,
+            2,
+            5
+          ],
+          "task_skills": [
+            "Shot Release",
+            "Receiving",
+            "Screening"
+          ],
+          "methods": [
+            "Quick release",
+            "One-touch shot",
+            "Find a pocket"
+          ],
+          "tendencies": [
+            "Present a target",
+            "Prepare the shot"
+          ],
+          "playbook_options": [
+            "Weak-side target",
+            "Power-play flank"
+          ]
+        },
+        {
+          "id": "connector",
+          "branch": "skater",
+          "class_id": "connector",
+          "class_name": "Connector",
+          "specialty": "Support hinge",
+          "description": "Fictional support hinge build. These authored values and training choices are game rules, not measurements of an NHL player.",
+          "priority": [
+            4,
+            2,
+            5,
+            1,
+            0,
+            3
+          ],
+          "task_skills": [
+            "Support",
+            "Outlet",
+            "Coverage"
+          ],
+          "methods": [
+            "Give and go",
+            "Short outlet",
+            "Cover exchange"
+          ],
+          "tendencies": [
+            "Stay available",
+            "Link the unit"
+          ],
+          "playbook_options": [
+            "F2 support",
+            "F3 cover"
+          ]
+        },
+        {
+          "id": "pathfinder",
+          "branch": "skater",
+          "class_id": "pathfinder",
+          "class_name": "Pathfinder",
+          "specialty": "Boundary breaker",
+          "description": "Fictional boundary breaker build. These authored values and training choices are game rules, not measurements of an NHL player.",
+          "priority": [
+            0,
+            1,
+            4,
+            2,
+            3,
+            5
+          ],
+          "task_skills": [
+            "Zone Exit",
+            "Zone Entry",
+            "Escape"
+          ],
+          "methods": [
+            "Pace change",
+            "Lateral cut",
+            "Carry through"
+          ],
+          "tendencies": [
+            "Attack a seam",
+            "Change the angle"
+          ],
+          "playbook_options": [
+            "Entry carrier",
+            "Transition outlet"
+          ]
+        },
+        {
+          "id": "setkeeper",
+          "branch": "goalie",
+          "class_id": "warden",
+          "class_name": "Warden",
+          "specialty": "Setkeeper",
+          "description": "Fictional setkeeper build. These authored values and training choices are game rules, not measurements of an NHL player.",
+          "priority": [
+            1,
+            0,
+            3,
+            4,
+            2,
+            5
+          ],
+          "task_skills": [
+            "Set Depth",
+            "Post Work",
+            "Rebound Direction"
+          ],
+          "methods": [
+            "Hold alignment",
+            "Absorb",
+            "Seal the post"
+          ],
+          "tendencies": [
+            "Stay controlled",
+            "Manage depth"
+          ],
+          "playbook_options": [
+            "Set-position option",
+            "Near-post option"
+          ]
+        },
+        {
+          "id": "scrambler",
+          "branch": "goalie",
+          "class_id": "warden",
+          "class_name": "Warden",
+          "specialty": "Scrambler",
+          "description": "Fictional scrambler build. These authored values and training choices are game rules, not measurements of an NHL player.",
+          "priority": [
+            2,
+            4,
+            0,
+            1,
+            3,
+            5
+          ],
+          "task_skills": [
+            "Lateral Response",
+            "Recovery",
+            "Track Traffic"
+          ],
+          "methods": [
+            "Push across",
+            "Recover edges",
+            "Follow the puck"
+          ],
+          "tendencies": [
+            "Restore readiness",
+            "Stay in the sequence"
+          ],
+          "playbook_options": [
+            "Lateral-response option",
+            "Recovery option"
+          ]
+        },
+        {
+          "id": "outletkeeper",
+          "branch": "goalie",
+          "class_id": "warden",
+          "class_name": "Warden",
+          "specialty": "Outletkeeper",
+          "description": "Fictional outletkeeper build. These authored values and training choices are game rules, not measurements of an NHL player.",
+          "priority": [
+            5,
+            4,
+            1,
+            0,
+            3,
+            2
+          ],
+          "task_skills": [
+            "Puck Exchange",
+            "Retrieval",
+            "Set Depth"
+          ],
+          "methods": [
+            "Stop the rim",
+            "Short exchange",
+            "Direct outlet"
+          ],
+          "tendencies": [
+            "Join the breakout",
+            "Coordinate the leave"
+          ],
+          "playbook_options": [
+            "Breakout exchange",
+            "Retrieval option"
+          ]
+        }
+      ]
+    },
+    "rules": {
+      "schema": "rinkcraft.unit-possession-rules.v1",
+      "version": "0.4.0-playtest",
+      "support_bonus": 2
+    },
+    "request": {
+      "members": [
+        {
+          "id": "home-carrier",
+          "side": "home",
+          "slot": "F1",
+          "character": {
+            "schema": "icelines.game-character.v1",
+            "profile_kind": "fictional_game_character",
+            "rules_version": "0.1.0-playtest",
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "template_id": "conductor",
+            "name": "Fixture Carrier",
+            "position": "F",
+            "branch": "skater",
+            "class_id": "conductor",
+            "class_name": "Conductor",
+            "specialty": "Lane weaver",
+            "description": "Fictional lane weaver build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "capabilities": [
+              {
+                "id": "skating",
+                "label": "Skating",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "handling",
+                "label": "Handling",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "passing",
+                "label": "Passing",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "shooting",
+                "label": "Shooting",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "reading",
+                "label": "Reading",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "defending",
+                "label": "Defending",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "task_skills": [
+              "Outlet",
+              "Zone Entry",
+              "Support"
+            ],
+            "methods": [
+              "Disguise",
+              "Quick exchange",
+              "Seam pass"
+            ],
+            "tendencies": [
+              "See the next option",
+              "Move the defense"
+            ],
+            "playbook_options": [
+              "F2 support",
+              "Power-play flank"
+            ],
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                12,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "dice": [],
+            "rolled_totals": [],
+            "inspiration": null,
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model."
+          }
+        },
+        {
+          "id": "home-receiver",
+          "side": "home",
+          "slot": "F2",
+          "character": {
+            "schema": "icelines.game-character.v1",
+            "profile_kind": "fictional_game_character",
+            "rules_version": "0.1.0-playtest",
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "template_id": "connector",
+            "name": "Unit High Receiver",
+            "position": "F",
+            "branch": "skater",
+            "class_id": "connector",
+            "class_name": "Connector",
+            "specialty": "Support hinge",
+            "description": "Fictional support hinge build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "capabilities": [
+              {
+                "id": "skating",
+                "label": "Skating",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "handling",
+                "label": "Handling",
+                "score": 20,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "passing",
+                "label": "Passing",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "shooting",
+                "label": "Shooting",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "reading",
+                "label": "Reading",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "defending",
+                "label": "Defending",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "task_skills": [
+              "Support",
+              "Outlet",
+              "Coverage"
+            ],
+            "methods": [
+              "Give and go",
+              "Short outlet",
+              "Cover exchange"
+            ],
+            "tendencies": [
+              "Stay available",
+              "Link the unit"
+            ],
+            "playbook_options": [
+              "F2 support",
+              "F3 cover"
+            ],
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                20,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "dice": [],
+            "rolled_totals": [],
+            "inspiration": null,
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model."
+          }
+        },
+        {
+          "id": "home-cover",
+          "side": "home",
+          "slot": "F3",
+          "character": {
+            "schema": "icelines.game-character.v1",
+            "profile_kind": "fictional_game_character",
+            "rules_version": "0.1.0-playtest",
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "template_id": "warden-skater",
+            "name": "Fixture Cover",
+            "position": "F",
+            "branch": "skater",
+            "class_id": "warden",
+            "class_name": "Warden",
+            "specialty": "Interior guardian",
+            "description": "Fictional interior guardian build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "capabilities": [
+              {
+                "id": "skating",
+                "label": "Skating",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "handling",
+                "label": "Handling",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "passing",
+                "label": "Passing",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "shooting",
+                "label": "Shooting",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "reading",
+                "label": "Reading",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "defending",
+                "label": "Defending",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "task_skills": [
+              "Coverage",
+              "Denial",
+              "Outlet"
+            ],
+            "methods": [
+              "Hold inside",
+              "Stick lane",
+              "Safe release"
+            ],
+            "tendencies": [
+              "Protect the middle",
+              "Preserve cover"
+            ],
+            "playbook_options": [
+              "F3 cover",
+              "Low support"
+            ],
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                12,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "dice": [],
+            "rolled_totals": [],
+            "inspiration": null,
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model."
+          }
+        },
+        {
+          "id": "home-point",
+          "side": "home",
+          "slot": "D1",
+          "character": {
+            "schema": "icelines.game-character.v1",
+            "profile_kind": "fictional_game_character",
+            "rules_version": "0.1.0-playtest",
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "template_id": "vanguard",
+            "name": "Fixture Point",
+            "position": "D",
+            "branch": "skater",
+            "class_id": "vanguard",
+            "class_name": "Vanguard",
+            "specialty": "Space contender",
+            "description": "Fictional space contender build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "capabilities": [
+              {
+                "id": "skating",
+                "label": "Skating",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "handling",
+                "label": "Handling",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "passing",
+                "label": "Passing",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "shooting",
+                "label": "Shooting",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "reading",
+                "label": "Reading",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "defending",
+                "label": "Defending",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "task_skills": [
+              "Protection",
+              "Screening",
+              "Retrieval"
+            ],
+            "methods": [
+              "Wall seal",
+              "Net-front hold",
+              "Contact exit"
+            ],
+            "tendencies": [
+              "Contest space",
+              "Retain possession"
+            ],
+            "playbook_options": [
+              "Net front",
+              "Wall recovery"
+            ],
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                12,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "dice": [],
+            "rolled_totals": [],
+            "inspiration": null,
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model."
+          }
+        },
+        {
+          "id": "home-anchor",
+          "side": "home",
+          "slot": "D2",
+          "character": {
+            "schema": "icelines.game-character.v1",
+            "profile_kind": "fictional_game_character",
+            "rules_version": "0.1.0-playtest",
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "template_id": "vanguard",
+            "name": "Fixture Anchor",
+            "position": "D",
+            "branch": "skater",
+            "class_id": "vanguard",
+            "class_name": "Vanguard",
+            "specialty": "Space contender",
+            "description": "Fictional space contender build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "capabilities": [
+              {
+                "id": "skating",
+                "label": "Skating",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "handling",
+                "label": "Handling",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "passing",
+                "label": "Passing",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "shooting",
+                "label": "Shooting",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "reading",
+                "label": "Reading",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "defending",
+                "label": "Defending",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "task_skills": [
+              "Protection",
+              "Screening",
+              "Retrieval"
+            ],
+            "methods": [
+              "Wall seal",
+              "Net-front hold",
+              "Contact exit"
+            ],
+            "tendencies": [
+              "Contest space",
+              "Retain possession"
+            ],
+            "playbook_options": [
+              "Net front",
+              "Wall recovery"
+            ],
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                12,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "dice": [],
+            "rolled_totals": [],
+            "inspiration": null,
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model."
+          }
+        },
+        {
+          "id": "home-goalie",
+          "side": "home",
+          "slot": "G",
+          "character": {
+            "schema": "icelines.game-character.v1",
+            "profile_kind": "fictional_game_character",
+            "rules_version": "0.1.0-playtest",
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "template_id": "outletkeeper",
+            "name": "Fixture Home Goalie",
+            "position": "G",
+            "branch": "goalie",
+            "class_id": "warden",
+            "class_name": "Warden",
+            "specialty": "Outletkeeper",
+            "description": "Fictional outletkeeper build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "capabilities": [
+              {
+                "id": "tracking",
+                "label": "Tracking",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "positioning",
+                "label": "Positioning",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "movement",
+                "label": "Movement",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "rebounds",
+                "label": "Rebounds",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "recovery",
+                "label": "Recovery",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "puck_play",
+                "label": "Puck Play",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "task_skills": [
+              "Puck Exchange",
+              "Retrieval",
+              "Set Depth"
+            ],
+            "methods": [
+              "Stop the rim",
+              "Short exchange",
+              "Direct outlet"
+            ],
+            "tendencies": [
+              "Join the breakout",
+              "Coordinate the leave"
+            ],
+            "playbook_options": [
+              "Breakout exchange",
+              "Retrieval option"
+            ],
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                12,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "dice": [],
+            "rolled_totals": [],
+            "inspiration": null,
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model."
+          }
+        },
+        {
+          "id": "away-pressure",
+          "side": "away",
+          "slot": "F1",
+          "character": {
+            "schema": "icelines.game-character.v1",
+            "profile_kind": "fictional_game_character",
+            "rules_version": "0.1.0-playtest",
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "template_id": "hunter",
+            "name": "Fixture Pressure",
+            "position": "F",
+            "branch": "skater",
+            "class_id": "hunter",
+            "class_name": "Hunter",
+            "specialty": "Puck pursuer",
+            "description": "Fictional puck pursuer build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "capabilities": [
+              {
+                "id": "skating",
+                "label": "Skating",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "handling",
+                "label": "Handling",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "passing",
+                "label": "Passing",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "shooting",
+                "label": "Shooting",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "reading",
+                "label": "Reading",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "defending",
+                "label": "Defending",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "task_skills": [
+              "Retrieval",
+              "Pressure",
+              "Recovery"
+            ],
+            "methods": [
+              "Angle pursuit",
+              "Stick pressure",
+              "Second effort"
+            ],
+            "tendencies": [
+              "Close space",
+              "Pursue loose pucks"
+            ],
+            "playbook_options": [
+              "F1 pressure",
+              "F2 recovery"
+            ],
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                12,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "dice": [],
+            "rolled_totals": [],
+            "inspiration": null,
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model."
+          }
+        },
+        {
+          "id": "away-interceptor",
+          "side": "away",
+          "slot": "F2",
+          "character": {
+            "schema": "icelines.game-character.v1",
+            "profile_kind": "fictional_game_character",
+            "rules_version": "0.1.0-playtest",
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "template_id": "conductor",
+            "name": "Fixture Interceptor",
+            "position": "F",
+            "branch": "skater",
+            "class_id": "conductor",
+            "class_name": "Conductor",
+            "specialty": "Lane weaver",
+            "description": "Fictional lane weaver build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "capabilities": [
+              {
+                "id": "skating",
+                "label": "Skating",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "handling",
+                "label": "Handling",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "passing",
+                "label": "Passing",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "shooting",
+                "label": "Shooting",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "reading",
+                "label": "Reading",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "defending",
+                "label": "Defending",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "task_skills": [
+              "Outlet",
+              "Zone Entry",
+              "Support"
+            ],
+            "methods": [
+              "Disguise",
+              "Quick exchange",
+              "Seam pass"
+            ],
+            "tendencies": [
+              "See the next option",
+              "Move the defense"
+            ],
+            "playbook_options": [
+              "F2 support",
+              "Power-play flank"
+            ],
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                12,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "dice": [],
+            "rolled_totals": [],
+            "inspiration": null,
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model."
+          }
+        },
+        {
+          "id": "away-cover",
+          "side": "away",
+          "slot": "F3",
+          "character": {
+            "schema": "icelines.game-character.v1",
+            "profile_kind": "fictional_game_character",
+            "rules_version": "0.1.0-playtest",
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "template_id": "warden-skater",
+            "name": "Fixture Away Cover",
+            "position": "F",
+            "branch": "skater",
+            "class_id": "warden",
+            "class_name": "Warden",
+            "specialty": "Interior guardian",
+            "description": "Fictional interior guardian build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "capabilities": [
+              {
+                "id": "skating",
+                "label": "Skating",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "handling",
+                "label": "Handling",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "passing",
+                "label": "Passing",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "shooting",
+                "label": "Shooting",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "reading",
+                "label": "Reading",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "defending",
+                "label": "Defending",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "task_skills": [
+              "Coverage",
+              "Denial",
+              "Outlet"
+            ],
+            "methods": [
+              "Hold inside",
+              "Stick lane",
+              "Safe release"
+            ],
+            "tendencies": [
+              "Protect the middle",
+              "Preserve cover"
+            ],
+            "playbook_options": [
+              "F3 cover",
+              "Low support"
+            ],
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                12,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "dice": [],
+            "rolled_totals": [],
+            "inspiration": null,
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model."
+          }
+        },
+        {
+          "id": "away-gap",
+          "side": "away",
+          "slot": "D1",
+          "character": {
+            "schema": "icelines.game-character.v1",
+            "profile_kind": "fictional_game_character",
+            "rules_version": "0.1.0-playtest",
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "template_id": "vanguard",
+            "name": "Fixture Gap",
+            "position": "D",
+            "branch": "skater",
+            "class_id": "vanguard",
+            "class_name": "Vanguard",
+            "specialty": "Space contender",
+            "description": "Fictional space contender build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "capabilities": [
+              {
+                "id": "skating",
+                "label": "Skating",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "handling",
+                "label": "Handling",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "passing",
+                "label": "Passing",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "shooting",
+                "label": "Shooting",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "reading",
+                "label": "Reading",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "defending",
+                "label": "Defending",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "task_skills": [
+              "Protection",
+              "Screening",
+              "Retrieval"
+            ],
+            "methods": [
+              "Wall seal",
+              "Net-front hold",
+              "Contact exit"
+            ],
+            "tendencies": [
+              "Contest space",
+              "Retain possession"
+            ],
+            "playbook_options": [
+              "Net front",
+              "Wall recovery"
+            ],
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                12,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "dice": [],
+            "rolled_totals": [],
+            "inspiration": null,
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model."
+          }
+        },
+        {
+          "id": "away-anchor",
+          "side": "away",
+          "slot": "D2",
+          "character": {
+            "schema": "icelines.game-character.v1",
+            "profile_kind": "fictional_game_character",
+            "rules_version": "0.1.0-playtest",
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "template_id": "warden-skater",
+            "name": "Fixture Away Anchor",
+            "position": "D",
+            "branch": "skater",
+            "class_id": "warden",
+            "class_name": "Warden",
+            "specialty": "Interior guardian",
+            "description": "Fictional interior guardian build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "capabilities": [
+              {
+                "id": "skating",
+                "label": "Skating",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "handling",
+                "label": "Handling",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "passing",
+                "label": "Passing",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "shooting",
+                "label": "Shooting",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "reading",
+                "label": "Reading",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "defending",
+                "label": "Defending",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "task_skills": [
+              "Coverage",
+              "Denial",
+              "Outlet"
+            ],
+            "methods": [
+              "Hold inside",
+              "Stick lane",
+              "Safe release"
+            ],
+            "tendencies": [
+              "Protect the middle",
+              "Preserve cover"
+            ],
+            "playbook_options": [
+              "F3 cover",
+              "Low support"
+            ],
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                12,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "dice": [],
+            "rolled_totals": [],
+            "inspiration": null,
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model."
+          }
+        },
+        {
+          "id": "away-goalie",
+          "side": "away",
+          "slot": "G",
+          "character": {
+            "schema": "icelines.game-character.v1",
+            "profile_kind": "fictional_game_character",
+            "rules_version": "0.1.0-playtest",
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "template_id": "setkeeper",
+            "name": "Fixture Away Goalie",
+            "position": "G",
+            "branch": "goalie",
+            "class_id": "warden",
+            "class_name": "Warden",
+            "specialty": "Setkeeper",
+            "description": "Fictional setkeeper build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "capabilities": [
+              {
+                "id": "tracking",
+                "label": "Tracking",
+                "score": 20,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "positioning",
+                "label": "Positioning",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "movement",
+                "label": "Movement",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "rebounds",
+                "label": "Rebounds",
+                "score": 1,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "recovery",
+                "label": "Recovery",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "puck_play",
+                "label": "Puck Play",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "task_skills": [
+              "Set Depth",
+              "Post Work",
+              "Rebound Direction"
+            ],
+            "methods": [
+              "Hold alignment",
+              "Absorb",
+              "Seal the post"
+            ],
+            "tendencies": [
+              "Stay controlled",
+              "Manage depth"
+            ],
+            "playbook_options": [
+              "Set-position option",
+              "Near-post option"
+            ],
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                20,
+                12,
+                12,
+                1,
+                12,
+                12
+              ]
+            },
+            "dice": [],
+            "rolled_totals": [],
+            "inspiration": null,
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model."
+          }
+        }
+      ],
+      "assignments": {
+        "carrier": "F1",
+        "receiver": "F2",
+        "high_cover": "F3",
+        "counter_defender": "D2",
+        "away_pressure": "F1",
+        "away_gap": "D1",
+        "away_interceptor": "F2"
+      },
+      "hero_id": "home-receiver",
+      "seed": 286,
+      "commit_support": false,
+      "actions": [
+        "outlet",
+        "carry",
+        "pass",
+        "receive",
+        "shoot",
+        "save",
+        "rebound"
+      ]
+    }
+  },
+  "session": {
+    "assignments": {
+      "away_gap": "D1",
+      "away_interceptor": "F2",
+      "away_pressure": "F1",
+      "carrier": "F1",
+      "counter_defender": "D2",
+      "high_cover": "F3",
+      "receiver": "F2"
+    },
+    "hero_id": "home-receiver",
+    "scene": {
+      "commit_support": false,
+      "events": [
+        {
+          "action": "outlet",
+          "actor": "home:G",
+          "actor_capability": "Puck Play",
+          "after": {
+            "control": "home:F1",
+            "cover_owner": "home:F3",
+            "loose": false,
+            "phase": "breakout"
+          },
+          "before": {
+            "control": "home:G",
+            "cover_owner": "home:F3",
+            "loose": false,
+            "phase": "goalie_control"
+          },
+          "contest": {
+            "actor_adjustment": 0,
+            "actor_score": 12,
+            "opposition_adjustment": 0,
+            "opposition_score": 12,
+            "score_rule": "half_offset"
+          },
+          "counts": {
+            "actor_wins": 190,
+            "combinations": 400,
+            "opposition_wins": 190,
+            "stalemates": 20
+          },
+          "explanation": "Goalie outlet reaches the carrier. This is possession, not a scoring chance.",
+          "opposition": "away:F1",
+          "opposition_capability": "Reading",
+          "resolution": {
+            "actor_die": 20,
+            "actor_total": 21,
+            "margin": 12,
+            "opposition_die": 8,
+            "opposition_total": 9,
+            "outcome": "actor_wins"
+          },
+          "terms": [
+            1,
+            1
+          ]
+        },
+        {
+          "action": "carry",
+          "actor": "home:F1",
+          "actor_capability": "Skating",
+          "after": {
+            "control": "home:F1",
+            "cover_owner": "home:F3",
+            "loose": false,
+            "phase": "advanced"
+          },
+          "before": {
+            "control": "home:F1",
+            "cover_owner": "home:F3",
+            "loose": false,
+            "phase": "breakout"
+          },
+          "contest": {
+            "actor_adjustment": 0,
+            "actor_score": 12,
+            "opposition_adjustment": 0,
+            "opposition_score": 12,
+            "score_rule": "half_offset"
+          },
+          "counts": {
+            "actor_wins": 190,
+            "combinations": 400,
+            "opposition_wins": 190,
+            "stalemates": 20
+          },
+          "explanation": "Carrier advances; the middle passing opportunity opens.",
+          "opposition": "away:D1",
+          "opposition_capability": "Defending",
+          "resolution": {
+            "actor_die": 11,
+            "actor_total": 12,
+            "margin": 2,
+            "opposition_die": 9,
+            "opposition_total": 10,
+            "outcome": "actor_wins"
+          },
+          "terms": [
+            1,
+            1
+          ]
+        },
+        {
+          "action": "pass",
+          "actor": "home:F1",
+          "actor_capability": "Passing",
+          "after": {
+            "control": null,
+            "cover_owner": "home:F3",
+            "in_flight_to": "home:F2",
+            "loose": false,
+            "phase": "pass_arriving"
+          },
+          "before": {
+            "control": "home:F1",
+            "cover_owner": "home:F3",
+            "loose": false,
+            "phase": "advanced"
+          },
+          "contest": {
+            "actor_adjustment": 0,
+            "actor_score": 12,
+            "opposition_adjustment": 0,
+            "opposition_score": 12,
+            "score_rule": "half_offset"
+          },
+          "counts": {
+            "actor_wins": 190,
+            "combinations": 400,
+            "opposition_wins": 190,
+            "stalemates": 20
+          },
+          "explanation": "Pass reaches the receiving lane but control is not awarded. The assigned receiver must handle it under pressure.",
+          "opposition": "away:F2",
+          "opposition_capability": "Reading",
+          "resolution": {
+            "actor_die": 16,
+            "actor_total": 17,
+            "margin": 15,
+            "opposition_die": 1,
+            "opposition_total": 2,
+            "outcome": "actor_wins"
+          },
+          "terms": [
+            1,
+            1
+          ]
+        },
+        {
+          "action": "receive",
+          "actor": "home:F2",
+          "actor_capability": "Handling",
+          "after": {
+            "control": "home:F2",
+            "cover_owner": "home:F3",
+            "loose": false,
+            "phase": "ready_to_shoot"
+          },
+          "before": {
+            "control": null,
+            "cover_owner": "home:F3",
+            "in_flight_to": "home:F2",
+            "loose": false,
+            "phase": "pass_arriving"
+          },
+          "contest": {
+            "actor_adjustment": 0,
+            "actor_score": 20,
+            "opposition_adjustment": 0,
+            "opposition_score": 12,
+            "score_rule": "half_offset"
+          },
+          "counts": {
+            "actor_wins": 264,
+            "combinations": 400,
+            "opposition_wins": 120,
+            "stalemates": 16
+          },
+          "explanation": "Receiver establishes control and a declared contested-release opportunity opens. No shot or goal is awarded yet.",
+          "opposition": "away:F2",
+          "opposition_capability": "Defending",
+          "resolution": {
+            "actor_die": 1,
+            "actor_total": 6,
+            "margin": 4,
+            "opposition_die": 1,
+            "opposition_total": 2,
+            "outcome": "actor_wins"
+          },
+          "terms": [
+            5,
+            1
+          ]
+        },
+        {
+          "action": "shoot",
+          "actor": "home:F2",
+          "actor_capability": "Shooting",
+          "after": {
+            "control": null,
+            "cover_owner": "home:F3",
+            "in_flight_to": "away:G",
+            "loose": false,
+            "phase": "shot_in_flight"
+          },
+          "before": {
+            "control": "home:F2",
+            "cover_owner": "home:F3",
+            "loose": false,
+            "phase": "ready_to_shoot"
+          },
+          "contest": {
+            "actor_adjustment": 0,
+            "actor_score": 12,
+            "opposition_adjustment": 0,
+            "opposition_score": 12,
+            "score_rule": "half_offset"
+          },
+          "counts": {
+            "actor_wins": 190,
+            "combinations": 400,
+            "opposition_wins": 190,
+            "stalemates": 20
+          },
+          "explanation": "Shooter gets an on-target release past the assigned gap defender. The shot is in flight; the goalie must respond. No goal yet.",
+          "opposition": "away:D1",
+          "opposition_capability": "Defending",
+          "resolution": {
+            "actor_die": 15,
+            "actor_total": 16,
+            "margin": 2,
+            "opposition_die": 13,
+            "opposition_total": 14,
+            "outcome": "actor_wins"
+          },
+          "terms": [
+            1,
+            1
+          ]
+        },
+        {
+          "action": "save",
+          "actor": "away:G",
+          "actor_capability": "Tracking",
+          "after": {
+            "control": null,
+            "cover_owner": "home:F3",
+            "loose": true,
+            "phase": "save_contact"
+          },
+          "before": {
+            "control": null,
+            "cover_owner": "home:F3",
+            "in_flight_to": "away:G",
+            "loose": false,
+            "phase": "shot_in_flight"
+          },
+          "contest": {
+            "actor_adjustment": 0,
+            "actor_score": 20,
+            "opposition_adjustment": 0,
+            "opposition_score": 12,
+            "score_rule": "half_offset"
+          },
+          "counts": {
+            "actor_wins": 264,
+            "combinations": 400,
+            "opposition_wins": 120,
+            "stalemates": 16
+          },
+          "explanation": "Goalie tracks and stops the clear-view shot. Save contact does not grant control; rebound containment must resolve next.",
+          "opposition": "home:F2",
+          "opposition_capability": "Shooting",
+          "resolution": {
+            "actor_die": 19,
+            "actor_total": 24,
+            "margin": 11,
+            "opposition_die": 12,
+            "opposition_total": 13,
+            "outcome": "actor_wins"
+          },
+          "terms": [
+            5,
+            1
+          ]
+        },
+        {
+          "action": "rebound",
+          "actor": "away:G",
+          "actor_capability": "Rebounds",
+          "after": {
+            "control": null,
+            "cover_owner": "home:F3",
+            "loose": true,
+            "phase": "rebound_loose"
+          },
+          "before": {
+            "control": null,
+            "cover_owner": "home:F3",
+            "loose": true,
+            "phase": "save_contact"
+          },
+          "contest": {
+            "actor_adjustment": 0,
+            "actor_score": 1,
+            "opposition_adjustment": 0,
+            "opposition_score": 20,
+            "score_rule": "half_offset"
+          },
+          "counts": {
+            "actor_wins": 45,
+            "combinations": 400,
+            "opposition_wins": 345,
+            "stalemates": 10
+          },
+          "explanation": "Rebound containment fails under the assigned receiver's pressure. The window ends with a loose puck, not automatic skater possession or a rebound goal.",
+          "opposition": "home:F2",
+          "opposition_capability": "Handling",
+          "resolution": {
+            "actor_die": 18,
+            "actor_total": 13,
+            "margin": -2,
+            "opposition_die": 10,
+            "opposition_total": 15,
+            "outcome": "opposition_wins"
+          },
+          "terms": [
+            -5,
+            5
+          ]
+        }
+      ],
+      "hero_slot": "home:F2",
+      "legal_actions": [],
+      "note": "Authored shooting rules 0.4: controlled reception opens a contested release, receiver Shooting versus assigned gap defender Defending. On-target flight requires away goalie Tracking versus shooter Shooting in a fixed clear-view situation. Save contact stays uncontrolled; goalie Rebounds versus receiver Handling determines held or loose. These sequential contests assert no empirical independence. No extra support on receive/shoot/save/rebound. Release/rebound failures end loose; save failure scores. Ties end unresolved with puck status preserved. No traffic, lateral movement, nearest-player geometry, clock, fatigue, restart or NHL probabilities. Positioning, Movement and Recovery are not tested.",
+      "participants": [
+        {
+          "character": {
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+            "branch": "skater",
+            "capabilities": [
+              {
+                "id": "skating",
+                "label": "Skating",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "handling",
+                "label": "Handling",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "passing",
+                "label": "Passing",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "shooting",
+                "label": "Shooting",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "reading",
+                "label": "Reading",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "defending",
+                "label": "Defending",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "class_id": "conductor",
+            "class_name": "Conductor",
+            "description": "Fictional lane weaver build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "dice": [],
+            "inspiration": null,
+            "methods": [
+              "Disguise",
+              "Quick exchange",
+              "Seam pass"
+            ],
+            "name": "Fixture Carrier",
+            "playbook_options": [
+              "F2 support",
+              "Power-play flank"
+            ],
+            "position": "F",
+            "profile_kind": "fictional_game_character",
+            "rolled_totals": [],
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "rules_version": "0.1.0-playtest",
+            "schema": "icelines.game-character.v1",
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                12,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "specialty": "Lane weaver",
+            "task_skills": [
+              "Outlet",
+              "Zone Entry",
+              "Support"
+            ],
+            "template_id": "conductor",
+            "tendencies": [
+              "See the next option",
+              "Move the defense"
+            ]
+          },
+          "slot": "home:F1",
+          "station": "advanced carrier lane"
+        },
+        {
+          "character": {
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+            "branch": "skater",
+            "capabilities": [
+              {
+                "id": "skating",
+                "label": "Skating",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "handling",
+                "label": "Handling",
+                "score": 20,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "passing",
+                "label": "Passing",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "shooting",
+                "label": "Shooting",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "reading",
+                "label": "Reading",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "defending",
+                "label": "Defending",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "class_id": "connector",
+            "class_name": "Connector",
+            "description": "Fictional support hinge build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "dice": [],
+            "inspiration": null,
+            "methods": [
+              "Give and go",
+              "Short outlet",
+              "Cover exchange"
+            ],
+            "name": "Unit High Receiver",
+            "playbook_options": [
+              "F2 support",
+              "F3 cover"
+            ],
+            "position": "F",
+            "profile_kind": "fictional_game_character",
+            "rolled_totals": [],
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "rules_version": "0.1.0-playtest",
+            "schema": "icelines.game-character.v1",
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                20,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "specialty": "Support hinge",
+            "task_skills": [
+              "Support",
+              "Outlet",
+              "Coverage"
+            ],
+            "template_id": "connector",
+            "tendencies": [
+              "Stay available",
+              "Link the unit"
+            ]
+          },
+          "slot": "home:F2",
+          "station": "controlled shooting lane"
+        },
+        {
+          "character": {
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+            "branch": "skater",
+            "capabilities": [
+              {
+                "id": "skating",
+                "label": "Skating",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "handling",
+                "label": "Handling",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "passing",
+                "label": "Passing",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "shooting",
+                "label": "Shooting",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "reading",
+                "label": "Reading",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "defending",
+                "label": "Defending",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "class_id": "warden",
+            "class_name": "Warden",
+            "description": "Fictional interior guardian build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "dice": [],
+            "inspiration": null,
+            "methods": [
+              "Hold inside",
+              "Stick lane",
+              "Safe release"
+            ],
+            "name": "Fixture Cover",
+            "playbook_options": [
+              "F3 cover",
+              "Low support"
+            ],
+            "position": "F",
+            "profile_kind": "fictional_game_character",
+            "rolled_totals": [],
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "rules_version": "0.1.0-playtest",
+            "schema": "icelines.game-character.v1",
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                12,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "specialty": "Interior guardian",
+            "task_skills": [
+              "Coverage",
+              "Denial",
+              "Outlet"
+            ],
+            "template_id": "warden-skater",
+            "tendencies": [
+              "Protect the middle",
+              "Preserve cover"
+            ]
+          },
+          "slot": "home:F3",
+          "station": "high cover"
+        },
+        {
+          "character": {
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+            "branch": "skater",
+            "capabilities": [
+              {
+                "id": "skating",
+                "label": "Skating",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "handling",
+                "label": "Handling",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "passing",
+                "label": "Passing",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "shooting",
+                "label": "Shooting",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "reading",
+                "label": "Reading",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "defending",
+                "label": "Defending",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "class_id": "vanguard",
+            "class_name": "Vanguard",
+            "description": "Fictional space contender build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "dice": [],
+            "inspiration": null,
+            "methods": [
+              "Wall seal",
+              "Net-front hold",
+              "Contact exit"
+            ],
+            "name": "Fixture Point",
+            "playbook_options": [
+              "Net front",
+              "Wall recovery"
+            ],
+            "position": "D",
+            "profile_kind": "fictional_game_character",
+            "rolled_totals": [],
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "rules_version": "0.1.0-playtest",
+            "schema": "icelines.game-character.v1",
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                12,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "specialty": "Space contender",
+            "task_skills": [
+              "Protection",
+              "Screening",
+              "Retrieval"
+            ],
+            "template_id": "vanguard",
+            "tendencies": [
+              "Contest space",
+              "Retain possession"
+            ]
+          },
+          "slot": "home:D1",
+          "station": "unit support"
+        },
+        {
+          "character": {
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+            "branch": "skater",
+            "capabilities": [
+              {
+                "id": "skating",
+                "label": "Skating",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "handling",
+                "label": "Handling",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "passing",
+                "label": "Passing",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "shooting",
+                "label": "Shooting",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "reading",
+                "label": "Reading",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "defending",
+                "label": "Defending",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "class_id": "vanguard",
+            "class_name": "Vanguard",
+            "description": "Fictional space contender build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "dice": [],
+            "inspiration": null,
+            "methods": [
+              "Wall seal",
+              "Net-front hold",
+              "Contact exit"
+            ],
+            "name": "Fixture Anchor",
+            "playbook_options": [
+              "Net front",
+              "Wall recovery"
+            ],
+            "position": "D",
+            "profile_kind": "fictional_game_character",
+            "rolled_totals": [],
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "rules_version": "0.1.0-playtest",
+            "schema": "icelines.game-character.v1",
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                12,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "specialty": "Space contender",
+            "task_skills": [
+              "Protection",
+              "Screening",
+              "Retrieval"
+            ],
+            "template_id": "vanguard",
+            "tendencies": [
+              "Contest space",
+              "Retain possession"
+            ]
+          },
+          "slot": "home:D2",
+          "station": "last line"
+        },
+        {
+          "character": {
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+            "branch": "goalie",
+            "capabilities": [
+              {
+                "id": "tracking",
+                "label": "Tracking",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "positioning",
+                "label": "Positioning",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "movement",
+                "label": "Movement",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "rebounds",
+                "label": "Rebounds",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "recovery",
+                "label": "Recovery",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "puck_play",
+                "label": "Puck Play",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "class_id": "warden",
+            "class_name": "Warden",
+            "description": "Fictional outletkeeper build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "dice": [],
+            "inspiration": null,
+            "methods": [
+              "Stop the rim",
+              "Short exchange",
+              "Direct outlet"
+            ],
+            "name": "Fixture Home Goalie",
+            "playbook_options": [
+              "Breakout exchange",
+              "Retrieval option"
+            ],
+            "position": "G",
+            "profile_kind": "fictional_game_character",
+            "rolled_totals": [],
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "rules_version": "0.1.0-playtest",
+            "schema": "icelines.game-character.v1",
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                12,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "specialty": "Outletkeeper",
+            "task_skills": [
+              "Puck Exchange",
+              "Retrieval",
+              "Set Depth"
+            ],
+            "template_id": "outletkeeper",
+            "tendencies": [
+              "Join the breakout",
+              "Coordinate the leave"
+            ]
+          },
+          "slot": "home:G",
+          "station": "crease exchange"
+        },
+        {
+          "character": {
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+            "branch": "skater",
+            "capabilities": [
+              {
+                "id": "skating",
+                "label": "Skating",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "handling",
+                "label": "Handling",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "passing",
+                "label": "Passing",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "shooting",
+                "label": "Shooting",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "reading",
+                "label": "Reading",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "defending",
+                "label": "Defending",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "class_id": "hunter",
+            "class_name": "Hunter",
+            "description": "Fictional puck pursuer build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "dice": [],
+            "inspiration": null,
+            "methods": [
+              "Angle pursuit",
+              "Stick pressure",
+              "Second effort"
+            ],
+            "name": "Fixture Pressure",
+            "playbook_options": [
+              "F1 pressure",
+              "F2 recovery"
+            ],
+            "position": "F",
+            "profile_kind": "fictional_game_character",
+            "rolled_totals": [],
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "rules_version": "0.1.0-playtest",
+            "schema": "icelines.game-character.v1",
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                12,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "specialty": "Puck pursuer",
+            "task_skills": [
+              "Retrieval",
+              "Pressure",
+              "Recovery"
+            ],
+            "template_id": "hunter",
+            "tendencies": [
+              "Close space",
+              "Pursue loose pucks"
+            ]
+          },
+          "slot": "away:F1",
+          "station": "pressure lane"
+        },
+        {
+          "character": {
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+            "branch": "skater",
+            "capabilities": [
+              {
+                "id": "skating",
+                "label": "Skating",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "handling",
+                "label": "Handling",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "passing",
+                "label": "Passing",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "shooting",
+                "label": "Shooting",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "reading",
+                "label": "Reading",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "defending",
+                "label": "Defending",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "class_id": "conductor",
+            "class_name": "Conductor",
+            "description": "Fictional lane weaver build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "dice": [],
+            "inspiration": null,
+            "methods": [
+              "Disguise",
+              "Quick exchange",
+              "Seam pass"
+            ],
+            "name": "Fixture Interceptor",
+            "playbook_options": [
+              "F2 support",
+              "Power-play flank"
+            ],
+            "position": "F",
+            "profile_kind": "fictional_game_character",
+            "rolled_totals": [],
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "rules_version": "0.1.0-playtest",
+            "schema": "icelines.game-character.v1",
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                12,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "specialty": "Lane weaver",
+            "task_skills": [
+              "Outlet",
+              "Zone Entry",
+              "Support"
+            ],
+            "template_id": "conductor",
+            "tendencies": [
+              "See the next option",
+              "Move the defense"
+            ]
+          },
+          "slot": "away:F2",
+          "station": "passing lane"
+        },
+        {
+          "character": {
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+            "branch": "skater",
+            "capabilities": [
+              {
+                "id": "skating",
+                "label": "Skating",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "handling",
+                "label": "Handling",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "passing",
+                "label": "Passing",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "shooting",
+                "label": "Shooting",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "reading",
+                "label": "Reading",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "defending",
+                "label": "Defending",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "class_id": "warden",
+            "class_name": "Warden",
+            "description": "Fictional interior guardian build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "dice": [],
+            "inspiration": null,
+            "methods": [
+              "Hold inside",
+              "Stick lane",
+              "Safe release"
+            ],
+            "name": "Fixture Away Cover",
+            "playbook_options": [
+              "F3 cover",
+              "Low support"
+            ],
+            "position": "F",
+            "profile_kind": "fictional_game_character",
+            "rolled_totals": [],
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "rules_version": "0.1.0-playtest",
+            "schema": "icelines.game-character.v1",
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                12,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "specialty": "Interior guardian",
+            "task_skills": [
+              "Coverage",
+              "Denial",
+              "Outlet"
+            ],
+            "template_id": "warden-skater",
+            "tendencies": [
+              "Protect the middle",
+              "Preserve cover"
+            ]
+          },
+          "slot": "away:F3",
+          "station": "unit support"
+        },
+        {
+          "character": {
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+            "branch": "skater",
+            "capabilities": [
+              {
+                "id": "skating",
+                "label": "Skating",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "handling",
+                "label": "Handling",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "passing",
+                "label": "Passing",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "shooting",
+                "label": "Shooting",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "reading",
+                "label": "Reading",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "defending",
+                "label": "Defending",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "class_id": "vanguard",
+            "class_name": "Vanguard",
+            "description": "Fictional space contender build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "dice": [],
+            "inspiration": null,
+            "methods": [
+              "Wall seal",
+              "Net-front hold",
+              "Contact exit"
+            ],
+            "name": "Fixture Gap",
+            "playbook_options": [
+              "Net front",
+              "Wall recovery"
+            ],
+            "position": "D",
+            "profile_kind": "fictional_game_character",
+            "rolled_totals": [],
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "rules_version": "0.1.0-playtest",
+            "schema": "icelines.game-character.v1",
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                12,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "specialty": "Space contender",
+            "task_skills": [
+              "Protection",
+              "Screening",
+              "Retrieval"
+            ],
+            "template_id": "vanguard",
+            "tendencies": [
+              "Contest space",
+              "Retain possession"
+            ]
+          },
+          "slot": "away:D1",
+          "station": "entry defense"
+        },
+        {
+          "character": {
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+            "branch": "skater",
+            "capabilities": [
+              {
+                "id": "skating",
+                "label": "Skating",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "handling",
+                "label": "Handling",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "passing",
+                "label": "Passing",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "shooting",
+                "label": "Shooting",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "reading",
+                "label": "Reading",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "defending",
+                "label": "Defending",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "class_id": "warden",
+            "class_name": "Warden",
+            "description": "Fictional interior guardian build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "dice": [],
+            "inspiration": null,
+            "methods": [
+              "Hold inside",
+              "Stick lane",
+              "Safe release"
+            ],
+            "name": "Fixture Away Anchor",
+            "playbook_options": [
+              "F3 cover",
+              "Low support"
+            ],
+            "position": "D",
+            "profile_kind": "fictional_game_character",
+            "rolled_totals": [],
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "rules_version": "0.1.0-playtest",
+            "schema": "icelines.game-character.v1",
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                12,
+                12,
+                12,
+                12,
+                12,
+                12
+              ]
+            },
+            "specialty": "Interior guardian",
+            "task_skills": [
+              "Coverage",
+              "Denial",
+              "Outlet"
+            ],
+            "template_id": "warden-skater",
+            "tendencies": [
+              "Protect the middle",
+              "Preserve cover"
+            ]
+          },
+          "slot": "away:D2",
+          "station": "unit support"
+        },
+        {
+          "character": {
+            "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+            "branch": "goalie",
+            "capabilities": [
+              {
+                "id": "tracking",
+                "label": "Tracking",
+                "score": 20,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "positioning",
+                "label": "Positioning",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "movement",
+                "label": "Movement",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "rebounds",
+                "label": "Rebounds",
+                "score": 1,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "recovery",
+                "label": "Recovery",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              },
+              {
+                "id": "puck_play",
+                "label": "Puck Play",
+                "score": 12,
+                "source": "game_rules_not_nhl_assessment"
+              }
+            ],
+            "class_id": "warden",
+            "class_name": "Warden",
+            "description": "Fictional setkeeper build. These authored values and training choices are game rules, not measurements of an NHL player.",
+            "dice": [],
+            "inspiration": null,
+            "methods": [
+              "Hold alignment",
+              "Absorb",
+              "Seal the post"
+            ],
+            "name": "Fixture Away Goalie",
+            "playbook_options": [
+              "Set-position option",
+              "Near-post option"
+            ],
+            "position": "G",
+            "profile_kind": "fictional_game_character",
+            "rolled_totals": [],
+            "rules_sha256": "df9f0d875855adce2a548192768f9e791882417f5bcab9caf68367e51dad96a6",
+            "rules_version": "0.1.0-playtest",
+            "schema": "icelines.game-character.v1",
+            "score_method": {
+              "kind": "manual",
+              "scores": [
+                20,
+                12,
+                12,
+                1,
+                12,
+                12
+              ]
+            },
+            "specialty": "Setkeeper",
+            "task_skills": [
+              "Set Depth",
+              "Post Work",
+              "Rebound Direction"
+            ],
+            "template_id": "setkeeper",
+            "tendencies": [
+              "Stay controlled",
+              "Manage depth"
+            ]
+          },
+          "slot": "away:G",
+          "station": "clear-view shot response"
+        }
+      ],
+      "rules_sha256": "9ac52b22ad7a0773485a22502bc471541ef74e0e95d8b8bc1540938bd48c27f9",
+      "rules_version": "0.4.0-playtest",
+      "schema": "icelines.possession-session.v4",
+      "seed": 286,
+      "state": {
+        "control": null,
+        "cover_owner": "home:F3",
+        "loose": true,
+        "phase": "rebound_loose"
+      }
+    },
+    "schema": "icelines.unit-possession-session.v1",
+    "units_sha256": "436c75654f1fc2d1a1889ded1fa25c76e41652cb239e0785b1ab4bd8e88d5be9"
+  }
+}

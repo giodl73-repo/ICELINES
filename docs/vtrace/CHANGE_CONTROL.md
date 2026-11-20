@@ -1,5 +1,151 @@
 # Change Control
 
+## CHG-144 — Experimental capability component audit (2026-11-09)
+
+Add a local research-only Gamma-Poisson finishing prototype, full-source coverage audit, source-sealed inputs, uncertainty and retrospective conditional checks. No main capability, class, production schema or app change. Contract/evidence: `docs/rinkcraft-capability-pilot-2026-11-09.md`.
+
+
+## CHG-143 — Hockey styling and full-app sheet acceptance (2026-11-09)
+
+Apply CSS-only hockey decoration to the approved capability form: ice palette, rink-line header, decorative rink mark and box hierarchy. Build the actual native app and browser shell using retained authenticated WASM/packages; verify real profiles without changing ratings, data or model definitions. Contract and validation: `docs/rinkcraft-live-sheet-validation-2026-11-09.md`.
+
+
+## CHG-142 — Reconcile approved Rinkcraft capability form (2026-11-09)
+
+Preserve the isolated F: category form over the alternative C: raw-stat rail. Keep capability ratings unassessed and preserve detailed evidence/statuses. No merge, source/class/model change or invented ability score. Contract: `design/specs/rinkcraft-sheet-reconciliation.md`.
+
+
+## CHG-140 — Possession and environment context (2026-11-09)
+
+Expose fixed source-record context on cards and in separate comparison tables. Preserve raw values/ranks, missingness and primary pools; no defensive grade or class inference. Contract: `design/specs/rinkcraft-context-evidence.md`.
+
+
+## CHG-139 — Explicit card comparisons and dated class context (2026-11-09)
+
+Add required source-scoped card counterpart choices and paired documentary identities selected for the comparison year. Preserve numeric data/API, source rules and missing-class availability. Contract: `design/specs/rinkcraft-card-comparison.md`.
+
+
+## CHG-138 — Readable matched numerical contrasts (2026-11-09)
+
+Add shared transparent top-gap summaries before the full numerical comparison, with coverage, signed/raw values and limits. Tighten formula/scale compatibility. No source/data/class changes. Contract: `design/specs/rinkcraft-contrast-summary.md`.
+
+
+## CHG-137 — Attributes first and inspectable evidence (2026-11-08)
+
+Move six/four fixed facets above methods/history; expose shared attribute explanations and restore declared feature-stat context. No input/value/class changes. Contract: `design/specs/rinkcraft-attribute-explanations.md`.
+
+
+## CHG-136 — Explicit numerical snapshot/source periods (2026-11-08)
+
+Align primary records with latest supplied player evidence within bounds; label older fallback, forbid fallback on exact requests/comparisons, and expose comparison year. Contract: `design/specs/rinkcraft-snapshot-selection.md`. No source/data/class changes.
+
+
+## CHG-135 — Visible measured assessment from annual evidence (2026-11-08)
+
+Add transparent shortlist-based repetition/recent-shift/coverage summaries to
+HistoryCard and the primary native/WASM card, plus `profile-assess` CLI. Source
+archive and numerical/class data unchanged. Full coverage required for repetition
+headlines; no missing-latest fallback or skill/class score. Contract:
+`design/specs/rinkcraft-measured-assessment.md`.
+
+## CHG-134 — Annual numerical evidence and transparent repetition (2026-11-08)
+
+Add optional bounded source-history archive/CLI, shared annual projection and
+default-closed evidence expander inside native/WASM character cards. New public
+2023–24/2025–26 source snapshots surround preserved 2024–25 data. Annual peers,
+missingness and retrospective limits remain explicit; no pooled rank, stable-skill
+badge or class change. Contract: `design/specs/rinkcraft-numerical-history.md`.
+
+## CHG-133 — Playing-method comparison with explicit coverage (2026-11-08)
+
+Owner asks to continue. Add shared style comparison projection and native/browser
+view with matched, one-sided and incompatible rows plus shared gaps. Original
+measurements and style inputs unchanged. No tactical values inferred from missing
+data, class relabeling or new source acquisition. Contract:
+`design/specs/rinkcraft-style-comparison.md`.
+
+## CHG-132 — Measured playing methods and explicit tactical gaps (2026-11-08)
+
+Add optional style evidence to numerical profiles/cards, a strict local verified
+EDGE capture adapter and `profile-style` CLI. Native/WASM cards show shot/contact
+tendencies and available tracking separately from missing tactical axes. Preserve
+all original measurements/classes. Actual source access limits tracking to one
+player; no automated acquisition, bypass, style validity or publication claim.
+Contract: `design/specs/rinkcraft-playing-methods.md`.
+
+## CHG-131 — Integrated numerical character cards and comparison (2026-11-08)
+
+Owner requests continued numerical differentiation before the next review. Shared
+core projects fixed facets and transparent leading signals, retains all measures,
+and computes compatible player differences. Native cards/API and WASM/browser use
+the same model. Optional prepared numerical artifact joins the authenticated
+offline shell. Documentary class hypotheses remain separate; no class relabeling,
+overall ability score or new source/formula. Contract and acceptance:
+`design/specs/rinkcraft-numerical-evidence.md`,
+`docs/rinkcraft-integrated-numerical-validation-2026-11-08.md`.
+
+## CHG-130 — Source-backed numerical Rinkcraft assessments (2026-11-08)
+
+Owner requests more numerical assessment and less quote-led classification.
+Add pure per-situation evidence vectors and league percentiles, strict local
+MoneyPuck ingestion, `profile-numbers` JSON CLI, and explicit native numerical
+page/API. Fifteen skater/five goalie measures retain component formulas, peers
+and source/reference hashes. No quote inputs, automatic class changes, composite
+ability scores or browser/WASM integration claim for the new adapter. Contract:
+`design/specs/rinkcraft-numerical-evidence.md`.
+
+## CHG-129 — Feature evidence and external player atlas (2026-11-08)
+
+Owner requests denser character cards, relevant feature statistics and a 25-star
+cohort. Add optional showcase/featured metadata, Pathfinder support, declared
+feature-stat relations and missing-measurement fields; validate stat keys and
+retain publication-date precision (day/year). Generic native `/rinkcraft` and
+browser atlas consume the optional external research catalog. Primary cards show
+raw season lines, existing percentiles and measured/eligible peer counts. No new
+rank computation, automatic class inference or player dossiers in IceLines.
+Contract: `design/specs/rinkcraft-character-card.md`, IF-RINKCRAFT-CHARACTER-001.
+
+## CHG-128 — Character identity before statistical history (2026-11-08)
+
+Owner requests the actual D&D character-card hierarchy. Add a source-linked
+documentary class catalog/selector and native/WASM identity cards; move graphs
+and statistical controls into default-closed expanders. Research inputs stay
+external and optional; classes are curated interpretations, not stat thresholds.
+Contract `design/specs/rinkcraft-character-card.md`, IF-RINKCRAFT-CHARACTER-001,
+WP-RINKCRAFT-04. No game mechanics or NHL-wide class-validity claim.
+
+## CHG-127 — Descriptive Rinkcraft attributes (2026-11-08)
+
+Add versioned experimental attribute measurements, reference populations, tie-aware
+percentiles and five display bands to native/CLI JSON/WASM profiles. Replace the
+generic-first presentation with player-specific cards and seasonal step charts.
+Separate involvement, observed output/outcome and deployment; no ability/class score.
+Interface IF-RINKCRAFT-ATTRIBUTES-001; work WP-RINKCRAFT-03; contract
+`design/specs/rinkcraft-attributes.md`. Rinkcraft owns protocol 0.1.0-experimental
+and producer-applied role review; no change to its action taxonomy 0.2.0-draft.
+
+## CHG-126 — Rinkcraft player UI and WASM subset (2026-11-08)
+
+Expose CHG-125 profiles through native player HTML/JSON and the standalone browser
+player dialog. Use one borrowed-view core builder for normal/sparse storage,
+retaining catalog guards and strict denominators. Native loading remains local;
+WASM uses resident prepared packages only and discloses omitted optional reports.
+No class assignment, new scores, automatic fetch/publication or TUI expansion.
+Interface: IF-RINKCRAFT-UI-001; work: WP-RINKCRAFT-02.
+
+## CHG-125 — Rinkcraft statistical evidence profiles (2026-11-08)
+
+Add `profile PLAYER --first-season/--last-season --type --json` over shared
+core/catalog semantics and canonical report-aware loading. Schema and limits:
+`design/specs/rinkcraft-stat-profile.md`; interface IF-RINKCRAFT-PROFILE-001.
+Preserve era/trade/missingness, strict aggregation and denominator evidence;
+season differences are descriptive, not role-change or causal classification.
+During actual career rehearsal, discovered regular/goalie active-snapshot shadowing
+of other seasons; fence those reads and realtime fallback by requested season,
+matching the existing playoff contract. Local regression evidence required.
+CLI only; other surfaces and exact calendar-date profiling deferred. No automatic
+workflows, releases, existing-data migrations or class-score thresholds.
+
 ## Scope
 
 Repo or feature: `icelines` repo-baseline VTRACE implementation.

@@ -560,7 +560,7 @@ async fn web_leader_html_rows(
         .expect("body");
     let html = String::from_utf8(body.to_vec()).expect("leaders HTML is UTF-8");
     let row_re = regex::Regex::new(
-        r#"<tr data-row-rank="\d+"\s+data-nhl-id="(?P<id>\d+)"\s+data-player-name="(?P<name>[^"]+)"\s+data-team-abbrev="(?P<team>[^"]+)"\s+data-goals="(?P<goals>\d+)"\s+data-points="(?P<points>\d+)">"#,
+        r#"<tr data-row-rank="\d+"\s+data-nhl-id="(?P<id>\d+)"\s+data-player-name="(?P<name>[^"]+)"\s+data-team-abbrev="(?P<team>[^"]+)"\s+data-goals="(?P<goals>\d+)"\s+data-points="(?P<points>\d+)"[^>]*>"#,
     )
     .expect("row regex compiles");
 
@@ -813,30 +813,24 @@ async fn web_leader_html_empty_warning_metadata(
     )
 }
 
-async fn web_leader_html_active_position_chip(
+async fn web_leader_html_active_position(
     sort: &str,
     season: u32,
     top: usize,
     pos: &str,
-) -> (String, String, u64) {
+) -> (String, u64) {
     let html = web_leader_html_recovery(sort, season, top, pos).await;
-    assert_eq!(
-        html.matches(r#"aria-current="true""#).count(),
-        1,
-        "leaders HTML should mark exactly one active position chip"
-    );
-    let active_chip_re = regex::Regex::new(
-        r#"(?s)<a href="\?sort=[^"]*&pos=(?P<pos>[^&"]*)&top=(?P<top>\d+)[^"]*"\s+class="filter-chip fit-solid"\s+aria-current="true">\s*(?P<label>[^<\s]+)\s*</a>"#,
-    )
-    .expect("active chip regex compiles");
-    let captures = active_chip_re
-        .captures(&html)
-        .expect("leaders HTML exposes active position chip");
-    (
-        captures["label"].to_string(),
-        captures["pos"].to_string(),
-        captures["top"].parse().expect("numeric top"),
-    )
+    let select = regex::Regex::new(r#"(?s)<select name="pos">(?P<options>.*?)</select>"#).unwrap();
+    let options = select.captures(&html).expect("position control");
+    let selected = regex::Regex::new(r#"<option value="(?P<pos>[^"]*)"\s+selected[^>]*>"#).unwrap();
+    let choices = selected
+        .captures_iter(&options["options"])
+        .collect::<Vec<_>>();
+    assert_eq!(choices.len(), 1, "exactly one selected position");
+    let top_input =
+        regex::Regex::new(r#"<input name="top" type="number" value="(?P<top>\d+)""#).unwrap();
+    let count = top_input.captures(&html).expect("row limit control");
+    (choices[0]["pos"].to_string(), count["top"].parse().unwrap())
 }
 
 async fn web_goalie_rows(
@@ -1139,19 +1133,16 @@ async fn l2_query_leaders_cli_json_and_web_html_empty_warning_metadata_match() {
 }
 
 #[tokio::test]
-async fn l2_query_leaders_cli_json_and_web_html_active_position_chip_match() {
+async fn l2_query_leaders_cli_json_and_web_html_active_position_match() {
     let season = 20242025;
     let top = 5;
     let cli_state = cli_leader_empty_warning_state("goals", season, top, "G");
-    let web_state = web_leader_html_active_position_chip("goals", season, top, "G").await;
+    let web_state = web_leader_html_active_position("goals", season, top, "G").await;
     let cli_pos = cli_state["meta"]["position_filter"]
         .as_str()
         .expect("CLI envelope carries selected position filter");
 
-    assert_eq!(
-        (cli_pos.to_string(), cli_pos.to_string(), top as u64),
-        web_state
-    );
+    assert_eq!((cli_pos.to_string(), top as u64), web_state);
 }
 
 #[tokio::test]

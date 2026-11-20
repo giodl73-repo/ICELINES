@@ -17,6 +17,17 @@ const result = spawnSync(process.execPath, ['node_modules/typescript/bin/tsc'], 
 if (result.status !== 0) process.exit(result.status ?? 1);
 await mkdir(new URL('./dist/', import.meta.url), { recursive: true });
 for (const name of ['index.html', 'style.css']) await cp(new URL(name, import.meta.url), new URL('dist/' + name, import.meta.url));
+await cp(new URL('../icelines-web/static/rinkcraft-character.css',import.meta.url),new URL('dist/rinkcraft-character.css',import.meta.url));
+await cp(new URL('../icelines-core/src/view_model/rinkcraft_capability_rules.json',import.meta.url),new URL('dist/capability-rules.json',import.meta.url));
+await cp(new URL('../icelines-web/static/rinkcraft-game.js',import.meta.url),new URL('dist/rinkcraft-game.js',import.meta.url));
+await cp(new URL('../icelines-web/static/rinkcraft-possession.js',import.meta.url),new URL('dist/rinkcraft-possession.js',import.meta.url));
+await cp(new URL('../icelines-web/static/rinkcraft-unit-studio.js',import.meta.url),new URL('dist/rinkcraft-unit-studio.js',import.meta.url));
+for(const name of ['rinkcraft-unit-blueprint.json','rinkcraft-unit-rules.json']){try{await cp(new URL('public/'+name,import.meta.url),new URL('dist/'+name,import.meta.url));}catch(e){if(e.code!=='ENOENT')throw e;}}
+try {await cp(new URL('public/rinkcraft-game-rules.json',import.meta.url),new URL('dist/rinkcraft-game-rules.json',import.meta.url));}catch(error){if(error.code!=='ENOENT')throw error;}
+try {await cp(new URL('public/rinkcraft-possession-rules.json',import.meta.url),new URL('dist/rinkcraft-possession-rules.json',import.meta.url));}catch(error){if(error.code!=='ENOENT')throw error;}
+try {await cp(new URL('public/rinkcraft-characters.json',import.meta.url),new URL('dist/rinkcraft-characters.json',import.meta.url));}catch(error){if(error.code!=='ENOENT')throw error;}
+try {await cp(new URL('public/rinkcraft-numbers.json',import.meta.url),new URL('dist/rinkcraft-numbers.json',import.meta.url));}catch(error){if(error.code!=='ENOENT')throw error;}
+try {await cp(new URL('public/rinkcraft-history.json',import.meta.url),new URL('dist/rinkcraft-history.json',import.meta.url));}catch(error){if(error.code!=='ENOENT')throw error;}
 await cp(new URL('../icelines-web/static/appearance.css',import.meta.url),new URL('dist/appearance.css',import.meta.url));
 await cp(new URL('public/pkg/', import.meta.url), new URL('dist/pkg/', import.meta.url), { recursive: true });
 const catalog = JSON.parse(await readFile(new URL('public/catalog.json', import.meta.url), 'utf8'));

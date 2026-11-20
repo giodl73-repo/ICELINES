@@ -1,0 +1,13 @@
+// Insert experimental Season patterns; preserve every prior profile value.
+import {readFile,writeFile} from 'node:fs/promises';import {createHash} from 'node:crypto';import assert from 'node:assert/strict';
+const [baseline,patchFile,output]=process.argv.slice(2);if(!output)throw Error('Usage: THREE_SCOPE_PROFILES FACEOFF_PATCHES OUTPUT');
+const raw=await readFile(baseline),profiles=JSON.parse(raw),original=structuredClone(profiles),patches=JSON.parse(await readFile(patchFile,'utf8'));const ids=['oz-draw-record','dz-draw-record','draw-specialist'];
+assert.equal(patches.schema,'rinkcraft.faceoff-profile-patches.v1');assert.equal(patches.profile_input_sha256,createHash('sha256').update(raw).digest('hex'));assert.deepEqual(Object.keys(patches.patches).sort(),Object.keys(profiles).sort());
+for(const [key,p]of Object.entries(profiles)){
+ const patch=patches.patches[key],w=p.profile_window,patterns=p.experimental_patterns;assert.equal(w.kind,'season');assert.equal(w.coverage,'selected_season');assert.equal(patterns.schema,'rinkcraft.scoped-patterns.v1');assert.equal(patch.player_id,p.request.player_id);assert.equal(patch.player_id,w.player_id);assert.equal(patch.season,w.season);assert.equal(patch.season_type,w.season_type);assert.equal(patch.group,patterns.group);assert.ok(patterns.patterns.every(p=>!ids.includes(p.id)));
+ if(patch.group==='Goalies'){assert.deepEqual(patch.patterns,[]);continue;}assert.deepEqual(patch.patterns.map(p=>p.id),ids);
+ for(const task of patch.patterns){const e=task.evidence,r=task.task_record;assert.equal(task.placement,'task_skills');assert.equal(e.schema,'rinkcraft.task-evidence.v1');assert.equal(e.scope_kind,'season');assert.equal(e.player_id,patch.player_id);assert.equal(e.season,w.season);assert.equal(e.season_type,w.season_type);assert.equal(e.group,patch.group);assert.ok(Number.isFinite(Date.parse(e.captured_through)));assert.equal(r.schema,'rinkcraft.faceoff-record.v1');assert.equal(r.games,p.latest_available.games);assert.equal(r.attempts,task.opportunities.draws);assert.equal(r.wins,task.opportunities.wins);assert.equal(r.losses,task.opportunities.losses);for(const h of task.history){assert.ok(h.season<w.season);assert.equal(h.evidence.season,h.season);assert.equal(h.evidence.player_id,patch.player_id);}}
+ patterns.patterns.unshift(...patch.patterns);
+}
+const stripped=structuredClone(profiles);for(const p of Object.values(stripped))p.experimental_patterns.patterns=p.experimental_patterns.patterns.filter(p=>!ids.includes(p.id));assert.deepEqual(stripped,original);
+await writeFile(output,JSON.stringify(profiles));console.log('Added twelve bounded Season task patterns; prior fields, Current and Career preserved.');

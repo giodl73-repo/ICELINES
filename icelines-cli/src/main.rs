@@ -142,6 +142,130 @@ fn should_auto_setup(
 
 async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
     match cli.command {
+        Commands::AnalyzeGoal {
+            target,
+            game_id,
+            event_id,
+            output_dir,
+            offline_dir,
+            data_root,
+        } => {
+            commands::goal_analysis::run(
+                target,
+                game_id,
+                event_id,
+                output_dir,
+                offline_dir,
+                data_root,
+            )
+            .await?;
+        }
+        Commands::ProfileAssess {
+            history,
+            player,
+            first_season,
+            last_season,
+        } => {
+            for season in [first_season, last_season].into_iter().flatten() {
+                let year = season / 10000;
+                anyhow::ensure!(
+                    (1900..=2200).contains(&year) && season % 10000 == year + 1,
+                    "season bounds must use YYYYZZZZ, for example 20242025"
+                );
+            }
+            let history = icelines_fetch::rinkcraft_history::load(&history)?;
+            let card = history
+                .card(player, first_season, last_season)
+                .map_err(anyhow::Error::msg)?;
+            println!("{}", serde_json::to_string_pretty(&card)?);
+        }
+        Commands::ProfileHistory { catalog } => {
+            let mut text = Vec::new();
+            let mut frames = Vec::new();
+            for path in catalog {
+                frames.push(icelines_fetch::rinkcraft_numbers::load_catalog(&path)?);
+                text.push(std::fs::read_to_string(path)?);
+            }
+            let h = icelines_core::view_model::rinkcraft_history::NumericalHistory {
+                finishing_research: None,
+                schema: icelines_core::view_model::rinkcraft_history::SCHEMA.into(),
+                catalogs: frames,
+            };
+            h.validate().map_err(anyhow::Error::msg)?;
+            let raw = text
+                .iter()
+                .map(|s| serde_json::value::RawValue::from_string(s.clone()))
+                .collect::<Result<Vec<_>, _>>()?;
+            #[derive(serde::Serialize)]
+            struct Archive<'a> {
+                schema: &'a str,
+                catalogs: Vec<Box<serde_json::value::RawValue>>,
+            }
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&Archive {
+                    schema: &h.schema,
+                    catalogs: raw
+                })?
+            );
+        }
+        Commands::ProfileStyle {
+            numbers,
+            edge_captures,
+        } => {
+            let mut catalog = icelines_fetch::rinkcraft_numbers::load_catalog(&numbers)?;
+            icelines_fetch::rinkcraft_style::enrich_from_capture_dir(&mut catalog, &edge_captures)?;
+            // Preserve original numeric tokens; only add the style projection.
+            type RawObject = std::collections::BTreeMap<String, Box<serde_json::value::RawValue>>;
+            let mut root: RawObject = serde_json::from_str(&std::fs::read_to_string(&numbers)?)?;
+            let mut profiles: Vec<RawObject> = serde_json::from_str(root["profiles"].get())?;
+            anyhow::ensure!(
+                profiles.len() == catalog.profiles.len(),
+                "profile count changed during enrichment"
+            );
+            for (raw, profile) in profiles.iter_mut().zip(&catalog.profiles) {
+                anyhow::ensure!(
+                    serde_json::from_str::<u32>(raw["player_id"].get())? == profile.player_id,
+                    "profile identity changed during enrichment"
+                );
+                raw.insert(
+                    "style_evidence".into(),
+                    serde_json::value::to_raw_value(&profile.style_evidence)?,
+                );
+            }
+            root.insert(
+                "profiles".into(),
+                serde_json::value::to_raw_value(&profiles)?,
+            );
+            println!("{}", serde_json::to_string_pretty(&root)?);
+        }
+        Commands::ProfileNumbers {
+            season,
+            skaters,
+            goalies,
+            player,
+        } => {
+            let view = icelines_fetch::rinkcraft_numbers::from_csv_files(
+                &skaters, &goalies, season, &player,
+            )?;
+            println!("{}", serde_json::to_string_pretty(&view)?);
+        }
+        Commands::Profile {
+            player,
+            first_season,
+            last_season,
+            season_type,
+            json,
+        } => {
+            commands::profile::run(
+                player,
+                first_season,
+                last_season,
+                season_type.to_core(),
+                json,
+            )
+            .await?;
+        }
         // ── Phase 1 implemented commands ──────────────────────────────────────
         Commands::Fetch(sub) => {
             commands::fetch::run(sub).await?;

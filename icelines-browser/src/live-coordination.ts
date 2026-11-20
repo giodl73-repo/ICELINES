@@ -7,7 +7,7 @@ function browserLocks(): Pick<LockManager, 'request'> | undefined {
 export class LiveReadCoordinator {
   private tail: Promise<unknown> = Promise.resolve();
   readonly crossTab: boolean;
-  constructor(private readonly locks = browserLocks(), private readonly timeoutMs = 120000) { this.crossTab = !!locks; }
+  constructor(private readonly locks: Pick<LockManager, 'request'> | null | undefined = browserLocks(), private readonly timeoutMs = 120000) { this.crossTab = !!locks; }
   async run<T>(signal: AbortSignal, action: (signal: AbortSignal) => Promise<T>): Promise<T> {
     signal.throwIfAborted(); const controller = new AbortController();
     const stop = (): void => controller.abort(signal.reason);

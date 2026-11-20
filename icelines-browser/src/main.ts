@@ -1,8 +1,18 @@
+import {mountBrowserGameStudio} from './rinkcraft-game.js';
+import type {GameInspiration} from './rinkcraft-game.js';
 import { teamSeasonFilter, playerTeamCodes } from './team-focus.js';
 import { ViewportTable } from './viewport-table.js';
 import { PlayerComparison, renderComparison } from './comparison.js';
 import type { ComparisonContext } from './comparison.js';
 import { renderPlayerHistory } from './player-history.js';
+import {readCharacterCatalog} from './rinkcraft-character.js';
+import {readNumericalCatalog,renderNumericalComparison} from './rinkcraft-numbers.js';
+import {readNumericalHistory} from './rinkcraft-history.js';
+import type {HistoryCard} from './rinkcraft-history.js';
+import type {NumericalComparison,CatalogView,SnapshotResult,ComparisonIdentities} from './rinkcraft-numbers.js';
+import type {CharacterSheet} from './rinkcraft-character.js';
+import { renderRinkcraftProfile } from './rinkcraft-profile.js';
+import type { RinkcraftProfile } from './rinkcraft-profile.js';
 import type { PlayerHistory } from './player-history.js';
 import { initializeAppearance } from './appearance.js';
 import { EngineClient, EngineStoppedError } from './engine-client.js';
@@ -38,6 +48,82 @@ const resident = new Map<string, Dataset>();
 let saved: SavedDatasetEntry[] = [];
 let librarySequence = 0;
 let result: QueryResult | undefined;
+void (async()=>{
+  const source=await readNumericalHistory()??await readNumericalCatalog();
+  if(!source)return;
+  // Initialization resumes after engine construction; all policy stays in shared Rust.
+  const left=element<HTMLSelectElement>('rinkcraft-numeric-left');const right=element<HTMLSelectElement>('rinkcraft-numeric-right');
+  const season=element<HTMLSelectElement>('rinkcraft-numeric-season');
+  const output=element('rinkcraft-numeric-result');
+  let view:CatalogView;let sequence=0;
+  const option=(id:number,name:string):HTMLOptionElement=>{const o=document.createElement('option');o.value=String(id);o.textContent=name;return o;};
+  const updateRight=(previous=right.value,keepMissing=false):void=>{
+    const chosen=view.catalog.profiles.find(p=>p.player_id===Number(left.value));
+    right.replaceChildren(...view.catalog.profiles.filter(p=>p.group===chosen?.group&&p.player_id!==chosen.player_id).map(p=>option(p.player_id,p.name)));
+    if(keepMissing&&previous&&!Array.from(right.options).some(o=>o.value===previous)){const missing=option(Number(previous),'Previously selected player · unavailable or incompatible this season');missing.disabled=true;right.prepend(missing);}
+    if(Array.from(right.options).some(o=>o.value===previous))right.value=previous;
+  };
+  const draw=async():Promise<boolean>=>{
+    const token=sequence;const generation=engine.generation;const c=view.catalog;const l=left.value;const r=right.value;
+    if(Number(season.value)!==c.season)throw new Error('Wait for the selected source season to load.');
+    if(!l||!r)throw new Error('Choose two available players in this source season.');
+    const comparison=await engine.request<NumericalComparison>('numericalComparison',{catalog:c,left:Number(l),right:Number(r)});
+    let identity:ComparisonIdentities={catalog_state:'unavailable',note:'No documentary class catalog loaded. Statistics do not assign classes.'};
+    try{const catalog=await readCharacterCatalog();if(catalog){const [a,b]=await Promise.all([engine.request<CharacterSheet|null>('characterSheet',{catalog,player_id:Number(l),season:c.season}),engine.request<CharacterSheet|null>('characterSheet',{catalog,player_id:Number(r),season:c.season})]);identity={catalog_state:'available',left:a,right:b,note:'Documentary class hypotheses are selected for this source season. Numerical differences do not establish class fit.'};}}
+    catch(error){if(error instanceof EngineStoppedError)throw error;identity={catalog_state:'unavailable',note:'Documentary class catalog unavailable. The numerical comparison remains available.'};}
+    if(token!==sequence||generation!==engine.generation||l!==left.value||r!==right.value)return false;
+    output.replaceChildren(renderNumericalComparison(comparison,identity));
+    return true;
+  };
+  const chooseSeason=async(year?:number,pid?:number,peer?:number):Promise<boolean>=>{
+    const token=++sequence;const previous=pid===undefined?left.value:String(pid);const previousName=left.selectedOptions[0]?.textContent??previous;
+    left.disabled=true;right.disabled=true;element<HTMLButtonElement>('rinkcraft-numeric-compare').disabled=true;output.textContent='Loading source season…';
+    const next=await engine.request<CatalogView>('numericalCatalog',{source,season:year});
+    if(token!==sequence)return false;
+    left.disabled=false;right.disabled=false;element<HTMLButtonElement>('rinkcraft-numeric-compare').disabled=false;
+    view=next;season.replaceChildren(...view.seasons.map(s=>option(s,`${Math.floor(s/10000)}–${String(s%100).padStart(2,'0')}`)));season.value=String(view.catalog.season);
+    left.replaceChildren(...view.catalog.profiles.map(p=>option(p.player_id,`${p.name} · ${p.group}`)));
+    if(previous){if(!Array.from(left.options).some(o=>o.value===previous)){const absent=option(Number(previous),`${previousName} · unavailable this season`);absent.disabled=true;left.prepend(absent);}left.value=previous;}
+    updateRight(peer===undefined?(pid===undefined?right.value:''):String(peer),peer!==undefined||pid===undefined);output.textContent='Both players use the selected source season. Choose players and compare. Missing players cannot fall back to an older year.';
+    return true;
+  };
+  await chooseSeason();
+  season.onchange=()=>{void perform(async()=>{await chooseSeason(Number(season.value));});};
+  left.onchange=()=>{sequence++;updateRight();output.replaceChildren();};
+  right.onchange=()=>{sequence++;output.replaceChildren();};
+  element('rinkcraft-numeric-controls').hidden=false;
+  element('rinkcraft-numeric-compare').onclick=()=>{void perform(async()=>{await draw();});};
+  document.addEventListener('rinkcraft-numerical-compare',event=>{const {player_id,season:year,right_id}=(event as CustomEvent<{player_id:number;season:number;right_id?:number}>).detail;void perform(async()=>{if(!await chooseSeason(year,player_id,right_id))return;if(!await draw())return;element<HTMLDialogElement>('player-dialog').close();element<HTMLDetailsElement>('rinkcraft-atlas').open=true;element<HTMLDetailsElement>('rinkcraft-numeric-controls').open=true;element('rinkcraft-numeric-controls').scrollIntoView({block:'start'});});});
+})().catch(error=>{element('rinkcraft-numeric-result').textContent=String(error);});
+void readCharacterCatalog().then(raw => {
+  if (!raw) { element('rinkcraft-atlas-notes').textContent='No documentary class catalog loaded. Numerical comparisons remain available.'; return; }
+  const c = raw as {showcase_notes?:string;classes:{id:string;name:string}[];assessments:{featured?:boolean;player_id:number;player_name:string;primary:{class_id:string};specialty:string;summary:string;assessed:string}[]};
+  element('rinkcraft-atlas-notes').textContent = c.showcase_notes ?? 'Source-linked documentary pilot.';
+  const container = element('rinkcraft-atlas-cards');
+  for (const a of [...c.assessments].sort((a,b)=>Number(!!b.featured)-Number(!!a.featured)||a.player_name.localeCompare(b.player_name))) {
+    const button = document.createElement('button');button.type='button';button.className=`rk-sheet rk-${a.primary.class_id} rk-atlas-card`;
+    button.setAttribute('aria-label',`${a.player_name} · ${c.classes.find(c=>c.id===a.primary.class_id)?.name??'Unscouted'} · ${a.specialty}`);
+    button.dataset.playerId=String(a.player_id);button.dataset.class=a.primary.class_id;
+    const label=document.createElement('small');label.textContent=`${a.featured?'Showcase':'Additional pilot'} · assessed ${a.assessed}`;
+    const name=document.createElement('strong');name.className='rk-atlas-name';name.textContent=a.player_name;
+    const identity=document.createElement('span');identity.className='rk-atlas-class';identity.textContent=c.classes.find(c=>c.id===a.primary.class_id)?.name??'Unscouted';
+    const specialty=document.createElement('span');specialty.className='rk-atlas-specialty';specialty.textContent=a.specialty;
+    const description=document.createElement('span');description.className='rk-atlas-summary';description.textContent=a.summary;
+    const action=document.createElement('span');action.className='rk-atlas-action';action.textContent='Open character sheet →';
+    button.append(label,name,identity,specialty,description,action);
+    button.onclick=()=>{void perform(async()=>{
+      if(!result)throw new Error('Load a season package first.');
+      const snapshot=result;const generation=engine.generation;
+      for(const goalies of [false,true]){
+        const candidates=await engine.request<QueryResult>('query',{filter:'',sort:goalies?'wins':'points',goalies,minimum_games:0,today:new Date().toISOString().slice(0,10)});
+        if(result!==snapshot||engine.generation!==generation)return;
+        const row=candidates.rows.find(row=>row.player_id===a.player_id);
+        if(row){await player(row);return;}
+      }
+      throw new Error(`${a.player_name} is unavailable in the active package. Choose another season.`);
+    });};container.append(button);
+  }
+}).catch(()=>{element('rinkcraft-atlas-notes').textContent='Documentary class catalog unavailable. Numerical comparisons remain available.';});
 let resultRequest: QueryRequest | undefined;
 let resultState: ViewState | undefined;
 let routing = false;
@@ -92,6 +178,13 @@ const engine = EngineClient.deferred(message => {
   status(message, true); updateState();
   if (!recovering) void recoverEngine();
 });
+let gameStudio:ReturnType<typeof mountBrowserGameStudio>|undefined;
+async function openGameStudio(inspiration?:GameInspiration):Promise<void>{
+  const details=element<HTMLDetailsElement>('rinkcraft-game-studio');details.open=true;
+  try{gameStudio??=mountBrowserGameStudio(element('rinkcraft-game-root'),engine);const studio=await gameStudio;if(inspiration)await studio.setInspiration(inspiration);details.scrollIntoView({block:'start'});}
+  catch(error){gameStudio=undefined;status('Game studio could not open. '+String(error),true);}
+}
+element('rinkcraft-game-studio').addEventListener('toggle',()=>{if(element<HTMLDetailsElement>('rinkcraft-game-studio').open)void openGameStudio();});
 async function recoverEngine(): Promise<void> {
   if (recovering) return;
   recovering = true; engineUnavailable = true;
@@ -241,9 +334,21 @@ async function player(row: PlayerRow): Promise<void> {
   const context = comparisonContext();
   if (!snapshot || !context) return;
   const detail = await engine.request<{ identity: { bio: unknown }; stats: unknown; history?: PlayerHistory }>('detail', row.player_id);
+  const profile = await engine.request<RinkcraftProfile>('rinkcraftProfile', { player_id:row.player_id, season_type:snapshot.season_type, first_season:null,last_season:null });
+  profile.documentary_catalog_available=false;
+  try{const characterCatalog=await readCharacterCatalog();if(characterCatalog){profile.character_sheet=await engine.request<CharacterSheet|undefined>('characterSheet',{catalog:characterCatalog,player_id:row.player_id,season:snapshot.season})??undefined;profile.documentary_catalog_available=true;}}
+  catch(error){if(error instanceof EngineStoppedError)throw error;}
+
+  const numericalSource=await readNumericalHistory()??await readNumericalCatalog();
+  if(numericalSource&&snapshot.season_type==='regular'){
+    const selected=await engine.request<SnapshotResult>('numericalSnapshot',{source:numericalSource,player_id:row.player_id,last:snapshot.season});
+    profile.numerical_evidence=selected.card??undefined;profile.numerical_snapshot=selected.selection;
+    if(selected.card){const c=selected.card;const peers=await engine.request<CatalogView>('numericalCatalog',{source:numericalSource,season:c.season});profile.numerical_comparison_choices=peers.catalog.profiles.filter(p=>p.group===c.group&&p.player_id!==c.player_id).map(p=>({player_id:p.player_id,name:p.name}));}
+    profile.numerical_history=await engine.request<HistoryCard|undefined>('numericalHistory',{catalog:numericalSource,player_id:row.player_id,last:snapshot.season})??undefined;
+  }
   if (result !== snapshot || generation !== engine.generation) return;
   element('player-name').textContent = row.name;
-  const summary = document.createElement('p'); summary.textContent = `${row.team} · ${row.position} · ${row.gp} games · ${row.points} points`;
+
   const details = document.createElement('details'); const label = document.createElement('summary'); label.textContent = 'Player evidence and season record';
   const pre = document.createElement('pre'); pre.textContent = JSON.stringify(detail, null, 2); details.append(label, pre);
   const choose = document.createElement('button'); choose.type = 'button'; choose.id = 'compare-player';
@@ -261,6 +366,8 @@ async function player(row: PlayerRow): Promise<void> {
     view.onclick = () => { element<HTMLDialogElement>('player-dialog').close(); element(comparison.players.length ? 'comparison-title' : 'analysis').focus(); };
     actions.append(view);
   }
+  const gameButton=document.createElement('button');gameButton.type='button';gameButton.textContent='Create inspired game character';
+  gameButton.onclick=()=>{element<HTMLDialogElement>('player-dialog').close();void openGameStudio({player_id:row.player_id,player_name:row.name,position:row.position,class_id:profile.character_sheet?.primary.id,evidence_season:profile.character_sheet?.as_of_season??snapshot.season,documentary_catalog_sha256:profile.character_sheet?.catalog_sha256??null});};actions.append(gameButton);
   const teams = document.createElement('div'); teams.className = 'actions';
   for (const team of playerTeamCodes(row.team)) {
     const button = document.createElement('button'); button.type = 'button'; button.textContent = `Explore ${team} season players`;
@@ -273,7 +380,9 @@ async function player(row: PlayerRow): Promise<void> {
   const teamHelp = document.createElement('p');
   teamHelp.textContent = 'Team shortcuts replace your filter and set Minimum GP to 0. Players match any team stint; values remain full-season totals.';
   if (teams.childElementCount) teams.append(teamHelp);
-  element('player-body').replaceChildren(summary, actions, teams, renderPlayerHistory(detail.history), details);
+  const recordHistory=document.createElement('details');recordHistory.className='rk-history';
+  const recordLabel=document.createElement('summary');recordLabel.textContent='Loaded records and source context';recordHistory.append(recordLabel,renderPlayerHistory(detail.history),details);
+  element('player-body').replaceChildren(renderRinkcraftProfile(profile), actions, teams, recordHistory);
   openPlayerContext = { revision: snapshot.revision, generation };
   element<HTMLDialogElement>('player-dialog').showModal();
 }

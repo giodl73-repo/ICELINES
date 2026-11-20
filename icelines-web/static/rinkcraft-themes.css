@@ -1,0 +1,123 @@
+/* Opt-in presentation experiments. No theme changes player data or its meaning. */
+[data-rinkcraft-theme] .rk-front{font-family:var(--rk-body,system-ui,sans-serif)}
+[data-rinkcraft-theme] .rk-front :is(h2,h4,dt,small){font-family:var(--rk-body,system-ui,sans-serif)}
+[data-rinkcraft-theme] .rk-front :is(h1,h3){font-family:var(--rk-display,system-ui,sans-serif)}
+[data-rinkcraft-theme] .rk-front dd{font-family:var(--rk-number,inherit)}
+[data-rinkcraft-theme] .rk-front[data-profile-kind="fictional_design_sample"] .rk-front-response strong{font-size:15px}
+
+/* 02 · A bookish character ledger: serif headings, framed panels, ink on paper. */
+[data-rinkcraft-theme="ledger"]{--rk-body:Georgia,'Times New Roman',serif;--rk-display:Georgia,'Times New Roman',serif;--rk-number:Georgia,serif;--studio-paper:#e8dfcb;--studio-accent:#76552e}
+[data-rinkcraft-theme="ledger"] .rk-front{--sheet-ink:#352d24;--sheet-line:#b6a382;--sheet-blue:#74522b;--sheet-red:#873f32;background:repeating-linear-gradient(0deg,#604b2010 0,#604b2010 1px,transparent 1px,transparent 5px),#faf3e1;border:5px double #8f7a55;padding:20px;box-shadow:0 9px 22px #49361926}
+[data-rinkcraft-theme="ledger"] .rk-front :is(h1,h3){font-weight:500;font-size:35px;letter-spacing:-.045em}
+[data-rinkcraft-theme="ledger"] .rk-front-header{border-bottom:4px double #92784c;box-shadow:none}
+[data-rinkcraft-theme="ledger"] .rk-front-header::after{opacity:.3}
+[data-rinkcraft-theme="ledger"] .rk-front-position{border-radius:50% 50% 8px 8px;background:#f6e9c9;box-shadow:none}
+[data-rinkcraft-theme="ledger"] .rk-front-identity{border:3px double #a28b63;border-radius:0;background:#fff8}
+[data-rinkcraft-theme="ledger"] .rk-form-box{border:3px double #b4a17c;border-radius:0;background:#fff7}
+[data-rinkcraft-theme="ledger"] .rk-form-box>:is(h2,h4){text-align:center;font-variant:small-caps;letter-spacing:.08em;border-bottom:1px solid #b4a17c}
+[data-rinkcraft-theme="ledger"] .rk-front-values .rk-field{border-radius:35% 35% 8% 8%;border:3px double #79643f;box-shadow:none;background:#f9efd7}
+[data-rinkcraft-theme="ledger"] .rk-front-values dd{font-size:32px;font-weight:500}
+[data-rinkcraft-theme="ledger"] .rk-front-values small{border-radius:0;background:#fff9}
+[data-rinkcraft-theme="ledger"] .rk-class-emblem{border-radius:50%;background:#efe0b9;border:3px double #8f784b;box-shadow:none}
+[data-rinkcraft-theme="ledger"] .rk-front-response{background:#eee3c8}
+[data-rinkcraft-theme="ledger"] .rk-front-coverage{border-top:4px double #8c754c}
+
+/* 03 · A working scout's numbered form, typed records and ruled cells. */
+[data-rinkcraft-theme="bureau"]{--rk-body:'Courier New',monospace;--rk-display:Georgia,serif;--rk-number:'Courier New',monospace;--studio-paper:#dce0d8;--studio-accent:#3b5144}
+[data-rinkcraft-theme="bureau"] .rk-front{--sheet-ink:#263b30;--sheet-line:#99a495;--sheet-blue:#3a5544;--sheet-red:#82433b;background:#f4f4e9;border:1px solid #5e7160;box-shadow:6px 6px 0 #334c3a22;padding:18px;counter-reset:form-section}
+[data-rinkcraft-theme="bureau"] .rk-front :is(h1,h3){font-size:32px;letter-spacing:-.03em;font-weight:700}
+[data-rinkcraft-theme="bureau"] .rk-front-header{border-bottom:3px solid #344f3d;box-shadow:none}
+[data-rinkcraft-theme="bureau"] .rk-front-header::after{display:none}
+[data-rinkcraft-theme="bureau"] .rk-front-position{border-radius:0;transform:rotate(2deg);border:3px double #3a5544;background:transparent;box-shadow:none}
+[data-rinkcraft-theme="bureau"] .rk-front-identity{border-radius:0;background:#fff7}
+[data-rinkcraft-theme="bureau"] .rk-form-box{border-radius:0;border:1px solid #869680;background:repeating-linear-gradient(0deg,transparent 0,transparent 18px,#65795c0a 18px,#65795c0a 19px),#fff7;counter-increment:form-section}
+[data-rinkcraft-theme="bureau"] .rk-form-box>:is(h2,h4)::before{content:counter(form-section,decimal-leading-zero) ' / ';color:#68785e}
+[data-rinkcraft-theme="bureau"] .rk-front-values .rk-field{border-radius:0;box-shadow:none;border:2px solid #5c705b;background:#e7ecde}
+[data-rinkcraft-theme="bureau"] .rk-front-values dd{font-size:29px}
+[data-rinkcraft-theme="bureau"] .rk-front-values small{border-radius:0;border:0;border-top:1px dashed #8c9d82;background:transparent}
+[data-rinkcraft-theme="bureau"] .rk-class-emblem{border-radius:0;border:2px solid #61725b;box-shadow:none}
+[data-rinkcraft-theme="bureau"] .rk-front-response{background:#e5eadf}
+[data-rinkcraft-theme="bureau"] .rk-front-counters dd{border-bottom:1px dashed #7f9276}
+
+/* 04 · Coaching board: horizontal ability strip, grid, chalk-like white rules. */
+[data-rinkcraft-theme="tactics"]{--rk-body:'Trebuchet MS',sans-serif;--rk-display:'Arial Narrow',Arial,sans-serif;--rk-number:Consolas,monospace;--studio-paper:#142a30;--studio-accent:#a4f0dc}
+[data-rinkcraft-theme="tactics"] .rk-front{--sheet-ink:#e2f1eb;--sheet-line:#729790;--sheet-blue:#b5e9d8;--sheet-red:#f0ae86;background:linear-gradient(#92b8aa0b 1px,transparent 1px),linear-gradient(90deg,#92b8aa0b 1px,transparent 1px),#163d3b;background-size:24px 24px;border:6px solid #668d7c;border-radius:9px;box-shadow:0 12px 30px #0004}
+[data-rinkcraft-theme="tactics"] .rk-front :is(h1,h3){font-size:38px;text-transform:uppercase;letter-spacing:.025em}
+[data-rinkcraft-theme="tactics"] .rk-front :is(small,dt,.rk-front-scope,.rk-front-snapshot,.rk-front-footer){color:#c1d8ce}
+[data-rinkcraft-theme="tactics"] .rk-front-position{border:1px dashed #b5e9d8;background:#32605a;box-shadow:none}
+[data-rinkcraft-theme="tactics"] .rk-front-identity{background:#0d252a66;border:1px dashed #7faaa1;border-radius:0}
+[data-rinkcraft-theme="tactics"] .rk-front .rk-class-field{background:#204e49}
+[data-rinkcraft-theme="tactics"] .rk-front .rk-class-note{color:#c1d8ce}
+[data-rinkcraft-theme="tactics"] .rk-form-box{background:#173633b3;border:1px solid #729790;border-radius:2px}
+[data-rinkcraft-theme="tactics"] .rk-front :is(.rk-task-list dd,.rk-method-status,.rk-method-evidence>summary){color:#bbdcd1}
+[data-rinkcraft-theme="tactics"] .rk-front-values .rk-field{border:1px solid #b8e6d8;border-radius:4px;background:#23504b;box-shadow:none}
+[data-rinkcraft-theme="tactics"] .rk-front-values small{background:transparent;border-color:#729790;color:#d7ece2}
+[data-rinkcraft-theme="tactics"] .rk-form-box li,[data-rinkcraft-theme="tactics"] .rk-task-list .rk-field{border-bottom-color:#658d8166}
+[data-rinkcraft-theme="tactics"] .rk-class-emblem{background:#366a60;color:#effff7;border:1px solid #b5e9d8;box-shadow:none;transform:rotate(-5deg)}
+[data-rinkcraft-theme="tactics"] .rk-front-response{background:#28594f}
+@media screen and (min-width:651px){
+ [data-rinkcraft-theme="tactics"] .rk-front-columns{grid-template-columns:1fr 1.05fr 1fr;grid-template-rows:auto 1fr auto}
+ [data-rinkcraft-theme="tactics"] :is(.rk-front-left,.rk-left-split){display:contents}
+ [data-rinkcraft-theme="tactics"] .rk-front-attributes{grid-column:1/-1;grid-row:1}
+ [data-rinkcraft-theme="tactics"] .rk-front-values{grid-template-columns:repeat(6,minmax(0,1fr))}
+ [data-rinkcraft-theme="tactics"] .rk-front-values .rk-field{min-height:83px}
+ [data-rinkcraft-theme="tactics"] .rk-front-task-column{grid-column:1;grid-row:2}
+ [data-rinkcraft-theme="tactics"] .rk-front-role-coverage{grid-column:1;grid-row:3}
+ [data-rinkcraft-theme="tactics"] .rk-front-center{grid-column:2;grid-row:2/span 2}
+ [data-rinkcraft-theme="tactics"] .rk-front-right{grid-column:3;grid-row:2/span 2}
+}
+
+/* 05 · Broadcast graphics: jersey stripe, cut corners, oversized athletic type. */
+[data-rinkcraft-theme="broadcast"]{--rk-body:'Segoe UI',Arial,sans-serif;--rk-display:Impact,'Arial Narrow',sans-serif;--rk-number:Bahnschrift,'Arial Narrow',sans-serif;--studio-paper:#dce7ee;--studio-accent:#00698a}
+[data-rinkcraft-theme="broadcast"] .rk-front{--sheet-ink:#102a41;--sheet-line:#9eb7c7;--sheet-blue:#005e83;--sheet-red:#ec6439;background:#fff;border:0;border-radius:15px 0 15px 0;box-shadow:0 15px 40px #163b5026;gap:10px}
+[data-rinkcraft-theme="broadcast"] .rk-front-header{padding:14px 16px 14px 22px;color:#fff;background:linear-gradient(110deg,#0a2740 70%,#026f91 70%,#026f91 83%,#ef693d 83%,#ef693d 86%,#0a2740 86%);border:0;border-left:7px solid #ef693d;box-shadow:none}
+[data-rinkcraft-theme="broadcast"] .rk-front-header :is(h1,h3){font-size:42px;letter-spacing:.015em;text-transform:uppercase;font-weight:500}
+[data-rinkcraft-theme="broadcast"] .rk-front-header>div:first-child>small{color:#d5f4ff;border:0;padding:0}
+[data-rinkcraft-theme="broadcast"] .rk-front-header::after{display:none}
+[data-rinkcraft-theme="broadcast"] .rk-front-position{border:0;border-radius:0;background:#fff;color:#0d2b40;box-shadow:none}
+[data-rinkcraft-theme="broadcast"] .rk-front-identity{border:0;border-bottom:3px solid #00698a;border-radius:0;background:#eaf2f7}
+[data-rinkcraft-theme="broadcast"] .rk-form-box{border:0;border-radius:7px;background:#edf3f7}
+[data-rinkcraft-theme="broadcast"] .rk-form-box>:is(h2,h4){border-bottom:2px solid #acd0df;letter-spacing:.08em}
+[data-rinkcraft-theme="broadcast"] .rk-front-values .rk-field{border:0;border-radius:0 18px 0 18px;box-shadow:inset 5px 0 0 #007c9a;background:#0d2d46;color:white}
+[data-rinkcraft-theme="broadcast"] .rk-front-values dt{color:#b4e8f7}
+[data-rinkcraft-theme="broadcast"] .rk-front-values dd{font-size:33px;font-weight:800}
+[data-rinkcraft-theme="broadcast"] .rk-front-values small{border:0;color:#effaff;background:#164361;border-radius:2px}
+[data-rinkcraft-theme="broadcast"] .rk-class-emblem{background:#0d2d46;color:#fff;border:0;border-radius:0 8px 0 8px;box-shadow:none}
+[data-rinkcraft-theme="broadcast"] .rk-front-counters{background:#0d2d46;color:white}
+[data-rinkcraft-theme="broadcast"] .rk-front-counters :is(h2,h4,dt){color:#b4e8f7;border-color:#32647b}
+[data-rinkcraft-theme="broadcast"] .rk-front-counters dd{font-size:23px}
+
+/* 06 · Editorial: type and whitespace replace the boxes. */
+[data-rinkcraft-theme="editorial"]{--rk-body:Arial,Helvetica,sans-serif;--rk-display:Georgia,serif;--rk-number:Georgia,serif;--studio-paper:#e8e6e3;--studio-accent:#292622}
+[data-rinkcraft-theme="editorial"] .rk-front{--sheet-ink:#252521;--sheet-line:#c0beb6;--sheet-blue:#252521;--sheet-red:#8b6556;background:#fffefa;border:0;border-top:6px solid #252521;box-shadow:0 4px 16px #18140a10;padding:24px;gap:11px}
+[data-rinkcraft-theme="editorial"] .rk-front :is(h1,h3){font-size:39px;font-weight:500;letter-spacing:-.06em}
+[data-rinkcraft-theme="editorial"] .rk-front-header{box-shadow:none;border-bottom:1px solid #252521;padding-bottom:16px}
+[data-rinkcraft-theme="editorial"] .rk-front-header::after{display:none}
+[data-rinkcraft-theme="editorial"] .rk-front-position{border:0;border-radius:0;border-left:1px solid #252521;background:transparent;box-shadow:none}
+[data-rinkcraft-theme="editorial"] .rk-front-identity{background:transparent;border:0;border-bottom:1px solid #252521;border-radius:0}
+[data-rinkcraft-theme="editorial"] .rk-front-identity .rk-field{border-right:0;padding-left:0}
+[data-rinkcraft-theme="editorial"] .rk-front-identity .rk-field:first-child{box-shadow:none}
+[data-rinkcraft-theme="editorial"] .rk-front .rk-class-field{background:transparent;padding-left:0!important}
+[data-rinkcraft-theme="editorial"] .rk-form-box{background:transparent;border:0;border-top:1px solid #252521;border-radius:0;padding:9px 0}
+[data-rinkcraft-theme="editorial"] .rk-form-box>:is(h2,h4){border:0;letter-spacing:.11em;font-size:9px}
+[data-rinkcraft-theme="editorial"] .rk-front-values .rk-field{border:0;border-bottom:1px solid #bdbbb2;border-radius:0;background:transparent;box-shadow:none;align-items:flex-start;padding-left:7px;text-align:left}
+[data-rinkcraft-theme="editorial"] .rk-front-values dd{font-size:35px;font-weight:400}
+[data-rinkcraft-theme="editorial"] .rk-front-values small{align-self:flex-start;border:0;border-radius:0;background:transparent;padding:0}
+[data-rinkcraft-theme="editorial"] .rk-class-emblem{display:none}
+[data-rinkcraft-theme="editorial"] .rk-front-response{background:#f1f0ea;border-top:2px solid #252521}
+[data-rinkcraft-theme="editorial"] .rk-front-coverage{border-top:1px solid #252521}
+
+@media print{
+ [data-rinkcraft-theme] .rk-front{background:#fff!important;box-shadow:none!important;--sheet-ink:#183247;--sheet-line:#a8bcc8;--sheet-blue:#286b92;color:#183247!important;padding:10px!important;gap:4px!important;min-height:10in;font-size:10px}
+ [data-rinkcraft-theme] .rk-front :is(h1,h3){font-size:25px!important}
+ [data-rinkcraft-theme] .rk-front-header{padding:5px 0 8px!important}
+ [data-rinkcraft-theme] .rk-front-position{padding:5px!important}
+ [data-rinkcraft-theme] .rk-front-identity .rk-field{padding:4px 7px!important}
+ [data-rinkcraft-theme] .rk-front .rk-form-box{padding:5px!important}
+ [data-rinkcraft-theme] .rk-front-values dd{font-size:24px!important}
+ [data-rinkcraft-theme] .rk-front-values .rk-field{padding:5px 3px!important}
+ [data-rinkcraft-theme] .rk-front .rk-front-response strong{font-size:13px!important}
+ [data-rinkcraft-theme] .rk-front .rk-front-counters dd{font-size:17px!important}
+ [data-rinkcraft-theme] .rk-front :is(.rk-form-box,.rk-front-values .rk-field,.rk-front-identity,.rk-front-header,.rk-front-position){background:#fff!important;color:#183247!important}
+ [data-rinkcraft-theme] .rk-front :is(h1,h2,h3,h4,small,dt,dd,p,li){color:#183247!important}
+}

@@ -1,0 +1,4 @@
+{% match c.context %}{% when Some with (v) %}<section class="rn-context-comparison" aria-label="Possession and environment comparison">
+<h3>{{ v.title }}</h3><p>{{ v.coverage }}</p><p>{{ v.note }}</p>
+{% for g in v.groups %}<h4>{{ g.label }}</h4><p>{{ g.note }}</p><div class="rn-comparison-scroll" role="region" aria-label="Context comparison table" tabindex="0"><table><thead><tr><th>Record</th><th>{{ c.left }}</th><th>{{ c.right }}</th><th>Left − right</th></tr></thead><tbody>{% for r in g.rows %}<tr data-context-comparison-key="{{ r.key }}"><td>{{ r.label }}<details><summary>Measurement limits</summary><p>{{ r.limit }}</p></details></td><td class="rn-left">{{ r.left }}<small>{{ r.left_p }}</small></td><td class="rn-right">{{ r.right }}<small>{{ r.right_p }}</small></td><td>{{ r.gap }}<small>{{ r.point_gap }}</small></td></tr>{% endfor %}</tbody></table></div>{% endfor %}
+</section>{% when None %}{% endmatch %}

@@ -1,0 +1,481 @@
+//! Curated, source-linked class identity. Never infer a class from statistical bands.
+use crate::{identity::PlayerId, model::Season};
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+
+pub const CHARACTER_CATALOG_SCHEMA: &str = "rinkcraft.character-catalog.v1";
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CharacterCatalog {
+    pub schema: String,
+    pub protocol: String,
+    #[serde(default)]
+    pub showcase_title: String,
+    #[serde(default)]
+    pub showcase_notes: String,
+    pub classes: Vec<CharacterClass>,
+    pub assessments: Vec<CharacterAssessment>,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CharacterClass {
+    pub id: String,
+    pub name: String,
+    pub analogy: String,
+    pub purpose: String,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CharacterAssessment {
+    #[serde(default)]
+    pub featured: bool,
+    pub player_id: PlayerId,
+    pub player_name: String,
+    pub assessed: String,
+    pub primary: ClassAssignment,
+    pub secondary: Vec<ClassAssignment>,
+    pub specialty: String,
+    pub summary: String,
+    pub traits: Vec<CharacterFeature>,
+    pub features: Vec<CharacterFeature>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub under_pressure: Vec<CharacterFeature>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub task_skills: Vec<CharacterFeature>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub card_facts: Vec<CharacterFact>,
+    pub sources: Vec<CharacterSource>,
+    pub unknowns: Vec<String>,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ClassAssignment {
+    pub class_id: String,
+    pub from_season: Season,
+    pub source_ids: Vec<String>,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CharacterFeature {
+    pub name: String,
+    pub detail: String,
+    pub evidence_type: String,
+    pub from_season: Season,
+    pub source_ids: Vec<String>,
+    #[serde(default)]
+    pub stat_evidence: Vec<FeatureStatLink>,
+    #[serde(default)]
+    pub unmeasured_stats: Vec<String>,
+}
+/// Source-bound factual background; no ability score or inferred biography.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CardFactField {
+    Development,
+    Experience,
+}
+impl CardFactField {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Development => "development",
+            Self::Experience => "experience",
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CharacterFact {
+    pub field: CardFactField,
+    pub context: String,
+    #[serde(flatten)]
+    pub feature: CharacterFeature,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub through_season: Option<Season>,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FeatureStatLink {
+    pub attribute_key: String,
+    pub relation: FeatureStatRelation,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FeatureStatRelation {
+    MeasuredAspect,
+    ActivityContext,
+    OutcomeContext,
+    DeploymentContext,
+}
+impl FeatureStatRelation {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::MeasuredAspect => "Measured aspect",
+            Self::ActivityContext => "Activity context",
+            Self::OutcomeContext => "Outcome context",
+            Self::DeploymentContext => "Deployment context",
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CharacterSource {
+    pub id: String,
+    pub title: String,
+    pub url: String,
+    pub published: String,
+    pub season: Season,
+    pub locator: String,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CharacterSheet {
+    pub schema: String,
+    pub protocol: String,
+    pub catalog_sha256: String,
+    pub player_id: PlayerId,
+    pub player_name: String,
+    pub assessed: String,
+    pub as_of_season: Season,
+    pub evidence_through: String,
+    pub status: String,
+    pub primary: CharacterClass,
+    pub secondary: Vec<CharacterClass>,
+    pub specialty: String,
+    pub summary: String,
+    pub traits: Vec<CharacterFeature>,
+    pub features: Vec<CharacterFeature>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub under_pressure: Vec<CharacterFeature>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub task_skills: Vec<CharacterFeature>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub card_facts: Vec<CharacterFact>,
+    pub sources: Vec<CharacterSource>,
+    pub unknowns: Vec<String>,
+}
+impl CharacterSheet {
+    pub fn card_fact(&self, field: &str) -> Option<&CharacterFact> {
+        self.card_facts.iter().find(|f| f.field.as_str() == field)
+    }
+}
+impl CharacterCatalog {
+    pub fn validate(&self) -> Result<(), String> {
+        use std::collections::HashSet;
+        if self.schema != CHARACTER_CATALOG_SCHEMA || self.protocol.is_empty() {
+            return Err("unsupported character catalog".into());
+        }
+        let mut class_ids = HashSet::new();
+        for c in &self.classes {
+            if !matches!(
+                c.id.as_str(),
+                "conductor"
+                    | "hunter"
+                    | "warden"
+                    | "vanguard"
+                    | "marksman"
+                    | "connector"
+                    | "pathfinder"
+            ) || c.name.is_empty()
+                || !class_ids.insert(&c.id)
+            {
+                return Err("invalid or duplicate class definition".into());
+            }
+        }
+        let mut players = HashSet::new();
+        for a in &self.assessments {
+            if !players.insert(a.player_id) || a.player_name.is_empty() {
+                return Err("duplicate or unnamed character assessment".into());
+            }
+            let mut ids = HashSet::new();
+            for s in &a.sources {
+                if !ids.insert(&s.id)
+                    || !s.url.starts_with("https://")
+                    || !(chrono::NaiveDate::parse_from_str(&s.published, "%Y-%m-%d").is_ok()
+                        || (s.published.len() == 4
+                            && s.published
+                                .parse::<u16>()
+                                .is_ok_and(|y| (1900..=2200).contains(&y))))
+                {
+                    return Err("invalid character source".into());
+                }
+            }
+            let supported = |from: Season, refs: &[String]| {
+                !refs.is_empty()
+                    && refs
+                        .iter()
+                        .all(|id| a.sources.iter().any(|s| s.id == *id && s.season <= from))
+            };
+            for c in std::iter::once(&a.primary).chain(&a.secondary) {
+                if !class_ids.contains(&c.class_id) || !supported(c.from_season, &c.source_ids) {
+                    return Err("unsupported character class assignment".into());
+                }
+            }
+            let mut fact_fields = HashSet::new();
+            for fact in &a.card_facts {
+                if !fact_fields.insert(fact.field)
+                    || fact.context.trim().is_empty()
+                    || fact
+                        .through_season
+                        .is_some_and(|end| end < fact.feature.from_season)
+                {
+                    return Err("duplicate, unscoped or reversed character fact".into());
+                }
+            }
+            for f in a
+                .under_pressure
+                .iter()
+                .chain(&a.task_skills)
+                .chain(a.card_facts.iter().map(|f| &f.feature))
+            {
+                if f.name.trim().is_empty()
+                    || f.detail.trim().is_empty()
+                    || f.evidence_type.trim().is_empty()
+                {
+                    return Err("unnamed or unexplained character specialization".into());
+                }
+            }
+            for f in a
+                .traits
+                .iter()
+                .chain(&a.features)
+                .chain(&a.under_pressure)
+                .chain(&a.task_skills)
+                .chain(a.card_facts.iter().map(|f| &f.feature))
+            {
+                if !supported(f.from_season, &f.source_ids) {
+                    return Err("unsupported character feature".into());
+                }
+                let mut linked = HashSet::new();
+                for stat in &f.stat_evidence {
+                    if !super::rinkcraft_attributes::is_attribute_key(&stat.attribute_key)
+                        || !linked.insert(&stat.attribute_key)
+                    {
+                        return Err("unknown or duplicate feature statistic".into());
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+    /// Returns no identity before its documentary support. Later features never leak backward.
+    pub fn sheet(&self, pid: PlayerId, season: Season) -> Result<Option<CharacterSheet>, String> {
+        self.validate()?;
+        let Some(a) = self
+            .assessments
+            .iter()
+            .find(|a| a.player_id == pid && a.primary.from_season <= season)
+        else {
+            return Ok(None);
+        };
+        let class = |id: &str| {
+            self.classes
+                .iter()
+                .find(|c| c.id == id)
+                .cloned()
+                .expect("validated class")
+        };
+        let traits: Vec<_> = a
+            .traits
+            .iter()
+            .filter(|f| f.from_season <= season)
+            .cloned()
+            .collect();
+        let features: Vec<_> = a
+            .features
+            .iter()
+            .filter(|f| f.from_season <= season)
+            .cloned()
+            .collect();
+        let under_pressure: Vec<_> = a
+            .under_pressure
+            .iter()
+            .filter(|f| f.from_season <= season)
+            .cloned()
+            .collect();
+        let task_skills: Vec<_> = a
+            .task_skills
+            .iter()
+            .filter(|f| f.from_season <= season)
+            .cloned()
+            .collect();
+        let card_facts: Vec<_> = a
+            .card_facts
+            .iter()
+            .filter(|f| {
+                f.feature.from_season <= season && f.through_season.is_none_or(|end| season <= end)
+            })
+            .cloned()
+            .collect();
+        let secondaries: Vec<_> = a
+            .secondary
+            .iter()
+            .filter(|c| c.from_season <= season)
+            .collect();
+        let used: std::collections::HashSet<_> = a
+            .primary
+            .source_ids
+            .iter()
+            .chain(secondaries.iter().flat_map(|c| c.source_ids.iter()))
+            .chain(
+                traits
+                    .iter()
+                    .chain(&features)
+                    .chain(&under_pressure)
+                    .chain(&task_skills)
+                    .chain(card_facts.iter().map(|f| &f.feature))
+                    .flat_map(|f| f.source_ids.iter()),
+            )
+            .collect();
+        let sources: Vec<_> = a
+            .sources
+            .iter()
+            .filter(|s| s.season <= season && used.contains(&s.id))
+            .cloned()
+            .collect();
+        let bytes = serde_json::to_vec(self).map_err(|e| e.to_string())?;
+        Ok(Some(CharacterSheet {
+            schema: "rinkcraft.character-sheet.v1".into(),
+            protocol: self.protocol.clone(),
+            catalog_sha256: format!("{:x}", Sha256::digest(bytes)),
+            player_id: pid,
+            player_name: a.player_name.clone(),
+            assessed: a.assessed.clone(),
+            as_of_season: season,
+            evidence_through: sources
+                .iter()
+                .map(|s| s.published.clone())
+                .max()
+                .unwrap_or_default(),
+            status: "provisional_documentary".into(),
+            primary: class(&a.primary.class_id),
+            secondary: secondaries.iter().map(|c| class(&c.class_id)).collect(),
+            specialty: a.specialty.clone(),
+            summary: a.summary.clone(),
+            traits,
+            features,
+            under_pressure,
+            task_skills,
+            card_facts,
+            sources,
+            unknowns: a.unknowns.clone(),
+        }))
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    fn catalog() -> CharacterCatalog {
+        serde_json::from_value(serde_json::json!({"schema":CHARACTER_CATALOG_SCHEMA,"protocol":"test","classes":[{"id":"conductor","name":"Conductor","analogy":"Wizard","purpose":"Distribution"}],"assessments":[{"player_id":1,"player_name":"Synthetic Player","assessed":"2026-11-08","primary":{"class_id":"conductor","from_season":20232024,"source_ids":["S1"]},"secondary":[],"specialty":"Test","summary":"Authored illustration","traits":[],"features":[{"name":"Later feature","detail":"Test","evidence_type":"attributed","from_season":20252026,"source_ids":["S2"]}],"sources":[{"id":"S1","title":"Synthetic","url":"https://example.org/one","published":"2024-04-03","season":20232024,"locator":"test"},{"id":"S2","title":"Synthetic","url":"https://example.org/two","published":"2026-03-13","season":20252026,"locator":"test"}],"unknowns":[]}]})).unwrap()
+    }
+    #[test]
+    fn documentary_classes_are_scoped_and_future_features_do_not_leak() {
+        let c = catalog();
+        assert!(c.sheet(PlayerId(1), Season(20222023)).unwrap().is_none());
+        let s = c.sheet(PlayerId(1), Season(20232024)).unwrap().unwrap();
+        assert!(s.features.is_empty());
+        assert_eq!(s.sources.len(), 1);
+        assert_eq!(
+            c.sheet(PlayerId(1), Season(20252026))
+                .unwrap()
+                .unwrap()
+                .features
+                .len(),
+            1
+        );
+    }
+    #[test]
+    fn missing_support_and_unsafe_source_links_reject() {
+        let mut c = catalog();
+        c.assessments[0].primary.source_ids = vec!["missing".into()];
+        assert!(c.validate().is_err());
+        let mut c = catalog();
+        c.assessments[0].sources[0].url = "javascript:alert(1)".into();
+        assert!(c.validate().is_err());
+    }
+    #[test]
+    fn feature_links_validate_and_year_precision_stays_explicit() {
+        let mut c = catalog();
+        c.assessments[0].sources[0].published = "2024".into();
+        assert!(c.validate().is_ok());
+        c.assessments[0].features[0]
+            .stat_evidence
+            .push(FeatureStatLink {
+                attribute_key: "made-up-skill".into(),
+                relation: FeatureStatRelation::OutcomeContext,
+            });
+        assert!(c.validate().is_err());
+        c.assessments[0].features[0].stat_evidence[0].attribute_key = "assist-output".into();
+        assert!(c.validate().is_ok());
+        let duplicate = c.assessments[0].features[0].stat_evidence[0].clone();
+        c.assessments[0].features[0].stat_evidence.push(duplicate);
+        assert!(c.validate().is_err());
+    }
+
+    #[test]
+    fn repertoires_preserve_legacy_fingerprints_and_never_borrow_methods() {
+        let c = catalog();
+        let legacy = serde_json::to_string(&c).unwrap();
+        assert!(!legacy.contains("under_pressure"));
+        assert!(!legacy.contains("task_skills"));
+        let s = c.sheet(PlayerId(1), Season(20252026)).unwrap().unwrap();
+        assert!(s.under_pressure.is_empty() && s.task_skills.is_empty());
+        assert_eq!(s.features.len(), 1);
+        assert_eq!(
+            s.catalog_sha256,
+            format!("{:x}", Sha256::digest(legacy.as_bytes()))
+        );
+    }
+
+    #[test]
+    fn repertoires_are_source_validated_and_date_gated_independently() {
+        let mut c = catalog();
+        let mut f = c.assessments[0].features[0].clone();
+        f.name = "Synthetic pressure response".into();
+        c.assessments[0].under_pressure.push(f.clone());
+        f.name = "Synthetic task specialty".into();
+        c.assessments[0].task_skills.push(f);
+        let early = c.sheet(PlayerId(1), Season(20232024)).unwrap().unwrap();
+        assert!(early.under_pressure.is_empty() && early.task_skills.is_empty());
+        let later = c.sheet(PlayerId(1), Season(20252026)).unwrap().unwrap();
+        assert_eq!(
+            (
+                later.under_pressure.len(),
+                later.task_skills.len(),
+                later.sources.len()
+            ),
+            (1, 1, 2)
+        );
+        c.assessments[0].under_pressure[0].source_ids = vec!["missing".into()];
+        assert!(c.validate().is_err());
+        c.assessments[0].under_pressure[0].source_ids = vec!["S2".into()];
+        c.assessments[0].task_skills[0].name.clear();
+        assert!(c.validate().is_err());
+    }
+
+    #[test]
+    fn card_facts_have_explicit_context_dates_and_deduplicated_sources() {
+        let mut c = catalog();
+        let fact = CharacterFact {
+            field: CardFactField::Development,
+            context: "Synthetic historical fact".into(),
+            feature: c.assessments[0].features[0].clone(),
+            through_season: Some(Season(20262027)),
+        };
+        c.assessments[0].card_facts.push(fact);
+        assert!(c
+            .sheet(PlayerId(1), Season(20232024))
+            .unwrap()
+            .unwrap()
+            .card_facts
+            .is_empty());
+        let s = c.sheet(PlayerId(1), Season(20252026)).unwrap().unwrap();
+        assert_eq!(s.card_facts.len(), 1);
+        assert_eq!(s.sources.len(), 2);
+        assert!(c
+            .sheet(PlayerId(1), Season(20272028))
+            .unwrap()
+            .unwrap()
+            .card_facts
+            .is_empty());
+        c.assessments[0].card_facts[0].context.clear();
+        assert!(c.validate().is_err());
+        c.assessments[0].card_facts[0].context = "Synthetic".into();
+        let duplicate = c.assessments[0].card_facts[0].clone();
+        c.assessments[0].card_facts.push(duplicate);
+        assert!(c.validate().is_err());
+        c.assessments[0].card_facts.pop();
+        c.assessments[0].card_facts[0].feature.source_ids = vec!["missing".into()];
+        assert!(c.validate().is_err());
+    }
+}

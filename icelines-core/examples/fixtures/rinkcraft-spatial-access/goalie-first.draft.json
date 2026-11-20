@@ -1,0 +1,399 @@
+{
+  "schema": "rinkcraft.event-draft.0.8",
+  "episode": {
+    "schema": "rinkcraft.event-episode.0.8",
+    "seed": 20261115,
+    "players": [
+      {
+        "id": "p0",
+        "side": "a",
+        "goalie": false
+      },
+      {
+        "id": "p1",
+        "side": "a",
+        "goalie": false
+      },
+      {
+        "id": "p2",
+        "side": "a",
+        "goalie": false
+      },
+      {
+        "id": "p3",
+        "side": "a",
+        "goalie": false
+      },
+      {
+        "id": "p4",
+        "side": "a",
+        "goalie": false
+      },
+      {
+        "id": "p5",
+        "side": "a",
+        "goalie": true
+      },
+      {
+        "id": "p6",
+        "side": "b",
+        "goalie": false
+      },
+      {
+        "id": "p7",
+        "side": "b",
+        "goalie": false
+      },
+      {
+        "id": "p8",
+        "side": "b",
+        "goalie": false
+      },
+      {
+        "id": "p9",
+        "side": "b",
+        "goalie": false
+      },
+      {
+        "id": "p10",
+        "side": "b",
+        "goalie": false
+      },
+      {
+        "id": "p11",
+        "side": "b",
+        "goalie": true
+      }
+    ],
+    "controller": "p0",
+    "seconds_remaining": 600,
+    "steps": [
+      {
+        "seconds": 1,
+        "action": {
+          "kind": "release",
+          "actor": "p0",
+          "shot": false
+        }
+      },
+      {
+        "seconds": 1,
+        "action": {
+          "kind": "flight",
+          "choices": [
+            {
+              "weight": 10000,
+              "outcome": {
+                "kind": "loose"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "seconds": 10,
+        "action": {
+          "kind": "loose_puck_access",
+          "plan": {
+            "schema": "rinkcraft.access-grid.0.1",
+            "snapshot_seconds_remaining": 598,
+            "basis": "Authored local grid, x east/y north, Manhattan travel; cells are not physical rink units",
+            "puck": {
+              "x": 2,
+              "y": 0
+            },
+            "reach_cells": 0,
+            "collection_seconds": 1,
+            "open_target": 5,
+            "actors": [
+              {
+                "player": "p0",
+                "cell": {
+                  "x": 0,
+                  "y": 0
+                },
+                "facing": "east",
+                "intent": {
+                  "kind": "pursue",
+                  "seconds_per_cell": 1,
+                  "reaction_seconds": 0,
+                  "turn_seconds": 2
+                }
+              },
+              {
+                "player": "p1",
+                "cell": {
+                  "x": 10,
+                  "y": 4
+                },
+                "facing": "west",
+                "intent": {
+                  "kind": "hold"
+                }
+              },
+              {
+                "player": "p2",
+                "cell": {
+                  "x": 10,
+                  "y": 4
+                },
+                "facing": "west",
+                "intent": {
+                  "kind": "hold"
+                }
+              },
+              {
+                "player": "p3",
+                "cell": {
+                  "x": 10,
+                  "y": 4
+                },
+                "facing": "west",
+                "intent": {
+                  "kind": "hold"
+                }
+              },
+              {
+                "player": "p4",
+                "cell": {
+                  "x": 10,
+                  "y": 4
+                },
+                "facing": "west",
+                "intent": {
+                  "kind": "hold"
+                }
+              },
+              {
+                "player": "p5",
+                "cell": {
+                  "x": 10,
+                  "y": 4
+                },
+                "facing": "west",
+                "intent": {
+                  "kind": "hold"
+                }
+              },
+              {
+                "player": "p6",
+                "cell": {
+                  "x": -2,
+                  "y": 0
+                },
+                "facing": "east",
+                "intent": {
+                  "kind": "pursue",
+                  "seconds_per_cell": 1,
+                  "reaction_seconds": 0,
+                  "turn_seconds": 2
+                }
+              },
+              {
+                "player": "p7",
+                "cell": {
+                  "x": 10,
+                  "y": 4
+                },
+                "facing": "west",
+                "intent": {
+                  "kind": "hold"
+                }
+              },
+              {
+                "player": "p8",
+                "cell": {
+                  "x": 10,
+                  "y": 4
+                },
+                "facing": "west",
+                "intent": {
+                  "kind": "hold"
+                }
+              },
+              {
+                "player": "p9",
+                "cell": {
+                  "x": 10,
+                  "y": 4
+                },
+                "facing": "west",
+                "intent": {
+                  "kind": "hold"
+                }
+              },
+              {
+                "player": "p10",
+                "cell": {
+                  "x": 10,
+                  "y": 4
+                },
+                "facing": "west",
+                "intent": {
+                  "kind": "hold"
+                }
+              },
+              {
+                "player": "p11",
+                "cell": {
+                  "x": 2,
+                  "y": 0
+                },
+                "facing": "west",
+                "intent": {
+                  "kind": "hold"
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "character_rules": {
+    "schema": "rinkcraft.game-rules.v1",
+    "version": "shot-encounter.0.1",
+    "title": "Fictional shot and goalie encounter",
+    "standard_array": [
+      17,
+      16,
+      15,
+      13,
+      11,
+      9
+    ],
+    "templates": [
+      {
+        "id": "retriever",
+        "branch": "skater",
+        "class_id": "retriever",
+        "class_name": "Retriever",
+        "specialty": "Loose pucks",
+        "description": "Neutral fictional skater for the collection adapter",
+        "priority": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "task_skills": [
+          "Loose-puck collection"
+        ],
+        "methods": [
+          "Secure under pressure"
+        ],
+        "tendencies": [],
+        "playbook_options": []
+      },
+      {
+        "id": "goalie",
+        "branch": "goalie",
+        "class_id": "guardian",
+        "class_name": "Guardian",
+        "specialty": "Track the puck",
+        "description": "Fictional goalie test build",
+        "priority": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "task_skills": [
+          "Tracking"
+        ],
+        "methods": [
+          "Follow release"
+        ],
+        "tendencies": [],
+        "playbook_options": []
+      }
+    ]
+  },
+  "score_rule": "half_offset",
+  "members": [
+    {
+      "player": "p0",
+      "build": {
+        "template_id": "retriever",
+        "name": "Shooter",
+        "position": "F",
+        "scores": {
+          "kind": "manual",
+          "scores": [
+            10,
+            10,
+            10,
+            10,
+            10,
+            10
+          ]
+        },
+        "inspiration": null
+      }
+    },
+    {
+      "player": "p11",
+      "build": {
+        "template_id": "goalie",
+        "name": "Goalie",
+        "position": "G",
+        "scores": {
+          "kind": "manual",
+          "scores": [
+            10,
+            10,
+            10,
+            10,
+            10,
+            10
+          ]
+        },
+        "inspiration": null
+      }
+    },
+    {
+      "player": "p6",
+      "build": {
+        "template_id": "retriever",
+        "name": "Spatial defender p6",
+        "position": "D",
+        "scores": {
+          "kind": "manual",
+          "scores": [
+            10,
+            10,
+            10,
+            10,
+            10,
+            10
+          ]
+        },
+        "inspiration": null
+      }
+    },
+    {
+      "player": "p7",
+      "build": {
+        "template_id": "retriever",
+        "name": "Spatial defender p7",
+        "position": "D",
+        "scores": {
+          "kind": "manual",
+          "scores": [
+            10,
+            10,
+            10,
+            10,
+            10,
+            10
+          ]
+        },
+        "inspiration": null
+      }
+    }
+  ]
+}

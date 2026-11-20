@@ -1,0 +1,9 @@
+<section class="rk-form-box rk-front-record"><h2>Estimated Record</h2>
+{% match numerical %}{% when Some with (n) %}
+{% match n.estimated_record %}{% when Some with (record) %}
+<small>{{ record.basis }}</small><dl class="rk-record-values">
+{% for m in record.metrics %}<div class="rk-field" data-numerical-key="{{ m.key }}"><dt>{{ m.label }}</dt><dd>{% match m.value %}{% when Some with (value) %}{% if m.projected_total %}{{ "{:.0}"|format(value) }}{% else if m.unit == "Pct" %}{{ "{:.1}"|format(value * 100.0) }}%{% else %}{{ "{:.2}"|format(value) }}{% endif %}{% when None %}—{% endmatch %}</dd><small>{% match m.per_game %}{% when Some with (rate) %}{{ "{:.2}"|format(rate) }} /game{% when None %}{% if m.value.is_some() %}Current rate{% else %}Unavailable{% endif %}{% endmatch %}</small></div>{% endfor %}
+</dl>
+{% when None %}<small>Recorded rates</small><dl class="rk-record-values">{% for f in n.facets %}<div class="rk-field" data-numerical-key="{{ f.key }}"><dt>{{ f.label }}</dt><dd>{{ f.value }}</dd><small>Recorded rate</small></div>{% endfor %}</dl>{% endmatch %}
+{% when None %}<dl class="rk-record-values">{% if attribute_cards.is_empty() %}<div class="rk-field"><dt>Coverage</dt><dd>Unavailable</dd></div>{% endif %}{% for a in attribute_cards %}<div class="rk-field"><dt>{{ a.label }}</dt><dd>{{ a.value }}</dd><small>Recorded rate</small></div>{% endfor %}</dl>{% endmatch %}
+</section>

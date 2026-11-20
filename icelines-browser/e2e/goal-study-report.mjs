@@ -1,0 +1,287 @@
+import {chromium} from 'playwright';
+import assert from 'node:assert/strict';
+import {readFile,writeFile} from 'node:fs/promises';
+const root=process.env.ICELINES_GOAL_STUDY_ARTIFACTS;
+assert.ok(root,'Set ICELINES_GOAL_STUDY_ARTIFACTS to the generated study directory');
+const summary=JSON.parse(await readFile(root+'/summary.json','utf8'));
+const review=JSON.parse(await readFile(root+'/review_records.json','utf8')).records;
+const browser=await chromium.launch({channel:'msedge',headless:true});
+const page=await browser.newPage({viewport:{width:1400,height:1000}});const errors=[];
+page.on('pageerror',e=>errors.push(e.message));
+await page.goto(process.env.ICELINES_GOAL_STUDY_URL||'http://127.0.0.1:8787/');
+assert.equal(await page.locator('#cases article').count(),summary.planned_cases);
+assert.equal(await page.locator('#summary tr').count(),summary.players.length);
+assert.equal(await page.locator('#cases article[data-status="captured"]').count(),summary.captured_cases);
+await page.selectOption('#status','unavailable');
+assert.equal(await page.locator('#cases article').count(),summary.planned_cases-summary.captured_cases);
+await page.selectOption('#status','');
+for(const p of summary.players){await page.selectOption('#player',p.player);assert.equal(await page.locator('#cases article').count(),p.planned_cases);}
+for(const r of review.filter(r=>r.status==='captured'))assert.equal(r.goal_event_windows.exact_goal_frame_verified,false);
+for(const r of review.filter(r=>r.status==='captured'&&r.goal_event_windows.candidate_count!==1)){
+ await page.selectOption('#player',r.selection.player.name);const c=page.locator('#cases article').filter({hasText:r.selection.game_date});await c.locator('.event-windows').evaluate(n=>n.open=true);
+ assert.equal(await c.locator('.crossing-candidate').count(),Math.min(4,r.goal_event_windows.candidate_count));
+ const full=c.locator('.full-puck-sequence');await full.evaluate(n=>n.open=true);await full.locator('.distance-history-svg rect[data-player-id]').first().waitFor();assert.equal(await full.locator('.sequence-end').inputValue(),'full');await full.evaluate(n=>n.open=false);
+ if(!r.goal_event_windows.candidate_count){assert.equal(await c.locator('.crossing-diagnostic').count(),1);assert.ok((await c.innerText()).includes('official goal and touch order remain recorded'));}
+}
+await page.selectOption('#player','Matthew Tkachuk');
+const annotated=review.find(r=>r.selection.player.name==='Matthew Tkachuk'&&r.documentary_annotation);
+assert.ok(annotated);const card=page.locator('#cases article').filter({hasText:annotated.selection.game_date});
+assert.ok((await card.innerText()).includes('Delivery plus receiver redirect'));
+assert.ok((await card.innerText()).includes('slap'));
+assert.equal(await card.getByRole('link',{name:'SRC-132',exact:true}).count(),1);
+assert.ok((await card.locator('dt[data-credit="secondary assist"]').innerText()).includes('Mikkola'));
+assert.ok((await card.locator('.contributors dd').nth(0).innerText()).includes('Action unassessed'));
+assert.ok((await card.locator('dt[data-credit="primary assist"]').innerText()).includes('Kulikov'));
+assert.ok((await card.locator('.contributors dd').nth(1).innerText()).includes('Shot delivery'));
+assert.ok((await card.locator('.contributors dd').nth(2).innerText()).includes('Receiver redirect'));
+assert.ok((await card.locator('.touch-order').innerText()).includes('N. Mikkola → D. Kulikov → M. Tkachuk'));
+const fullRef=annotated.full_puck_sequence;
+assert.ok(fullRef);const fullData=JSON.parse(await readFile(root+'/'+fullRef.file,'utf8'));
+const whole=card.locator('.full-puck-sequence');await whole.evaluate(n=>n.open=true);
+await whole.locator('.distance-history-svg rect[data-player-id]').first().waitFor();
+assert.equal(await whole.locator('.sequence-end').inputValue(),'candidate:0');
+const rosterCount=fullData.distance_history.roster.length;
+assert.equal(await whole.locator('.all-player-distances tr[data-player-id]').count(),rosterCount);
+assert.equal(await whole.locator('.sample-goalie').count(),2);
+assert.equal(await whole.locator('.distance-history-svg rect[data-player-id]').count(),rosterCount*84);
+const lightness=async id=>Number((await whole.locator(`.distance-history-svg rect[data-player-id="${id}"][data-frame-index="0"]`).getAttribute('fill')).match(/([0-9.]+)%[)]$/)[1]);
+assert.ok(await lightness(8482665)<await lightness(8475683),'Closer must be darker than farther');
+
+await whole.locator('.distance-history-svg rect[data-player-id="8481789"][data-frame-index="71"]').click();
+await whole.locator('.history-current').filter({hasText:'source sample 71'}).waitFor();
+assert.ok((await whole.locator('.history-current').innerText()).includes('71'));
+assert.equal(await whole.locator('.rink-sample').inputValue(),'71');
+const full71=fullData.distance_history.frames[71];
+assert.equal(await whole.locator('.control-radius').inputValue(),'6');
+assert.equal(await whole.locator('.control-state').getAttribute('data-state'),fullData.control_candidates.frames[71].variants.find(v=>v.distance_screen_feet===6).state);
+assert.ok((await whole.locator('.control-state').innerText()).includes('brief proximity'));
+await whole.locator('.control-radius').selectOption('4');
+assert.equal(await whole.locator('.control-state').getAttribute('data-state'),fullData.control_candidates.frames[71].variants.find(v=>v.distance_screen_feet===4).state);
+await whole.locator('.control-radius').selectOption('6');
+
+for(const p of full71.players){const tr=whole.locator(`.all-player-distances tr[data-player-id="${p.player_id}"]`);assert.equal(await tr.locator('td').nth(1).innerText(),p.puck_separation_feet_derived==null?'Unknown':p.puck_separation_feet_derived.toFixed(1));assert.equal(await tr.locator('td').nth(2).innerText(),p.change_since_previous_sample_feet_derived==null?'Unknown':p.change_since_previous_sample_feet_derived.toFixed(1))}
+await whole.locator('.rink-next').click();assert.ok((await whole.locator('.history-current').innerText()).includes('72'));
+assert.equal(await whole.locator('.control-state').getAttribute('data-state'),'no_nearby_candidate');
+assert.equal(await whole.locator('.control-candidate-name').count(),0);
+assert.equal(await whole.locator('[data-role="control-sample"][data-frame-index="72"]').getAttribute('data-state'),'no_nearby_candidate');
+const positiveControl=fullData.control_candidates.frames.find(f=>f.frame_index<83&&f.variants.some(v=>v.distance_screen_feet===6&&v.candidate_id!=null));
+assert.ok(positiveControl);await whole.locator('.rink-sample').selectOption(String(positiveControl.frame_index));
+assert.equal(await whole.locator('.control-state').getAttribute('data-state'),'sustained_control_geometry_candidate');
+assert.ok((await whole.locator('.control-candidate-name').innerText()).includes(positiveControl.nearest_markers[0].name));
+assert.equal(fullData.control_candidates.possession_verified,false);assert.equal(fullData.control_candidates.carry_verified,false);
+
+await whole.locator('.sequence-end').selectOption('full');
+assert.equal(await whole.locator('.distance-history-svg rect[data-player-id]').count(),rosterCount*120);
+assert.equal(await whole.locator('.history-labels-svg text[data-player-id]').count(),rosterCount);
+await whole.locator('.rink-sample').selectOption('119');assert.ok((await whole.locator('.history-current').innerText()).includes('119'));
+await whole.locator('.sequence-end').selectOption('candidate:0');assert.equal(await whole.locator('.rink-sample').inputValue(),'83');
+assert.equal(await whole.locator('.control-timing-note').count(),1);
+await whole.screenshot({path:root+'/whole-sequence.png'});
+await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+const nameBox=await whole.locator('.history-labels-svg').boundingBox(),scrollBox=await whole.locator('.distance-history-scroll').boundingBox();assert.ok(nameBox.x>=0&&nameBox.x+nameBox.width<=scrollBox.x+1);
+await whole.screenshot({path:root+'/whole-sequence-mobile.png'});await page.setViewportSize({width:1400,height:1000});
+await whole.evaluate(n=>n.open=false);
+await card.locator('.touch-anchors').evaluate(n=>n.open=true);
+assert.ok((await card.locator('.anchor-candidate').first().innerText()).includes('N. Mikkola frames 54–67 → D. Kulikov frames 68–70 → M. Tkachuk frames 73–73'));
+assert.equal(await card.locator('.goal-relative-anchors li:not(.goalie-reference)').count(),3);
+assert.equal(await card.locator('.goalie-reference').count(),3);
+assert.ok((await card.locator('.goalie-reference').first().innerText()).includes('J. Daccord'));
+assert.ok((await card.locator('.goalie-reference').first().innerText()).includes('reference line moves with the puck'));
+await card.locator('.event-windows').evaluate(n=>n.open=true);
+assert.ok((await card.locator('.crossing-candidate').first().innerText()).includes('Frames 82 → 83'));
+assert.ok((await card.locator('.pre-crossing-chain').first().innerText()).includes('N. Mikkola 54–67 → D. Kulikov 68–70 → M. Tkachuk 73–73'));
+
+
+assert.ok((await card.locator('.goal-relative-anchors').innerText()).includes('ft from goal'));
+
+
+
+const sequence=card.locator('.sequence-summary').first();
+await sequence.evaluate(n=>n.open=true);
+assert.equal(await sequence.locator('.sequence-phase').count(),5);
+assert.ok((await sequence.innerText()).includes('Between D. Kulikov and M. Tkachuk candidates: 70 → 73'));
+assert.ok((await sequence.innerText()).includes('T. Kartye during 70 → 71'));
+assert.ok((await sequence.innerText()).includes('M. Beniers 3.3 ft'));
+assert.ok((await sequence.innerText()).includes('Puck-route comparison unavailable for this interval'));
+
+const deliveryPhase=sequence.locator('.sequence-phase').filter({hasText:'Between D. Kulikov and M. Tkachuk candidates'});
+const deliveryMotion=deliveryPhase.locator('.marker-motion');
+await deliveryMotion.evaluate(n=>n.open=true);
+assert.ok((await deliveryMotion.locator('.scorer-motion').innerText()).includes('0.5 ft'));
+assert.ok((await deliveryMotion.locator('.same-pair-motion').first().innerText()).includes('M. Beniers: opponent net displacement 2.4 ft; same-pair separation 3.3 ft → 3.5 ft'));
+assert.ok((await deliveryMotion.innerText()).includes('not distance travelled'));
+const rink=deliveryMotion.locator('.motion-rink');
+await rink.evaluate(n=>n.open=true);
+await rink.locator('svg').waitFor();
+assert.equal(await rink.locator('.rink-mode').inputValue(),'sample');
+await rink.locator('.rink-mode').selectOption('endpoints');
+assert.ok((await rink.locator('.rink-caption').innerText()).includes('Open circle'));
+const tkRecord=review.find(r=>r.target?.game_id===2023020118&&r.target?.event_id===205);
+const tkMotion=tkRecord.goal_event_windows.candidates[0].opposition_sequence_summary.examples[0].phases.find(p=>p.from_frame_index===70&&p.to_frame_index===73).same_identity_motion;
+const assertPoint=async(container,role,endpoint,point)=>{
+ const circle=container.locator(`circle[data-role="${role}"][data-endpoint="${endpoint}"]`);
+ assert.equal(Number(await circle.getAttribute('cx')),point.x);
+ assert.equal(Number(await circle.getAttribute('cy')),point.y);
+};
+for(const endpoint of ['start','end']){
+ await assertPoint(rink,'scorer',endpoint,tkMotion.scorer_marker_endpoints_native[endpoint]);
+ await assertPoint(rink,'puck',endpoint,tkMotion.puck_endpoints_native[endpoint]);
+ await assertPoint(rink,'goalie',endpoint,tkMotion.goalie_endpoint_reference[endpoint]);
+}
+assert.equal(await rink.locator('circle[data-role="goalie"]').count(),2);
+assert.equal(await rink.locator('svg text').filter({hasText:'Goal ref'}).getAttribute('text-anchor'),'end');
+await rink.locator('.rink-opponent').selectOption('8481789');
+const tkKartye=tkMotion.markers.find(m=>m.player_id===8481789);
+for(const endpoint of ['start','end'])await assertPoint(rink,'opponent',endpoint,tkKartye.marker_endpoints_native[endpoint]);
+assert.ok((await rink.locator('.rink-status').innerText()).includes('T. Kartye'));
+assert.ok((await rink.locator('.rink-status').innerText()).includes('opponent comparisons have complete endpoints'));
+assert.ok((await rink.innerText()).includes('Other players are omitted'));
+assert.equal(await rink.locator('circle[data-role="puck-sample"]').count(),4);
+for(const sample of tkMotion.puck_samples_native){
+ const dot=rink.locator(`circle[data-role="puck-sample"][data-frame-index="${sample.frame_index}"]`);
+ assert.equal(Number(await dot.getAttribute('cx')),sample.marker.x);
+ assert.equal(Number(await dot.getAttribute('cy')),sample.marker.y);
+}
+assert.equal(await rink.locator('line[data-role="puck"][data-kind="endpoint-connector"]').count(),0);
+await rink.locator('.rink-sample-numbers').check();
+assert.equal(await rink.locator('[data-role="puck-sample-label"]').count(),4);
+await rink.locator('.rink-puck-samples').uncheck();
+assert.equal(await rink.locator('circle[data-role="puck-sample"]').count(),0);
+assert.equal(await rink.locator('line[data-role="puck"][data-kind="endpoint-connector"]').count(),1);
+await rink.locator('.rink-puck-samples').check();
+assert.ok((await rink.locator('.rink-status').innerText()).includes('4/4 coordinates available'));
+assert.ok((await rink.innerText()).includes('not positions at each puck sample'));
+const focusBox=await rink.locator('svg').getAttribute('viewBox');
+await rink.locator('.rink-view').selectOption('full');
+assert.notEqual(await rink.locator('svg').getAttribute('viewBox'),focusBox);
+await rink.locator('.rink-view').selectOption('focus');
+await rink.screenshot({path:root+'/endpoint-rink.png'});
+await rink.locator('.rink-mode').selectOption('sample');
+await rink.locator('.rink-sample').selectOption('71');
+assert.ok((await rink.locator('.rink-caption').innerText()).includes('Every shown position comes from this one published source sample'));
+assert.ok(!(await rink.locator('.rink-caption').innerText()).includes('Open circle'));
+const scene71=tkMotion.synchronized_scene.frames.find(f=>f.frame_index===71);
+assert.ok((await rink.locator('.nearest-puck').innerText()).includes('T. Kartye · 1.5 ft'));
+assert.ok((await rink.locator('.nearest-scorer').innerText()).includes('M. Beniers · 3.2 ft'));
+const distances71=tkMotion.synchronized_proximity.frames.find(f=>f.frame_index===71);
+for(const r of distances71.opponents){const tr=rink.locator(`.sample-proximity tr[data-observation-index="${r.source_observation_index}"]`);assert.equal(await tr.locator('td').nth(1).innerText(),r.puck_separation_feet_derived==null?'Unknown':r.puck_separation_feet_derived.toFixed(1));assert.equal(await tr.locator('td').nth(2).innerText(),r.scorer_separation_feet_derived==null?'Unknown':r.scorer_separation_feet_derived.toFixed(1))}
+assert.equal(await rink.locator('.sample-goalie').count(),1);
+
+const rawPlayer=(frame,id)=>frame.players.find(p=>p.player_id===id);
+await assertPoint(rink,'puck','current',scene71.puck.marker);
+await assertPoint(rink,'scorer','current',rawPlayer(scene71,tkMotion.synchronized_scene.scorer_id).marker);
+await assertPoint(rink,'opponent','current',rawPlayer(scene71,8481789).marker);
+await assertPoint(rink,'goalie','current',rawPlayer(scene71,tkMotion.goalie_endpoint_reference.recorded_goalie_id).marker);
+assert.equal(await rink.locator('circle[data-endpoint="start"]').count(),0);
+assert.equal(await rink.locator('circle[data-role="puck-sample"]').count(),0);
+assert.equal(await rink.locator('[data-kind="endpoint-connector"]').count(),0);
+assert.equal(await rink.locator('.rink-puck-samples').isDisabled(),true);
+assert.ok((await rink.locator('.sample-meta').innerText()).includes('Source sample 71'));
+await rink.locator('.rink-next').click();assert.equal(await rink.locator('.rink-sample').inputValue(),'72');
+assert.ok((await rink.locator('.nearest-scorer').innerText()).includes('M. Beniers · 3.3 ft'));
+await rink.locator('.rink-previous').click();assert.equal(await rink.locator('.rink-sample').inputValue(),'71');
+await rink.locator('.rink-other-players').check();
+const shownIds=new Set([tkMotion.synchronized_scene.scorer_id,8481789,tkMotion.goalie_endpoint_reference.recorded_goalie_id]);
+const other71=scene71.players.filter(p=>!shownIds.has(p.player_id)&&p.coordinate_status==='observed');
+assert.equal(await rink.locator('circle[data-role="other-observed"]').count(),other71.length);
+for(const p of other71){const dot=rink.locator(`circle[data-role="other-observed"][data-observation-index="${p.source_observation_index}"]`);assert.equal(Number(await dot.getAttribute('cx')),p.marker.x);assert.equal(Number(await dot.getAttribute('cy')),p.marker.y)}
+assert.equal(await rink.locator('.snapshot-observations li').count(),scene71.players.length);
+await rink.screenshot({path:root+'/synchronized-rink.png'});
+await rink.locator('.rink-mode').selectOption('endpoints');
+
+await page.selectOption('#player','Cale Makar');
+const makar=page.locator('#cases article').filter({hasText:'2023-10-11'});
+await makar.locator('.event-windows').evaluate(n=>n.open=true);
+await makar.locator('.sequence-summary').first().evaluate(n=>n.open=true);
+const makarPhase=makar.locator('.sequence-phase').filter({hasText:'C. Makar candidate interval: 55 → 72'});
+await makarPhase.locator('.marker-motion').evaluate(n=>n.open=true);
+assert.ok((await makarPhase.locator('.scorer-motion').innerText()).includes('17.6 ft'));
+assert.ok((await makarPhase.locator('.same-pair-motion').first().innerText()).includes('V. Gavrikov: opponent net displacement 17.1 ft; same-pair separation 44.6 ft → 10.3 ft'));
+const makarRink=makarPhase.locator('.motion-rink');
+await makarRink.evaluate(n=>n.open=true);await makarRink.locator('svg').waitFor();
+await makarRink.locator('.rink-mode').selectOption('endpoints');
+assert.equal(await makarRink.locator('[data-role="target-reference"]').getAttribute('x1'),'132');
+assert.equal(await makarRink.locator('svg text').filter({hasText:'Goal ref'}).getAttribute('text-anchor'),'start');
+assert.equal(await makarRink.locator('circle[data-role="puck-sample"]').count(),18);
+await makarRink.screenshot({path:root+'/endpoint-rink-makar.png'});
+const empty=review.find(r=>r.goalie_geometry?.status==='inapplicable_empty_net'&&r.goal_event_windows.candidates.some(w=>w.opposition_sequence_summary.examples.length));
+assert.ok(empty);await page.selectOption('#player',empty.selection.player.name);
+const emptyCard=page.locator('#cases article').filter({hasText:empty.selection.game_date});
+await emptyCard.locator('.event-windows').evaluate(n=>n.open=true);
+await emptyCard.locator('.sequence-summary').first().evaluate(n=>n.open=true);
+await emptyCard.locator('.marker-motion').first().evaluate(n=>n.open=true);
+const emptyRink=emptyCard.locator('.motion-rink').first();await emptyRink.evaluate(n=>n.open=true);await emptyRink.locator('svg').waitFor();
+await emptyRink.locator('.rink-mode').selectOption('endpoints');
+assert.equal(await emptyRink.locator('circle[data-role="goalie"]').count(),0);
+assert.ok((await emptyRink.locator('.rink-status').innerText()).includes('empty net'));
+await emptyRink.locator('.rink-mode').selectOption('sample');
+assert.equal(await emptyRink.locator('circle[data-role="goalie"]').count(),0);
+assert.ok((await emptyRink.locator('.rink-status').innerText()).includes('no occupancy inference'));
+await page.selectOption('#player','Matthew Tkachuk');
+await card.locator('.touch-anchors').evaluate(n=>n.open=true);
+await card.locator('.event-windows').evaluate(n=>n.open=true);
+await sequence.evaluate(n=>n.open=true);
+await deliveryMotion.evaluate(n=>n.open=true);
+await rink.evaluate(n=>n.open=true);await rink.locator('svg').waitFor();
+await rink.locator('.rink-mode').selectOption('endpoints');
+
+const opposition=card.locator('.opposition-geometry');
+await opposition.evaluate(n=>n.open=true);
+await opposition.locator('select').selectOption('70');
+const kartye=opposition.locator('tr').filter({hasText:'T. Kartye'});
+assert.equal(await kartye.locator('td').nth(1).innerText(),'1.5 ft');
+const beniers=opposition.locator('tr').filter({hasText:'M. Beniers'});
+assert.equal(await beniers.locator('td').nth(2).innerText(),'3.3 ft');
+assert.equal(await opposition.locator('tr').filter({hasText:'J. Daccord'}).count(),0);
+await opposition.locator('select').selectOption('73');
+assert.equal(await opposition.locator('tr').filter({hasText:'M. Beniers'}).locator('td').nth(1).innerText(),'1.2 ft');
+
+const native=await card.getByRole('link',{name:'Open native IceLines sequence'}).getAttribute('href');
+await card.screenshot({path:root+'/assist-card.png'});
+await page.screenshot({path:root+'/study-desktop.png',fullPage:true});
+await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+await page.screenshot({path:root+'/study-mobile.png',fullPage:true});
+// Synthetic rendering check: missing positions and duplicate identities must
+// never borrow endpoint positions or select an arbitrary duplicate.
+const html=await readFile(root+'/index.html','utf8');
+const embedded=/<script type="application\/json" id="data">([\s\S]*?)<\/script>/;
+const fixture=JSON.parse(embedded.exec(html)[1]);fixture.records=[structuredClone(tkRecord)];
+const fixtureMotion=fixture.records[0].goal_event_windows.candidates[0].opposition_sequence_summary.examples[0].phases.find(p=>p.from_frame_index===70&&p.to_frame_index===73).same_identity_motion;
+const missing71=fixtureMotion.synchronized_scene.frames.find(f=>f.frame_index===71);
+missing71.players=missing71.players.filter(p=>p.player_id!==8481789);
+const duplicateKeeper=structuredClone(missing71.players.find(p=>p.player_id===fixtureMotion.goalie_endpoint_reference.recorded_goalie_id));
+duplicateKeeper.source_observation_index=Math.max(...missing71.players.map(p=>p.source_observation_index))+1;
+duplicateKeeper.marker.x+=30;missing71.players.push(duplicateKeeper);
+missing71.puck={coordinate_status:'coordinates_unavailable',marker:null};
+const missingProximity=fixtureMotion.synchronized_proximity.frames.find(f=>f.frame_index===71);
+missingProximity.puck_status='coordinates_unavailable';missingProximity.nearest_puck_skater={status:'unavailable',distance_feet_derived:null,markers:[]};
+missingProximity.opponents=missingProximity.opponents.filter(r=>r.player_id!==8481789);
+for(const r of missingProximity.opponents){r.puck_separation_feet_derived=null;if(r.player_id===fixtureMotion.goalie_endpoint_reference.recorded_goalie_id){r.status='identity_ambiguous';r.scorer_separation_feet_derived=null}}
+
+const escapedFixture=JSON.stringify(fixture).replaceAll('<',String.fromCharCode(92)+'u003c').replaceAll('>',String.fromCharCode(92)+'u003e').replaceAll('&',String.fromCharCode(92)+'u0026');
+await page.setContent(html.replace(embedded,()=>`<script type="application/json" id="data">${escapedFixture}</script>`));
+const synthetic=page.locator('#cases article').first();
+await synthetic.locator('.event-windows').evaluate(n=>n.open=true);await synthetic.locator('.sequence-summary').first().evaluate(n=>n.open=true);
+const syntheticPhase=synthetic.locator('.sequence-phase').filter({hasText:'Between D. Kulikov and M. Tkachuk candidates'});
+await syntheticPhase.locator('.marker-motion').evaluate(n=>n.open=true);
+const syntheticRink=syntheticPhase.locator('.motion-rink');await syntheticRink.evaluate(n=>n.open=true);await syntheticRink.locator('svg').waitFor();
+await syntheticRink.locator('.rink-opponent').selectOption('8481789');await syntheticRink.locator('.rink-sample').selectOption('71');
+for(const role of ['puck','opponent','goalie'])assert.equal(await syntheticRink.locator(`circle[data-role="${role}"]`).count(),0);
+assert.equal(await syntheticRink.locator('circle[data-role="scorer"][data-frame-index="71"]').count(),1);
+assert.ok((await syntheticRink.locator('.rink-status').innerText()).includes('no fallback'));
+assert.ok((await syntheticRink.locator('.rink-status').innerText()).includes('Unavailable: puck'));
+assert.ok((await syntheticRink.locator('.nearest-puck').innerText()).includes('Unavailable'));
+for(const cell of await syntheticRink.locator('.sample-proximity tr[data-player-id] td:nth-child(2)').all())assert.equal(await cell.innerText(),'Unknown');
+await syntheticRink.locator('.rink-other-players').check();
+assert.equal(await syntheticRink.locator(`circle[data-role="other-observed"][data-player-id="${fixtureMotion.goalie_endpoint_reference.recorded_goalie_id}"]`).count(),2);
+assert.equal(await syntheticRink.locator('.snapshot-observations li').filter({hasText:'duplicate source ID'}).count(),2);
+await page.route('**/'+fullRef.file,route=>route.fulfill({status:200,contentType:'application/json',body:'{}'}));
+const badSequence=synthetic.locator('.full-puck-sequence');await badSequence.evaluate(n=>n.open=true);
+await badSequence.locator('p.bad').filter({hasText:'content hash does not match'}).waitFor();
+assert.equal(await badSequence.locator('.distance-history-svg').count(),0);
+await page.unroute('**/'+fullRef.file);
+await page.goto(native);assert.equal(await page.locator('#ga-report').isVisible(),true);
+assert.ok((await page.locator('#ga-heading').innerText()).includes('Tkachuk'));
+assert.deepEqual(errors,[]);await browser.close();
+const result={status:'passed',planned_cases:summary.planned_cases,captured_cases:summary.captured_cases,checks:['all cases and missing cases','per-player filter','attributed annotation and original shot label','official source link','native sequence link','desktop/mobile','zero page errors','official assist slots','source-supported actions and unresolved secondary contribution','credited touch order and ordered tracking anchors','fixed-goal distance and bearing at candidate intervals','recorded goalie marker reference without a position grade','2D crossing brackets and pre-crossing credited anchors','moving opponent puck-route minimum and separate scorer proximity','candidate sequence summaries and sample boundaries','same-player endpoint motion for both scorer and opponent','native endpoint rink plot; opponent and view controls; goalie and empty-net states','all source puck samples; labels and visibility controls; no interpolated connector','same-source sample selector and stepping; all observed players; no stale endpoint positions','synthetic missing puck/opponent and duplicate goalie IDs render unknown without fallback','Rust same-sample opponent distances and separate tied skater minima','whole captured sequence, both teams and goalies; shared-scale heatmap; synchronized click/step; candidate/full scope','closer-is-darker scale, ambiguous timing defaults and corrupted-payload hash rejection','experimental control evidence, radius sensitivity and no forced distant holder']};
+await writeFile(root+'/ui-verification.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result));

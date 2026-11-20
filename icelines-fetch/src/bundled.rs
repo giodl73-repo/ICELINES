@@ -479,9 +479,11 @@ pub fn load_goalies_with_fallback(
     store: &crate::snapshot::SnapshotStore,
 ) -> Result<Vec<GoalieStats>, FetchError> {
     // 1. Legacy file-per-tier active snapshot (chunked path lands in G.2+).
-    if let Ok(rows) = store
-        .read_tier::<Vec<GoalieStats>>(&crate::snapshot::SnapshotTier::Stats, "goalie-stats.json")
-    {
+    if let Ok(rows) = store.read_tier_for_season::<Vec<GoalieStats>>(
+        &crate::snapshot::SnapshotTier::Stats,
+        "goalie-stats.json",
+        season,
+    ) {
         return Ok(rows);
     }
     // 2. Bundled data.
@@ -642,19 +644,21 @@ pub fn load_playoffs(season_id: &str) -> Option<PlayoffsBundle> {
 /// Load bios: try the snapshot store first, falling back to bundled data.
 ///
 /// Resolution order (Phase 8h):
-/// 1. Active snapshot — chunked layout (`chunked.json`) if present
-/// 2. Active snapshot — legacy `stats/bios.json`
+/// 1. Matching-season active snapshot — chunked layout (`chunked.json`) if present
+/// 2. Matching-season snapshot chain — legacy `stats/bios.json`
 /// 3. Bundled data shipped with the binary
 pub fn load_bios_with_fallback(
     season: &str,
     store: &crate::snapshot::SnapshotStore,
 ) -> Result<Vec<SkaterBio>, FetchError> {
     // 1. Chunked active snapshot
-    if let Ok((bios, _)) = read_chunked_active(store) {
+    if let Ok((bios, _)) = read_chunked_active(store, season) {
         return Ok(bios);
     }
     // 2. Legacy file-per-tier active snapshot
-    if let Ok(bios) = store.read_tier(&crate::snapshot::SnapshotTier::Stats, "bios.json") {
+    if let Ok(bios) =
+        store.read_tier_for_season(&crate::snapshot::SnapshotTier::Stats, "bios.json", season)
+    {
         return Ok(bios);
     }
     // 3. Bundled data shipped with binary
@@ -670,11 +674,13 @@ pub fn load_stats_with_fallback(
     store: &crate::snapshot::SnapshotStore,
 ) -> Result<Vec<SkaterStats>, FetchError> {
     // 1. Chunked active snapshot
-    if let Ok((_, stats)) = read_chunked_active(store) {
+    if let Ok((_, stats)) = read_chunked_active(store, season) {
         return Ok(stats);
     }
     // 2. Legacy file-per-tier active snapshot
-    if let Ok(stats) = store.read_tier(&crate::snapshot::SnapshotTier::Stats, "stats.json") {
+    if let Ok(stats) =
+        store.read_tier_for_season(&crate::snapshot::SnapshotTier::Stats, "stats.json", season)
+    {
         return Ok(stats);
     }
     get_stats(season).ok_or_else(|| FetchError::PlayerNotFound {
@@ -776,12 +782,22 @@ pub fn load_playoff_goalies_with_fallback(
 /// any chunk fails its integrity check.
 fn read_chunked_active(
     store: &crate::snapshot::SnapshotStore,
+    requested_season: &str,
 ) -> Result<(Vec<SkaterBio>, Vec<SkaterStats>), crate::snapshot::SnapshotError> {
     let manifest = store.load_manifest()?;
     let active = manifest
         .active
         .as_deref()
         .ok_or(crate::snapshot::SnapshotError::NoActiveSnapshot)?;
+    let meta = store.load_meta(active)?;
+    if meta.season != requested_season {
+        return Err(crate::snapshot::SnapshotError::NotFound {
+            name: format!(
+                "{active}/chunked.json: snapshot season {} != requested {requested_season}",
+                meta.season
+            ),
+        });
+    }
     if !store.is_chunked(active) {
         return Err(crate::snapshot::SnapshotError::NotFound {
             name: format!("{active}/chunked.json"),
@@ -825,6 +841,43 @@ fn read_chunked_active_playoff_for_season(
 mod tests {
     use super::*;
     use icelines_core::CURRENT_SEASON_STR;
+
+    #[test]
+    fn rinkcraft_profile_regular_and_goalie_fallback_do_not_read_another_season() {
+        use crate::snapshot::{SnapshotStore, SnapshotTier};
+        let dir = tempfile::tempdir().unwrap();
+        let store = SnapshotStore::new(dir.path());
+        let requested = BUNDLED_SEASONS[0];
+        let other = BUNDLED_SEASONS[1];
+        store
+            .create(
+                "other-season",
+                other,
+                SnapshotTier::Stats,
+                None,
+                "2000-01-01",
+            )
+            .unwrap();
+        // Empty source payloads are enough to reveal shadowing without real-player fixtures.
+        for file in ["bios.json", "stats.json", "goalie-stats.json"] {
+            store
+                .write_file("other-season", &SnapshotTier::Stats, file, b"[]")
+                .unwrap();
+        }
+        store.seal("other-season").unwrap();
+        store.set_active("other-season").unwrap();
+        assert!(!load_bios_with_fallback(requested, &store)
+            .unwrap()
+            .is_empty());
+        assert!(!load_stats_with_fallback(requested, &store)
+            .unwrap()
+            .is_empty());
+        assert!(!load_goalies_with_fallback(requested, &store)
+            .unwrap()
+            .is_empty());
+        // The same payload remains authoritative for its actual season.
+        assert!(load_bios_with_fallback(other, &store).unwrap().is_empty());
+    }
 
     #[test]
     fn l0_bundled_current_season_bios_parse() {

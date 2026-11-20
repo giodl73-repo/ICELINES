@@ -232,8 +232,45 @@ impl BrowserEngine {
         serde_json::to_vec(&active.package).map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
+    /// Stateless workload projection; never mutates resident packages or ratings.
+    pub fn deployment_report(
+        &self,
+        bytes: &[u8],
+        player: u32,
+        season: u32,
+        game_type: u8,
+        goalie: bool,
+        source_url: &str,
+    ) -> Result<String, JsValue> {
+        let card = icelines_sources::nhl::deployment::parse(
+            bytes, player, season, game_type, goalie, source_url,
+        )
+        .map_err(|e| JsValue::from_str(&e))?;
+        serde_json::to_string(&card).map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+
     pub fn current_season(&self) -> u32 {
         icelines_core::CURRENT_SEASON
+    }
+    /// Stateless supplied-cohort research records; no package or rating mutation.
+    pub fn seasonal_record_catalog(&self, input: &[u8]) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_seasonal_records::evaluate_json(input)
+            .map_err(|e| JsValue::from_str(&e))
+    }
+    /// Simple supplied-cohort 1–20 stat estimates, shared with the native scorer.
+    pub fn stat_attribute_catalog(&self, input: &str) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_stat_scores::evaluate_json(input)
+            .map_err(|e| JsValue::from_str(&e))
+    }
+    /// Versioned one/two/three-stat conjunctions, separate from classes and abilities.
+    pub fn achievement_catalog(&self, reports: &[u8], rules: &str) -> Result<String, JsValue> {
+        let input = icelines_sources::nhl::achievements::parse(reports)
+            .map_err(|e| JsValue::from_str(&e))?;
+        let rules: Vec<icelines_core::view_model::rinkcraft_achievements::Rule> =
+            serde_json::from_str(rules).map_err(|e| JsValue::from_str(&e.to_string()))?;
+        let catalog = icelines_core::view_model::rinkcraft_achievements::evaluate(&input, &rules)
+            .map_err(|e| JsValue::from_str(&e))?;
+        serde_json::to_string(&catalog).map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
     /// Select an already validated window by exact revision; never fetch or save.
@@ -288,9 +325,225 @@ impl BrowserEngine {
         }))
         .map_err(|e| JsValue::from_str(&e.to_string()))
     }
+
+    /// Same profile semantics as native IceLines, limited to resident packages.
+    pub fn rinkcraft_profile(&self, request: &str) -> Result<String, JsValue> {
+        let request = serde_json::from_str(request)
+            .map_err(|e| JsValue::from_str(&format!("invalid profile request: {e}")))?;
+        let profile = self
+            .prepared_rinkcraft_profile(request)
+            .map_err(|e| JsValue::from_str(&e.to_string()))?;
+        serde_json::to_string(&profile).map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+    /// Curated research input is explicitly supplied; no stat-to-class inference or IO.
+    pub fn numerical_catalog(&self, source: &str, season: Option<u32>) -> Result<String, JsValue> {
+        let h = icelines_core::view_model::rinkcraft_history::parse_source(source)
+            .map_err(|e| JsValue::from_str(&e))?;
+        let view = h.catalog_view(season).map_err(|e| JsValue::from_str(&e))?;
+        serde_json::to_string(&view).map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+    pub fn numerical_snapshot(
+        &self,
+        source: &str,
+        player_id: u32,
+        first: Option<u32>,
+        last: Option<u32>,
+        exact: Option<u32>,
+    ) -> Result<String, JsValue> {
+        let h = icelines_core::view_model::rinkcraft_history::parse_source(source)
+            .map_err(|e| JsValue::from_str(&e))?;
+        let selected = h
+            .snapshot(player_id, first, last, exact)
+            .map_err(|e| JsValue::from_str(&e))?;
+        serde_json::to_string(&selected).map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+    pub fn numerical_history(
+        &self,
+        catalog: &str,
+        player_id: u32,
+        first: Option<u32>,
+        last: Option<u32>,
+    ) -> Result<String, JsValue> {
+        let history = icelines_core::view_model::rinkcraft_history::parse_source(catalog)
+            .map_err(|e| JsValue::from_str(&e))?;
+        let card = history
+            .card(player_id, first, last)
+            .map_err(|e| JsValue::from_str(&e))?;
+        serde_json::to_string(&card).map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+    pub fn numerical_evidence(
+        &self,
+        catalog: &str,
+        player_id: u32,
+        ceiling: Option<u32>,
+    ) -> Result<String, JsValue> {
+        let c = icelines_core::view_model::rinkcraft_numbers::parse_catalog(catalog)
+            .map_err(|e| JsValue::from_str(&e))?;
+        let card = c
+            .card(player_id, ceiling)
+            .map_err(|e| JsValue::from_str(&e))?;
+        serde_json::to_string(&card).map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+    pub fn numerical_comparison(
+        &self,
+        catalog: &str,
+        left: u32,
+        right: u32,
+    ) -> Result<String, JsValue> {
+        let c = icelines_core::view_model::rinkcraft_numbers::parse_catalog(catalog)
+            .map_err(|e| JsValue::from_str(&e))?;
+        let comparison = c.compare(left, right).map_err(|e| JsValue::from_str(&e))?;
+        serde_json::to_string(&comparison).map_err(|e| JsValue::from_str(&e.to_string()))
+    }
+    pub fn game_character(&self, rules: &str, request: &str) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_game::build_from_json(rules, request)
+            .map_err(|e| JsValue::from_str(&e))
+    }
+    pub fn possession_session(
+        &self,
+        character_rules: &str,
+        rules: &str,
+        request: &str,
+    ) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_possession::from_json(character_rules, rules, request)
+            .map_err(|e| JsValue::from_str(&e))
+    }
+    pub fn export_possession_replay(
+        &self,
+        character_rules: &str,
+        rules: &str,
+        request: &str,
+    ) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_possession::export_replay_from_json(
+            character_rules,
+            rules,
+            request,
+        )
+        .map_err(|e| JsValue::from_str(&e))
+    }
+    pub fn import_possession_replay(&self, replay: &str) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_possession::import_replay_from_json(replay)
+            .map_err(|e| JsValue::from_str(&e))
+    }
+    pub fn inspect_possession_replay(&self, replay: &str, step: f64) -> Result<String, JsValue> {
+        if !step.is_finite() || step.fract() != 0.0 || !(0.0..=16.0).contains(&step) {
+            return Err(JsValue::from_str(
+                "Review step must be an integer from 0 to 16",
+            ));
+        }
+        icelines_core::view_model::rinkcraft_possession::inspect_replay_from_json(
+            replay,
+            step as usize,
+        )
+        .map_err(|e| JsValue::from_str(&e))
+    }
+    pub fn branch_possession_replay(&self, replay: &str, fork: &str) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_possession::branch_replay_from_json(replay, fork)
+            .map_err(|e| JsValue::from_str(&e))
+    }
+    pub fn compare_possession_plans(&self, replay: &str) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_plan_compare::compare_replay_from_json(replay)
+            .map_err(|e| JsValue::from_str(&e))
+    }
+    pub fn unit_studio(&self, command: &str) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_unit_studio::from_json(command)
+            .map_err(|e| JsValue::from_str(&e))
+    }
+    pub fn import_game_character(&self, rules: &str, character: &str) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_game::import_from_json(rules, character)
+            .map_err(|e| JsValue::from_str(&e))
+    }
+    pub fn character_sheet(
+        &self,
+        catalog: &str,
+        player_id: u32,
+        season: u32,
+    ) -> Result<String, JsValue> {
+        if catalog.len() > 128 * 1024 {
+            return Err(JsValue::from_str("character catalog exceeds 128 KiB"));
+        }
+        let c: icelines_core::view_model::rinkcraft_character::CharacterCatalog =
+            serde_json::from_str(catalog).map_err(|e| JsValue::from_str(&e.to_string()))?;
+        let s = c
+            .sheet(PlayerId(player_id), Season(season))
+            .map_err(|e| JsValue::from_str(&e))?;
+        serde_json::to_string(&s).map_err(|e| JsValue::from_str(&e.to_string()))
+    }
 }
 
 impl BrowserEngine {
+    pub fn prepared_rinkcraft_profile(
+        &self,
+        request: icelines_core::view_model::rinkcraft_profile::RinkcraftProfileRequest,
+    ) -> Result<icelines_core::view_model::rinkcraft_profile::RinkcraftStatProfile, EngineError>
+    {
+        use icelines_core::view_model::rinkcraft_profile::build_rinkcraft_stat_profile_from_views;
+        let windows: Vec<_> = self
+            .active
+            .iter()
+            .chain(self.resident.iter().rev())
+            .collect();
+        let identity = windows
+            .iter()
+            .find_map(|w| w.repository.identity(request.player_id))
+            .ok_or_else(|| {
+                EngineError::MissingData("player identity absent from resident packages".into())
+            })?;
+        let views = windows
+            .iter()
+            .filter_map(|w| {
+                w.repository.view(
+                    request.player_id,
+                    Season(w.package.season),
+                    w.package.season_type,
+                )
+            })
+            .collect();
+        let mut profile =
+            build_rinkcraft_stat_profile_from_views(&identity.full_name, request, views)
+                .map_err(|e| EngineError::InvalidQuery(e.to_string()))?;
+        profile.source_windows = profile.included_seasons.iter().map(|s|
+            icelines_core::view_model::rinkcraft_profile::ProfileSourceWindow {
+                season:*s,season_type:request.season_type,
+                missing_reports:vec!["Package v1: realtime, MoneyPuck, time-on-ice, goals-for-against and goalie advanced reports are not included".into()],
+            }).collect();
+        profile.limitations.push("Browser profile covers resident prepared packages only (at most eight windows), not a fetched or verified complete career. Package v1 omits optional realtime, MoneyPuck, TOI and advanced reports; those metrics remain unavailable. Eviction can shorten this profile.".into());
+        if request.season_type == SeasonType::Regular {
+            if let Some(s) = profile.latest_available.as_ref() {
+                if let Some(w) = windows.iter().find(|w| {
+                    w.package.season == s.season.0 && w.package.season_type == request.season_type
+                }) {
+                    profile.achievements =
+                        icelines_core::view_model::rinkcraft_achievements::from_league(
+                            w.repository
+                                .read_league(s.season, request.season_type)
+                                .collect(),
+                            s.season.0,
+                            request.player_id.0,
+                        )
+                        .ok()
+                        .flatten();
+                }
+            }
+        }
+        profile.attribute_seasons = profile
+            .included_seasons
+            .iter()
+            .filter_map(|s| {
+                let w = windows.iter().find(|w| {
+                    w.package.season == s.0 && w.package.season_type == request.season_type
+                })?;
+                icelines_core::view_model::rinkcraft_attributes::build_attribute_season(
+                    request.player_id,
+                    *s,
+                    request.season_type,
+                    w.repository.read_league(*s, request.season_type).collect(),
+                )
+            })
+            .collect();
+        Ok(profile)
+    }
+
     /// Read the resident windows without selecting them, changing LRU order or fetching.
     fn history(&self, player_id: u32) -> PlayerHistory {
         let mut rows: Vec<_> = self
@@ -608,6 +861,75 @@ impl BrowserEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn rinkcraft_browser_uses_shared_builder_and_only_resident_competition() {
+        use icelines_core::view_model::rinkcraft_profile::{
+            ProfileMetricStatus, RinkcraftProfileRequest,
+        };
+        let mut engine = BrowserEngine::new();
+        let request = RinkcraftProfileRequest {
+            player_id: PlayerId(1),
+            season_type: SeasonType::Regular,
+            first_season: None,
+            last_season: None,
+        };
+        assert!(engine.prepared_rinkcraft_profile(request).is_err());
+        for season in [20242025, 20252026] {
+            engine
+                .load_bytes(&serde_json::to_vec(&season_package(season)).unwrap())
+                .unwrap();
+        }
+        let revisions = engine.resident_revisions();
+        let profile = engine.prepared_rinkcraft_profile(request).unwrap();
+        assert_eq!(
+            profile.included_seasons,
+            vec![Season(20242025), Season(20252026)]
+        );
+        assert_eq!(
+            profile
+                .summary
+                .iter()
+                .find(|m| m.key == "goals")
+                .unwrap()
+                .value,
+            Some(40.0)
+        );
+        assert_eq!(
+            profile
+                .summary
+                .iter()
+                .find(|m| m.key == "hits")
+                .unwrap()
+                .status,
+            ProfileMetricStatus::Unavailable
+        );
+        assert_eq!(profile.changes.len(), 1);
+        assert_eq!(profile.attribute_seasons.len(), 2);
+        assert_eq!(profile.attribute_seasons[0].attributes[0].value, Some(0.0));
+        assert_eq!(
+            profile.attribute_seasons[0].attributes[0].state,
+            "insufficient_reference"
+        );
+        assert_eq!(profile.attribute_seasons[0].attributes[0].band, None);
+        assert_eq!(engine.resident_revisions(), revisions);
+        let playoff = engine
+            .prepared_rinkcraft_profile(RinkcraftProfileRequest {
+                season_type: SeasonType::Playoff,
+                ..request
+            })
+            .unwrap();
+        assert!(playoff.timeline.is_empty());
+        engine.unload_active();
+        assert_eq!(
+            engine
+                .prepared_rinkcraft_profile(request)
+                .unwrap()
+                .timeline
+                .len(),
+            1
+        );
+    }
 
     fn package() -> serde_json::Value {
         // Hand-audited 82 GP, 20 G + 30 A = 50 P, 50 P/82 pace.

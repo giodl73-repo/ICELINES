@@ -1,0 +1,55 @@
+// Compile TypeScript first; reads an existing native API without restarting it.
+import {chromium,expect} from '@playwright/test';
+import {readFile,writeFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {mkdir} from 'node:fs/promises';
+const root=fileURLToPath(new URL('../../',import.meta.url));
+const base=process.env.ICELINES_TEST_URL??'http://127.0.0.1:8765';
+const browserSurface=process.env.ICELINES_SHEET_SURFACE==='browser';
+const prefix=browserSurface?'browser-':'';
+const fixtures=process.env.ICELINES_PROFILE_FIXTURES?JSON.parse(await readFile(process.env.ICELINES_PROFILE_FIXTURES,'utf8')):undefined;
+await mkdir(resolve(root,'target/compact-sheet'),{recursive:true});
+const browser=await chromium.launch({channel:'msedge',headless:true});
+const page=await browser.newPage({viewport:{width:1280,height:1100}});
+await page.route('http://sheet.test/**',async route=>{
+ const path=new URL(route.request().url()).pathname;
+ if(path==='/'){await route.fulfill({contentType:'text/html',body:'<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/base.css"><link rel="stylesheet" href="/sheet.css">'+(browserSurface?'<dialog open id="player-dialog">':'')+'<main id="main"></main>'+(browserSurface?'</dialog>':'')});return;}
+ const file=path==='/sheet.css'?'icelines-web/static/rinkcraft-character.css':path==='/base.css'?(browserSurface?'icelines-browser/style.css':'icelines-web/static/style.css'):'icelines-browser/dist'+path;
+ await route.fulfill({contentType:path.endsWith('.js')?'text/javascript':'text/css',body:await readFile(resolve(root,file))});
+});
+const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+const results=[];
+try{
+ await page.goto('http://sheet.test/');
+ for(const [label,id,query] of [['defense',8479323,''],['forward',8481789,''],['goalie',8478048,''],['unscouted',8479323,'?season=20202021'],['unavailable',8479323,''],['goalie-source-only',8478048,'']]){
+  let profile=fixtures?structuredClone(fixtures[label==='unavailable'?'unscouted':label==='goalie-source-only'?'goalie':label]):(await (await fetch(`${base}/api/v1/player/${id}/rinkcraft${query}`)).json()).data;
+  if(label==='unavailable')profile.character_sheet=undefined;if(label==='goalie-source-only'){profile.latest_available=null;profile.attribute_seasons=[];}
+  await page.evaluate(async ({p,available})=>{const {renderCharacterCard}=await import('/src/rinkcraft-character.js');document.querySelector('main').replaceChildren(renderCharacterCard(p.player_name,p.character_sheet??undefined,p.attribute_seasons.at(-1),p.latest_available,p.numerical_evidence??undefined,p.numerical_history??undefined,p.numerical_snapshot??undefined,[],available));},{p:profile,available:label!=='unavailable'});
+  await expect(page.locator('.rk-front')).toBeVisible();
+  if(label==='unavailable'){await expect(page.locator('.rk-front')).toContainText('Class dossier unavailable');await expect(page.locator('.rk-front')).not.toContainText('Unscouted');}
+  if(label==='goalie-source-only')await expect(page.locator('.rk-front-attributes dt')).toHaveText(['Tracking','Positioning','Movement','Rebounds','Recovery','Puck Play']);
+  expect(await page.locator('.rk-evidence').evaluate(e=>e.open)).toBe(false);
+  const box=await page.locator('.rk-front').boundingBox();expect(box.width).toBeLessThanOrEqual(816);
+  expect(await page.locator('.rk-front .rk-field[data-numerical-key]').count()).toBe(profile.numerical_evidence?.facets.length??0);
+  await expect(page.locator('.rk-front-attributes [data-capability-index]')).toHaveCount(6);
+  await expect(page.locator('.rk-front-attributes [data-numerical-key]')).toHaveCount(0);
+  await expect(page.locator('.rk-front-attributes dd')).toHaveText(['—','—','—','—','—','—']);
+  const tiles=await page.locator('.rk-front-values .rk-field').all();
+  const boxes=await Promise.all(tiles.map(t=>t.boundingBox()));
+  expect(new Set(boxes.map(b=>Math.round(b.x))).size).toBe(1);
+  for(let i=1;i<boxes.length;i++)expect(boxes[i].y).toBeGreaterThanOrEqual(boxes[i-1].y+boxes[i-1].height);
+  await page.locator('.rk-evidence > summary').click();await expect(page.locator('.rk-sheet')).toBeVisible();await page.locator('.rk-evidence > summary').click();
+  await page.screenshot({path:resolve(root,`target/compact-sheet/${prefix}${label}.png`),fullPage:true});
+  const html=await page.locator('.rk-profile').evaluate(e=>e.outerHTML);
+  await writeFile(resolve(root,`target/compact-sheet/${prefix}${label}.html`),'<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Compact Rinkcraft profile</title><style>'+await readFile(resolve(root,'icelines-web/static/rinkcraft-character.css'),'utf8')+'</style>'+html+'</html>');
+  const pdf=await page.pdf({path:resolve(root,`target/compact-sheet/${prefix}${label}.pdf`),preferCSSPageSize:true});
+  expect(pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)?.length).toBe(1);
+  await page.setViewportSize({width:390,height:844});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.screenshot({path:resolve(root,`target/compact-sheet/${prefix}${label}-mobile.png`),fullPage:true});
+  await page.setViewportSize({width:1280,height:1100});
+  results.push({label,width:box.width,height:box.height,facets:profile.numerical_evidence?.facets.length??0});
+ }
+ expect(errors).toEqual([]);await writeFile(resolve(root,`target/compact-sheet/${prefix}results.json`),JSON.stringify({results,errors},null,2));console.log(JSON.stringify(results));
+}finally{await browser.close();}

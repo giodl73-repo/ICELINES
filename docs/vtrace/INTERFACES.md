@@ -1,5 +1,122 @@
 # Interfaces
 
+## IF-RINKCRAFT-NUMBERS-001 (CHG-130)
+
+CHG-140: optional EvidenceCard `context_evidence`, schema
+`icelines.rinkcraft-context-evidence.v1`; shared fixed source-record groups,
+nullable Measurement slots, explanations and availability/rank counts. Existing
+native/WASM projections carry it; no new operation/input schema. Primary pools
+and statistical definitions are unchanged. Contract:
+`design/specs/rinkcraft-context-evidence.md`.
+
+CHG-139: presentation-only counterpart choices and paired class hypotheses, using
+existing source-year and CharacterSheet selectors. Browser comparison event adds
+optional `right_id`; renderer accepts optional identity metadata. Native numeric
+API/core/WASM payload formats remain unchanged. Optional class-source failures
+now preserve primary numerical profiles; source availability stays UI metadata. Contract:
+`design/specs/rinkcraft-card-comparison.md`.
+
+CHG-138: optional NumericalComparison `contrast`, schema
+`icelines.rinkcraft-contrast-summary.v1`. Shared Rust selects fixed-facet rank gaps,
+coverage and omissions; existing native/WASM comparison transports the projection.
+Matched definitions now include formula/scale. Legacy rendering remains valid.
+Contract: `design/specs/rinkcraft-contrast-summary.md`.
+
+CHG-137: optional EvidenceFacet `explanation` and default-empty EvidenceCard
+`feature_context`. Shared Rust owns explicit related measures, limitations and
+feature bindings. Existing projection operations carry additive fields; no new
+worker operation or input schema. Contract:
+`design/specs/rinkcraft-attribute-explanations.md`.
+
+CHG-136: optional profile `numerical_snapshot`; stateless WASM `numerical_catalog`
+and `numerical_snapshot` plus matching camelCase worker operations. Native numerical
+JSON/comparison/page accept an optional exact source `season`; default newest
+supplied. Primary snapshot allows labeled fallback within bounds, exact requests
+and comparison do not. Legacy single-season input supported. Contract:
+`design/specs/rinkcraft-snapshot-selection.md`.
+
+CHG-135: additive optional HistoryCard `assessment`, schema
+`icelines.rinkcraft-measured-assessment.v1`. Existing native profile/WASM history
+projection transports shared policy/results. New explicit-file `profile-assess`
+CLI with whole-season bounds; existing archive/prepared asset unchanged. Legacy
+history cards retain their table. Contract:
+`design/specs/rinkcraft-measured-assessment.md`.
+
+CHG-134: optional profile `numerical_history`; archive schema
+`icelines.rinkcraft-numerical-history.v1`, projected card
+`icelines.rinkcraft-history-card.v1`; CLI `profile-history`, native
+`ICELINES_RINKCRAFT_HISTORY`, stateless WASM `numerical_history` and worker
+`numericalHistory`, optional authenticated `rinkcraft-history.json`. Existing
+single-season/style contracts unchanged. Bounds precede repetition counting.
+
+CHG-133: optional NumericalComparison `style` projection, schema
+`icelines.rinkcraft-style-comparison.v1`. Existing native comparison API and WASM
+method carry shared context matching, difference/missingness states and shared
+gaps. No new worker operation or prepared data format. Contract:
+`design/specs/rinkcraft-style-comparison.md`.
+
+CHG-132 extension: optional `style_evidence` in numerical profile and EvidenceCard,
+protocol `rinkcraft.playing-methods.0.1.0-experimental`; bounded local capture
+manifest and `profile-style` CLI. Existing native API and WASM numerical projection
+share validation/selection. Old catalogs default to None. Contract:
+`design/specs/rinkcraft-playing-methods.md`.
+
+CHG-131 extension: additive optional profile `numerical_evidence`, shared
+`icelines.rinkcraft-evidence-card.v1` projection and same-reference comparison.
+Native GET `/api/v1/rinkcraft/numbers/compare?left=ID&right=ID`; WASM methods
+`numerical_evidence`/`numerical_comparison` and matching worker operations.
+Optional prepared `rinkcraft-numbers.json` is part of the authenticated shell.
+Snapshot/competition guards and legacy catalog/profile fallback are required.
+
+`icelines.rinkcraft-numerical.v1`, protocol
+`rinkcraft.numerical-evidence.0.1.0-experimental`: normalized rows to a catalog
+with sources, profiles, missing player IDs and limits. Fetch parses local CSVs;
+CLI `profile-numbers` emits JSON. Native `ICELINES_RINKCRAFT_NUMBERS` supplies
+`/rinkcraft/numbers` and `/api/v1/rinkcraft/numbers`. Contract:
+`design/specs/rinkcraft-numerical-evidence.md`.
+
+## IF-RINKCRAFT-CHARACTER-001 (CHG-128)
+
+CHG-129 additive extension: catalog `showcase_title`/`showcase_notes` default empty;
+assessment `featured` defaults false; feature `stat_evidence` and
+`unmeasured_stats` default empty. Relations: measured_aspect, activity_context,
+outcome_context, deployment_context. Unknown/duplicate attribute keys reject.
+Source publication accepts ISO day or four-digit year, preserving precision.
+Native `/rinkcraft` lists configured assessments without profile hydration.
+Browser atlas opens the existing player dialog against the active package.
+
+Optional `rinkcraft.character-catalog.v1` input and `character_sheet` profile
+projection; stateless WASM selector and `characterSheet` worker operation;
+native explicit `ICELINES_RINKCRAFT_SHEETS` path and optional offline browser
+snapshot. Dated documentary selection, validation and UI contract:
+`design/specs/rinkcraft-character-card.md`. Missing dossier stays unscouted.
+
+## IF-RINKCRAFT-ATTRIBUTES-001 (CHG-127)
+
+Additive `attribute_seasons` in profile v1, built by core `rinkcraft_attributes`;
+normal/sparse WASM and native local-reference loading use the same protocol.
+Fields, provisional cohorts, missingness and band formula:
+`design/specs/rinkcraft-attributes.md`. Every level is a descriptive band for a
+specific measured quantity, not overall talent or validated role membership.
+
+## IF-RINKCRAFT-UI-001 (CHG-126)
+
+HTML `/player/:id/rinkcraft`, JSON `/api/v1/player/:id/rinkcraft`, browser worker
+`rinkcraftProfile` and WASM `rinkcraft_profile(request_json)` render the core
+statistical profile. Native uses report-aware local career loading; browser uses
+resident packages only. Query and coverage limits:
+`design/specs/rinkcraft-stat-profile.md`. No hosted publication is implied.
+
+## IF-RINKCRAFT-PROFILE-001 (CHG-125)
+
+`icelines profile PLAYER [--first-season YYYYZZZZ] [--last-season YYYYZZZZ]
+[--type regular|playoff] [--json]` emits the shared
+`view_model::rinkcraft_profile::RinkcraftStatProfile` evidence contract. Full-name
+or numeric-id resolution, inclusive whole-season scope, latest loaded/current
+distinction, catalog cells, strict component-based summaries, missing reports,
+arithmetic season differences and unmeasured dimensions. No class scores or
+automatic blame; `design/specs/rinkcraft-stat-profile.md` defines the schema.
+
 ## Scope
 
 Repo or feature: `icelines` repo-baseline VTRACE adoption.

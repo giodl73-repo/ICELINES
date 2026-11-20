@@ -40,6 +40,7 @@ pub mod card_store;
 pub mod config;
 pub mod dashboard_command;
 pub mod error;
+pub mod goal_analysis;
 pub mod query_bio;
 pub mod query_report;
 pub mod state;
@@ -71,6 +72,80 @@ pub use state::WebState;
 /// directory mounts, reintroduce a `RouterConfig` then.
 pub fn router(state: WebState) -> Router {
     Router::new()
+        .route("/goal-analysis", get(handlers::goal_analysis::page))
+        .route("/api/v1/goal-analysis", get(handlers::goal_analysis::json))
+        .route("/rinkcraft", get(handlers::rinkcraft::get_atlas))
+        .route("/rinkcraft/game", get(handlers::rinkcraft::get_game_page))
+        .route(
+            "/api/v1/rinkcraft/game-rules",
+            get(handlers::rinkcraft::get_game_rules),
+        )
+        .route(
+            "/api/v1/rinkcraft/possession-rules",
+            get(handlers::rinkcraft::get_possession_rules),
+        )
+        .route(
+            "/api/v1/rinkcraft/unit-blueprint",
+            get(handlers::rinkcraft::get_unit_blueprint),
+        )
+        .route(
+            "/api/v1/rinkcraft/unit-rules",
+            get(handlers::rinkcraft::get_unit_rules),
+        )
+        .route(
+            "/api/v1/rinkcraft/unit-scene",
+            post(handlers::rinkcraft::post_unit_studio)
+                .layer(axum::extract::DefaultBodyLimit::max(768 * 1024)),
+        )
+        .route(
+            "/api/v1/rinkcraft/possession/export",
+            post(handlers::rinkcraft::post_export_possession)
+                .layer(axum::extract::DefaultBodyLimit::max(128 * 1024)),
+        )
+        .route(
+            "/api/v1/rinkcraft/possession/inspect",
+            post(handlers::rinkcraft::post_inspect_possession)
+                .layer(axum::extract::DefaultBodyLimit::max(300 * 1024)),
+        )
+        .route(
+            "/api/v1/rinkcraft/possession/branch",
+            post(handlers::rinkcraft::post_branch_possession)
+                .layer(axum::extract::DefaultBodyLimit::max(300 * 1024)),
+        )
+        .route(
+            "/api/v1/rinkcraft/possession/compare",
+            post(handlers::rinkcraft::post_compare_possession)
+                .layer(axum::extract::DefaultBodyLimit::max(300 * 1024)),
+        )
+        .route(
+            "/api/v1/rinkcraft/possession/import",
+            post(handlers::rinkcraft::post_import_possession)
+                .layer(axum::extract::DefaultBodyLimit::max(300 * 1024)),
+        )
+        .route(
+            "/api/v1/rinkcraft/possession",
+            post(handlers::rinkcraft::post_possession)
+                .layer(axum::extract::DefaultBodyLimit::max(128 * 1024)),
+        )
+        .route(
+            "/api/v1/rinkcraft/game-character",
+            post(handlers::rinkcraft::post_game_character)
+                .layer(axum::extract::DefaultBodyLimit::max(128 * 1024)),
+        )
+        .route(
+            "/api/v1/rinkcraft/game-character/import",
+            post(handlers::rinkcraft::post_import_game_character)
+                .layer(axum::extract::DefaultBodyLimit::max(128 * 1024)),
+        )
+        .route("/rinkcraft/numbers", get(handlers::rinkcraft::get_numbers))
+        .route(
+            "/api/v1/rinkcraft/numbers/compare",
+            get(handlers::rinkcraft::get_numerical_comparison),
+        )
+        .route(
+            "/api/v1/rinkcraft/numbers",
+            get(handlers::rinkcraft::get_numbers_json),
+        )
         .route("/", get(handlers::home::get_home))
         .route("/dashboard", get(handlers::dashboard::get_dashboard))
         .route(
@@ -96,6 +171,11 @@ pub fn router(state: WebState) -> Router {
         .route("/api/v1/leaders", get(handlers::leaders::get_leaders_json))
         // Player card — King.3.1. Name links on /leaders point here.
         .route("/player/:id", get(handlers::player::get_player))
+        .route("/player/:id/rinkcraft", get(handlers::rinkcraft::get_html))
+        .route(
+            "/api/v1/player/:id/rinkcraft",
+            get(handlers::rinkcraft::get_json),
+        )
         .route(
             "/player/by-name/:name",
             get(handlers::player::get_player_by_name),
@@ -717,6 +797,7 @@ pub fn router(state: WebState) -> Router {
 mod handlers {
     pub mod behavior_rankings;
     pub mod date_range;
+    pub mod goal_analysis;
     // QueryA — bio filter primitives moved to the icelines-query
     // crate so the CLI can share them. The web handlers reach in via
     // `super::extract_bio` / `super::BioConstraints`; the CLI's
@@ -770,6 +851,7 @@ mod handlers {
     /// `/player/:id` — King.3.1 + King.3.2. Player card + career table.
     pub mod player;
     pub mod records;
+    pub mod rinkcraft;
     pub mod scoring;
     pub mod scouting;
     pub mod signals;

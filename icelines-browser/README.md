@@ -29,6 +29,27 @@ dialog is reopened. A dataset change closes any open stale dialog.
 Run the local browser history check after building with
 `npm --prefix icelines-browser run acceptance:player-history`.
 
+The player dialog opens with a **Rinkcraft character card**: documentary hockey
+class/fantasy analogy, specialty, source-linked features/methods, optional
+multiclass and compact measured attributes. Trait evolution/statistical history
+is a closed expander. The class is curated research, never inferred from bands.
+Supply an authored research catalog as ignored `public/rinkcraft-characters.json`
+before building to include it in the offline shell. Without a dossier, the card
+says Unscouted. See `design/specs/rinkcraft-character-card.md` in the repo root.
+
+The profile's history expander includes experimental,
+player-specific descriptive attribute bands and seasonal step charts. Each band
+shows its observed value, layer, positional peer group, exposure, reference
+coverage and versioned rule. These are unadjusted all-strength measurements,
+not skill or class levels; missing data and insufficient references stay unranked.
+The profile also has latest/loaded-season
+and loaded-window summary views, searchable catalog evidence, explicit gaps,
+six job-family descriptions and arithmetic season differences. Its calculations
+come from the shared Rust builder through the WASM worker, including the opt-in
+sparse backend. Only resident packages are included; optional native reports
+absent from package v1 stay unavailable. Classes, directional styles and causal
+assignment responsibility are not inferred from these aggregate statistics.
+
 For the opt-in sparse prepared-season backend, use
 `node scripts/build-browser.mjs --sparse-storage` from the repository root.
 The generated build-info records the selected WASM features. Ordinary builds use
@@ -461,3 +482,28 @@ team-only statistical split. The `team=` predicate keeps its existing semantics.
 Exports record the actual filter and floor; sharing filter text remains opt-in.
 Run `npm run acceptance:team-focus` after a local browser build for the real
 Chromium offline/trade/goalie/export/narrow-theme check.
+
+## Seasonal research records in the worker
+
+`seasonalRecords` is a stateless byte-input operation backed by
+`BrowserEngine.seasonal_record_catalog`. It uses the same
+`icelines_core::view_model::rinkcraft_seasonal_records` evaluator as native Rust.
+The caller supplies a verified cohort of official exposure/counts and optional
+source-bound EDGE observations. The engine does not acquire tracking data or
+certify that a supplied cohort is the NHL population.
+
+```js
+const owned = sourceBytes.slice(); // retain original evidence bytes
+const catalog = await client.request('seasonalRecords', owned.buffer, [owned.buffer]);
+```
+
+Input schema: `icelines.seasonal-record-input.v1`; output schema:
+`icelines.seasonal-record-catalog.v1`. Both families remain research candidates.
+The input specifies regular-season/all-strength scope, cohort label, exposure
+settings and record sources. Limits are 32 MiB and 10,000 skater records. Separate
+season/position/metric references and their hashes are returned. No resident
+package, capability grade, class or simulation input is changed. This API does
+not automatically insert the result into an existing player-profile response.
+
+See [the shared-engine specification](../design/specs/rinkcraft-shared-seasonal-engine.md)
+for the protocol, reproduction and actual native/WASM/worker acceptance.

@@ -27,7 +27,7 @@ comfy-table.workspace = true
 csv.workspace         = true
 owo-colors.workspace  = true
 serde.workspace       = true
-serde_json.workspace  = true
+serde_json = { workspace = true, features = ["raw_value"] }
 toml.workspace        = true
 ratatui.workspace     = true
 crossterm.workspace   = true

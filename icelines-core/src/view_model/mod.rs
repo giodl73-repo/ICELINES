@@ -80,6 +80,20 @@ pub mod prospect_conversion;
 pub mod prospect_study;
 pub mod records;
 pub mod report;
+pub mod rinkcraft_annotation_agreement;
+pub mod rinkcraft_assessment;
+pub mod rinkcraft_attribute_evidence;
+pub mod rinkcraft_attributes;
+pub mod rinkcraft_character;
+pub mod rinkcraft_context;
+pub mod rinkcraft_contrast;
+pub mod rinkcraft_evidence_guide;
+pub mod rinkcraft_history;
+pub mod rinkcraft_history_changes;
+pub mod rinkcraft_measurement_plan;
+pub mod rinkcraft_numbers;
+pub mod rinkcraft_profile;
+pub mod rinkcraft_style;
 pub mod scenario_development_calibration;
 pub mod scenario_registry;
 pub mod schedule;
@@ -2323,3 +2337,30 @@ mod tests {
         assert_eq!(json["home_top_skaters"][0]["points"], 3);
     }
 }
+
+pub mod rinkcraft_achievements;
+pub mod rinkcraft_contest;
+pub mod rinkcraft_deployment;
+pub mod rinkcraft_events;
+pub mod rinkcraft_finishing;
+pub mod rinkcraft_finishing_evidence;
+pub mod rinkcraft_game;
+pub mod rinkcraft_goalie_readiness;
+pub mod rinkcraft_plan_compare;
+pub mod rinkcraft_plan_experiment;
+pub mod rinkcraft_possession;
+pub mod rinkcraft_readiness_followup;
+pub mod rinkcraft_record_milestones;
+pub mod rinkcraft_season;
+pub mod rinkcraft_task_season;
+pub mod rinkcraft_unit_studio;
+pub mod rinkcraft_units;
+
+pub mod rinkcraft_capability_index;
+pub mod rinkcraft_edge;
+pub mod rinkcraft_edge_exposure;
+pub mod rinkcraft_finishing_fit;
+pub mod rinkcraft_seasonal_records;
+pub mod rinkcraft_stat_scores;
+pub mod rinkcraft_task_measurements;
+pub mod rinkcraft_whistle;

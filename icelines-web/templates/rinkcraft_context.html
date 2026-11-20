@@ -1,0 +1,5 @@
+{% match n.context %}{% when Some with (v) %}<section class="rn-context" aria-label="Possession and environment evidence">
+<h4>{{ v.title }}</h4><p class="rn-context-coverage">{{ v.coverage }}</p>
+<div class="rn-context-groups" data-context-groups="{{ v.groups.len() }}">{% for g in v.groups %}<section class="rn-context-group"><h5>{{ g.label }}</h5><p>{{ g.note }}</p>
+{% for r in g.rows %}<div class="rn-context-row" data-context-key="{{ r.key }}"><div class="rn-context-values"><span>{{ r.label }}</span><b>{{ r.value }}</b><strong>{{ r.rank }}</strong></div><details><summary>Evidence · {{ r.peers }}</summary><p>{{ r.question }}</p><p>{{ r.limit }}</p><small>{{ r.formula }}<br>{{ r.components }}<br>{{ r.state }} · Reference SHA256 {{ r.reference }}</small></details></div>{% endfor %}
+</section>{% endfor %}</div><p class="rn-context-limit">{{ v.note }}</p></section>{% when None %}{% endmatch %}

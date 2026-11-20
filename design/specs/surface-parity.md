@@ -1,5 +1,19 @@
 # IceLines surface parity matrix
 
+## Rinkcraft stat-profile addition — CHG-125
+
+Shared engine: `icelines-core::view_model::rinkcraft_profile`; canonical source
+hydration in `icelines-fetch::rinkcraft_profile`. CLI: `icelines profile`.
+Native player HTML/JSON and browser/WASM subset added by CHG-126; TUI deferred.
+Whole-season scope, coverage and strict aggregation are implemented; class
+scores, causal duties and arbitrary dates are not. Local evidence:
+`signals/roles/check/rinkcraft-stat-profile-2026-11-08.md`.
+
+CHG-128 adds a primary source-linked character card from optional research input;
+the statistical dashboard moves into expanders. Documentary class identity is
+separate from measured bands and is not a validated automatic classifier. See
+`design/specs/rinkcraft-character-card.md` and its validation record.
+
 **Date**: 2026-05-09
 **Status**: Active source of truth - Phase Islanders closeout on 2026-06-20
 

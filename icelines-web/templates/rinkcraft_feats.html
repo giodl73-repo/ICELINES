@@ -1,0 +1,4 @@
+<div class="rk-stat-feats"><small>Stat feats · all strengths · {{ feat_section.earned }}/{{ feat_section.total }}</small>
+{% for feat in feat_section.visible %}{% include "rinkcraft_feat_row.html" %}{% endfor %}
+{% if feat_section.visible.is_empty() %}<p>No unlocked stat feat in this category.</p>{% endif %}
+{% if !feat_section.other.is_empty() %}<details class="rk-feat-library"><summary>Browse {{ feat_section.other.len() }} more feats</summary>{% for feat in feat_section.other %}{% include "rinkcraft_feat_row.html" %}{% endfor %}</details>{% endif %}</div>

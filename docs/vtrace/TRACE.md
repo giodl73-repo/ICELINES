@@ -1,5 +1,86 @@
 # Trace Matrix
 
+## Capability-component research prototype (CHG-144)
+
+Owner capability-form objective -> separate experimental config/JSON contract -> source-sealed CLI estimate, audit and report -> synthetic provenance/temporal/uncertainty checks plus an actual full-league retrospective conditional run. Evidence: `docs/rinkcraft-capability-pilot-2026-11-09.md`. No production interface or headline grade released.
+
+
+## Hockey styling and actual app delivery (CHG-143)
+
+REQ-WEB-001 / REQ-BROWSER-001 / REQ-PARITY-001 -> unchanged character/numerical contracts -> shared CSS form and existing native/browser wiring -> app-backed 25-player raw-value/capability separation checks, keyboard/no-JS comparison, offline/mobile/theme and Letter checks. Evidence: `docs/rinkcraft-live-sheet-validation-2026-11-09.md`.
+
+
+## Approved category-form reconciliation (CHG-142)
+
+REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> existing documentary/numerical interfaces -> distinct capability, measured record and assignment categories -> unrated/zero/null/unavailable/goalie tests, fixture disclosure/mobile/Letter checks. Evidence: `docs/rinkcraft-sheet-reconciliation-2026-11-09.md`. Full live-app parity remains separate.
+
+
+## Possession and environment context (CHG-140)
+
+REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> IF-RINKCRAFT-NUMBERS-001 -> optional shared context projection and separate native/WASM rendering -> exact copies, zero/missing/unranked, all-position parity, unchanged primary pools and no-JS/offline/mobile/theme checks. Evidence: `docs/rinkcraft-context-validation-2026-11-09.md`.
+
+
+## Card comparison workflow (CHG-139)
+
+REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> existing Rinkcraft character/numerical interfaces -> shared-selected candidate year/group and documentary identities, native no-JS form/browser action -> IDs/year, class provenance, fallback/unscouted/optional/stale-read and offline/mobile/theme checks. Evidence: `docs/rinkcraft-card-comparison-validation-2026-11-09.md`.
+
+
+## Readable matched contrasts (CHG-138)
+
+REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> IF-RINKCRAFT-NUMBERS-001 -> shared fixed-pool contrast selection and native/WASM rendering -> ties/signs/coverage/definition guards, actual pair parity and no-JS/offline/mobile. Evidence: `docs/rinkcraft-contrast-validation-2026-11-09.md`.
+
+
+## Attribute evidence and primary differentiation (CHG-137)
+
+REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> IF-RINKCRAFT-NUMBERS-001 -> shared explanation/context projection and native/WASM card -> unchanged values, nine contrasting profiles, first-screen placement, legacy/no-JS/offline/mobile. Evidence: `docs/rinkcraft-attributes-first-validation-2026-11-08.md`.
+
+
+## Explicit source selection (CHG-136)
+
+REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> IF-RINKCRAFT-NUMBERS-001 -> core source selection, native query/HTML and WASM worker/browser consumers -> all-player parity, missing/exact/bounds, legacy and offline/mobile checks. Evidence: `docs/rinkcraft-snapshot-validation-2026-11-08.md`.
+
+
+CHG-135 / IF-RINKCRAFT-NUMBERS-001: REQ-PARITY-001 / REQ-WEB-001 /
+REQ-BROWSER-001 -> shared measured assessment policy and explicit CLI -> visible
+native/WASM card -> P80/tie/bound/cutoff/missing/context guards, 25 CLI/WASM and
+representative native parity, legacy/no-JS/offline/mobile/source preservation.
+Evidence: `docs/rinkcraft-measured-assessment-validation-2026-11-08.md`.
+
+CHG-134 / IF-RINKCRAFT-NUMBERS-001: REQ-PARITY-001 / REQ-WEB-001 /
+REQ-BROWSER-001 -> bounded archive/CLI, shared annual projection and range guards
+-> native/WASM character expander -> source preservation, missing/year/group/
+duplicate guards, actual engine/UI parity, offline/no-JS/mobile and history
+regressions. Evidence: `docs/rinkcraft-numerical-history-validation-2026-11-08.md`.
+
+CHG-133 / IF-RINKCRAFT-NUMBERS-001: REQ-PARITY-001 / REQ-WEB-001 /
+REQ-BROWSER-001 -> shared style matching/differences -> native/WASM comparison
+view -> sign reversal, missingness, incompatible source/context, old catalog,
+goalie, exact API/WASM, no-JS/offline/mobile checks. Evidence:
+`docs/rinkcraft-style-comparison-validation-2026-11-08.md`.
+
+CHG-132 / IF-RINKCRAFT-NUMBERS-001: REQ-PARITY-001 / REQ-WEB-001 /
+REQ-BROWSER-001 -> bounded source capture parser, pure descriptive style extension
+and native/WASM cards -> denominator/hash/season/missingness tests, unchanged
+original measurements, actual card parity, no-JS/offline/mobile. Evidence:
+`docs/rinkcraft-playing-methods-validation-2026-11-08.md`.
+
+CHG-131 / IF-RINKCRAFT-NUMBERS-001: REQ-PARITY-001 / REQ-WEB-001 /
+REQ-BROWSER-001 -> shared numerical projection/comparison -> primary native/WASM
+cards, compatible comparisons and optional offline artifact -> core guards,
+25-card actual engine checks, exact comparison parity, offline/history/no-JS and
+mobile checks. Evidence: `docs/rinkcraft-integrated-numerical-validation-2026-11-08.md`.
+
+CHG-130 / IF-RINKCRAFT-NUMBERS-001: REQ-WEB-001 -> strict source parsing, pure
+numerical vectors/peer ranks, CLI/native renderer -> deterministic boundary tests
+and fixed-season 25-player rehearsal. Evidence:
+`docs/rinkcraft-numerical-validation-2026-11-08.md`.
+
+CHG-125: REQ-STAT-001 / REQ-STAT-002 / REQ-DATA-001 / REQ-DATA-DEPTH-001
+→ IF-RINKCRAFT-PROFILE-001 → core stat-profile view, fetch report hydration and CLI
+adapter → synthetic aggregation/missingness tests, season-fence/report regressions,
+CLI contract checks and recorded actual player rehearsals. Validation scope and
+remaining limits: `signals/roles/check/rinkcraft-stat-profile-2026-11-08.md`.
+
 ## Scope
 
 Repo or feature: `icelines` repo-baseline VTRACE adoption.
@@ -392,3 +473,38 @@ concrete PlayerView alias/shared ReadPlayerView, common BrowserEngine reads and 
 -> sparse_season integration/golden/mutation tests, both-mode browser tests and
 native/WASM compilation -> actual native owner/query samples and full browser-engine
 replay. WASM/browser resource and physical-device acceptance remain separate.
+
+## Rinkcraft player UI (CHG-126)
+
+REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> IF-RINKCRAFT-UI-001 ->
+borrowed core profile builder, native player HTML/JSON and browser WASM worker
+profile -> core/profile, both storage modes, formatting, actual browser and CLI
+snapshot parity checks. Evidence: `docs/rinkcraft-ui-validation-2026-11-08.md`.
+Coverage remains explicit; classes and tactical responsibility are unclassified.
+
+## Rinkcraft descriptive attributes (CHG-127)
+
+REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> IF-RINKCRAFT-ATTRIBUTES-001
+-> shared borrowed-view measurement/reference builder, native source adapter,
+normal/sparse WASM profile and native/browser cards/step charts -> focused core,
+both storage modes, actual engine/UI parity, source-snapshot regression and mobile
+checks. Evidence: `docs/rinkcraft-attributes-validation-2026-11-08.md`.
+Experimental descriptive bands do not establish skill, style or role validity.
+
+## Rinkcraft primary character card (CHG-128)
+
+REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> IF-RINKCRAFT-CHARACTER-001 ->
+external documentary catalog, shared Rust validation/dated selection, native
+and explicit WASM binding, original shared character design and default-closed
+history -> source/temporal unit tests, actual UI/binding, offline, no-JS, mobile,
+legacy-link and existing-history checks. Evidence:
+`docs/rinkcraft-character-card-validation-2026-11-08.md`. No automatic or validated
+NHL-wide role classifier is claimed.
+
+## Feature evidence and star atlas (CHG-129)
+
+REQ-PARITY-001 / REQ-WEB-001 / REQ-BROWSER-001 -> IF-RINKCRAFT-CHARACTER-001 ->
+external catalog selection, native/browser atlas, feature-stat readouts and
+compact percentile/peer display -> catalog validation, all configured featured
+cards, actual WASM class selection, skater/goalie opening, mobile and existing
+profile regressions. Evidence: `docs/rinkcraft-star-atlas-validation-2026-11-08.md`.

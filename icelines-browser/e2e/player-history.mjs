@@ -18,7 +18,7 @@ const server = createServer(async (request, response) => {
   } catch { response.writeHead(404).end(); }
 });
 await new Promise(accept => server.listen(0, '127.0.0.1', accept));
-const browser = await chromium.launch({ channel: 'chromium', headless: true });
+const browser = await chromium.launch({ channel: process.env.ICELINES_TEST_BROWSER??'chromium', headless: true });
 const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
 const page = await context.newPage();
 const payloadRequests = [];
@@ -31,6 +31,7 @@ const exportedRows = async () => {
 const open = async name => {
   await page.locator('#rows td:nth-child(2) button').filter({ hasText: name }).first().click();
   await expect(page.locator('#player-dialog')).toBeVisible();
+  await page.getByText('Loaded records and source context',{exact:true}).click();
 };
 let failure;
 try {

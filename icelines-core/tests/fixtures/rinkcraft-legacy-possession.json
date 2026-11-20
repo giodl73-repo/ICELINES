@@ -1,0 +1,3287 @@
+{
+  "origin": "Captured from unchanged 3e3d3c3 WASM before unit-kernel extraction; fictional neutral inputs",
+  "cases": [
+    {
+      "schema": "rinkcraft.possession-replay.v1",
+      "character_rules": {
+        "schema": "rinkcraft.game-rules.v1",
+        "version": "test",
+        "title": "Neutral legacy fixture",
+        "standard_array": [
+          12,
+          12,
+          12,
+          12,
+          12,
+          12
+        ],
+        "templates": [
+          {
+            "id": "s",
+            "branch": "skater",
+            "class_id": "test",
+            "class_name": "Test",
+            "specialty": "Test",
+            "description": "Fictional fixture",
+            "priority": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "task_skills": [],
+            "methods": [],
+            "tendencies": [],
+            "playbook_options": []
+          },
+          {
+            "id": "g",
+            "branch": "goalie",
+            "class_id": "test",
+            "class_name": "Test",
+            "specialty": "Test",
+            "description": "Fictional fixture",
+            "priority": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "task_skills": [],
+            "methods": [],
+            "tendencies": [],
+            "playbook_options": []
+          }
+        ]
+      },
+      "rules": {
+        "schema": "rinkcraft.possession-rules.v1",
+        "version": "0.1.0-playtest",
+        "support_bonus": 2
+      },
+      "request": {
+        "hero": {
+          "schema": "icelines.game-character.v1",
+          "profile_kind": "fictional_game_character",
+          "rules_version": "test",
+          "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+          "template_id": "s",
+          "name": "Fixture carrier",
+          "position": "F",
+          "branch": "skater",
+          "class_id": "test",
+          "class_name": "Test",
+          "specialty": "Test",
+          "description": "Fictional fixture",
+          "capabilities": [
+            {
+              "id": "skating",
+              "label": "Skating",
+              "score": 12,
+              "source": "game_rules_not_nhl_assessment"
+            },
+            {
+              "id": "handling",
+              "label": "Handling",
+              "score": 12,
+              "source": "game_rules_not_nhl_assessment"
+            },
+            {
+              "id": "passing",
+              "label": "Passing",
+              "score": 12,
+              "source": "game_rules_not_nhl_assessment"
+            },
+            {
+              "id": "shooting",
+              "label": "Shooting",
+              "score": 12,
+              "source": "game_rules_not_nhl_assessment"
+            },
+            {
+              "id": "reading",
+              "label": "Reading",
+              "score": 12,
+              "source": "game_rules_not_nhl_assessment"
+            },
+            {
+              "id": "defending",
+              "label": "Defending",
+              "score": 12,
+              "source": "game_rules_not_nhl_assessment"
+            }
+          ],
+          "task_skills": [],
+          "methods": [],
+          "tendencies": [],
+          "playbook_options": [],
+          "score_method": {
+            "kind": "standard_array"
+          },
+          "dice": [],
+          "rolled_totals": [],
+          "inspiration": null,
+          "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model."
+        },
+        "seed": 43,
+        "commit_support": false,
+        "actions": [
+          "outlet",
+          "carry",
+          "pass"
+        ]
+      },
+      "session": {
+        "commit_support": false,
+        "events": [
+          {
+            "action": "outlet",
+            "actor": "home:G",
+            "actor_capability": "Puck Play",
+            "after": {
+              "control": "home:F1",
+              "cover_owner": "home:F3",
+              "loose": false,
+              "phase": "breakout"
+            },
+            "before": {
+              "control": "home:G",
+              "cover_owner": "home:F3",
+              "loose": false,
+              "phase": "goalie_control"
+            },
+            "contest": {
+              "actor_adjustment": 0,
+              "actor_score": 12,
+              "opposition_adjustment": 0,
+              "opposition_score": 12,
+              "score_rule": "half_offset"
+            },
+            "counts": {
+              "actor_wins": 190,
+              "combinations": 400,
+              "opposition_wins": 190,
+              "stalemates": 20
+            },
+            "explanation": "Goalie outlet reaches the carrier. This is possession, not a scoring chance.",
+            "opposition": "away:F1",
+            "opposition_capability": "Reading",
+            "resolution": {
+              "actor_die": 17,
+              "actor_total": 18,
+              "margin": 3,
+              "opposition_die": 14,
+              "opposition_total": 15,
+              "outcome": "actor_wins"
+            },
+            "terms": [
+              1,
+              1
+            ]
+          },
+          {
+            "action": "carry",
+            "actor": "home:F1",
+            "actor_capability": "Skating",
+            "after": {
+              "control": "home:F1",
+              "cover_owner": "home:F3",
+              "loose": false,
+              "phase": "advanced"
+            },
+            "before": {
+              "control": "home:F1",
+              "cover_owner": "home:F3",
+              "loose": false,
+              "phase": "breakout"
+            },
+            "contest": {
+              "actor_adjustment": 0,
+              "actor_score": 12,
+              "opposition_adjustment": 0,
+              "opposition_score": 12,
+              "score_rule": "half_offset"
+            },
+            "counts": {
+              "actor_wins": 190,
+              "combinations": 400,
+              "opposition_wins": 190,
+              "stalemates": 20
+            },
+            "explanation": "Carrier advances; the middle passing opportunity opens.",
+            "opposition": "away:D1",
+            "opposition_capability": "Defending",
+            "resolution": {
+              "actor_die": 15,
+              "actor_total": 16,
+              "margin": 14,
+              "opposition_die": 1,
+              "opposition_total": 2,
+              "outcome": "actor_wins"
+            },
+            "terms": [
+              1,
+              1
+            ]
+          },
+          {
+            "action": "pass",
+            "actor": "home:F1",
+            "actor_capability": "Passing",
+            "after": {
+              "control": "home:F2",
+              "cover_owner": "home:F3",
+              "loose": false,
+              "phase": "complete"
+            },
+            "before": {
+              "control": "home:F1",
+              "cover_owner": "home:F3",
+              "loose": false,
+              "phase": "advanced"
+            },
+            "contest": {
+              "actor_adjustment": 0,
+              "actor_score": 12,
+              "opposition_adjustment": 0,
+              "opposition_score": 12,
+              "score_rule": "half_offset"
+            },
+            "counts": {
+              "actor_wins": 190,
+              "combinations": 400,
+              "opposition_wins": 190,
+              "stalemates": 20
+            },
+            "explanation": "Receiver controls the pass. Possession sequence complete; no shot or goal is awarded.",
+            "opposition": "away:F2",
+            "opposition_capability": "Reading",
+            "resolution": {
+              "actor_die": 12,
+              "actor_total": 13,
+              "margin": 10,
+              "opposition_die": 2,
+              "opposition_total": 3,
+              "outcome": "actor_wins"
+            },
+            "terms": [
+              1,
+              1
+            ]
+          }
+        ],
+        "hero_slot": "home:F1",
+        "legal_actions": [],
+        "note": "Fictional outlet/carry/pass scene; scripted opponent responses, half-offset arithmetic and a support/cover tradeoff. No shots, goals, clock, fatigue or NHL probabilities. F1/F2/F3 name this scene's duties only.",
+        "participants": [
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "Fixture carrier",
+              "playbook_options": [],
+              "position": "F",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "home:F1",
+            "station": "advanced carrier lane"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "home F2",
+              "playbook_options": [],
+              "position": "F",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "home:F2",
+            "station": "controlled receiving lane"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "home F3",
+              "playbook_options": [],
+              "position": "F",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "home:F3",
+            "station": "high cover"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "home D1",
+              "playbook_options": [],
+              "position": "D",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "home:D1",
+            "station": "point support"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "home D2",
+              "playbook_options": [],
+              "position": "D",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "home:D2",
+            "station": "last line"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "goalie",
+              "capabilities": [
+                {
+                  "id": "tracking",
+                  "label": "Tracking",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "positioning",
+                  "label": "Positioning",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "movement",
+                  "label": "Movement",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "rebounds",
+                  "label": "Rebounds",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "recovery",
+                  "label": "Recovery",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "puck_play",
+                  "label": "Puck Play",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "home G",
+              "playbook_options": [],
+              "position": "G",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "g",
+              "tendencies": []
+            },
+            "slot": "home:G",
+            "station": "crease exchange"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "away F1",
+              "playbook_options": [],
+              "position": "F",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "away:F1",
+            "station": "wall carrier"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "away F2",
+              "playbook_options": [],
+              "position": "F",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "away:F2",
+            "station": "middle receiver"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "away F3",
+              "playbook_options": [],
+              "position": "F",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "away:F3",
+            "station": "high cover"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "away D1",
+              "playbook_options": [],
+              "position": "D",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "away:D1",
+            "station": "point support"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "away D2",
+              "playbook_options": [],
+              "position": "D",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "away:D2",
+            "station": "last line"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "goalie",
+              "capabilities": [
+                {
+                  "id": "tracking",
+                  "label": "Tracking",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "positioning",
+                  "label": "Positioning",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "movement",
+                  "label": "Movement",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "rebounds",
+                  "label": "Rebounds",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "recovery",
+                  "label": "Recovery",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "puck_play",
+                  "label": "Puck Play",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "away G",
+              "playbook_options": [],
+              "position": "G",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "g",
+              "tendencies": []
+            },
+            "slot": "away:G",
+            "station": "crease exchange"
+          }
+        ],
+        "rules_sha256": "370f379e4fc9e1576cdd5110cbb59bcf1de8e3ec9c1335697bb2f93fe1fce490",
+        "rules_version": "0.1.0-playtest",
+        "schema": "icelines.possession-session.v1",
+        "seed": 43,
+        "state": {
+          "control": "home:F2",
+          "cover_owner": "home:F3",
+          "loose": false,
+          "phase": "complete"
+        }
+      }
+    },
+    {
+      "schema": "rinkcraft.possession-replay.v1",
+      "character_rules": {
+        "schema": "rinkcraft.game-rules.v1",
+        "version": "test",
+        "title": "Neutral legacy fixture",
+        "standard_array": [
+          12,
+          12,
+          12,
+          12,
+          12,
+          12
+        ],
+        "templates": [
+          {
+            "id": "s",
+            "branch": "skater",
+            "class_id": "test",
+            "class_name": "Test",
+            "specialty": "Test",
+            "description": "Fictional fixture",
+            "priority": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "task_skills": [],
+            "methods": [],
+            "tendencies": [],
+            "playbook_options": []
+          },
+          {
+            "id": "g",
+            "branch": "goalie",
+            "class_id": "test",
+            "class_name": "Test",
+            "specialty": "Test",
+            "description": "Fictional fixture",
+            "priority": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "task_skills": [],
+            "methods": [],
+            "tendencies": [],
+            "playbook_options": []
+          }
+        ]
+      },
+      "rules": {
+        "schema": "rinkcraft.possession-rules.v1",
+        "version": "0.1.0-playtest",
+        "support_bonus": 2
+      },
+      "request": {
+        "hero": {
+          "schema": "icelines.game-character.v1",
+          "profile_kind": "fictional_game_character",
+          "rules_version": "test",
+          "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+          "template_id": "s",
+          "name": "Fixture carrier",
+          "position": "F",
+          "branch": "skater",
+          "class_id": "test",
+          "class_name": "Test",
+          "specialty": "Test",
+          "description": "Fictional fixture",
+          "capabilities": [
+            {
+              "id": "skating",
+              "label": "Skating",
+              "score": 12,
+              "source": "game_rules_not_nhl_assessment"
+            },
+            {
+              "id": "handling",
+              "label": "Handling",
+              "score": 12,
+              "source": "game_rules_not_nhl_assessment"
+            },
+            {
+              "id": "passing",
+              "label": "Passing",
+              "score": 12,
+              "source": "game_rules_not_nhl_assessment"
+            },
+            {
+              "id": "shooting",
+              "label": "Shooting",
+              "score": 12,
+              "source": "game_rules_not_nhl_assessment"
+            },
+            {
+              "id": "reading",
+              "label": "Reading",
+              "score": 12,
+              "source": "game_rules_not_nhl_assessment"
+            },
+            {
+              "id": "defending",
+              "label": "Defending",
+              "score": 12,
+              "source": "game_rules_not_nhl_assessment"
+            }
+          ],
+          "task_skills": [],
+          "methods": [],
+          "tendencies": [],
+          "playbook_options": [],
+          "score_method": {
+            "kind": "standard_array"
+          },
+          "dice": [],
+          "rolled_totals": [],
+          "inspiration": null,
+          "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model."
+        },
+        "seed": 19,
+        "commit_support": false,
+        "actions": [
+          "outlet",
+          "recover",
+          "counter"
+        ]
+      },
+      "session": {
+        "commit_support": false,
+        "events": [
+          {
+            "action": "outlet",
+            "actor": "home:G",
+            "actor_capability": "Puck Play",
+            "after": {
+              "control": null,
+              "cover_owner": "home:F3",
+              "loose": true,
+              "phase": "loose"
+            },
+            "before": {
+              "control": "home:G",
+              "cover_owner": "home:F3",
+              "loose": false,
+              "phase": "goalie_control"
+            },
+            "contest": {
+              "actor_adjustment": 0,
+              "actor_score": 12,
+              "opposition_adjustment": 0,
+              "opposition_score": 12,
+              "score_rule": "half_offset"
+            },
+            "counts": {
+              "actor_wins": 190,
+              "combinations": 400,
+              "opposition_wins": 190,
+              "stalemates": 20
+            },
+            "explanation": "The attempted action breaks down into a loose puck; a lost roll is not an automatic turnover.",
+            "opposition": "away:F1",
+            "opposition_capability": "Reading",
+            "resolution": {
+              "actor_die": 7,
+              "actor_total": 8,
+              "margin": -11,
+              "opposition_die": 18,
+              "opposition_total": 19,
+              "outcome": "opposition_wins"
+            },
+            "terms": [
+              1,
+              1
+            ]
+          },
+          {
+            "action": "recover",
+            "actor": "home:F1",
+            "actor_capability": "Reading",
+            "after": {
+              "control": "away:F1",
+              "cover_owner": "home:F3",
+              "loose": false,
+              "phase": "counter"
+            },
+            "before": {
+              "control": null,
+              "cover_owner": "home:F3",
+              "loose": true,
+              "phase": "loose"
+            },
+            "contest": {
+              "actor_adjustment": 0,
+              "actor_score": 12,
+              "opposition_adjustment": 0,
+              "opposition_score": 12,
+              "score_rule": "half_offset"
+            },
+            "counts": {
+              "actor_wins": 190,
+              "combinations": 400,
+              "opposition_wins": 190,
+              "stalemates": 20
+            },
+            "explanation": "Away wins recovery and gains control. High cover will affect the counter defense.",
+            "opposition": "away:F1",
+            "opposition_capability": "Handling",
+            "resolution": {
+              "actor_die": 1,
+              "actor_total": 2,
+              "margin": -9,
+              "opposition_die": 10,
+              "opposition_total": 11,
+              "outcome": "opposition_wins"
+            },
+            "terms": [
+              1,
+              1
+            ]
+          },
+          {
+            "action": "counter",
+            "actor": "away:F1",
+            "actor_capability": "Skating",
+            "after": {
+              "control": null,
+              "cover_owner": "home:F3",
+              "loose": true,
+              "phase": "counter_stopped"
+            },
+            "before": {
+              "control": "away:F1",
+              "cover_owner": "home:F3",
+              "loose": false,
+              "phase": "counter"
+            },
+            "contest": {
+              "actor_adjustment": 0,
+              "actor_score": 12,
+              "opposition_adjustment": 2,
+              "opposition_score": 12,
+              "score_rule": "half_offset"
+            },
+            "counts": {
+              "actor_wins": 153,
+              "combinations": 400,
+              "opposition_wins": 229,
+              "stalemates": 18
+            },
+            "explanation": "Home disrupts the counter into a loose puck. No automatic home possession or goal.",
+            "opposition": "home:D2",
+            "opposition_capability": "Defending",
+            "resolution": {
+              "actor_die": 10,
+              "actor_total": 11,
+              "margin": -11,
+              "opposition_die": 19,
+              "opposition_total": 22,
+              "outcome": "opposition_wins"
+            },
+            "terms": [
+              1,
+              3
+            ]
+          }
+        ],
+        "hero_slot": "home:F1",
+        "legal_actions": [],
+        "note": "Fictional outlet/carry/pass scene; scripted opponent responses, half-offset arithmetic and a support/cover tradeoff. No shots, goals, clock, fatigue or NHL probabilities. F1/F2/F3 name this scene's duties only.",
+        "participants": [
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "Fixture carrier",
+              "playbook_options": [],
+              "position": "F",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "home:F1",
+            "station": "wall carrier"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "home F2",
+              "playbook_options": [],
+              "position": "F",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "home:F2",
+            "station": "middle receiver"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "home F3",
+              "playbook_options": [],
+              "position": "F",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "home:F3",
+            "station": "high cover"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "home D1",
+              "playbook_options": [],
+              "position": "D",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "home:D1",
+            "station": "point support"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "home D2",
+              "playbook_options": [],
+              "position": "D",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "home:D2",
+            "station": "last line"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "goalie",
+              "capabilities": [
+                {
+                  "id": "tracking",
+                  "label": "Tracking",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "positioning",
+                  "label": "Positioning",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "movement",
+                  "label": "Movement",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "rebounds",
+                  "label": "Rebounds",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "recovery",
+                  "label": "Recovery",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "puck_play",
+                  "label": "Puck Play",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "home G",
+              "playbook_options": [],
+              "position": "G",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "g",
+              "tendencies": []
+            },
+            "slot": "home:G",
+            "station": "crease exchange"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "away F1",
+              "playbook_options": [],
+              "position": "F",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "away:F1",
+            "station": "counter lane"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "away F2",
+              "playbook_options": [],
+              "position": "F",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "away:F2",
+            "station": "middle receiver"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "away F3",
+              "playbook_options": [],
+              "position": "F",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "away:F3",
+            "station": "high cover"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "away D1",
+              "playbook_options": [],
+              "position": "D",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "away:D1",
+            "station": "point support"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "away D2",
+              "playbook_options": [],
+              "position": "D",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "away:D2",
+            "station": "last line"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "goalie",
+              "capabilities": [
+                {
+                  "id": "tracking",
+                  "label": "Tracking",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "positioning",
+                  "label": "Positioning",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "movement",
+                  "label": "Movement",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "rebounds",
+                  "label": "Rebounds",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "recovery",
+                  "label": "Recovery",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "puck_play",
+                  "label": "Puck Play",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "away G",
+              "playbook_options": [],
+              "position": "G",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "g",
+              "tendencies": []
+            },
+            "slot": "away:G",
+            "station": "crease exchange"
+          }
+        ],
+        "rules_sha256": "370f379e4fc9e1576cdd5110cbb59bcf1de8e3ec9c1335697bb2f93fe1fce490",
+        "rules_version": "0.1.0-playtest",
+        "schema": "icelines.possession-session.v1",
+        "seed": 19,
+        "state": {
+          "control": null,
+          "cover_owner": "home:F3",
+          "loose": true,
+          "phase": "counter_stopped"
+        }
+      }
+    },
+    {
+      "schema": "rinkcraft.possession-replay.v1",
+      "character_rules": {
+        "schema": "rinkcraft.game-rules.v1",
+        "version": "test",
+        "title": "Neutral legacy fixture",
+        "standard_array": [
+          12,
+          12,
+          12,
+          12,
+          12,
+          12
+        ],
+        "templates": [
+          {
+            "id": "s",
+            "branch": "skater",
+            "class_id": "test",
+            "class_name": "Test",
+            "specialty": "Test",
+            "description": "Fictional fixture",
+            "priority": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "task_skills": [],
+            "methods": [],
+            "tendencies": [],
+            "playbook_options": []
+          },
+          {
+            "id": "g",
+            "branch": "goalie",
+            "class_id": "test",
+            "class_name": "Test",
+            "specialty": "Test",
+            "description": "Fictional fixture",
+            "priority": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "task_skills": [],
+            "methods": [],
+            "tendencies": [],
+            "playbook_options": []
+          }
+        ]
+      },
+      "rules": {
+        "schema": "rinkcraft.possession-rules.v1",
+        "version": "0.1.0-playtest",
+        "support_bonus": 2
+      },
+      "request": {
+        "hero": {
+          "schema": "icelines.game-character.v1",
+          "profile_kind": "fictional_game_character",
+          "rules_version": "test",
+          "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+          "template_id": "s",
+          "name": "Fixture carrier",
+          "position": "F",
+          "branch": "skater",
+          "class_id": "test",
+          "class_name": "Test",
+          "specialty": "Test",
+          "description": "Fictional fixture",
+          "capabilities": [
+            {
+              "id": "skating",
+              "label": "Skating",
+              "score": 12,
+              "source": "game_rules_not_nhl_assessment"
+            },
+            {
+              "id": "handling",
+              "label": "Handling",
+              "score": 12,
+              "source": "game_rules_not_nhl_assessment"
+            },
+            {
+              "id": "passing",
+              "label": "Passing",
+              "score": 12,
+              "source": "game_rules_not_nhl_assessment"
+            },
+            {
+              "id": "shooting",
+              "label": "Shooting",
+              "score": 12,
+              "source": "game_rules_not_nhl_assessment"
+            },
+            {
+              "id": "reading",
+              "label": "Reading",
+              "score": 12,
+              "source": "game_rules_not_nhl_assessment"
+            },
+            {
+              "id": "defending",
+              "label": "Defending",
+              "score": 12,
+              "source": "game_rules_not_nhl_assessment"
+            }
+          ],
+          "task_skills": [],
+          "methods": [],
+          "tendencies": [],
+          "playbook_options": [],
+          "score_method": {
+            "kind": "standard_array"
+          },
+          "dice": [],
+          "rolled_totals": [],
+          "inspiration": null,
+          "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model."
+        },
+        "seed": 19,
+        "commit_support": true,
+        "actions": [
+          "outlet",
+          "recover",
+          "counter"
+        ]
+      },
+      "session": {
+        "commit_support": true,
+        "events": [
+          {
+            "action": "outlet",
+            "actor": "home:G",
+            "actor_capability": "Puck Play",
+            "after": {
+              "control": null,
+              "cover_owner": null,
+              "loose": true,
+              "phase": "loose"
+            },
+            "before": {
+              "control": "home:G",
+              "cover_owner": null,
+              "loose": false,
+              "phase": "goalie_control"
+            },
+            "contest": {
+              "actor_adjustment": 2,
+              "actor_score": 12,
+              "opposition_adjustment": 0,
+              "opposition_score": 12,
+              "score_rule": "half_offset"
+            },
+            "counts": {
+              "actor_wins": 229,
+              "combinations": 400,
+              "opposition_wins": 153,
+              "stalemates": 18
+            },
+            "explanation": "The attempted action breaks down into a loose puck; a lost roll is not an automatic turnover.",
+            "opposition": "away:F1",
+            "opposition_capability": "Reading",
+            "resolution": {
+              "actor_die": 7,
+              "actor_total": 10,
+              "margin": -9,
+              "opposition_die": 18,
+              "opposition_total": 19,
+              "outcome": "opposition_wins"
+            },
+            "terms": [
+              3,
+              1
+            ]
+          },
+          {
+            "action": "recover",
+            "actor": "home:F1",
+            "actor_capability": "Reading",
+            "after": {
+              "control": "away:F1",
+              "cover_owner": null,
+              "loose": false,
+              "phase": "counter"
+            },
+            "before": {
+              "control": null,
+              "cover_owner": null,
+              "loose": true,
+              "phase": "loose"
+            },
+            "contest": {
+              "actor_adjustment": 0,
+              "actor_score": 12,
+              "opposition_adjustment": 0,
+              "opposition_score": 12,
+              "score_rule": "half_offset"
+            },
+            "counts": {
+              "actor_wins": 190,
+              "combinations": 400,
+              "opposition_wins": 190,
+              "stalemates": 20
+            },
+            "explanation": "Away wins recovery and gains control. High cover will affect the counter defense.",
+            "opposition": "away:F1",
+            "opposition_capability": "Handling",
+            "resolution": {
+              "actor_die": 1,
+              "actor_total": 2,
+              "margin": -9,
+              "opposition_die": 10,
+              "opposition_total": 11,
+              "outcome": "opposition_wins"
+            },
+            "terms": [
+              1,
+              1
+            ]
+          },
+          {
+            "action": "counter",
+            "actor": "away:F1",
+            "actor_capability": "Skating",
+            "after": {
+              "control": null,
+              "cover_owner": null,
+              "loose": true,
+              "phase": "counter_stopped"
+            },
+            "before": {
+              "control": "away:F1",
+              "cover_owner": null,
+              "loose": false,
+              "phase": "counter"
+            },
+            "contest": {
+              "actor_adjustment": 0,
+              "actor_score": 12,
+              "opposition_adjustment": 0,
+              "opposition_score": 12,
+              "score_rule": "half_offset"
+            },
+            "counts": {
+              "actor_wins": 190,
+              "combinations": 400,
+              "opposition_wins": 190,
+              "stalemates": 20
+            },
+            "explanation": "Home disrupts the counter into a loose puck. No automatic home possession or goal.",
+            "opposition": "home:D2",
+            "opposition_capability": "Defending",
+            "resolution": {
+              "actor_die": 10,
+              "actor_total": 11,
+              "margin": -9,
+              "opposition_die": 19,
+              "opposition_total": 20,
+              "outcome": "opposition_wins"
+            },
+            "terms": [
+              1,
+              1
+            ]
+          }
+        ],
+        "hero_slot": "home:F1",
+        "legal_actions": [],
+        "note": "Fictional outlet/carry/pass scene; scripted opponent responses, half-offset arithmetic and a support/cover tradeoff. No shots, goals, clock, fatigue or NHL probabilities. F1/F2/F3 name this scene's duties only.",
+        "participants": [
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "Fixture carrier",
+              "playbook_options": [],
+              "position": "F",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "home:F1",
+            "station": "wall carrier"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "home F2",
+              "playbook_options": [],
+              "position": "F",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "home:F2",
+            "station": "middle receiver"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "home F3",
+              "playbook_options": [],
+              "position": "F",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "home:F3",
+            "station": "outlet support; high cover vacated"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "home D1",
+              "playbook_options": [],
+              "position": "D",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "home:D1",
+            "station": "point support"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "home D2",
+              "playbook_options": [],
+              "position": "D",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "home:D2",
+            "station": "last line"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "goalie",
+              "capabilities": [
+                {
+                  "id": "tracking",
+                  "label": "Tracking",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "positioning",
+                  "label": "Positioning",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "movement",
+                  "label": "Movement",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "rebounds",
+                  "label": "Rebounds",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "recovery",
+                  "label": "Recovery",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "puck_play",
+                  "label": "Puck Play",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "home G",
+              "playbook_options": [],
+              "position": "G",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "g",
+              "tendencies": []
+            },
+            "slot": "home:G",
+            "station": "crease exchange"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "away F1",
+              "playbook_options": [],
+              "position": "F",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "away:F1",
+            "station": "counter lane"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "away F2",
+              "playbook_options": [],
+              "position": "F",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "away:F2",
+            "station": "middle receiver"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "away F3",
+              "playbook_options": [],
+              "position": "F",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "away:F3",
+            "station": "high cover"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "away D1",
+              "playbook_options": [],
+              "position": "D",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "away:D1",
+            "station": "point support"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "skater",
+              "capabilities": [
+                {
+                  "id": "skating",
+                  "label": "Skating",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "handling",
+                  "label": "Handling",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "passing",
+                  "label": "Passing",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "shooting",
+                  "label": "Shooting",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "reading",
+                  "label": "Reading",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "defending",
+                  "label": "Defending",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "away D2",
+              "playbook_options": [],
+              "position": "D",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "s",
+              "tendencies": []
+            },
+            "slot": "away:D2",
+            "station": "last line"
+          },
+          {
+            "character": {
+              "assessment_status": "Authored game build; not measured NHL abilities or a validated simulation model.",
+              "branch": "goalie",
+              "capabilities": [
+                {
+                  "id": "tracking",
+                  "label": "Tracking",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "positioning",
+                  "label": "Positioning",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "movement",
+                  "label": "Movement",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "rebounds",
+                  "label": "Rebounds",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "recovery",
+                  "label": "Recovery",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                },
+                {
+                  "id": "puck_play",
+                  "label": "Puck Play",
+                  "score": 12,
+                  "source": "game_rules_not_nhl_assessment"
+                }
+              ],
+              "class_id": "test",
+              "class_name": "Test",
+              "description": "Fictional fixture",
+              "dice": [],
+              "inspiration": null,
+              "methods": [],
+              "name": "away G",
+              "playbook_options": [],
+              "position": "G",
+              "profile_kind": "fictional_game_character",
+              "rolled_totals": [],
+              "rules_sha256": "dd517acd34ea6455079f2adf6494d41b58b4fbd6f4fd54f0f17dac3ff050071a",
+              "rules_version": "test",
+              "schema": "icelines.game-character.v1",
+              "score_method": {
+                "kind": "standard_array"
+              },
+              "specialty": "Test",
+              "task_skills": [],
+              "template_id": "g",
+              "tendencies": []
+            },
+            "slot": "away:G",
+            "station": "crease exchange"
+          }
+        ],
+        "rules_sha256": "370f379e4fc9e1576cdd5110cbb59bcf1de8e3ec9c1335697bb2f93fe1fce490",
+        "rules_version": "0.1.0-playtest",
+        "schema": "icelines.possession-session.v1",
+        "seed": 19,
+        "state": {
+          "control": null,
+          "cover_owner": null,
+          "loose": true,
+          "phase": "counter_stopped"
+        }
+      }
+    }
+  ]
+}

@@ -1,5 +1,131 @@
 # Work Packages
 
+## WP-RINKCRAFT-20 (CHG-144)
+
+Audit available skater/goalie capability evidence and execute a full-league conditional finishing pilot under authored research rules. Preserve missingness, scope, prospective-vintage blocks and unreleased headline ratings. Evidence: `docs/rinkcraft-capability-pilot-2026-11-09.md`.
+
+
+## WP-RINKCRAFT-19 (CHG-143)
+
+Deliver the approved form in local full native/browser apps, with CSS-only hockey styling. Retain unrated capabilities and complete dossier access. Recheck real player profiles, no-JS/keyboard comparison, offline/mobile/themes and Letter export. Evidence: `docs/rinkcraft-live-sheet-validation-2026-11-09.md`.
+
+
+## WP-RINKCRAFT-18 (CHG-142)
+
+Compare divergent branches deliberately; retain the approved category mapping and selectively reuse evidence traceability. Acceptance: `docs/rinkcraft-sheet-reconciliation-2026-11-09.md`. CHG-141 / WP-RINKCRAFT-17 remain on the alternative C: implementation.
+
+
+## WP-RINKCRAFT-16 (CHG-140)
+
+Make possession, penalty and on-ice threat records visible for skaters, plus workload-dependent goalie saving total. Acceptance: `docs/rinkcraft-context-validation-2026-11-09.md`.
+
+
+## WP-RINKCRAFT-15 (CHG-139)
+
+Connect primary character cards to explicit matched comparisons, retaining dated class evidence and numeric independence. Acceptance: `docs/rinkcraft-card-comparison-validation-2026-11-09.md`.
+
+
+## WP-RINKCRAFT-14 (CHG-138)
+
+Deliver interpretable matched numerical differences across all groups, preserving full evidence and missingness. Acceptance: `docs/rinkcraft-contrast-validation-2026-11-09.md`.
+
+
+## WP-RINKCRAFT-13 (CHG-137)
+
+Deliver visible differentiation, inspectable per-attribute evidence and contrasting-player review across all positions. Acceptance: `docs/rinkcraft-attributes-first-validation-2026-11-08.md`.
+
+
+## WP-RINKCRAFT-12 (CHG-136)
+
+Deliver shared selection metadata, bounded/latest/exact semantics, legacy compatibility, explicit seasonal comparisons and native/browser parity. Acceptance: `docs/rinkcraft-snapshot-validation-2026-11-08.md`.
+
+
+## WP-RINKCRAFT-11 (CHG-135)
+
+Deliver a visible, reproducible measured summary of existing annual evidence,
+retaining full data/coverage and independent class hypotheses. No new source,
+overall ability/class score, statistical persistence or causal claim. Acceptance
+and actual source/build provenance:
+`docs/rinkcraft-measured-assessment-validation-2026-11-08.md`.
+
+## WP-RINKCRAFT-10 (CHG-134)
+
+Deliver annual numerical evidence from three independent seasonal snapshots,
+preserving primary class/stat/style identity and exposing missing records. Shared
+Rust owns counts and temporal selection. No persistent-talent, directional style
+or class validity model. Actual checks/coverage:
+`docs/rinkcraft-numerical-history-validation-2026-11-08.md`.
+
+## WP-RINKCRAFT-09 (CHG-133)
+
+Deliver matched-method comparison and visible data coverage from existing inputs.
+No new tactical dataset, player labels, grade or inferred chemistry. Validate
+shared Rust output, actual UI/API/WASM parity and legacy/offline/period behavior.
+Report: `docs/rinkcraft-style-comparison-validation-2026-11-08.md`.
+
+## WP-RINKCRAFT-08 (CHG-132)
+
+Deliver the first measured playing-method layer from retained data, with source
+coverage and unmeasured tactical axes explicit. Core owns ratios and missingness;
+fetch owns local byte/identity checks; native/browser own presentation. Tracking
+coverage is one pilot, not the whole 25-player cohort. Validation and remaining
+research limits: `docs/rinkcraft-playing-methods-validation-2026-11-08.md`.
+
+## WP-RINKCRAFT-07 (CHG-131)
+
+Deliver shared numerical card/comparison projections, integrated character views,
+compatible pair controls, explicit temporal scope and prepared offline artifact.
+Local implementation/acceptance complete within the validation report's scope.
+No source acquisition, class relabeling, validated skill model, chemistry engine
+or publication. See `docs/rinkcraft-integrated-numerical-validation-2026-11-08.md`.
+
+## WP-RINKCRAFT-06 (CHG-130)
+
+Compute source-backed numerical evidence independently of class dossiers and
+quotes. Validate formulas, league peers, source boundaries, observed zero versus
+missing, and a matched fixed-season sample. Display exact scope, peer counts and
+interpretation limits. First pass: CLI/native, no new browser adapter claim.
+
+## WP-RINKCRAFT-05 (CHG-129)
+
+Deliver generic showcase navigation and feature-specific numeric context while
+preserving external research ownership, class/stat separation, unknowns and old
+catalog compatibility. Validate all configured featured cards, actual WASM dated
+selection, active-package skater/goalie opening, existing profile controls and
+mobile rendering. Evidence: `docs/rinkcraft-star-atlas-validation-2026-11-08.md`.
+
+## WP-RINKCRAFT-04 (CHG-128)
+
+Implement external documentary class input, shared validation/dated projection,
+native and WASM primary character card, default-closed statistical history and
+optional offline research artifact. Verify source/date boundaries, invalid input,
+actual card/engine identity, no-JS, mobile and explicit multiclass. Research owns
+authored pilot records and class interpretation, not the application engine.
+
+## WP-RINKCRAFT-03 (CHG-127)
+
+Implement role-reviewed experimental descriptive attributes with peer cohorts,
+missingness, source formulas and seasonal step charts in native and WASM profiles.
+Verify exposure arithmetic, ties, positional/competition isolation, goalie branch,
+duplicate identities, small cohorts and actual UI/engine parity. No statistical
+reliability, persistent skill or player-role validity claim.
+
+## WP-RINKCRAFT-02 (CHG-126)
+
+Add native player HTML/JSON and resident-browser profile rendering, shared
+normal/sparse borrowed-view computation, explicit coverage and local browser
+preview. Verify core regression, both WASM storage modes, UI formatting/controls,
+route responses and actual browser rendering. No role validity claims or releases.
+
+## WP-RINKCRAFT-01 (CHG-125)
+
+Compute catalog-backed career/whole-season profiles and numeric changes through
+one shared view. Own core view, fetch hydration/season fences, CLI adapter,
+focused tests and evidence. Schema/interface scope:
+`design/specs/rinkcraft-stat-profile.md`. No TUI/Web/browser, arbitrary calendar
+date slices, validated classes, hidden scoring weights or deployment authority.
+Local gate results are recorded in the feature review before closure.
+
 ## Scope
 
 Repo or feature: `icelines` repo-baseline VTRACE implementation.

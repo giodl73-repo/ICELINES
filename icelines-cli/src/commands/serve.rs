@@ -92,6 +92,10 @@ pub async fn run(
     };
 
     let state = WebState {
+        goal_analysis_root: std::sync::Arc::new(Some(
+            icelines_fetch::goal_analysis::default_data_root(),
+        )),
+        goal_analysis_live: crate::config::live_feeds_enabled(),
         repo: std::sync::Arc::new(tokio::sync::RwLock::new(repo)),
         config: std::sync::Arc::new(tokio::sync::RwLock::new(web_config.clone())),
         snapshots_root: std::sync::Arc::new(Some(cfg.snapshot_dir())),

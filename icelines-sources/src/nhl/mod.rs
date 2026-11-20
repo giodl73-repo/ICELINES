@@ -1,8 +1,11 @@
+pub mod achievements;
 pub mod camp_participation;
 pub mod club_publication;
 pub mod contract_control;
 pub mod contract_publication;
+pub mod deployment;
 pub mod draft_picks;
+pub mod edge;
 pub mod gamecenter;
 pub mod official_identity_landing;
 pub mod player_landing;
@@ -13,4 +16,5 @@ pub mod schedule;
 pub mod shift_chart;
 pub mod standings;
 pub mod termination_publication;
+pub mod tracking_summary;
 pub mod trade_tracker;

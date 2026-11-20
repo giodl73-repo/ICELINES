@@ -1,0 +1,7 @@
+import {chromium,expect} from '@playwright/test';
+import {writeFile} from 'node:fs/promises';
+const b=await chromium.launch({channel:'msedge',headless:true});const p=await b.newPage({viewport:{width:1440,height:1000}});const errors=[];p.on('pageerror',e=>errors.push(String(e)));
+try{
+ await p.goto('http://127.0.0.1:8771/position-finishing/index.html');await expect(p.locator('table')).toHaveCount(2);await expect(p.locator('table tr')).toHaveCount(6);await expect(p.locator('table').last()).toContainText('870.8');await expect(p.locator('table').last()).toContainText('866');await p.locator('summary').nth(1).click();await expect(p.locator('details').nth(1)).toHaveAttribute('open','');expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await p.evaluate(()=>scrollTo(0,0));await p.screenshot({path:'target/compact-sheet/position-finishing/desktop.png'});
+ await p.setViewportSize({width:390,height:844});expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await p.screenshot({path:'target/compact-sheet/position-finishing/mobile.png'});expect(errors).toEqual([]);await writeFile('target/compact-sheet/position-finishing/browser-check.json',JSON.stringify({passed:true,windows:2,groups:2,policies:4,viewports:[1440,390],errors},null,2));console.log('Two evaluation windows, F/D totals, four policies, disclosure and desktop/mobile passed.');
+}finally{await b.close()}

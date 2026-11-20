@@ -1373,7 +1373,7 @@ pub fn simulate_team_season_forecast(
     forecast: &TeamGameForecastView,
     config: TeamSeasonSimulationConfig,
 ) -> Result<TeamSeasonForecastView, String> {
-    simulate_team_season_forecast_impl(forecast, config, None, None)
+    simulate_team_season_forecast_impl(forecast, config, None, None, None)
 }
 
 pub fn simulate_team_season_forecast_with_scenario(
@@ -1381,7 +1381,7 @@ pub fn simulate_team_season_forecast_with_scenario(
     config: TeamSeasonSimulationConfig,
     scenario: Option<TeamSeasonScenario>,
 ) -> Result<TeamSeasonForecastView, String> {
-    simulate_team_season_forecast_impl(forecast, config, scenario, None)
+    simulate_team_season_forecast_impl(forecast, config, scenario, None, None)
 }
 
 /// Simulate only the unknown remainder of a season after fixing every final
@@ -1393,7 +1393,168 @@ pub fn simulate_team_season_forecast_as_of_with_scenario(
     scenario: Option<TeamSeasonScenario>,
     as_of_date: NaiveDate,
 ) -> Result<TeamSeasonForecastView, String> {
-    simulate_team_season_forecast_impl(forecast, config, scenario, Some(as_of_date))
+    simulate_team_season_forecast_impl(forecast, config, scenario, Some(as_of_date), None)
+}
+
+/// Explicit opt-in game model. Default strength-based simulations are unchanged.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GameOutcomeProbabilities {
+    pub home_regulation_win: f64,
+    pub away_regulation_win: f64,
+    pub overtime: f64,
+    pub home_overtime_win: f64,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SuppliedGameProbability {
+    pub game_id: u64,
+    pub home: String,
+    pub away: String,
+    pub probabilities: GameOutcomeProbabilities,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SuppliedPlayoffProbability {
+    pub home: String,
+    pub away: String,
+    pub home_win_probability: f64,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SeasonProbabilityModel {
+    pub schema: String,
+    pub model_id: String,
+    pub source_sha256: String,
+    pub games: Vec<SuppliedGameProbability>,
+    pub playoffs: Vec<SuppliedPlayoffProbability>,
+}
+type ProbabilityTables = (
+    BTreeMap<u64, GameOutcomeProbabilities>,
+    BTreeMap<(String, String), f64>,
+);
+fn validate_probability_model(
+    forecast: &TeamGameForecastView,
+    model: &SeasonProbabilityModel,
+) -> Result<ProbabilityTables, String> {
+    let known: BTreeSet<_> = forecast
+        .games
+        .iter()
+        .flat_map(|g| [g.home_team.clone(), g.away_team.clone()])
+        .collect();
+    if known.len() < 2 {
+        return Err("Supplied model needs a nonempty multi-team schedule".into());
+    }
+    if model.schema != "season_probability_model.v1"
+        || model.model_id.trim().is_empty()
+        || model.source_sha256.len() != 64
+        || !model.source_sha256.bytes().all(|b| b.is_ascii_hexdigit())
+    {
+        return Err("Invalid supplied probability model provenance".into());
+    }
+    let mut games = BTreeMap::new();
+    let mut playoffs = BTreeMap::new();
+    for row in &model.games {
+        let p = &row.probabilities;
+        let g = forecast
+            .games
+            .iter()
+            .find(|g| g.game_id == row.game_id)
+            .ok_or("Unknown supplied probability game")?;
+        if g.home_team != row.home
+            || g.away_team != row.away
+            || [
+                p.home_regulation_win,
+                p.away_regulation_win,
+                p.overtime,
+                p.home_overtime_win,
+            ]
+            .iter()
+            .any(|v| !v.is_finite() || !(0.0..=1.0).contains(v))
+            || (p.home_regulation_win + p.away_regulation_win + p.overtime - 1.0).abs() > 1e-10
+            || games.insert(row.game_id, p.clone()).is_some()
+        {
+            return Err("Invalid/duplicate supplied game probabilities or identities".into());
+        }
+    }
+    for row in &model.playoffs {
+        if row.home == row.away
+            || !known.contains(&row.home)
+            || !known.contains(&row.away)
+            || !row.home_win_probability.is_finite()
+            || !(0.0..=1.0).contains(&row.home_win_probability)
+            || playoffs
+                .insert(
+                    (row.home.clone(), row.away.clone()),
+                    row.home_win_probability,
+                )
+                .is_some()
+        {
+            return Err("Invalid/duplicate supplied playoff matchup".into());
+        }
+    }
+    if games.len() != forecast.games.len() || playoffs.len() != known.len() * (known.len() - 1) {
+        return Err(
+            "Supplied model needs every scheduled game and every ordered playoff matchup".into(),
+        );
+    }
+    Ok((games, playoffs))
+}
+pub fn simulate_team_season_forecast_with_probabilities(
+    forecast: &TeamGameForecastView,
+    config: TeamSeasonSimulationConfig,
+    model: &SeasonProbabilityModel,
+) -> Result<TeamSeasonForecastView, String> {
+    let (table, _) = validate_probability_model(forecast, model)?;
+    let mut projected = forecast.clone();
+    projected.disclosures=vec![format!("Supplied probability model {} replaces input game probabilities; archived strength, schedule-context comparators and result labels are not its task evidence. Source {}.",model.model_id,model.source_sha256)];
+    projected.forecast_mode = model.model_id.clone();
+    projected.accuracy = None;
+    for g in &mut projected.games {
+        let p = &table[&g.game_id];
+        g.home_regulation_win_probability = p.home_regulation_win;
+        g.away_regulation_win_probability = p.away_regulation_win;
+        g.overtime_probability = p.overtime;
+        g.home_overtime_win_probability = p.home_overtime_win;
+        g.home_overall_win_probability = p.home_regulation_win + p.overtime * p.home_overtime_win;
+        g.away_overall_win_probability = 1.0 - g.home_overall_win_probability;
+        g.home_expected_standings_points =
+            2.0 * p.home_regulation_win + p.overtime * (1.0 + p.home_overtime_win);
+        g.away_expected_standings_points =
+            2.0 * p.away_regulation_win + p.overtime * (2.0 - p.home_overtime_win);
+        g.favored_team = if g.home_overall_win_probability >= 0.5 {
+            g.home_team.clone()
+        } else {
+            g.away_team.clone()
+        };
+        g.confidence = "supplied probability model".into();
+        g.factors.clear();
+        g.pick_correct = None;
+        g.brier_score = None;
+        g.binary_log_loss = None;
+        g.multiclass_log_loss = None;
+    }
+    for t in &mut projected.teams {
+        t.expected_standings_points = projected
+            .games
+            .iter()
+            .map(|g| {
+                if g.home_team == t.team {
+                    g.home_expected_standings_points
+                } else if g.away_team == t.team {
+                    g.away_expected_standings_points
+                } else {
+                    0.0
+                }
+            })
+            .sum();
+        t.favored_games = projected
+            .games
+            .iter()
+            .filter(|g| g.favored_team == t.team)
+            .count();
+    }
+    simulate_team_season_forecast_impl(&projected, config, None, None, Some(model))
 }
 
 fn simulate_team_season_forecast_impl(
@@ -1401,7 +1562,11 @@ fn simulate_team_season_forecast_impl(
     config: TeamSeasonSimulationConfig,
     scenario: Option<TeamSeasonScenario>,
     as_of_date: Option<NaiveDate>,
+    probability_model: Option<&SeasonProbabilityModel>,
 ) -> Result<TeamSeasonForecastView, String> {
+    let probability_tables = probability_model
+        .map(|model| validate_probability_model(forecast, model))
+        .transpose()?;
     if config.trials == 0 || config.trials > 1_000_000 {
         return Err("IceCast trials must be between 1 and 1,000,000".to_owned());
     }
@@ -1632,6 +1797,9 @@ fn simulate_team_season_forecast_impl(
                 away_delta,
                 forecast.parameters.strength_edge_scale,
                 race_edge + form_edge,
+                probability_tables
+                    .as_ref()
+                    .and_then(|t| t.0.get(&game.game_id)),
                 &mut state,
                 &mut rng,
             );
@@ -1671,6 +1839,7 @@ fn simulate_team_season_forecast_impl(
             forecast.schedule_end + Duration::days(1),
             &playoff_strengths,
             &forecast.parameters,
+            probability_tables.as_ref().map(|t| &t.1),
             &mut rng,
         );
         let draft_slots = draft_order_policy.as_ref().map(|_| {
@@ -1952,11 +2121,14 @@ fn simulate_team_season_forecast_impl(
     });
 
     let mut disclosures = forecast.disclosures.clone();
+    if let Some(model) = probability_model {
+        disclosures.push(format!("Opt-in probability model {} (source {}). Supplied task probabilities drive regular season AND playoffs; strength scenarios, form and race feedback do not modify these fixed probabilities.",model.model_id,model.source_sha256));
+    }
     disclosures.extend([
         "IceCast samples one shared result for every scheduled game in every seeded trial; team records and league standings therefore reconcile within each trial.".to_owned(),
         "Playoff qualification uses the modern NHL top-three-per-division plus two conference wild cards format; simplified tiebreaks are points, wins, then team abbreviation.".to_owned(),
-        "Each trial continues through the modern divisional playoff bracket using best-of-seven 2-2-1-1-1 home ice, roster/depth strength, and scenario events still active after the regular season.".to_owned(),
-        "During the final 45 days, conference ranks 7-10 define the hunt and ranks 13-16 can create spoiler matchups; hunt motivation is capped at 0.4 probability points and five-game form at 1.5 points.".to_owned(),
+        if probability_model.is_some(){"Each trial uses the existing best-of-seven bracket with supplied ordered task-matchup probabilities in every playoff round.".into()}else{"Each trial continues through the modern divisional playoff bracket using best-of-seven 2-2-1-1-1 home ice, roster/depth strength, and scenario events still active after the regular season.".to_owned()},
+        if probability_model.is_some(){"Race and recent-form indicators remain descriptive; no strength, race or form adjustment is applied to supplied probabilities.".into()}else{"During the final 45 days, conference ranks 7-10 define the hunt and ranks 13-16 can create spoiler matchups; hunt motivation is capped at 0.4 probability points and five-game form at 1.5 points.".to_owned()},
         "League leaderboards rank Presidents' Trophy, Stanley Cup, and longest-win-streak leader probabilities; schedule stretches use each team's lowest and highest baseline average win probability across consecutive five-game windows.".to_owned(),
         "Only events embedded in the run's scenario are applied; automatic personnel events are modeled risks from player records, not live injury or goalie confirmations.".to_owned(),
     ]);
@@ -3257,15 +3429,14 @@ fn recent_form_edge(state: &BTreeMap<String, TrialTeam>, home_team: &str, away_t
         .clamp(-0.015, 0.015)
 }
 
-fn sample_game(
+/// Shared probability kernel. A frozen dynamic edge is not an exact season expectation.
+pub(crate) fn game_probability_components(
     game: &TeamGameForecastRow,
     home_strength_delta: f64,
     away_strength_delta: f64,
     strength_edge_scale: f64,
     dynamic_edge: f64,
-    state: &mut BTreeMap<String, TrialTeam>,
-    rng: &mut SimRng,
-) {
+) -> [f64; 3] {
     let overtime = game.overtime_probability;
     let attribution_scale = 1.0 - overtime * 0.5;
     let baseline_edge = (game.home_overall_win_probability - 0.5) / attribution_scale;
@@ -3274,6 +3445,36 @@ fn sample_game(
     let home_regulation = (1.0 - overtime) * (0.5 + edge);
     let away_regulation = (1.0 - overtime) * (0.5 - edge);
     let home_overtime = (0.5 + edge * 0.5).clamp(0.25, 0.75);
+    [home_regulation, away_regulation, home_overtime]
+}
+
+fn sample_game(
+    game: &TeamGameForecastRow,
+    home_strength_delta: f64,
+    away_strength_delta: f64,
+    strength_edge_scale: f64,
+    dynamic_edge: f64,
+    supplied: Option<&GameOutcomeProbabilities>,
+    state: &mut BTreeMap<String, TrialTeam>,
+    rng: &mut SimRng,
+) {
+    let [home_regulation, away_regulation, home_overtime] = supplied
+        .map(|p| {
+            [
+                p.home_regulation_win,
+                p.away_regulation_win,
+                p.home_overtime_win,
+            ]
+        })
+        .unwrap_or_else(|| {
+            game_probability_components(
+                game,
+                home_strength_delta,
+                away_strength_delta,
+                strength_edge_scale,
+                dynamic_edge,
+            )
+        });
     let draw = rng.unit();
     let (home_win, overtime_loss) = if draw < home_regulation {
         (true, false)
@@ -3375,6 +3576,7 @@ fn simulate_playoffs(
     playoff_date: NaiveDate,
     strengths: &BTreeMap<String, f64>,
     parameters: &TeamForecastParameters,
+    supplied_playoffs: Option<&BTreeMap<(String, String), f64>>,
     rng: &mut SimRng,
 ) -> TrialPlayoffResult {
     let mut result = TrialPlayoffResult::default();
@@ -3431,6 +3633,7 @@ fn simulate_playoffs(
                 playoff_date,
                 strengths,
                 parameters,
+                supplied_playoffs,
                 rng,
             );
             let second_winner = simulate_series(
@@ -3442,6 +3645,7 @@ fn simulate_playoffs(
                 playoff_date,
                 strengths,
                 parameters,
+                supplied_playoffs,
                 rng,
             );
             result.second_round.insert(first_winner.clone());
@@ -3455,6 +3659,7 @@ fn simulate_playoffs(
                 playoff_date,
                 strengths,
                 parameters,
+                supplied_playoffs,
                 rng,
             );
             result.conference_final.insert(finalist.clone());
@@ -3469,6 +3674,7 @@ fn simulate_playoffs(
             playoff_date,
             strengths,
             parameters,
+            supplied_playoffs,
             rng,
         );
         result.stanley_cup_final.insert(champion.clone());
@@ -3483,6 +3689,7 @@ fn simulate_playoffs(
         playoff_date,
         strengths,
         parameters,
+        supplied_playoffs,
         rng,
     ));
     result
@@ -3498,6 +3705,7 @@ fn simulate_series(
     playoff_date: NaiveDate,
     strengths: &BTreeMap<String, f64>,
     parameters: &TeamForecastParameters,
+    supplied_playoffs: Option<&BTreeMap<(String, String), f64>>,
     rng: &mut SimRng,
 ) -> String {
     let (higher, lower) = if standing_cmp(first, second, state).is_lt() {
@@ -3520,7 +3728,9 @@ fn simulate_series(
         let edge = (parameters.home_edge
             + ((home_strength - away_strength) / 100.0) * parameters.strength_edge_scale)
             .clamp(-0.24, 0.24);
-        let home_win_probability = 0.5 + edge * (1.0 - parameters.overtime_probability * 0.5);
+        let home_win_probability = supplied_playoffs
+            .map(|p| p[&(home.to_owned(), away.to_owned())])
+            .unwrap_or(0.5 + edge * (1.0 - parameters.overtime_probability * 0.5));
         let winner = if rng.chance(home_win_probability) {
             home
         } else {

@@ -1,8 +1,25 @@
 import type { EngineRequest, EngineResponse, QueryRequest } from './types.js';
 import { importArchive } from './archive.js';
 interface Engine {
+  seasonal_record_catalog(bytes:Uint8Array):string;
   load_package(bytes: Uint8Array): string; package_metadata(): string; query(request: string): string;
   player_detail(id: number): string; current_season(): number; free(): void;
+  rinkcraft_profile(request: string): string;
+  game_character(rules:string,request:string):string;
+  possession_session(characterRules:string,rules:string,request:string):string;
+  export_possession_replay(characterRules:string,rules:string,request:string):string;
+  import_possession_replay(replay:string):string;
+  inspect_possession_replay(replay:string,step:number):string;
+  branch_possession_replay(replay:string,fork:string):string;
+  compare_possession_plans(replay:string):string;
+  unit_studio(command:string):string;
+  import_game_character(rules:string,character:string):string;
+  character_sheet(catalog:string,playerId:number,season:number):string;
+  numerical_catalog(source:string,season?:number):string;
+  numerical_snapshot(source:string,playerId:number,first?:number,last?:number,exact?:number):string;
+  numerical_evidence(catalog:string,playerId:number,ceiling?:number):string;
+  numerical_history(catalog:string,playerId:number,first?:number,last?:number):string;
+  numerical_comparison(catalog:string,left:number,right:number):string;
   schedule_week(bytes: Uint8Array): string;
   select_resident(revision: string): void; resident_revisions(): string; unload_active(): void;
 }
@@ -43,6 +60,23 @@ self.onmessage = (event: MessageEvent<EngineRequest>) => {
         }
         case 'query': response.value = JSON.parse(engine.query(JSON.stringify(request.payload as QueryRequest))); break;
         case 'detail': response.value = JSON.parse(engine.player_detail(Number(request.payload))); break;
+        case 'rinkcraftProfile': response.value = JSON.parse(engine.rinkcraft_profile(JSON.stringify(request.payload))); break;
+        case 'gameCharacter': {const p=request.payload as {rules:unknown;request:unknown};response.value=JSON.parse(engine.game_character(JSON.stringify(p.rules),JSON.stringify(p.request)));break;}
+        case 'possessionSession': {const p=request.payload as {characterRules:unknown;rules:unknown;request:unknown};response.value=JSON.parse(engine.possession_session(JSON.stringify(p.characterRules),JSON.stringify(p.rules),JSON.stringify(p.request)));break;}
+        case 'exportPossessionReplay': {const p=request.payload as {characterRules:unknown;rules:unknown;request:unknown};response.value=JSON.parse(engine.export_possession_replay(JSON.stringify(p.characterRules),JSON.stringify(p.rules),JSON.stringify(p.request)));break;}
+        case 'importPossessionReplay': {const p=request.payload as {replay:unknown};response.value=JSON.parse(engine.import_possession_replay(JSON.stringify(p.replay)));break;}
+        case 'inspectPossessionReplay': {const p=request.payload as {replay:unknown;step:number};response.value=JSON.parse(engine.inspect_possession_replay(JSON.stringify(p.replay),p.step));break;}
+        case 'branchPossessionReplay': {const p=request.payload as {replay:unknown;fork:unknown};response.value=JSON.parse(engine.branch_possession_replay(JSON.stringify(p.replay),JSON.stringify(p.fork)));break;}
+        case 'comparePossessionPlans': {const p=request.payload as {replay:unknown};response.value=JSON.parse(engine.compare_possession_plans(JSON.stringify(p.replay)));break;}
+        case 'unitStudio': response.value=JSON.parse(engine.unit_studio(JSON.stringify(request.payload)));break;
+        case 'importGameCharacter': {const p=request.payload as {rules:unknown;character:unknown};response.value=JSON.parse(engine.import_game_character(JSON.stringify(p.rules),JSON.stringify(p.character)));break;}
+        case 'characterSheet': {const p=request.payload as {catalog:unknown;player_id:number;season:number};response.value=JSON.parse(engine.character_sheet(JSON.stringify(p.catalog),p.player_id,p.season));break;}
+        case 'numericalCatalog': {const p=request.payload as {source:unknown;season?:number};response.value=JSON.parse(engine.numerical_catalog(JSON.stringify(p.source),p.season));break;}
+        case 'numericalSnapshot': {const p=request.payload as {source:unknown;player_id:number;first?:number;last?:number;exact?:number};response.value=JSON.parse(engine.numerical_snapshot(JSON.stringify(p.source),p.player_id,p.first,p.last,p.exact));break;}
+        case 'numericalEvidence': {const p=request.payload as {catalog:unknown;player_id:number;ceiling:number|null};response.value=JSON.parse(engine.numerical_evidence(JSON.stringify(p.catalog),p.player_id,p.ceiling??undefined));break;}
+        case 'numericalHistory': {const p=request.payload as {catalog:unknown;player_id:number;first?:number;last?:number};response.value=JSON.parse(engine.numerical_history(JSON.stringify(p.catalog),p.player_id,p.first,p.last));break;}
+        case 'numericalComparison': {const p=request.payload as {catalog:unknown;left:number;right:number};response.value=JSON.parse(engine.numerical_comparison(JSON.stringify(p.catalog),p.left,p.right));break;}
+        case 'seasonalRecords': response.value=JSON.parse(engine.seasonal_record_catalog(new Uint8Array(request.payload as ArrayBuffer)));break;
         case 'currentSeason': response.value = engine.current_season(); break;
         case 'schedule': response.value = JSON.parse(engine.schedule_week(new Uint8Array(request.payload as ArrayBuffer))); break;
         case 'selectResident': engine.select_resident(String(request.payload)); response.value = true; break;
