@@ -1,4 +1,4 @@
-//! Attach the research-only skating family; preserve all existing JSON tokens.
+//! Attach seasonal skating and optional shooting research; preserve existing JSON tokens.
 use serde_json::{
     json,
     value::{to_raw_value, RawValue},
@@ -10,16 +10,16 @@ type RawMap = BTreeMap<String, Box<RawValue>>;
 fn digest(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
-fn project(bytes: &[u8], candidate: &Value) -> Result<Vec<u8>, String> {
+fn attach(bytes: &[u8], key: &str, candidate: &Value) -> Result<Vec<u8>, String> {
     let mut root: RawMap = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
     let mut frame: RawMap =
         serde_json::from_str(root.get("numerical_evidence").ok_or("missing frame")?.get())
             .map_err(|e| e.to_string())?;
-    if frame.contains_key("edge_skating_candidate") {
+    if frame.contains_key(key) {
         return Err("candidate already attached".into());
     }
     frame.insert(
-        "edge_skating_candidate".into(),
+        key.into(),
         to_raw_value(candidate).map_err(|e| e.to_string())?,
     );
     root.insert(
@@ -28,7 +28,16 @@ fn project(bytes: &[u8], candidate: &Value) -> Result<Vec<u8>, String> {
     );
     serde_json::to_vec(&root).map_err(|e| e.to_string())
 }
-fn run(exposure: &Path, candidates: &Path, base: &Path, out: &Path) -> Result<(), String> {
+fn project(bytes: &[u8], candidate: &Value) -> Result<Vec<u8>, String> {
+    attach(bytes, "edge_skating_candidate", candidate)
+}
+fn run(
+    exposure: &Path,
+    candidates: &Path,
+    base: &Path,
+    out: &Path,
+    shooting: Option<&Path>,
+) -> Result<(), String> {
     if out.exists() {
         return Err("new output directory required".into());
     }
@@ -88,6 +97,51 @@ fn run(exposure: &Path, candidates: &Path, base: &Path, out: &Path) -> Result<()
     }
     let mut attached = 0;
     let mut qualified = 0;
+    let mut shooting_rows = BTreeMap::new();
+    let mut shooting_rules = Value::Null;
+    let mut shooting_hash = String::new();
+    if let Some(path) = shooting {
+        let bytes = fs::read(path).map_err(|e| e.to_string())?;
+        shooting_hash = digest(&bytes);
+        let report: Value = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+        if report["schema"] != "rinkcraft.shooting-records.v1"
+            || report["exposure_report_sha256"] != digest(&exposure_bytes)
+            || report["catalog_sha256"] != exposure["catalog_sha256"]
+            || report["rules"]["status"] != "research_candidates_not_awarded"
+            || report["rules_sha256"] != digest(&serde_json::to_vec(&report["rules"]).unwrap())
+        {
+            return Err("shooting lineage mismatch".into());
+        }
+        shooting_rules = report["rules_sha256"].clone();
+        let selected: Vec<_> = report["scenarios"]
+            .as_array()
+            .ok_or("missing shooting scenarios")?
+            .iter()
+            .filter(|s| {
+                s["minimum_conversion_shots"] == 25
+                    && s["minimum_games"] == 10
+                    && s["minimum_minutes"] == 100
+            })
+            .collect();
+        if selected.len() != 1 {
+            return Err("one 25-SOG audit scenario required".into());
+        }
+        for row in selected[0]["rows"]
+            .as_array()
+            .ok_or("missing shooting rows")?
+        {
+            let r = &row["record"];
+            let key = (
+                r["season"].as_u64().ok_or("missing season")?,
+                r["player_id"].as_u64().ok_or("missing actor")?,
+            );
+            if shooting_rows.insert(key, row.clone()).is_some() {
+                return Err("duplicate shooting row".into());
+            }
+        }
+    }
+    let mut shooting_attached = 0;
+    let mut shooting_qualified = 0;
     for window in catalog["windows"].as_array().ok_or("missing windows")? {
         let season = window["season"].as_u64().ok_or("missing season")?;
         for actor in window["players"].as_array().ok_or("missing actors")? {
@@ -111,7 +165,7 @@ fn run(exposure: &Path, candidates: &Path, base: &Path, out: &Path) -> Result<()
             {
                 return Err("profile/catalog binding mismatch".into());
             }
-            let projected = if let Some(row) = records.remove(&(season, id)) {
+            let mut projected = if let Some(row) = records.remove(&(season, id)) {
                 if row["group"] != frame["group"]
                     || row["edge_sha256"] != frame["edge_evidence"]["source"]["sha256"]
                     || frame["group"] == "Goalies"
@@ -141,12 +195,36 @@ fn run(exposure: &Path, candidates: &Path, base: &Path, out: &Path) -> Result<()
             } else {
                 bytes
             };
+            if let Some(mut row) = shooting_rows.remove(&(season, id)) {
+                let r = &row["record"];
+                if r["source_profile_sha256"] != hash
+                    || r["group"] != frame["group"]
+                    || r["games"] != frame["games"]
+                    || r["edge_sha256"] != frame["edge_evidence"]["source"]["sha256"]
+                    || frame["group"] == "Goalies"
+                {
+                    return Err("shooting/profile binding mismatch".into());
+                }
+                row["schema"] = json!("icelines.shooting-candidate.v1");
+                row["status"] = json!("research_candidate");
+                row["season_type"] = json!("regular");
+                row["minimum_games"] = json!(10);
+                row["minimum_minutes"] = json!(100);
+                row["minimum_conversion_shots"] = json!(25);
+                row["rules_sha256"] = shooting_rules.clone();
+                row["candidate_report_sha256"] = json!(shooting_hash);
+                shooting_attached += 1;
+                if !row["candidate"].is_null() {
+                    shooting_qualified += 1;
+                }
+                projected = attach(&projected, "edge_shooting_candidate", &row)?;
+            }
             let destination = out.join(relative);
             fs::create_dir_all(destination.parent().unwrap()).map_err(|e| e.to_string())?;
             fs::write(destination, projected).map_err(|e| e.to_string())?;
         }
     }
-    if !records.is_empty() || !inventory.is_empty() {
+    if !records.is_empty() || !inventory.is_empty() || !shooting_rows.is_empty() {
         return Err("unconsumed actor or inventory records".into());
     }
     fs::write(out.join("catalog.json"), catalog_bytes).map_err(|e| e.to_string())?;
@@ -158,12 +236,13 @@ fn run(exposure: &Path, candidates: &Path, base: &Path, out: &Path) -> Result<()
     println!(
         "Attached {attached} research contexts; {qualified} candidate labels across four seasons."
     );
+    println!("Shooting: {shooting_attached} contexts; {shooting_qualified} candidate labels.");
     Ok(())
 }
 fn main() {
     let a: Vec<_> = env::args().collect();
-    if a.len() != 5 {
-        eprintln!("usage: rinkcraft_edge_candidate_profiles EXPOSURE_JSON CANDIDATE_JSON BASE_DIRECTORY NEW_DIRECTORY");
+    if a.len() != 5 && a.len() != 6 {
+        eprintln!("usage: rinkcraft_edge_candidate_profiles EXPOSURE_JSON CANDIDATE_JSON BASE_DIRECTORY NEW_DIRECTORY [SHOOTING_JSON]");
         std::process::exit(2);
     }
     if let Err(e) = run(
@@ -171,6 +250,7 @@ fn main() {
         Path::new(&a[2]),
         Path::new(&a[3]),
         Path::new(&a[4]),
+        a.get(5).map(Path::new),
     ) {
         eprintln!("{e}");
         std::process::exit(1);
@@ -188,5 +268,19 @@ mod tests {
         assert!(text.contains("1.234567890123456789"));
         assert!(text.contains("\"unknown\":null"));
         assert!(project(&out, &json!({})).is_err());
+        let both = attach(
+            &out,
+            "edge_shooting_candidate",
+            &json!({"state":"unassessed"}),
+        )
+        .unwrap();
+        let root: Value = serde_json::from_slice(&both).unwrap();
+        assert!(root["numerical_evidence"]
+            .get("edge_skating_candidate")
+            .is_some());
+        assert!(root["numerical_evidence"]
+            .get("edge_shooting_candidate")
+            .is_some());
+        assert!(attach(&both, "edge_shooting_candidate", &json!({})).is_err());
     }
 }

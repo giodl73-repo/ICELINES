@@ -445,3 +445,10 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 @media print{.rk-skating-record-trigger{display:none}.rk-skating-candidate{break-inside:avoid}}
 .rk-front-movement .rk-skating-record-trigger{display:block;margin:.3rem auto 0;line-height:1.25}
 .rk-skating-dialog>button{float:none;display:block;margin:0 0 .6rem auto}
+
+.rk-seasonal-records-heading{display:flex;justify-content:space-between;align-items:baseline;gap:.3rem;border-top:1px solid var(--rk-rule,#ccd5de);margin-top:.5rem;padding-top:.3rem}
+.rk-seasonal-records{display:flex;flex-wrap:wrap;gap:.3rem}.rk-seasonal-records>div{flex:1 1 6.5rem;min-width:0}
+.rk-shooting-candidate{margin-top:.45rem;padding:.35rem .45rem;border-left:3px solid var(--rk-accent,#315a8b);background:color-mix(in srgb,var(--rk-accent,#315a8b) 7%,transparent)}
+.rk-shooting-candidate button,.rk-shooting-record-trigger{font:inherit;color:var(--rk-accent,#315a8b);background:transparent;border:0;text-align:left;text-decoration:underline;text-underline-offset:.15em;cursor:pointer;padding:0}
+.rk-shooting-candidate button{display:block;font-weight:750}.rk-shooting-candidate small{display:block}.rk-shooting-record-trigger{font-size:.85em}
+@media print{.rk-shooting-record-trigger{display:none}.rk-seasonal-records{break-inside:avoid}}

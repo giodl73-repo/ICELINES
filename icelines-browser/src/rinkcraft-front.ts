@@ -10,6 +10,7 @@ import {renderObservations} from './rinkcraft-observations.js';
 import {openCapability} from './rinkcraft-capability.js';
 import {matchesEdge} from './rinkcraft-edge.js';
 import {matchesSkatingCandidate,renderSkatingCandidate,skatingRecordButton} from './rinkcraft-skating-candidate.js';
+import {matchesShootingCandidate,renderShootingCandidate,shootingRecordButton} from './rinkcraft-shooting-candidate.js';
 import type {AchievementProfile} from './rinkcraft-achievements.js';
 import {renderRepertoire} from './rinkcraft-repertoire.js';
 import {renderDeploymentUsage} from './rinkcraft-deployment.js';
@@ -78,6 +79,7 @@ export function renderCharacterFront(
   const statFeats=achievements&&achievements.player_id===(usageRequest?.player_id??sheet?.player_id)&&achievements.season===targetSeason&&achievements.season_type===usageRequest?.season_type&&achievements.group===featGroup?achievements:undefined;
   const edge=usageRequest?.season_type==='regular'&&matchesEdge(numerical?.edge_evidence,usageRequest?.player_id??sheet?.player_id,targetSeason,featGroup,numerical?.games)?numerical!.edge_evidence:undefined;
   const skating=matchesSkatingCandidate(numerical?.edge_skating_candidate,edge,numerical?.minutes)?numerical!.edge_skating_candidate:undefined;
+  const shooting=usageRequest?.season_type==='regular'&&numerical?.player_id===(usageRequest?.player_id??sheet?.player_id)&&matchesShootingCandidate(numerical?.edge_shooting_candidate,numerical,edge)?numerical!.edge_shooting_candidate:undefined;
   const front=node('section');front.className='rk-front';front.dataset.layout='rinkcraft-profile-v2';front.dataset.class=sheet?.primary.id??'unscouted';front.dataset.profileKind='nhl_evidence';
   front.setAttribute('aria-label',`${name} compact player sheet`);
   const header=node('header');header.className='rk-front-header';
@@ -201,7 +203,10 @@ export function renderCharacterFront(
   distinctive.append(node('strong',sheet?.specialty??'Undocumented'));
   if(sheet)distinctive.append(node('p',sheet.summary));
   if(statFeats)distinctive.append(renderStatFeats(statFeats,'distinctive_features',2));
-  if(skating){const candidate=renderSkatingCandidate(skating);if(candidate)distinctive.append(candidate);}
+  const seasonal=node('div');seasonal.className='rk-seasonal-records';
+  if(skating){const candidate=renderSkatingCandidate(skating);if(candidate)seasonal.append(candidate);}
+  if(shooting){const candidate=renderShootingCandidate(shooting);if(candidate)seasonal.append(candidate);}
+  if(shooting||seasonal.children.length){const heading=node('div');heading.className='rk-seasonal-records-heading';heading.append(node('small','Seasonal records'));if(shooting)heading.append(shootingRecordButton(shooting));distinctive.append(heading,seasonal);}
   const questions=namesBox('Open Questions','rk-front-questions',sheet?.unknowns??[],sheet?'None recorded':'Undocumented');
   right.append(distinctive,questions);columns.append(left,center,right);front.append(columns);
 
