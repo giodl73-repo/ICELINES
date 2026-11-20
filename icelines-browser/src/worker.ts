@@ -1,6 +1,7 @@
 import type { EngineRequest, EngineResponse, QueryRequest } from './types.js';
 import { importArchive } from './archive.js';
 interface Engine {
+  seasonal_record_catalog(bytes:Uint8Array):string;
   load_package(bytes: Uint8Array): string; package_metadata(): string; query(request: string): string;
   player_detail(id: number): string; current_season(): number; free(): void;
   rinkcraft_profile(request: string): string;
@@ -75,6 +76,7 @@ self.onmessage = (event: MessageEvent<EngineRequest>) => {
         case 'numericalEvidence': {const p=request.payload as {catalog:unknown;player_id:number;ceiling:number|null};response.value=JSON.parse(engine.numerical_evidence(JSON.stringify(p.catalog),p.player_id,p.ceiling??undefined));break;}
         case 'numericalHistory': {const p=request.payload as {catalog:unknown;player_id:number;first?:number;last?:number};response.value=JSON.parse(engine.numerical_history(JSON.stringify(p.catalog),p.player_id,p.first,p.last));break;}
         case 'numericalComparison': {const p=request.payload as {catalog:unknown;left:number;right:number};response.value=JSON.parse(engine.numerical_comparison(JSON.stringify(p.catalog),p.left,p.right));break;}
+        case 'seasonalRecords': response.value=JSON.parse(engine.seasonal_record_catalog(new Uint8Array(request.payload as ArrayBuffer)));break;
         case 'currentSeason': response.value = engine.current_season(); break;
         case 'schedule': response.value = JSON.parse(engine.schedule_week(new Uint8Array(request.payload as ArrayBuffer))); break;
         case 'selectResident': engine.select_resident(String(request.payload)); response.value = true; break;

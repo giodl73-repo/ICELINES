@@ -53,10 +53,7 @@ fn official_count(profile: &Value, key: &str) -> Result<Option<u32>, String> {
     Ok(Some(v as u32))
 }
 fn conversion(goals: Option<u32>, shots: Option<u32>) -> Option<f64> {
-    match (goals, shots) {
-        (Some(g), Some(s)) if s > 0 && g <= s => Some(f64::from(g) * 100. / f64::from(s)),
-        _ => None,
-    }
+    icelines_core::view_model::rinkcraft_seasonal_records::conversion(goals, shots)
 }
 fn metric(r: &Record, key: &str, min_shots: u32) -> Option<f64> {
     match key {
@@ -67,27 +64,34 @@ fn metric(r: &Record, key: &str, min_shots: u32) -> Option<f64> {
     }
 }
 fn midrank(sorted: &[f64], value: f64) -> f64 {
-    let lower = sorted.partition_point(|x| *x < value);
-    let upper = sorted.partition_point(|x| *x <= value);
-    100. * (lower as f64 + 0.5 * (upper - lower) as f64) / sorted.len() as f64
+    icelines_core::view_model::rinkcraft_seasonal_records::midrank(sorted, value)
+        .expect("finite sorted cohort")
 }
 fn family(
     peak: Option<(f64, usize)>,
     volume: Option<(f64, usize)>,
 ) -> (&'static str, Option<&'static str>) {
-    let (Some((p, pn)), Some((v, vn))) = (peak, volume) else {
-        return ("unassessed", None);
+    use icelines_core::view_model::rinkcraft_seasonal_records::{classify_pair, Family};
+    let d = classify_pair(
+        Family::Shooting,
+        true,
+        peak.map(|(p, n)| (p, n as u64)),
+        volume.map(|(p, n)| (p, n as u64)),
+    )
+    .expect("validated cohort comparisons");
+    let state = match d.state.as_str() {
+        "assessed" => "assessed",
+        "unassessed" => "unassessed",
+        _ => unreachable!("eligible shared decision"),
     };
-    if pn < 20 || vn < 20 {
-        return ("unassessed", None);
-    }
-    let candidate = match (p >= 90., v >= 90.) {
-        (true, true) => Some("power-volume"),
-        (true, false) => Some("shot-power"),
-        (false, true) => Some("shot-volume"),
-        _ => None,
+    let candidate = match d.candidate.as_deref() {
+        Some("power-volume") => Some("power-volume"),
+        Some("shot-power") => Some("shot-power"),
+        Some("shot-volume") => Some("shot-volume"),
+        None => None,
+        _ => unreachable!("shared shooting family"),
     };
-    ("assessed", candidate)
+    (state, candidate)
 }
 fn evaluate(records: &[Record], min_shots: u32) -> Value {
     let eligible = |r: &Record| r.games >= 10 && r.minutes >= 100.;

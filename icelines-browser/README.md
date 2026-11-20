@@ -482,3 +482,28 @@ team-only statistical split. The `team=` predicate keeps its existing semantics.
 Exports record the actual filter and floor; sharing filter text remains opt-in.
 Run `npm run acceptance:team-focus` after a local browser build for the real
 Chromium offline/trade/goalie/export/narrow-theme check.
+
+## Seasonal research records in the worker
+
+`seasonalRecords` is a stateless byte-input operation backed by
+`BrowserEngine.seasonal_record_catalog`. It uses the same
+`icelines_core::view_model::rinkcraft_seasonal_records` evaluator as native Rust.
+The caller supplies a verified cohort of official exposure/counts and optional
+source-bound EDGE observations. The engine does not acquire tracking data or
+certify that a supplied cohort is the NHL population.
+
+```js
+const owned = sourceBytes.slice(); // retain original evidence bytes
+const catalog = await client.request('seasonalRecords', owned.buffer, [owned.buffer]);
+```
+
+Input schema: `icelines.seasonal-record-input.v1`; output schema:
+`icelines.seasonal-record-catalog.v1`. Both families remain research candidates.
+The input specifies regular-season/all-strength scope, cohort label, exposure
+settings and record sources. Limits are 32 MiB and 10,000 skater records. Separate
+season/position/metric references and their hashes are returned. No resident
+package, capability grade, class or simulation input is changed. This API does
+not automatically insert the result into an existing player-profile response.
+
+See [the shared-engine specification](../design/specs/rinkcraft-shared-seasonal-engine.md)
+for the protocol, reproduction and actual native/WASM/worker acceptance.

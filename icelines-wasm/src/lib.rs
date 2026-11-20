@@ -241,6 +241,11 @@ impl BrowserEngine {
     pub fn current_season(&self) -> u32 {
         icelines_core::CURRENT_SEASON
     }
+    /// Stateless supplied-cohort research records; no package or rating mutation.
+    pub fn seasonal_record_catalog(&self, input: &[u8]) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_seasonal_records::evaluate_json(input)
+            .map_err(|e| JsValue::from_str(&e))
+    }
     /// Versioned one/two/three-stat conjunctions, separate from classes and abilities.
     pub fn achievement_catalog(&self, reports: &[u8], rules: &str) -> Result<String, JsValue> {
         let input=icelines_sources::nhl::achievements::parse(reports).map_err(|e|JsValue::from_str(&e))?;

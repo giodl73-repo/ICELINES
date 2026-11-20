@@ -16,27 +16,22 @@ fn classify(
     peak: Option<(f64, u64)>,
     rate: Option<(f64, u64)>,
 ) -> Result<(&'static str, Option<&'static str>), String> {
-    for (p, n) in [peak, rate].into_iter().flatten() {
-        if !p.is_finite() || !(0. ..=100.).contains(&p) || n == 0 {
-            return Err("invalid metric comparison".into());
-        }
-    }
-    if !eligible {
-        return Ok(("insufficient_exposure", None));
-    }
-    let (Some((p, pn)), Some((r, rn))) = (peak, rate) else {
-        return Ok(("unassessed", None));
+    use icelines_core::view_model::rinkcraft_seasonal_records::{classify_pair, Family};
+    let d = classify_pair(Family::Skating, eligible, peak, rate)?;
+    let state = match d.state.as_str() {
+        "assessed" => "assessed",
+        "unassessed" => "unassessed",
+        "insufficient_exposure" => "insufficient_exposure",
+        _ => unreachable!("shared decision state"),
     };
-    if pn < MIN_PEERS || rn < MIN_PEERS {
-        return Ok(("unassessed", None));
-    }
-    let candidate = match (p >= CUTOFF, r >= CUTOFF) {
-        (true, true) => Some("two-gears"),
-        (true, false) => Some("top-gear"),
-        (false, true) => Some("burst-engine"),
-        (false, false) => None,
+    let candidate = match d.candidate.as_deref() {
+        Some("two-gears") => Some("two-gears"),
+        Some("top-gear") => Some("top-gear"),
+        Some("burst-engine") => Some("burst-engine"),
+        None => None,
+        _ => unreachable!("shared skating family"),
     };
-    Ok(("assessed", candidate))
+    Ok((state, candidate))
 }
 
 fn evaluate(input: &Value) -> Result<Value, String> {
