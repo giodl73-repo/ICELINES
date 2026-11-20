@@ -14,5 +14,6 @@ pub mod shift_chart;
 pub mod standings;
 pub mod deployment;
 pub mod achievements;
+pub mod edge;
 pub mod termination_publication;
 pub mod trade_tracker;

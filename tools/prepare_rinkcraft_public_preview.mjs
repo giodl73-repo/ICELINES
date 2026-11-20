@@ -1,6 +1,6 @@
 // Package Rust-generated public card data and the existing shared renderer.
-import {readFile,writeFile,mkdir,cp,stat} from 'node:fs/promises';
-import {resolve,dirname} from 'node:path';
+import {readFile,writeFile,mkdir,cp,rm} from 'node:fs/promises';
+import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 const [dataDirectory,outputDirectory]=process.argv.slice(2);
 if(!outputDirectory)throw Error('Usage: RUST_CATALOG_DIRECTORY OUTPUT_DIRECTORY');
@@ -11,6 +11,7 @@ if(catalog.schema!=='rinkcraft.public-preview.v1'||!catalog.windows.length)throw
 await mkdir(out,{recursive:true});
 await cp(resolve(source,'data'),resolve(out,'data'),{recursive:true});
 await writeFile(resolve(out,'catalog.json'),raw);
+try{await writeFile(resolve(out,'edge-coverage.json'),await readFile(resolve(source,'edge-coverage.json')));}catch(e){if(e.code!=='ENOENT')throw e;await rm(resolve(out,'edge-coverage.json'),{force:true});}
 for(const [from,to] of [
  ['icelines-browser/rinkcraft-preview.html','index.html'],['icelines-browser/rinkcraft-preview.css','rinkcraft-preview.css'],
  ['icelines-web/static/rinkcraft-character.css','rinkcraft-character.css'],['icelines-web/static/rinkcraft-themes.css','rinkcraft-themes.css'],

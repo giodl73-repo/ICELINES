@@ -8,6 +8,7 @@ import {numericalValue} from './rinkcraft-numbers.js';
 import {renderStatFeats} from './rinkcraft-achievements.js';
 import {renderObservations} from './rinkcraft-observations.js';
 import {openCapability} from './rinkcraft-capability.js';
+import {matchesEdge} from './rinkcraft-edge.js';
 import type {AchievementProfile} from './rinkcraft-achievements.js';
 import {renderRepertoire} from './rinkcraft-repertoire.js';
 import {renderDeploymentUsage} from './rinkcraft-deployment.js';
@@ -74,6 +75,7 @@ export function renderCharacterFront(
   const usage=deploymentEvidence&&deploymentEvidence.season===targetSeason&&deploymentEvidence.goalie===goalie&&deploymentEvidence.player_id===(usageRequest?.player_id??sheet?.player_id)&&deploymentEvidence.season_type===usageRequest?.season_type?deploymentEvidence:undefined;
   const featGroup=goalie?'Goalies':['D','Defense'].includes(position)?'Defense':'Forwards';
   const statFeats=achievements&&achievements.player_id===(usageRequest?.player_id??sheet?.player_id)&&achievements.season===targetSeason&&achievements.season_type===usageRequest?.season_type&&achievements.group===featGroup?achievements:undefined;
+  const edge=usageRequest?.season_type==='regular'&&matchesEdge(numerical?.edge_evidence,usageRequest?.player_id??sheet?.player_id,targetSeason,featGroup,numerical?.games)?numerical!.edge_evidence:undefined;
   const front=node('section');front.className='rk-front';front.dataset.layout='rinkcraft-profile-v2';front.dataset.class=sheet?.primary.id??'unscouted';front.dataset.profileKind='nhl_evidence';
   front.setAttribute('aria-label',`${name} compact player sheet`);
   const header=node('header');header.className='rk-front-header';
@@ -104,7 +106,7 @@ export function renderCharacterFront(
   const labels=goalie?['Tracking','Positioning','Movement','Rebounds','Recovery','Puck Play']:['Skating','Handling','Passing','Shooting','Reading','Defending'];
   for(const [index,label] of labels.entries()){
     const score=field(label,'—');score.dataset.capabilityIndex=String(index);score.dataset.ratingState='unassessed';
-    const rule=node('button',label);rule.type='button';rule.className='rk-capability-trigger';rule.setAttribute('aria-label',`How ${label} is scored`);rule.onclick=()=>{void openCapability(label,goalie,name);};score.children[0].textContent='';score.children[0].append(rule);
+    const rule=node('button',label);rule.type='button';rule.className='rk-capability-trigger';rule.setAttribute('aria-label',`How ${label} is scored`);rule.onclick=()=>{void openCapability(label,goalie,name,edge);};score.children[0].textContent='';score.children[0].append(rule);
     score.append(node('small','Unrated'));scores.append(score);
   }
   attributes.append(scores);
@@ -127,7 +129,9 @@ export function renderCharacterFront(
     if(movement){response.className+=' rk-front-movement';response.dataset.movementState='unassessed';}
     const speed=!goalie&&title==='Skating Detail'&&['Forwards','Defense'].includes(numerical?.group??'')&&numerical?.style_evidence?.season===numerical?.season
       ?numerical?.style_evidence?.measured.find(m=>m.key==='max-skating-speed'&&m.unit==='Mph'&&Number.isFinite(m.value)&&m.value>=0&&typeof m.scope==='string'&&m.scope.startsWith('All strengths')):undefined;
-    if(speed){response.dataset.movementState='observed_maximum';response.append(node('strong',`${speed.value.toFixed(2)} mph`),node('small','Season max · all strengths'));response.title=`${speed.scope}. Observed maximum; not puck-carrying speed, acceleration or a capability grade.`;}
+    const edgeSpeed=!goalie&&title==='Skating Detail'?edge?.measures.find(m=>m.key==='max-skating-speed'&&m.unit==='Mph'):undefined;
+    if(edgeSpeed){response.dataset.movementState='observed_maximum';response.append(node('strong',`${edgeSpeed.value.toFixed(2)} mph`),node('small','EDGE season max · all strengths'));response.title=`Captured ${edge!.captured_at} · ${edgeSpeed.interpretation}`;}
+    else if(speed){response.dataset.movementState='observed_maximum';response.append(node('strong',`${speed.value.toFixed(2)} mph`),node('small','Season max · all strengths'));response.title=`${speed.scope}. Observed maximum; not puck-carrying speed, acceleration or a capability grade.`;}
     else response.append(node('strong','—'),node('small','Unassessed'));
     responses.append(response);
   }
