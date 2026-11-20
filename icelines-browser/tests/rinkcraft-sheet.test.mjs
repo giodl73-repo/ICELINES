@@ -16,6 +16,24 @@ globalThis.document = {
 };
 const all = n => [n, ...n.children.flatMap(all)];
 const classed = (n, name) => all(n).filter(e => e.className?.split(' ').includes(name));
+test('estimated record shows season totals with per-game rates rather than percentile codes',()=>{
+ const numerical={player_id:1,season:20262027,group:'Forwards',situation:'all strengths',games:20,minutes:300,eligible_peers:200,facets:[],metrics:[],leading:[],source_credit:'NHL',unknowns:[],estimated_record:{season:20262027,target_games:84,basis:'84-game pace',metrics:[{key:'points',label:'Points',value:168,unit:'Count',per_game:2,projected_total:true},{key:'missing',label:'Missing',value:null,unit:'Count',per_game:null,projected_total:true}]}};
+ const record=classed(renderCharacterCard('Example',undefined,undefined,undefined,numerical),'rk-front-record')[0];
+ assert.match(record.textContent,/Estimated Record.*84-game pace.*Points 168 2.00 \/game/);
+ assert.match(record.textContent,/Missing — Unavailable/);
+ assert.doesNotMatch(record.textContent,/\bP\d|\bn=/);
+});
+test('simple stat estimates occupy the six primary attributes and require matching identity/window',()=>{
+ const labels=['Skating','Handling','Passing','Shooting','Reading','Defending'];
+ const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20252026,group:'Forwards',scope:'all strengths',small_sample:false,scores:labels.map((label,i)=>({label,score:i+10,stat_points:(i+10)*5,parts:[],note:'Stat approximation'}))};
+ const numerical={player_id:1,season:20252026,group:'Forwards',situation:'all strengths',games:30,minutes:300,eligible_peers:200,facets:[],metrics:[],leading:[],source_credit:'NHL',unknowns:[],stat_attributes:stats};
+ const render=n=>renderCharacterCard('Example',undefined,undefined,{season:20252026,position:'Center',games:30,metrics:[]},n,undefined,undefined,undefined,true,undefined,undefined,{player_id:1,season_type:'regular'});
+ const ratings=all(render(numerical)).filter(n=>n.dataset.capabilityIndex!==undefined);
+ assert.equal(ratings.length,6);assert.ok(ratings.every(r=>r.dataset.ratingState==='stat_estimate'));
+ assert.deepEqual(ratings.map(r=>r.children[1].textContent),['10','11','12','13','14','15']);
+ for(const invalid of [{...stats,player_id:2},{...stats,season:20242025},{...stats,group:'Defense'}])assert.ok(all(render({...numerical,stat_attributes:invalid})).filter(n=>n.dataset.capabilityIndex!==undefined).every(n=>n.dataset.ratingState==='unassessed'));
+ const small=render({...numerical,stat_attributes:{...stats,small_sample:true}});assert.match(classed(small,'rk-front-attributes')[0].textContent,/Small sample/);
+});
 const sheet = {
   primary:{id:'warden',name:'Warden',analogy:'Paladin',purpose:'Protect the final space.'},
   secondary:[], specialty:'Edge keeper', summary:'Full documentary summary.',
@@ -29,7 +47,7 @@ test('stat feats populate five slots, retain the long list and gate actor/window
  const f=(id,placement,state='earned')=>({id,name:id,state,tier:state==='earned'?'Gold':null,placements:[placement],matched:state==='earned'?2:1,required:2,conditions:[{key:'hits',label:'Hits / GP',value:2,unit:'PerGame',numerator:100,denominator:50,percentile:95,peers:100,reference_sha256:'ref',qualifies:true}]});
  const a={player_id:1,season:20242025,season_type:'regular',group:'Forwards',games:50,minimum_games:20,rules_sha256:'rules',source_sha256:'input',source_urls:[],earned:4,notes:['Experimental stat patterns, not abilities.'],feats:[f('Hitter','task_skills'),f('Locked','task_skills','not_earned'),f('Volume','playing_tendencies'),f('Triple','distinctive_features'),f('Flag','risk_flags')]};
  const render=feat=>renderCharacterCard('Example',{...sheet,player_id:1},undefined,{season:20242025,position:'Center',games:50,metrics:[]},undefined,undefined,undefined,undefined,true,undefined,undefined,{player_id:1,season_type:'regular'},feat);
- const card=render(a),front=classed(card,'rk-front')[0];assert.equal(classed(front,'rk-stat-feats').length,5);assert.match(classed(front,'rk-front-skills')[0].textContent,/Hitter.*Hits \/ GP.*95.0.*Locked/);assert.match(classed(front,'rk-front-limitations')[0].textContent,/Flag/);assert.equal(classed(front,'rk-front-pressure')[0].textContent.includes('Hitter'),false);
+ const card=render(a),front=classed(card,'rk-front')[0];assert.equal(classed(front,'rk-stat-feats').length,5);assert.match(classed(front,'rk-front-skills')[0].textContent,/Hitter.*Hits: 2.00\/game.*Locked/);assert.match(classed(front,'rk-front-limitations')[0].textContent,/Flag/);assert.equal(classed(front,'rk-front-pressure')[0].textContent.includes('Hitter'),false);
  assert.ok(all(front).filter(n=>n.dataset.capabilityIndex!==undefined).every(n=>n.dataset.ratingState==='unassessed'));
  for(const wrong of [{...a,player_id:2},{...a,season:20252026},{...a,season_type:'playoff'},{...a,group:'Goalies'}])assert.equal(classed(render(wrong),'rk-stat-feats').length,0);
 });
@@ -81,8 +99,8 @@ test('front-sheet signals retain zero, missing values and unranked measurements'
   const numerical={season:20252026,group:'Goalies',situation:'all strengths',games:20,minutes:700,eligible_peers:12,facets:metrics.map(measurement=>({label:measurement.label,measurement})),metrics,leading:[],unknowns:[],source_credit:'Source'};
   const profile=renderCharacterCard('Test goalie',sheet,undefined,undefined,numerical);
   const front=classed(profile,'rk-front')[0];
- assert.match(front.textContent,/Zero 0 P0\.0/);
-  assert.match(front.textContent,/Missing.*—.*Unranked/);
+ assert.match(front.textContent,/Zero 0 Recorded value/);
+  assert.match(front.textContent,/Missing.*—.*Unavailable/);
   assert.equal(all(front).filter(n=>n.dataset.numericalKey).length,2);
   assert.match(classed(front,'rk-front-attributes')[0].textContent,/Tracking.*Positioning.*Movement.*Rebounds.*Recovery.*Puck Play/);
 });
@@ -97,7 +115,7 @@ test('missing dossiers leave source and question coverage unknown', () => {
 });
 
 
-test('capabilities stay unrated while statistics remain in Measured Record', () => {
+test('capabilities without estimates stay unrated while record statistics remain separate', () => {
   const profile=renderCharacterCard('Test skater',sheet);
   const rail=classed(profile,'rk-front-attributes')[0];
   const scores=all(rail).filter(n=>n.dataset.capabilityIndex!==undefined);

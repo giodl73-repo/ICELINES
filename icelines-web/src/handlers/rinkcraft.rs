@@ -879,6 +879,8 @@ struct ProfileTemplate {
     absent_json: String,
 }
 struct EvidenceView {
+    estimated_record: Option<icelines_core::view_model::rinkcraft_stat_scores::EstimatedRecord>,
+    stat_attributes: Option<icelines_core::view_model::rinkcraft_stat_scores::Profile>,
     front_maximum_speed: Option<String>,
     context: Option<ContextView>,
     sources: Vec<icelines_core::view_model::rinkcraft_numbers::Source>,
@@ -892,6 +894,13 @@ struct EvidenceView {
 }
 struct FeatSectionView {earned:usize,total:usize,visible:Vec<FeatRowView>,other:Vec<FeatRowView>,context:String,notes:Vec<String>,rules:String,source:String}
 struct FeatRowView {id:String,name:String,state:String,tier:String,trigger:String,conditions:Vec<String>,note:String}
+fn plain_feat_condition(c: &icelines_core::view_model::rinkcraft_achievements::Condition, tier: Option<&str>) -> String {
+    let key=match tier {Some("Gold"|"Marked")=>"90",Some("Silver"|"Elevated")=>"75",_=>"60"};
+    let label=c.label.replace(" / GP","");
+    let amount=|v:f64|if c.unit=="Pct"{format!("{:.1}%",v*100.)}else if c.unit=="Count"{format!("{v:.0}")}else{format!("{v:.2}/game")};
+    if let Some(cut)=c.raw_thresholds.get(key){format!("{} {} {}",label,if cut.inclusive{"≥"}else{">"},amount(cut.value))}
+    else{format!("{}: {}",label,c.value.map(amount).unwrap_or_else(||"Unavailable".into()))}
+}
 fn feat_section(view:&RinkcraftStatProfile,placement:&str,limit:usize)->Option<FeatSectionView>{
     let a=view.achievements.as_ref()?;
     let target=view.numerical_evidence.as_ref().map(|n|n.season).or_else(||view.latest_available.as_ref().map(|s|s.season.0));
@@ -900,7 +909,7 @@ fn feat_section(view:&RinkcraftStatProfile,placement:&str,limit:usize)->Option<F
     let mut feats:Vec<_>=a.feats.iter().filter(|f|f.placements.iter().any(|p|p==placement)).collect();
     feats.sort_by(|a,b|{let score=|f:&icelines_core::view_model::rinkcraft_achievements::Feat|f.conditions.iter().filter_map(|c|c.percentile).fold(100.,f64::min);(b.state=="earned").cmp(&(a.state=="earned")).then_with(||b.required.cmp(&a.required)).then_with(||score(b).total_cmp(&score(a))).then_with(||a.id.cmp(&b.id))});
     let earned=feats.iter().filter(|f|f.state=="earned").count();let total=feats.len();let mut visible=Vec::new();let mut other=Vec::new();
-    for f in feats{let row=FeatRowView{id:f.id.clone(),name:f.name.clone(),state:f.state.clone(),tier:f.tier.clone().unwrap_or_else(||if f.state=="unavailable"{"Needs data".into()}else if f.state=="ineligible"{"Needs GP".into()}else{format!("{}/{} conditions",f.matched,f.required)}),note:f.note.clone().unwrap_or_default(),trigger:f.conditions.iter().map(|c|format!("{}: {}",c.label.replace(" / GP",""),c.percentile.map(|p|format!("P{p:.0}")).unwrap_or_else(||"—".into()))).collect::<Vec<_>>().join(" · "),conditions:f.conditions.iter().map(|c|format!("{}: {} · {} · n={} · {} / {} · Reference {}",c.label,c.value.map(|v|if c.unit=="Pct"{format!("{:.2}%",v*100.)}else{format!("{v:.3}")}).unwrap_or_else(||"Unavailable".into()),c.percentile.map(|p|format!("P{p:.1}")).unwrap_or_else(||"Unranked".into()),c.peers,c.numerator.map(|v|v.to_string()).unwrap_or_else(||"unknown".into()),c.denominator.map(|v|v.to_string()).unwrap_or_else(||"unknown".into()),c.reference_sha256)).collect()};if f.state=="earned"&&visible.len()<limit{visible.push(row)}else{other.push(row)}}
+    for f in feats{let row=FeatRowView{id:f.id.clone(),name:f.name.clone(),state:f.state.clone(),tier:f.tier.clone().unwrap_or_else(||if f.state=="unavailable"{"Needs data".into()}else if f.state=="ineligible"{"Needs GP".into()}else{format!("{}/{} conditions",f.matched,f.required)}),note:f.note.clone().unwrap_or_default(),trigger:f.conditions.iter().map(|c|plain_feat_condition(c,f.tier.as_deref())).collect::<Vec<_>>().join(" · "),conditions:f.conditions.iter().map(|c|format!("Your {}: {}",c.label,c.value.map(|v|if c.unit=="Pct"{format!("{:.1}%",v*100.)}else{format!("{v:.2}")}).unwrap_or_else(||"Unavailable".into()))).collect()};if f.state=="earned"&&visible.len()<limit{visible.push(row)}else{other.push(row)}}
     Some(FeatSectionView{earned,total,visible,other,context:format!("{} · {} · all strengths · {} · {} GP",a.season,a.season_type,a.group,a.games),notes:a.notes.clone(),rules:a.rules_sha256.clone(),source:a.source_sha256.clone()})
 }
 struct HistoryView {
@@ -1160,6 +1169,8 @@ fn measurement_value(m: &icelines_core::view_model::rinkcraft_numbers::Measureme
 }
 fn evidence_view(c: &icelines_core::view_model::rinkcraft_numbers::EvidenceCard) -> EvidenceView {
     EvidenceView {
+        estimated_record: c.estimated_record.clone(),
+        stat_attributes: c.stat_attributes.clone().filter(|s| s.player_id == c.player_id && s.season == c.season && s.group == c.group),
         front_maximum_speed: c.style_evidence.as_ref()
             .filter(|s| s.season == c.season && matches!(c.group.as_str(), "Forwards" | "Defense"))
             .and_then(|s| s.measured.iter().find(|m| m.key == "max-skating-speed"

@@ -18,5 +18,5 @@ for(const [from,to] of [
  ['icelines-core/src/view_model/rinkcraft_capability_rules.json','capability-rules.json'],
 ])await writeFile(resolve(out,to),await readFile(resolve(from)));
 await cp(resolve('icelines-browser/dist/src'),resolve(out,'src'),{recursive:true});
-await writeFile(resolve(out,'build.json'),JSON.stringify({schema:'rinkcraft.preview-build.v1',catalog_sha256:createHash('sha256').update(raw).digest('hex'),windows:catalog.windows.map(w=>({season:w.season,players:w.players.length,captured_through:w.captured_through})),models:'Shared Rust feat and workload builders; all-strength records. No 1–20 capability estimates or inferred classes.'},null,2));
+await writeFile(resolve(out,'build.json'),JSON.stringify({schema:'rinkcraft.preview-build.v1',catalog_sha256:createHash('sha256').update(raw).digest('hex'),windows:catalog.windows.map(w=>({season:w.season,players:w.players.length,captured_through:w.captured_through})),models:'Shared Rust feats, workload and simple 1–20 stat estimates when supplied. All-strength records; documentary classes remain separate.'},null,2));
 console.log(JSON.stringify({output:out,windows:catalog.windows.length,player_seasons:catalog.windows.reduce((n,w)=>n+w.players.length,0)}));

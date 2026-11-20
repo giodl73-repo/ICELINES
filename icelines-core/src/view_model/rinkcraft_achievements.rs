@@ -29,6 +29,8 @@ pub struct Rule {
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Condition {
+    #[serde(default, skip_serializing_if="BTreeMap::is_empty")]
+    pub raw_thresholds: BTreeMap<String, RawThreshold>,
     pub key: String,
     pub label: String,
     pub value: Option<f64>,
@@ -39,6 +41,33 @@ pub struct Condition {
     pub peers: usize,
     pub reference_sha256: String,
     pub qualifies: Option<bool>,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RawThreshold {
+    pub value: f64,
+    pub inclusive: bool,
+}
+/// Exact raw boundaries for the existing midrank tier rules, including ties.
+pub fn raw_thresholds(values: &[f64]) -> BTreeMap<String, RawThreshold> {
+    let mut sorted = values.to_vec();
+    if sorted.len() < 20 || sorted.iter().any(|v| !v.is_finite()) { return BTreeMap::new(); }
+    sorted.sort_by(f64::total_cmp);
+    let mut result = BTreeMap::new();
+    for target in [60., 75., 90.] {
+        let mut below = 0;
+        while below < sorted.len() {
+            let value = sorted[below];
+            let tied = sorted[below..].iter().take_while(|v| **v == value).count();
+            let at = 100. * (below as f64 + 0.5 * tied as f64) / sorted.len() as f64;
+            let above = 100. * (below + tied) as f64 / sorted.len() as f64;
+            if at >= target || above >= target {
+                result.insert(format!("{target:.0}"), RawThreshold { value, inclusive: at >= target });
+                break;
+            }
+            below += tied;
+        }
+    }
+    result
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Feat {
@@ -287,7 +316,8 @@ pub fn evaluate(input: &Input, rules: &[Rule]) -> Result<Catalog, String> {
                         .map_err(|e| e.to_string())?
                 )
             );
-            references.insert((group.to_owned(), key.clone()), (peers, hash));
+            let thresholds = raw_thresholds(&peers.iter().map(|(_, v)| *v).collect::<Vec<_>>());
+            references.insert((group.to_owned(), key.clone()), (peers, hash, thresholds));
         }
     }
     let mut profiles = Vec::new();
@@ -300,7 +330,7 @@ pub fn evaluate(input: &Input, rules: &[Rule]) -> Result<Catalog, String> {
         {
             let mut conditions = Vec::new();
             for key in &rule.metrics {
-                let (peers, reference_sha256) = references
+                let (peers, reference_sha256, raw_thresholds) = references
                     .get(&(p.group.clone(), key.clone()))
                     .expect("registered reference");
                 let v = value(p, key);
@@ -316,6 +346,7 @@ pub fn evaluate(input: &Input, rules: &[Rule]) -> Result<Catalog, String> {
                 let (numerator, denominator) = components(p, key);
                 let (label, _, _, unit) = metric(key).unwrap();
                 conditions.push(Condition {
+                    raw_thresholds: raw_thresholds.clone(),
                     key: key.clone(),
                     label: label.into(),
                     value: v,

@@ -1,0 +1,3 @@
+{% for label in ["Skating", "Handling", "Passing", "Shooting", "Reading", "Defending"] %}
+<div class="rk-field" data-capability-index="{{ loop.index0 }}" data-rating-state="unassessed"><dt>{% if front_position == "G" || front_position == "Goalies" || front_position == "Goalie" %}{{ goalie_attributes[loop.index0] }}{% else %}{{ label }}{% endif %}</dt><dd>—</dd><small>Unrated</small></div>
+{% endfor %}

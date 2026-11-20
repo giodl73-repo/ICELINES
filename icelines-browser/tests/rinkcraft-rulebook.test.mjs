@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {featThreshold,featArithmetic,renderFeatRule} from '../dist/src/rinkcraft-feat-rule.js';
+import {featThreshold,featArithmetic,renderFeatRule,featConditionText} from '../dist/src/rinkcraft-feat-rule.js';
 import {renderCapabilityRecipe} from '../dist/src/rinkcraft-capability.js';
 class Element{children=[];dataset={};constructor(tag){this.tag=tag;}append(...nodes){this.children.push(...nodes);}set textContent(v){this.text=v;this.children=[];}get textContent(){return (this.text??'')+this.children.map(n=>n.textContent).join(' ');}}
 globalThis.document={createElement:tag=>new Element(tag)};
-const c={key:'hits',label:'Hits / GP',value:2,unit:'PerGame',numerator:100,denominator:50,percentile:83.4,peers:456,reference_sha256:'ref',qualifies:true};
+const c={key:'hits',label:'Hits / GP',value:2,unit:'PerGame',numerator:100,denominator:50,percentile:83.4,peers:456,reference_sha256:'ref',qualifies:true,raw_thresholds:{'60':{value:1,inclusive:true},'75':{value:1.5,inclusive:true},'90':{value:2.1,inclusive:false}}};
 const feat={id:'shield',name:'Shot shield',state:'earned',tier:'Silver',placements:['task_skills','role_coverage'],matched:2,required:2,conditions:[c,{...c,key:'blocks',label:'Blocks / GP',percentile:78}]};
 const profile={season:20242025,season_type:'regular',group:'Forwards',games:50,minimum_games:20};
-test('readable feat shows exact conjunction, arithmetic, categories and supplied tier',()=>{const root=renderFeatRule(feat,profile);assert.match(root.textContent,/Task Skills \/ Role Coverage/);assert.match(root.textContent,/Hits \/ GP ≥ P75 AND Blocks \/ GP ≥ P75/);assert.match(root.textContent,/100 ÷ 50 = 2.000 \/ GP/);assert.match(root.textContent,/Earned Silver/);assert.match(root.textContent,/456 measured Forwards/);});
+test('readable feat shows raw cutoffs, arithmetic, categories and supplied tier',()=>{const root=renderFeatRule(feat,profile);assert.match(root.textContent,/Task Skills \/ Role Coverage/);assert.match(root.textContent,/Hits ≥ 1.5\/game AND Blocks ≥ 1.5\/game/);assert.match(root.textContent,/100 ÷ 50 = 2.000 \/ GP/);assert.match(root.textContent,/Earned Silver/);assert.match(root.textContent,/456 peers/);assert.equal(featConditionText(c,'Gold'),'Hits > 2.1/game');assert.equal(featConditionText({...c,raw_thresholds:undefined},'Gold'),'Hits: 2.00/game');});
 test('a rounded percentile does not unlock an unearned feat',()=>{const root=renderFeatRule({...feat,state:'not_earned',tier:null,matched:0,required:1,conditions:[{...c,percentile:59.96,qualifies:false}]},profile);assert.match(root.textContent,/P60.0/);assert.match(root.textContent,/0 of 1 base conditions met/);assert.ok(!root.textContent.includes('Earned'));});
 test('zero, missing and goalie fraction arithmetic remain different',()=>{assert.equal(featArithmetic({...c,unit:'Count',value:0}),'Season total = 0');assert.equal(featArithmetic({...c,value:null}),'Measurement unavailable');assert.equal(featArithmetic({...c,denominator:0}),'Calculation inputs unavailable');assert.equal(featArithmetic({...c,unit:'Pct',numerator:90,denominator:100,value:.9}),'90 ÷ 100 × 100 = 90.00%');});
 test('unknown tiers do not inherit a known award threshold',()=>{assert.equal(featThreshold('Gold'),90);assert.equal(featThreshold('Marked'),90);assert.equal(featThreshold('Future'),null);assert.equal(featThreshold(null),60);});

@@ -8,6 +8,7 @@ import {numericalValue} from './rinkcraft-numbers.js';
 import {renderStatFeats} from './rinkcraft-achievements.js';
 import {renderObservations} from './rinkcraft-observations.js';
 import {openCapability} from './rinkcraft-capability.js';
+import {matchesStatScores,openStatScore} from './rinkcraft-stat-scores.js';
 import {matchesEdge} from './rinkcraft-edge.js';
 import {matchesSkatingCandidate,renderSkatingCandidate,skatingRecordButton} from './rinkcraft-skating-candidate.js';
 import {matchesShootingCandidate,renderShootingCandidate,shootingRecordButton} from './rinkcraft-shooting-candidate.js';
@@ -76,6 +77,7 @@ export function renderCharacterFront(
   const targetSeason=numerical?.season??record?.season??assessment?.season;
   const usage=deploymentEvidence&&deploymentEvidence.season===targetSeason&&deploymentEvidence.goalie===goalie&&deploymentEvidence.player_id===(usageRequest?.player_id??sheet?.player_id)&&deploymentEvidence.season_type===usageRequest?.season_type?deploymentEvidence:undefined;
   const featGroup=goalie?'Goalies':['D','Defense'].includes(position)?'Defense':'Forwards';
+  const statScores=!goalie&&numerical?.player_id===(usageRequest?.player_id??sheet?.player_id)&&matchesStatScores(numerical?.stat_attributes,numerical?.player_id,targetSeason,featGroup)?numerical!.stat_attributes:undefined;
   const statFeats=achievements&&achievements.player_id===(usageRequest?.player_id??sheet?.player_id)&&achievements.season===targetSeason&&achievements.season_type===usageRequest?.season_type&&achievements.group===featGroup?achievements:undefined;
   const edge=usageRequest?.season_type==='regular'&&matchesEdge(numerical?.edge_evidence,usageRequest?.player_id??sheet?.player_id,targetSeason,featGroup,numerical?.games)?numerical!.edge_evidence:undefined;
   const skating=matchesSkatingCandidate(numerical?.edge_skating_candidate,edge,numerical?.minutes)?numerical!.edge_skating_candidate:undefined;
@@ -105,13 +107,14 @@ export function renderCharacterFront(
   const left=node('div');left.className='rk-front-left';
   const split=node('div');split.className='rk-left-split';
   const attributes=node('section');attributes.className='rk-front-attributes';
-  attributes.append(node('h4','Attributes'));const scale=node('small','1–20 scale');scale.className='rk-rating-scale';attributes.append(scale);
+  attributes.append(node('h4','Attributes'));const scale=node('small',statScores?'1–20 estimates':'1–20 scale');scale.className='rk-rating-scale';attributes.append(scale);
   const scores=node('dl');scores.className='rk-front-values';
   const labels=goalie?['Tracking','Positioning','Movement','Rebounds','Recovery','Puck Play']:['Skating','Handling','Passing','Shooting','Reading','Defending'];
   for(const [index,label] of labels.entries()){
-    const score=field(label,'—');score.dataset.capabilityIndex=String(index);score.dataset.ratingState='unassessed';
-    const rule=node('button',label);rule.type='button';rule.className='rk-capability-trigger';rule.setAttribute('aria-label',`How ${label} is scored`);rule.onclick=()=>{void openCapability(label,goalie,name,edge);};score.children[0].textContent='';score.children[0].append(rule);
-    score.append(node('small','Unrated'));scores.append(score);
+    const estimate=statScores?.scores[index];
+    const score=field(label,estimate?.score===null||estimate?.score===undefined?'—':String(estimate.score));score.dataset.capabilityIndex=String(index);score.dataset.ratingState=estimate?.score!==null&&estimate?.score!==undefined?'stat_estimate':'unassessed';
+    const rule=node('button',label);rule.type='button';rule.className='rk-capability-trigger';rule.setAttribute('aria-label',`How ${label} is scored`);rule.onclick=()=>{if(statScores&&estimate)openStatScore(statScores,estimate,name);else void openCapability(label,goalie,name,edge);};score.children[0].textContent='';score.children[0].append(rule);
+    score.append(node('small',estimate?.score!==null&&estimate?.score!==undefined?(statScores?.small_sample?'Small sample':'Estimate'):'Unrated'));scores.append(score);
   }
   attributes.append(scores);
   const tasks=node('div');tasks.className='rk-front-task-column';
@@ -176,18 +179,25 @@ export function renderCharacterFront(
     }
     evidence.append(body);item.append(evidence);
   }
-  const measured=box('Measured Record','rk-front-record');
+  const measured=box('Estimated Record','rk-front-record');
+  const projection=numerical?.estimated_record?.season===numerical?.season?numerical?.estimated_record:undefined;
+  measured.append(node('small',projection?.basis??'Recorded rates'));
   const values=node('dl');values.className='rk-record-values';
-  if(numerical)for(const facet of numerical.facets){
+  if(projection)for(const m of projection.metrics){
+    const total=m.value===null?'—':m.projected_total?Math.round(m.value).toLocaleString('en-US'):numericalValue({unit:m.unit,value:m.value} as import('./rinkcraft-numbers.js').NumericalMeasurement);
+    const cell=field(m.label,total);cell.dataset.numericalKey=m.key;
+    cell.append(node('small',m.per_game===null?(m.value===null?'Unavailable':'Current rate'):`${m.per_game.toFixed(2)} /game`));values.append(cell);
+  }
+  else if(numerical)for(const facet of numerical.facets){
     const m=facet.measurement,cell=field(facet.label,numericalValue(m));cell.dataset.numericalKey=m.key;cell.title=m.interpretation;
-    cell.append(node('small',m.state==='conflicting_sources'?'Source conflict':m.percentile==null?'Unranked':`P${m.percentile.toFixed(1)} · n=${m.measured_peers}`));values.append(cell);
+    cell.append(node('small',m.state==='conflicting_sources'?'Source conflict':m.value===null?'Unavailable':m.unit==='PerGame'?'Per game':'Recorded value'));values.append(cell);
   }
   else if(assessment)for(const a of assessment.attributes){
     const cell=field(a.label,attributeValue(a));
-    cell.append(node('small',a.percentile==null?'Unranked':`P${a.percentile.toFixed(1)} · n=${a.measured_peers}`));values.append(cell);
+    cell.append(node('small','Recorded rate'));values.append(cell);
   }
   else values.append(field('Coverage','Unavailable'));
-  measured.append(values,node('p','P = raw-value percentile; position peers. Rates and outcomes, not capability grades.'));
+  measured.append(values);
   const deployment=box('Deployment','rk-front-deployment'),assignment=node('dl');assignment.className='rk-task-list';
   if(usage)deployment.append(renderDeploymentUsage(usage));
   else {assignment.append(field('Unit','Undocumented'),field('Station','Undocumented'));deployment.append(assignment);}
@@ -215,6 +225,6 @@ export function renderCharacterFront(
     field('Open Questions',sheet?String(sheet.unknowns.length):'Unknown'),
     field('Dossier Through',sheet?.evidence_through??'Unknown'),field('Assessed',sheet?.assessed??'Unknown'));
   front.append(sources);
-  const footer=node('footer',sheet?'Provisional documentary class · capability ratings unassessed · evidence below':catalogAvailable===false?'Class dossier unavailable · statistics do not assign a class':'No supported class dossier · statistics do not assign a class');
+  const footer=node('footer',statScores?'Stat-based attribute estimates · selected season · click an attribute for its formula':sheet?'Provisional documentary class · capability ratings unassessed · evidence below':catalogAvailable===false?'Class dossier unavailable · statistics do not assign a class':'No supported class dossier · statistics do not assign a class');
   footer.className='rk-front-footer';front.append(footer);return front;
 }

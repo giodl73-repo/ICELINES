@@ -246,6 +246,11 @@ impl BrowserEngine {
         icelines_core::view_model::rinkcraft_seasonal_records::evaluate_json(input)
             .map_err(|e| JsValue::from_str(&e))
     }
+    /// Simple supplied-cohort 1–20 stat estimates, shared with the native scorer.
+    pub fn stat_attribute_catalog(&self, input: &str) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_stat_scores::evaluate_json(input)
+            .map_err(|e| JsValue::from_str(&e))
+    }
     /// Versioned one/two/three-stat conjunctions, separate from classes and abilities.
     pub fn achievement_catalog(&self, reports: &[u8], rules: &str) -> Result<String, JsValue> {
         let input=icelines_sources::nhl::achievements::parse(reports).map_err(|e|JsValue::from_str(&e))?;

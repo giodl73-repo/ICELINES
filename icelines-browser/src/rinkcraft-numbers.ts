@@ -7,6 +7,8 @@ export interface NumericalMeasurement {
 }
 export interface ContextEvidence {schema:string;title:string;note:string;facet_count:number;measured_facets:number;ranked_facets:number;groups:{label:string;note:string;facets:{key:string;label:string;measurement:NumericalMeasurement|null;explanation:{question:string;related_keys:string[];limit:string}}[]}[];}
 export interface NumericalEvidence {
+  estimated_record?:import('./rinkcraft-stat-scores.js').EstimatedRecord;
+  stat_attributes?:import('./rinkcraft-stat-scores.js').StatProfile;
   edge_shooting_candidate?:import('./rinkcraft-shooting-candidate.js').ShootingCandidate;
   edge_skating_candidate?:import('./rinkcraft-skating-candidate.js').SkatingCandidate;
   edge_evidence?:import('./rinkcraft-edge.js').EdgeEvidence;
