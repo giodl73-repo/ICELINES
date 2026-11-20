@@ -3,13 +3,14 @@ import { createHash } from 'node:crypto';
 import { gzipSync } from 'node:zlib';
 
 export async function buildOfflineShell(root) {
-  const files = ['index.html', 'style.css', 'rinkcraft-character.css','rinkcraft-game.js','rinkcraft-possession.js','rinkcraft-unit-studio.js','catalog.json'];
+  const files = ['index.html', 'appearance.css', 'style.css', 'rinkcraft-character.css','rinkcraft-game.js','rinkcraft-possession.js','rinkcraft-unit-studio.js','catalog.json'];
   try {await readFile(new URL('dist/capability-rules.json',root));files.push('capability-rules.json');}catch(error){if(error.code!=='ENOENT')throw error;}
   try {await readFile(new URL('dist/rinkcraft-game-rules.json',root));files.push('rinkcraft-game-rules.json');}catch(error){if(error.code!=='ENOENT')throw error;}
   try {await readFile(new URL('dist/rinkcraft-possession-rules.json',root));files.push('rinkcraft-possession-rules.json');}catch(error){if(error.code!=='ENOENT')throw error;}
   try {await readFile(new URL('dist/rinkcraft-characters.json',root));files.push('rinkcraft-characters.json');}catch(error){if(error.code!=='ENOENT')throw error;}
   try {await readFile(new URL('dist/rinkcraft-numbers.json',root));files.push('rinkcraft-numbers.json');}catch(error){if(error.code!=='ENOENT')throw error;}
   try {await readFile(new URL('dist/rinkcraft-history.json',root));files.push('rinkcraft-history.json');}catch(error){if(error.code!=='ENOENT')throw error;}
+
   try { await readFile(new URL('dist/build-info.json', root)); files.push('build-info.json'); }
   catch (error) { if (error.code !== 'ENOENT') throw error; }
   for (const name of await readdir(new URL('src/', root))) if (name.endsWith('.ts')) files.push('src/' + name.replace(/\.ts$/, '.js'));

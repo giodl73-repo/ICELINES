@@ -233,9 +233,20 @@ impl BrowserEngine {
     }
 
     /// Stateless workload projection; never mutates resident packages or ratings.
-    pub fn deployment_report(&self, bytes: &[u8], player: u32, season: u32, game_type: u8, goalie: bool, source_url: &str) -> Result<String, JsValue> {
-        let card=icelines_sources::nhl::deployment::parse(bytes,player,season,game_type,goalie,source_url).map_err(|e|JsValue::from_str(&e))?;
-        serde_json::to_string(&card).map_err(|e|JsValue::from_str(&e.to_string()))
+    pub fn deployment_report(
+        &self,
+        bytes: &[u8],
+        player: u32,
+        season: u32,
+        game_type: u8,
+        goalie: bool,
+        source_url: &str,
+    ) -> Result<String, JsValue> {
+        let card = icelines_sources::nhl::deployment::parse(
+            bytes, player, season, game_type, goalie, source_url,
+        )
+        .map_err(|e| JsValue::from_str(&e))?;
+        serde_json::to_string(&card).map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
     pub fn current_season(&self) -> u32 {
@@ -253,10 +264,13 @@ impl BrowserEngine {
     }
     /// Versioned one/two/three-stat conjunctions, separate from classes and abilities.
     pub fn achievement_catalog(&self, reports: &[u8], rules: &str) -> Result<String, JsValue> {
-        let input=icelines_sources::nhl::achievements::parse(reports).map_err(|e|JsValue::from_str(&e))?;
-        let rules:Vec<icelines_core::view_model::rinkcraft_achievements::Rule>=serde_json::from_str(rules).map_err(|e|JsValue::from_str(&e.to_string()))?;
-        let catalog=icelines_core::view_model::rinkcraft_achievements::evaluate(&input,&rules).map_err(|e|JsValue::from_str(&e))?;
-        serde_json::to_string(&catalog).map_err(|e|JsValue::from_str(&e.to_string()))
+        let input = icelines_sources::nhl::achievements::parse(reports)
+            .map_err(|e| JsValue::from_str(&e))?;
+        let rules: Vec<icelines_core::view_model::rinkcraft_achievements::Rule> =
+            serde_json::from_str(rules).map_err(|e| JsValue::from_str(&e.to_string()))?;
+        let catalog = icelines_core::view_model::rinkcraft_achievements::evaluate(&input, &rules)
+            .map_err(|e| JsValue::from_str(&e))?;
+        serde_json::to_string(&catalog).map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
     /// Select an already validated window by exact revision; never fetch or save.
@@ -382,32 +396,62 @@ impl BrowserEngine {
         serde_json::to_string(&comparison).map_err(|e| JsValue::from_str(&e.to_string()))
     }
     pub fn game_character(&self, rules: &str, request: &str) -> Result<String, JsValue> {
-        icelines_core::view_model::rinkcraft_game::build_from_json(rules, request).map_err(|e| JsValue::from_str(&e))
+        icelines_core::view_model::rinkcraft_game::build_from_json(rules, request)
+            .map_err(|e| JsValue::from_str(&e))
     }
-    pub fn possession_session(&self, character_rules: &str, rules: &str, request: &str) -> Result<String, JsValue> {
-        icelines_core::view_model::rinkcraft_possession::from_json(character_rules, rules, request).map_err(|e| JsValue::from_str(&e))
+    pub fn possession_session(
+        &self,
+        character_rules: &str,
+        rules: &str,
+        request: &str,
+    ) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_possession::from_json(character_rules, rules, request)
+            .map_err(|e| JsValue::from_str(&e))
     }
-    pub fn export_possession_replay(&self, character_rules: &str, rules: &str, request: &str) -> Result<String, JsValue> {
-        icelines_core::view_model::rinkcraft_possession::export_replay_from_json(character_rules,rules,request).map_err(|e|JsValue::from_str(&e))
+    pub fn export_possession_replay(
+        &self,
+        character_rules: &str,
+        rules: &str,
+        request: &str,
+    ) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_possession::export_replay_from_json(
+            character_rules,
+            rules,
+            request,
+        )
+        .map_err(|e| JsValue::from_str(&e))
     }
     pub fn import_possession_replay(&self, replay: &str) -> Result<String, JsValue> {
-        icelines_core::view_model::rinkcraft_possession::import_replay_from_json(replay).map_err(|e|JsValue::from_str(&e))
+        icelines_core::view_model::rinkcraft_possession::import_replay_from_json(replay)
+            .map_err(|e| JsValue::from_str(&e))
     }
     pub fn inspect_possession_replay(&self, replay: &str, step: f64) -> Result<String, JsValue> {
-        if !step.is_finite() || step.fract()!=0.0 || !(0.0..=16.0).contains(&step) {return Err(JsValue::from_str("Review step must be an integer from 0 to 16"));}
-        icelines_core::view_model::rinkcraft_possession::inspect_replay_from_json(replay,step as usize).map_err(|e|JsValue::from_str(&e))
+        if !step.is_finite() || step.fract() != 0.0 || !(0.0..=16.0).contains(&step) {
+            return Err(JsValue::from_str(
+                "Review step must be an integer from 0 to 16",
+            ));
+        }
+        icelines_core::view_model::rinkcraft_possession::inspect_replay_from_json(
+            replay,
+            step as usize,
+        )
+        .map_err(|e| JsValue::from_str(&e))
     }
     pub fn branch_possession_replay(&self, replay: &str, fork: &str) -> Result<String, JsValue> {
-        icelines_core::view_model::rinkcraft_possession::branch_replay_from_json(replay,fork).map_err(|e|JsValue::from_str(&e))
+        icelines_core::view_model::rinkcraft_possession::branch_replay_from_json(replay, fork)
+            .map_err(|e| JsValue::from_str(&e))
     }
     pub fn compare_possession_plans(&self, replay: &str) -> Result<String, JsValue> {
-        icelines_core::view_model::rinkcraft_plan_compare::compare_replay_from_json(replay).map_err(|e|JsValue::from_str(&e))
+        icelines_core::view_model::rinkcraft_plan_compare::compare_replay_from_json(replay)
+            .map_err(|e| JsValue::from_str(&e))
     }
     pub fn unit_studio(&self, command: &str) -> Result<String, JsValue> {
-        icelines_core::view_model::rinkcraft_unit_studio::from_json(command).map_err(|e|JsValue::from_str(&e))
+        icelines_core::view_model::rinkcraft_unit_studio::from_json(command)
+            .map_err(|e| JsValue::from_str(&e))
     }
     pub fn import_game_character(&self, rules: &str, character: &str) -> Result<String, JsValue> {
-        icelines_core::view_model::rinkcraft_game::import_from_json(rules, character).map_err(|e| JsValue::from_str(&e))
+        icelines_core::view_model::rinkcraft_game::import_from_json(rules, character)
+            .map_err(|e| JsValue::from_str(&e))
     }
     pub fn character_sheet(
         &self,
@@ -464,7 +508,24 @@ impl BrowserEngine {
                 missing_reports:vec!["Package v1: realtime, MoneyPuck, time-on-ice, goals-for-against and goalie advanced reports are not included".into()],
             }).collect();
         profile.limitations.push("Browser profile covers resident prepared packages only (at most eight windows), not a fetched or verified complete career. Package v1 omits optional realtime, MoneyPuck, TOI and advanced reports; those metrics remain unavailable. Eviction can shorten this profile.".into());
-        if request.season_type==SeasonType::Regular {if let Some(s)=profile.latest_available.as_ref(){if let Some(w)=windows.iter().find(|w|w.package.season==s.season.0&&w.package.season_type==request.season_type){profile.achievements=icelines_core::view_model::rinkcraft_achievements::from_league(w.repository.read_league(s.season,request.season_type).collect(),s.season.0,request.player_id.0).ok().flatten();}}}
+        if request.season_type == SeasonType::Regular {
+            if let Some(s) = profile.latest_available.as_ref() {
+                if let Some(w) = windows.iter().find(|w| {
+                    w.package.season == s.season.0 && w.package.season_type == request.season_type
+                }) {
+                    profile.achievements =
+                        icelines_core::view_model::rinkcraft_achievements::from_league(
+                            w.repository
+                                .read_league(s.season, request.season_type)
+                                .collect(),
+                            s.season.0,
+                            request.player_id.0,
+                        )
+                        .ok()
+                        .flatten();
+                }
+            }
+        }
         profile.attribute_seasons = profile
             .included_seasons
             .iter()

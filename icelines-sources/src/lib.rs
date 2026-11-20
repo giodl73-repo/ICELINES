@@ -18,7 +18,6 @@ pub mod fragment;
 pub mod identity_review;
 pub mod moneypuck;
 pub mod moneypuck_finishing;
-pub mod tracking_feasibility;
 pub mod moneypuck_goalie_game;
 pub mod moneypuck_line_game;
 pub mod moneypuck_skater_game;
@@ -29,6 +28,7 @@ pub mod prospect_population;
 pub mod reconciliation;
 pub mod schema;
 pub mod teams;
+pub mod tracking_feasibility;
 pub mod transactions;
 pub mod yahoo_eligibility;
 

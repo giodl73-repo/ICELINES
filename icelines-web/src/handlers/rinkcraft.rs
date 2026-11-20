@@ -892,25 +892,165 @@ struct EvidenceView {
     metrics: Vec<NumberRow>,
     credit: String,
 }
-struct FeatSectionView {earned:usize,total:usize,visible:Vec<FeatRowView>,other:Vec<FeatRowView>,context:String,notes:Vec<String>,rules:String,source:String}
-struct FeatRowView {id:String,name:String,state:String,tier:String,trigger:String,conditions:Vec<String>,note:String}
-fn plain_feat_condition(c: &icelines_core::view_model::rinkcraft_achievements::Condition, tier: Option<&str>) -> String {
-    let key=match tier {Some("Gold"|"Marked")=>"90",Some("Silver"|"Elevated")=>"75",_=>"60"};
-    let label=c.label.replace(" / GP","");
-    let amount=|v:f64|if c.unit=="Pct"{format!("{:.1}%",v*100.)}else if c.unit=="Count"{format!("{v:.0}")}else{format!("{v:.2}/game")};
-    if let Some(cut)=c.raw_thresholds.get(key){format!("{} {} {}",label,if cut.inclusive{"≥"}else{">"},amount(cut.value))}
-    else{format!("{}: {}",label,c.value.map(amount).unwrap_or_else(||"Unavailable".into()))}
+struct FeatSectionView {
+    earned: usize,
+    total: usize,
+    visible: Vec<FeatRowView>,
+    other: Vec<FeatRowView>,
+    context: String,
+    notes: Vec<String>,
+    rules: String,
+    source: String,
 }
-fn feat_section(view:&RinkcraftStatProfile,placement:&str,limit:usize)->Option<FeatSectionView>{
-    let a=view.achievements.as_ref()?;
-    let target=view.numerical_evidence.as_ref().map(|n|n.season).or_else(||view.latest_available.as_ref().map(|s|s.season.0));
-    let group=view.latest_available.as_ref().map(|s|match s.position{icelines_core::model::Position::Goalie=>"Goalies",icelines_core::model::Position::Defense=>"Defense",_=>"Forwards"});
-    if a.player_id!=view.request.player_id.0||Some(a.season)!=target||a.season_type!=view.request.season_type.label()||Some(a.group.as_str())!=group{return None;}
-    let mut feats:Vec<_>=a.feats.iter().filter(|f|f.placements.iter().any(|p|p==placement)).collect();
-    feats.sort_by(|a,b|{let score=|f:&icelines_core::view_model::rinkcraft_achievements::Feat|f.conditions.iter().filter_map(|c|c.percentile).fold(100.,f64::min);(b.state=="earned").cmp(&(a.state=="earned")).then_with(||b.required.cmp(&a.required)).then_with(||score(b).total_cmp(&score(a))).then_with(||a.id.cmp(&b.id))});
-    let earned=feats.iter().filter(|f|f.state=="earned").count();let total=feats.len();let mut visible=Vec::new();let mut other=Vec::new();
-    for f in feats{let row=FeatRowView{id:f.id.clone(),name:f.name.clone(),state:f.state.clone(),tier:f.tier.clone().unwrap_or_else(||if f.state=="unavailable"{"Needs data".into()}else if f.state=="ineligible"{format!("Needs {} GP ({}/{})",a.minimum_games,a.games,a.minimum_games)}else{format!("{}/{} conditions",f.matched,f.required)}),note:f.note.clone().unwrap_or_default(),trigger:f.conditions.iter().map(|c|plain_feat_condition(c,f.tier.as_deref())).collect::<Vec<_>>().join(" · "),conditions:f.conditions.iter().map(|c|format!("Your {}: {}",c.label,c.value.map(|v|if c.unit=="Pct"{format!("{:.1}%",v*100.)}else{format!("{v:.2}")}).unwrap_or_else(||"Unavailable".into()))).collect()};if f.state=="earned"&&visible.len()<limit{visible.push(row)}else{other.push(row)}}
-    Some(FeatSectionView{earned,total,visible,other,context:format!("{} · {} · all strengths · {} · {} GP",a.season,a.season_type,a.group,a.games),notes:a.notes.clone(),rules:a.rules_sha256.clone(),source:a.source_sha256.clone()})
+struct FeatRowView {
+    id: String,
+    name: String,
+    state: String,
+    tier: String,
+    trigger: String,
+    conditions: Vec<String>,
+    note: String,
+}
+fn plain_feat_condition(
+    c: &icelines_core::view_model::rinkcraft_achievements::Condition,
+    tier: Option<&str>,
+) -> String {
+    let key = match tier {
+        Some("Gold" | "Marked") => "90",
+        Some("Silver" | "Elevated") => "75",
+        _ => "60",
+    };
+    let label = c.label.replace(" / GP", "");
+    let amount = |v: f64| {
+        if c.unit == "Pct" {
+            format!("{:.1}%", v * 100.)
+        } else if c.unit == "Count" {
+            format!("{v:.0}")
+        } else {
+            format!("{v:.2}/game")
+        }
+    };
+    if let Some(cut) = c.raw_thresholds.get(key) {
+        format!(
+            "{} {} {}",
+            label,
+            if cut.inclusive { "≥" } else { ">" },
+            amount(cut.value)
+        )
+    } else {
+        format!(
+            "{}: {}",
+            label,
+            c.value.map(amount).unwrap_or_else(|| "Unavailable".into())
+        )
+    }
+}
+fn feat_section(
+    view: &RinkcraftStatProfile,
+    placement: &str,
+    limit: usize,
+) -> Option<FeatSectionView> {
+    let a = view.achievements.as_ref()?;
+    let target = view
+        .numerical_evidence
+        .as_ref()
+        .map(|n| n.season)
+        .or_else(|| view.latest_available.as_ref().map(|s| s.season.0));
+    let group = view.latest_available.as_ref().map(|s| match s.position {
+        icelines_core::model::Position::Goalie => "Goalies",
+        icelines_core::model::Position::Defense => "Defense",
+        _ => "Forwards",
+    });
+    if a.player_id != view.request.player_id.0
+        || Some(a.season) != target
+        || a.season_type != view.request.season_type.label()
+        || Some(a.group.as_str()) != group
+    {
+        return None;
+    }
+    let mut feats: Vec<_> = a
+        .feats
+        .iter()
+        .filter(|f| f.placements.iter().any(|p| p == placement))
+        .collect();
+    feats.sort_by(|a, b| {
+        let score = |f: &icelines_core::view_model::rinkcraft_achievements::Feat| {
+            f.conditions
+                .iter()
+                .filter_map(|c| c.percentile)
+                .fold(100., f64::min)
+        };
+        (b.state == "earned")
+            .cmp(&(a.state == "earned"))
+            .then_with(|| b.required.cmp(&a.required))
+            .then_with(|| score(b).total_cmp(&score(a)))
+            .then_with(|| a.id.cmp(&b.id))
+    });
+    let earned = feats.iter().filter(|f| f.state == "earned").count();
+    let total = feats.len();
+    let mut visible = Vec::new();
+    let mut other = Vec::new();
+    for f in feats {
+        let row = FeatRowView {
+            id: f.id.clone(),
+            name: f.name.clone(),
+            state: f.state.clone(),
+            tier: f.tier.clone().unwrap_or_else(|| {
+                if f.state == "unavailable" {
+                    "Needs data".into()
+                } else if f.state == "ineligible" {
+                    format!(
+                        "Needs {} GP ({}/{})",
+                        a.minimum_games, a.games, a.minimum_games
+                    )
+                } else {
+                    format!("{}/{} conditions", f.matched, f.required)
+                }
+            }),
+            note: f.note.clone().unwrap_or_default(),
+            trigger: f
+                .conditions
+                .iter()
+                .map(|c| plain_feat_condition(c, f.tier.as_deref()))
+                .collect::<Vec<_>>()
+                .join(" · "),
+            conditions: f
+                .conditions
+                .iter()
+                .map(|c| {
+                    format!(
+                        "Your {}: {}",
+                        c.label,
+                        c.value
+                            .map(|v| if c.unit == "Pct" {
+                                format!("{:.1}%", v * 100.)
+                            } else {
+                                format!("{v:.2}")
+                            })
+                            .unwrap_or_else(|| "Unavailable".into())
+                    )
+                })
+                .collect(),
+        };
+        if f.state == "earned" && visible.len() < limit {
+            visible.push(row)
+        } else {
+            other.push(row)
+        }
+    }
+    Some(FeatSectionView {
+        earned,
+        total,
+        visible,
+        other,
+        context: format!(
+            "{} · {} · all strengths · {} · {} GP",
+            a.season, a.season_type, a.group, a.games
+        ),
+        notes: a.notes.clone(),
+        rules: a.rules_sha256.clone(),
+        source: a.source_sha256.clone(),
+    })
 }
 struct HistoryView {
     changes: Vec<HistoryChangeView>,
@@ -922,8 +1062,21 @@ struct HistoryView {
     coverage: Vec<String>,
     limits: Vec<String>,
 }
-struct HistoryChangeView { scope: String, exposure: String, rows: Vec<HistoryChangeRowView> }
-struct HistoryChangeRowView { key: String, label: String, earlier: String, later: String, difference: String, peer: String, state: String, note: String }
+struct HistoryChangeView {
+    scope: String,
+    exposure: String,
+    rows: Vec<HistoryChangeRowView>,
+}
+struct HistoryChangeRowView {
+    key: String,
+    label: String,
+    earlier: String,
+    later: String,
+    difference: String,
+    peer: String,
+    state: String,
+    note: String,
+}
 struct HistoryRowView {
     key: String,
     label: String,
@@ -1038,13 +1191,20 @@ fn assessment_view(
 }
 fn history_view(h: &icelines_core::view_model::rinkcraft_history::HistoryCard) -> HistoryView {
     let change_value = |unit: &str, value: Option<f64>, signed: bool| -> String {
-        value.map(|v| {
-            let n = if unit == "Pct" {v * 100.} else {v};
-            let n = if n.abs() < 0.005 {0.} else {n};
-            let prefix = if signed && n > 0. {"+"} else {""};
-            let suffix = match unit {"Pct" if signed => " pp", "Pct" => "%", "Per60" => " /60", _ => ""};
-            format!("{prefix}{n:.2}{suffix}")
-        }).unwrap_or_else(|| "—".into())
+        value
+            .map(|v| {
+                let n = if unit == "Pct" { v * 100. } else { v };
+                let n = if n.abs() < 0.005 { 0. } else { n };
+                let prefix = if signed && n > 0. { "+" } else { "" };
+                let suffix = match unit {
+                    "Pct" if signed => " pp",
+                    "Pct" => "%",
+                    "Per60" => " /60",
+                    _ => "",
+                };
+                format!("{prefix}{n:.2}{suffix}")
+            })
+            .unwrap_or_else(|| "—".into())
     };
     HistoryView {
         changes: h.changes.iter().map(|c| HistoryChangeView {
@@ -1170,12 +1330,23 @@ fn measurement_value(m: &icelines_core::view_model::rinkcraft_numbers::Measureme
 fn evidence_view(c: &icelines_core::view_model::rinkcraft_numbers::EvidenceCard) -> EvidenceView {
     EvidenceView {
         estimated_record: c.estimated_record.clone(),
-        stat_attributes: c.stat_attributes.clone().filter(|s| s.player_id == c.player_id && s.season == c.season && s.group == c.group),
-        front_maximum_speed: c.style_evidence.as_ref()
+        stat_attributes: c
+            .stat_attributes
+            .clone()
+            .filter(|s| s.player_id == c.player_id && s.season == c.season && s.group == c.group),
+        front_maximum_speed: c
+            .style_evidence
+            .as_ref()
             .filter(|s| s.season == c.season && matches!(c.group.as_str(), "Forwards" | "Defense"))
-            .and_then(|s| s.measured.iter().find(|m| m.key == "max-skating-speed"
-                && m.unit == "Mph" && m.value.is_finite() && m.value >= 0.
-                && m.scope.starts_with("All strengths")))
+            .and_then(|s| {
+                s.measured.iter().find(|m| {
+                    m.key == "max-skating-speed"
+                        && m.unit == "Mph"
+                        && m.value.is_finite()
+                        && m.value >= 0.
+                        && m.scope.starts_with("All strengths")
+                })
+            })
             .map(|m| format!("{:.2} mph", m.value)),
         context: c.context_evidence.as_ref().map(context_view),
         sources: c.sources.clone(),
@@ -1691,29 +1862,64 @@ pub async fn get_html(
         Vec::new()
     };
     let template = ProfileTemplate {
-        role_feats:feat_section(&view,"role_coverage",2),
-        skills_feats:feat_section(&view,"task_skills",3),
-        tendency_feats:feat_section(&view,"playing_tendencies",2),
-        distinctive_feats:feat_section(&view,"distinctive_features",2),
-        risk_feats:feat_section(&view,"risk_flags",2),
-        deployment: view.deployment_evidence.as_ref().filter(|d|
-            d.player_id==view.request.player_id && d.season_type==view.request.season_type
-            && Some(d.season.0)==view.numerical_evidence.as_ref().map(|n|n.season).or_else(||view.latest_available.as_ref().map(|s|s.season.0))
-            && d.goalie==view.latest_available.as_ref().is_some_and(|s|s.position==icelines_core::model::Position::Goalie)
-        ).cloned(),
-        front_position: view.latest_available.as_ref()
+        role_feats: feat_section(&view, "role_coverage", 2),
+        skills_feats: feat_section(&view, "task_skills", 3),
+        tendency_feats: feat_section(&view, "playing_tendencies", 2),
+        distinctive_feats: feat_section(&view, "distinctive_features", 2),
+        risk_feats: feat_section(&view, "risk_flags", 2),
+        deployment: view
+            .deployment_evidence
+            .as_ref()
+            .filter(|d| {
+                d.player_id == view.request.player_id
+                    && d.season_type == view.request.season_type
+                    && Some(d.season.0)
+                        == view
+                            .numerical_evidence
+                            .as_ref()
+                            .map(|n| n.season)
+                            .or_else(|| view.latest_available.as_ref().map(|s| s.season.0))
+                    && d.goalie
+                        == view
+                            .latest_available
+                            .as_ref()
+                            .is_some_and(|s| s.position == icelines_core::model::Position::Goalie)
+            })
+            .cloned(),
+        front_position: view
+            .latest_available
+            .as_ref()
             .map(|s| s.position.abbreviation().to_owned())
             .or_else(|| view.numerical_evidence.as_ref().map(|n| n.group.clone()))
             .unwrap_or_else(|| "Unknown".into()),
         documentary_catalog_available: comparison_character_catalog().0.is_some(),
         comparison_choices,
-        brief_gaps: view.character_sheet.as_ref().map(|c| {
-            let mut gaps=Vec::new();
-            for f in &c.features { for gap in &f.unmeasured_stats { if !gaps.contains(gap) {gaps.push(gap.clone());} } }
-            gaps
-        }).unwrap_or_default(),
-        brief_history_matches: view.numerical_evidence.as_ref().zip(view.numerical_history.as_ref()).is_some_and(|(n,h)|
-            h.player_id==n.player_id && h.seasons.last().is_some_and(|s|s.season==n.season) && h.assessment.as_ref().is_some_and(|a|a.last_season==n.season)),
+        brief_gaps: view
+            .character_sheet
+            .as_ref()
+            .map(|c| {
+                let mut gaps = Vec::new();
+                for f in &c.features {
+                    for gap in &f.unmeasured_stats {
+                        if !gaps.contains(gap) {
+                            gaps.push(gap.clone());
+                        }
+                    }
+                }
+                gaps
+            })
+            .unwrap_or_default(),
+        brief_history_matches: view
+            .numerical_evidence
+            .as_ref()
+            .zip(view.numerical_history.as_ref())
+            .is_some_and(|(n, h)| {
+                h.player_id == n.player_id
+                    && h.seasons.last().is_some_and(|s| s.season == n.season)
+                    && h.assessment
+                        .as_ref()
+                        .is_some_and(|a| a.last_season == n.season)
+            }),
         history: view.numerical_history.as_ref().map(history_view),
         numerical: view.numerical_evidence.as_ref().map(evidence_view),
         stat_line: stat_line(&view, p.season),
@@ -1822,106 +2028,327 @@ mod tests {
 
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct GameBuildPayload { rules: serde_json::Value, request: serde_json::Value }
+pub struct GameBuildPayload {
+    rules: serde_json::Value,
+    request: serde_json::Value,
+}
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct GameImportPayload { rules: serde_json::Value, character: serde_json::Value }
+pub struct GameImportPayload {
+    rules: serde_json::Value,
+    character: serde_json::Value,
+}
 fn game_response(value: Result<String, String>) -> Result<Response, WebError> {
-    let raw = value.map_err(|message| WebError::BadParam { param: "game_character".into(), message, hint: Some("Game builds are fictional; use the supplied versioned rules.".into()) })?;
-    let parsed: serde_json::Value = serde_json::from_str(&raw).map_err(|e| WebError::Internal(e.into()))?;
-    Ok(crate::api::json_data_meta("rinkcraft-game-character", parsed, serde_json::json!({"profile_kind":"fictional_game_character","nhl_assessment":false})))
+    let raw = value.map_err(|message| WebError::BadParam {
+        param: "game_character".into(),
+        message,
+        hint: Some("Game builds are fictional; use the supplied versioned rules.".into()),
+    })?;
+    let parsed: serde_json::Value =
+        serde_json::from_str(&raw).map_err(|e| WebError::Internal(e.into()))?;
+    Ok(crate::api::json_data_meta(
+        "rinkcraft-game-character",
+        parsed,
+        serde_json::json!({"profile_kind":"fictional_game_character","nhl_assessment":false}),
+    ))
 }
-pub async fn post_game_character(axum::Json(payload): axum::Json<GameBuildPayload>) -> Result<Response, WebError> {
-    game_response(icelines_core::view_model::rinkcraft_game::build_from_json(&payload.rules.to_string(), &payload.request.to_string()))
+pub async fn post_game_character(
+    axum::Json(payload): axum::Json<GameBuildPayload>,
+) -> Result<Response, WebError> {
+    game_response(icelines_core::view_model::rinkcraft_game::build_from_json(
+        &payload.rules.to_string(),
+        &payload.request.to_string(),
+    ))
 }
-pub async fn post_import_game_character(axum::Json(payload): axum::Json<GameImportPayload>) -> Result<Response, WebError> {
-    game_response(icelines_core::view_model::rinkcraft_game::import_from_json(&payload.rules.to_string(), &payload.character.to_string()))
+pub async fn post_import_game_character(
+    axum::Json(payload): axum::Json<GameImportPayload>,
+) -> Result<Response, WebError> {
+    game_response(icelines_core::view_model::rinkcraft_game::import_from_json(
+        &payload.rules.to_string(),
+        &payload.character.to_string(),
+    ))
 }
 
 #[derive(Template)]
 #[template(path = "rinkcraft_game.html")]
-struct GamePageTemplate { active_label: String }
+struct GamePageTemplate {
+    active_label: String,
+}
 pub async fn get_game_page() -> Result<Html<String>, WebError> {
-    GamePageTemplate { active_label: "Game character creation".into() }.render().map(Html).map_err(|e| WebError::Internal(e.into()))
+    GamePageTemplate {
+        active_label: "Game character creation".into(),
+    }
+    .render()
+    .map(Html)
+    .map_err(|e| WebError::Internal(e.into()))
 }
 pub async fn get_game_rules() -> Result<Response, WebError> {
-    let path = std::env::var_os("ICELINES_RINKCRAFT_GAME_RULES").ok_or_else(|| WebError::NotFound { what: "Game rules not configured".into(), hint: Some("Configure the explicit Rinkcraft playtest rules file.".into()) })?;
+    let path =
+        std::env::var_os("ICELINES_RINKCRAFT_GAME_RULES").ok_or_else(|| WebError::NotFound {
+            what: "Game rules not configured".into(),
+            hint: Some("Configure the explicit Rinkcraft playtest rules file.".into()),
+        })?;
     let metadata = std::fs::metadata(&path).map_err(|e| WebError::Internal(e.into()))?;
-    if metadata.len() > 64 * 1024 { return Err(WebError::BadParam { param: "game_rules".into(), message: "Game rules exceed 64 KiB".into(), hint: None }); }
+    if metadata.len() > 64 * 1024 {
+        return Err(WebError::BadParam {
+            param: "game_rules".into(),
+            message: "Game rules exceed 64 KiB".into(),
+            hint: None,
+        });
+    }
     let raw = std::fs::read_to_string(path).map_err(|e| WebError::Internal(e.into()))?;
-    let rules: icelines_core::view_model::rinkcraft_game::GameRules = serde_json::from_str(&raw).map_err(|e| WebError::BadParam { param: "game_rules".into(), message: e.to_string(), hint: None })?;
-    rules.validate().map_err(|message| WebError::BadParam { param: "game_rules".into(), message, hint: None })?;
-    Ok(crate::api::json_data_meta("rinkcraft-game-rules", rules, serde_json::json!({"game_only":true})))
+    let rules: icelines_core::view_model::rinkcraft_game::GameRules = serde_json::from_str(&raw)
+        .map_err(|e| WebError::BadParam {
+            param: "game_rules".into(),
+            message: e.to_string(),
+            hint: None,
+        })?;
+    rules.validate().map_err(|message| WebError::BadParam {
+        param: "game_rules".into(),
+        message,
+        hint: None,
+    })?;
+    Ok(crate::api::json_data_meta(
+        "rinkcraft-game-rules",
+        rules,
+        serde_json::json!({"game_only":true}),
+    ))
 }
 
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct PossessionPayload { character_rules: serde_json::Value, rules: serde_json::Value, request: serde_json::Value }
-pub async fn post_possession(axum::Json(p): axum::Json<PossessionPayload>) -> Result<Response, WebError> {
-    let raw=icelines_core::view_model::rinkcraft_possession::from_json(&p.character_rules.to_string(),&p.rules.to_string(),&p.request.to_string()).map_err(|message|WebError::BadParam {param:"possession".into(),message,hint:None})?;
-    let result:serde_json::Value=serde_json::from_str(&raw).map_err(|e|WebError::Internal(e.into()))?;
-    Ok(crate::api::json_data_meta("rinkcraft-possession",result,serde_json::json!({"fictional":true,"nhl_probability":false})))
+pub struct PossessionPayload {
+    character_rules: serde_json::Value,
+    rules: serde_json::Value,
+    request: serde_json::Value,
+}
+pub async fn post_possession(
+    axum::Json(p): axum::Json<PossessionPayload>,
+) -> Result<Response, WebError> {
+    let raw = icelines_core::view_model::rinkcraft_possession::from_json(
+        &p.character_rules.to_string(),
+        &p.rules.to_string(),
+        &p.request.to_string(),
+    )
+    .map_err(|message| WebError::BadParam {
+        param: "possession".into(),
+        message,
+        hint: None,
+    })?;
+    let result: serde_json::Value =
+        serde_json::from_str(&raw).map_err(|e| WebError::Internal(e.into()))?;
+    Ok(crate::api::json_data_meta(
+        "rinkcraft-possession",
+        result,
+        serde_json::json!({"fictional":true,"nhl_probability":false}),
+    ))
 }
 pub async fn get_possession_rules() -> Result<Response, WebError> {
-    let path=std::env::var_os("ICELINES_RINKCRAFT_ENCOUNTER_RULES").ok_or_else(||WebError::NotFound {what:"Possession playtest rules not configured".into(),hint:None})?;
-    if std::fs::metadata(&path).map_err(|e|WebError::Internal(e.into()))?.len()>8192 {return Err(WebError::BadParam {param:"possession_rules".into(),message:"Rules exceed 8 KiB".into(),hint:None});}
-    let raw=std::fs::read_to_string(path).map_err(|e|WebError::Internal(e.into()))?;
-    if raw.len()>8192 {return Err(WebError::BadParam {param:"possession_rules".into(),message:"Rules exceed 8 KiB".into(),hint:None});}
-    let rules:icelines_core::view_model::rinkcraft_possession::Rules=serde_json::from_str(&raw).map_err(|e|WebError::BadParam {param:"possession_rules".into(),message:e.to_string(),hint:None})?;
-    rules.validate().map_err(|message|WebError::BadParam {param:"possession_rules".into(),message,hint:None})?;
-    Ok(crate::api::json_data_meta("rinkcraft-possession-rules",rules,serde_json::json!({"fictional":true})))
+    let path = std::env::var_os("ICELINES_RINKCRAFT_ENCOUNTER_RULES").ok_or_else(|| {
+        WebError::NotFound {
+            what: "Possession playtest rules not configured".into(),
+            hint: None,
+        }
+    })?;
+    if std::fs::metadata(&path)
+        .map_err(|e| WebError::Internal(e.into()))?
+        .len()
+        > 8192
+    {
+        return Err(WebError::BadParam {
+            param: "possession_rules".into(),
+            message: "Rules exceed 8 KiB".into(),
+            hint: None,
+        });
+    }
+    let raw = std::fs::read_to_string(path).map_err(|e| WebError::Internal(e.into()))?;
+    if raw.len() > 8192 {
+        return Err(WebError::BadParam {
+            param: "possession_rules".into(),
+            message: "Rules exceed 8 KiB".into(),
+            hint: None,
+        });
+    }
+    let rules: icelines_core::view_model::rinkcraft_possession::Rules = serde_json::from_str(&raw)
+        .map_err(|e| WebError::BadParam {
+            param: "possession_rules".into(),
+            message: e.to_string(),
+            hint: None,
+        })?;
+    rules.validate().map_err(|message| WebError::BadParam {
+        param: "possession_rules".into(),
+        message,
+        hint: None,
+    })?;
+    Ok(crate::api::json_data_meta(
+        "rinkcraft-possession-rules",
+        rules,
+        serde_json::json!({"fictional":true}),
+    ))
 }
 
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct PossessionReplayPayload { replay: serde_json::Value }
-fn possession_replay_response(result: Result<String,String>) -> Result<Response,WebError> {
-    let raw=result.map_err(|message|WebError::BadParam{param:"possession_replay".into(),message,hint:None})?;
-    let value:serde_json::Value=serde_json::from_str(&raw).map_err(|e|WebError::Internal(e.into()))?;
-    Ok(crate::api::json_data_meta("rinkcraft-possession-replay",value,serde_json::json!({"fictional":true,"validation":"recomputed_internal_consistency"})))
+pub struct PossessionReplayPayload {
+    replay: serde_json::Value,
 }
-pub async fn post_export_possession(axum::Json(p):axum::Json<PossessionPayload>) -> Result<Response,WebError> {
-    possession_replay_response(icelines_core::view_model::rinkcraft_possession::export_replay_from_json(&p.character_rules.to_string(),&p.rules.to_string(),&p.request.to_string()))
+fn possession_replay_response(result: Result<String, String>) -> Result<Response, WebError> {
+    let raw = result.map_err(|message| WebError::BadParam {
+        param: "possession_replay".into(),
+        message,
+        hint: None,
+    })?;
+    let value: serde_json::Value =
+        serde_json::from_str(&raw).map_err(|e| WebError::Internal(e.into()))?;
+    Ok(crate::api::json_data_meta(
+        "rinkcraft-possession-replay",
+        value,
+        serde_json::json!({"fictional":true,"validation":"recomputed_internal_consistency"}),
+    ))
 }
-pub async fn post_import_possession(axum::Json(p):axum::Json<PossessionReplayPayload>) -> Result<Response,WebError> {
-    possession_replay_response(icelines_core::view_model::rinkcraft_possession::import_replay_from_json(&p.replay.to_string()))
+pub async fn post_export_possession(
+    axum::Json(p): axum::Json<PossessionPayload>,
+) -> Result<Response, WebError> {
+    possession_replay_response(
+        icelines_core::view_model::rinkcraft_possession::export_replay_from_json(
+            &p.character_rules.to_string(),
+            &p.rules.to_string(),
+            &p.request.to_string(),
+        ),
+    )
+}
+pub async fn post_import_possession(
+    axum::Json(p): axum::Json<PossessionReplayPayload>,
+) -> Result<Response, WebError> {
+    possession_replay_response(
+        icelines_core::view_model::rinkcraft_possession::import_replay_from_json(
+            &p.replay.to_string(),
+        ),
+    )
 }
 
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct PossessionInspectPayload { replay:serde_json::Value,step:usize }
+pub struct PossessionInspectPayload {
+    replay: serde_json::Value,
+    step: usize,
+}
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct PossessionBranchPayload { replay:serde_json::Value,fork:serde_json::Value }
-pub async fn post_inspect_possession(axum::Json(p):axum::Json<PossessionInspectPayload>)->Result<Response,WebError> {
-    possession_replay_response(icelines_core::view_model::rinkcraft_possession::inspect_replay_from_json(&p.replay.to_string(),p.step))
+pub struct PossessionBranchPayload {
+    replay: serde_json::Value,
+    fork: serde_json::Value,
 }
-pub async fn post_branch_possession(axum::Json(p):axum::Json<PossessionBranchPayload>)->Result<Response,WebError> {
-    possession_replay_response(icelines_core::view_model::rinkcraft_possession::branch_replay_from_json(&p.replay.to_string(),&p.fork.to_string()))
+pub async fn post_inspect_possession(
+    axum::Json(p): axum::Json<PossessionInspectPayload>,
+) -> Result<Response, WebError> {
+    possession_replay_response(
+        icelines_core::view_model::rinkcraft_possession::inspect_replay_from_json(
+            &p.replay.to_string(),
+            p.step,
+        ),
+    )
 }
-pub async fn post_compare_possession(axum::Json(p):axum::Json<PossessionReplayPayload>)->Result<Response,WebError> {
-    possession_replay_response(icelines_core::view_model::rinkcraft_plan_compare::compare_replay_from_json(&p.replay.to_string()))
+pub async fn post_branch_possession(
+    axum::Json(p): axum::Json<PossessionBranchPayload>,
+) -> Result<Response, WebError> {
+    possession_replay_response(
+        icelines_core::view_model::rinkcraft_possession::branch_replay_from_json(
+            &p.replay.to_string(),
+            &p.fork.to_string(),
+        ),
+    )
 }
-pub async fn post_unit_studio(axum::Json(p):axum::Json<serde_json::Value>)->Result<Response,WebError> {
-    let raw=icelines_core::view_model::rinkcraft_unit_studio::from_json(&p.to_string()).map_err(|message|WebError::BadParam{param:"unit_scene".into(),message,hint:None})?;
-    let value:serde_json::Value=serde_json::from_str(&raw).map_err(|e|WebError::Internal(e.into()))?;
-    Ok(crate::api::json_data_meta("rinkcraft-unit-studio",value,serde_json::json!({"fictional":true,"validation":"recomputed_internal_consistency"})))
+pub async fn post_compare_possession(
+    axum::Json(p): axum::Json<PossessionReplayPayload>,
+) -> Result<Response, WebError> {
+    possession_replay_response(
+        icelines_core::view_model::rinkcraft_plan_compare::compare_replay_from_json(
+            &p.replay.to_string(),
+        ),
+    )
 }
-fn read_unit_asset(env:&str,max:usize)->Result<String,WebError> {
-    let path=std::env::var_os(env).ok_or_else(||WebError::NotFound{what:"Authored unit setup not configured".into(),hint:None})?;
-    if std::fs::metadata(&path).map_err(|e|WebError::Internal(e.into()))?.len()>max as u64 {return Err(WebError::BadParam{param:"unit_setup".into(),message:"Unit setup file exceeds bounds".into(),hint:None})}
-    let raw=std::fs::read_to_string(path).map_err(|e|WebError::Internal(e.into()))?;
-    if raw.len()>max {return Err(WebError::BadParam{param:"unit_setup".into(),message:"Unit setup file exceeds bounds".into(),hint:None})}Ok(raw)
+pub async fn post_unit_studio(
+    axum::Json(p): axum::Json<serde_json::Value>,
+) -> Result<Response, WebError> {
+    let raw = icelines_core::view_model::rinkcraft_unit_studio::from_json(&p.to_string()).map_err(
+        |message| WebError::BadParam {
+            param: "unit_scene".into(),
+            message,
+            hint: None,
+        },
+    )?;
+    let value: serde_json::Value =
+        serde_json::from_str(&raw).map_err(|e| WebError::Internal(e.into()))?;
+    Ok(crate::api::json_data_meta(
+        "rinkcraft-unit-studio",
+        value,
+        serde_json::json!({"fictional":true,"validation":"recomputed_internal_consistency"}),
+    ))
 }
-pub async fn get_unit_blueprint()->Result<Response,WebError> {
-    let raw=read_unit_asset("ICELINES_RINKCRAFT_UNIT_BLUEPRINT",256*1024)?;
-    let value:icelines_core::view_model::rinkcraft_units::Blueprint=serde_json::from_str(&raw).map_err(|e|WebError::BadParam{param:"unit_blueprint".into(),message:e.to_string(),hint:None})?;
-    value.validate_shape().map_err(|message|WebError::BadParam{param:"unit_blueprint".into(),message,hint:None})?;
-    Ok(crate::api::json_data_meta("rinkcraft-unit-blueprint",value,serde_json::json!({"fictional":true})))
+fn read_unit_asset(env: &str, max: usize) -> Result<String, WebError> {
+    let path = std::env::var_os(env).ok_or_else(|| WebError::NotFound {
+        what: "Authored unit setup not configured".into(),
+        hint: None,
+    })?;
+    if std::fs::metadata(&path)
+        .map_err(|e| WebError::Internal(e.into()))?
+        .len()
+        > max as u64
+    {
+        return Err(WebError::BadParam {
+            param: "unit_setup".into(),
+            message: "Unit setup file exceeds bounds".into(),
+            hint: None,
+        });
+    }
+    let raw = std::fs::read_to_string(path).map_err(|e| WebError::Internal(e.into()))?;
+    if raw.len() > max {
+        return Err(WebError::BadParam {
+            param: "unit_setup".into(),
+            message: "Unit setup file exceeds bounds".into(),
+            hint: None,
+        });
+    }
+    Ok(raw)
 }
-pub async fn get_unit_rules()->Result<Response,WebError> {
-    let raw=read_unit_asset("ICELINES_RINKCRAFT_UNIT_RULES",8192)?;
-    let value:icelines_core::view_model::rinkcraft_units::Rules=serde_json::from_str(&raw).map_err(|e|WebError::BadParam{param:"unit_rules".into(),message:e.to_string(),hint:None})?;
-    value.validate().map_err(|message|WebError::BadParam{param:"unit_rules".into(),message,hint:None})?;
-    Ok(crate::api::json_data_meta("rinkcraft-unit-rules",value,serde_json::json!({"fictional":true})))
+pub async fn get_unit_blueprint() -> Result<Response, WebError> {
+    let raw = read_unit_asset("ICELINES_RINKCRAFT_UNIT_BLUEPRINT", 256 * 1024)?;
+    let value: icelines_core::view_model::rinkcraft_units::Blueprint =
+        serde_json::from_str(&raw).map_err(|e| WebError::BadParam {
+            param: "unit_blueprint".into(),
+            message: e.to_string(),
+            hint: None,
+        })?;
+    value
+        .validate_shape()
+        .map_err(|message| WebError::BadParam {
+            param: "unit_blueprint".into(),
+            message,
+            hint: None,
+        })?;
+    Ok(crate::api::json_data_meta(
+        "rinkcraft-unit-blueprint",
+        value,
+        serde_json::json!({"fictional":true}),
+    ))
+}
+pub async fn get_unit_rules() -> Result<Response, WebError> {
+    let raw = read_unit_asset("ICELINES_RINKCRAFT_UNIT_RULES", 8192)?;
+    let value: icelines_core::view_model::rinkcraft_units::Rules = serde_json::from_str(&raw)
+        .map_err(|e| WebError::BadParam {
+            param: "unit_rules".into(),
+            message: e.to_string(),
+            hint: None,
+        })?;
+    value.validate().map_err(|message| WebError::BadParam {
+        param: "unit_rules".into(),
+        message,
+        hint: None,
+    })?;
+    Ok(crate::api::json_data_meta(
+        "rinkcraft-unit-rules",
+        value,
+        serde_json::json!({"fictional":true}),
+    ))
 }

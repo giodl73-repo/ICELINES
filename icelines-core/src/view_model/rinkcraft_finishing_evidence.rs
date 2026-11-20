@@ -259,15 +259,24 @@ pub fn project(raw: &Value, card: &EvidenceCard, catalogs: &[NumericalCatalog]) 
         out.history_seasons.sort_unstable();
         out.history_goals = Some(record.history.iter().map(|h| h.goals as u64).sum());
         out.history_xg = Some(record.history.iter().map(|h| h.xg).sum());
-        let mut rows = record.history.iter().map(|h| SupportRow {
-            season: h.season, position: h.position, goals: h.goals,
-            provider_xg: h.xg, position_factor: h.position.factor(&input.model),
-            adjusted_xg: h.xg * h.position.factor(&input.model),
-        }).collect::<Vec<_>>();
+        let mut rows = record
+            .history
+            .iter()
+            .map(|h| SupportRow {
+                season: h.season,
+                position: h.position,
+                goals: h.goals,
+                provider_xg: h.xg,
+                position_factor: h.position.factor(&input.model),
+                adjusted_xg: h.xg * h.position.factor(&input.model),
+            })
+            .collect::<Vec<_>>();
         rows.sort_by_key(|h| h.season);
         let adjusted_history_xg: f64 = rows.iter().map(|h| h.adjusted_xg).sum();
         out.support = Some(Support {
-            rows, prior_shape: input.model.shape, prior_rate: input.model.shape,
+            rows,
+            prior_shape: input.model.shape,
+            prior_rate: input.model.shape,
             posterior_shape: prediction.position_residual.shape,
             posterior_rate: prediction.position_residual.rate,
             adjusted_history_xg,

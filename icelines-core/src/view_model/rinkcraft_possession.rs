@@ -253,7 +253,15 @@ pub(crate) fn resolve_scene(
     participants: Vec<Participant>,
     bindings: &SceneBindings,
 ) -> Result<Session, String> {
-    resolve_scene_inner(rules, request, hero_slot, participants, bindings, false, false)
+    resolve_scene_inner(
+        rules,
+        request,
+        hero_slot,
+        participants,
+        bindings,
+        false,
+        false,
+    )
 }
 pub(crate) fn resolve_receiving_scene(
     rules: &Rules,
@@ -262,7 +270,15 @@ pub(crate) fn resolve_receiving_scene(
     participants: Vec<Participant>,
     bindings: &SceneBindings,
 ) -> Result<Session, String> {
-    resolve_scene_inner(rules, request, hero_slot, participants, bindings, true, false)
+    resolve_scene_inner(
+        rules,
+        request,
+        hero_slot,
+        participants,
+        bindings,
+        true,
+        false,
+    )
 }
 pub(crate) fn resolve_shooting_scene(
     rules: &Rules,
@@ -271,7 +287,15 @@ pub(crate) fn resolve_shooting_scene(
     participants: Vec<Participant>,
     bindings: &SceneBindings,
 ) -> Result<Session, String> {
-    resolve_scene_inner(rules, request, hero_slot, participants, bindings, true, true)
+    resolve_scene_inner(
+        rules,
+        request,
+        hero_slot,
+        participants,
+        bindings,
+        true,
+        true,
+    )
 }
 fn resolve_scene_inner(
     rules: &Rules,

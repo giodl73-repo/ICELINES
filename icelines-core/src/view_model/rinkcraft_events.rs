@@ -94,7 +94,9 @@ pub enum Action {
     LoosePuckAccess {
         plan: space::Plan,
     },
-    ThreeZoneSequence { plan: zones::Plan },
+    ThreeZoneSequence {
+        plan: zones::Plan,
+    },
     Challenge {
         actor: String,
         victim: String,
@@ -483,7 +485,9 @@ impl Engine<'_> {
         Ok(())
     }
     fn apply(&mut self, i: usize, step: &Step) -> Result<(), String> {
-        if let Action::ThreeZoneSequence {plan}=&step.action {return self.three_zones(i,step.seconds,plan);}
+        if let Action::ThreeZoneSequence { plan } = &step.action {
+            return self.three_zones(i, step.seconds, plan);
+        }
         if let Action::LoosePuckAccess { plan } = &step.action {
             return self.spatial_access(i, step.seconds, plan);
         }
@@ -815,7 +819,8 @@ impl Engine<'_> {
             Action::Wait => self.emit(i, "wait", None, None, None),
             Action::Restart { .. }
             | Action::ReboundFollowup { .. }
-            | Action::LoosePuckAccess { .. } | Action::ThreeZoneSequence { .. } => unreachable!(),
+            | Action::LoosePuckAccess { .. }
+            | Action::ThreeZoneSequence { .. } => unreachable!(),
         }
         Ok(())
     }

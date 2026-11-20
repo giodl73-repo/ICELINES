@@ -328,8 +328,18 @@ pub fn build_rinkcraft_stat_profile(
         })
         .filter_map(|s| repo.view(request.player_id, s.season, s.season_type))
         .collect();
-    let mut profile=build_rinkcraft_stat_profile_from_views(&identity.full_name, request, views)?;
-    if request.season_type==SeasonType::Regular {if let Some(s)=profile.latest_available.as_ref(){profile.achievements=super::rinkcraft_achievements::from_league(repo.read_league(s.season,request.season_type).collect(),s.season.0,request.player_id.0).ok().flatten();}}
+    let mut profile = build_rinkcraft_stat_profile_from_views(&identity.full_name, request, views)?;
+    if request.season_type == SeasonType::Regular {
+        if let Some(s) = profile.latest_available.as_ref() {
+            profile.achievements = super::rinkcraft_achievements::from_league(
+                repo.read_league(s.season, request.season_type).collect(),
+                s.season.0,
+                request.player_id.0,
+            )
+            .ok()
+            .flatten();
+        }
+    }
     Ok(profile)
 }
 

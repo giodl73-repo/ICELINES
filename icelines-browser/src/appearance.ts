@@ -1,4 +1,4 @@
-export const THEMES = ['night-game', 'fresh-ice', 'hockey-club'] as const;
+export const THEMES = ['night-game', 'fresh-ice', 'hockey-club', 'nhl'] as const;
 export type Theme = typeof THEMES[number];
 export const THEME_KEY = 'icelines.appearance.v1';
 export function parseTheme(value: unknown): Theme {

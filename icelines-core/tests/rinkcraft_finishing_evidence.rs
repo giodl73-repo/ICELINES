@@ -107,7 +107,9 @@ fn support_uses_residual_prior_and_each_historical_position() {
     assert_eq!(s.posterior_rate, 13.6);
     assert!((s.history_weight - 9.6 / 13.6).abs() < 1e-14);
     assert!((f.mean.unwrap() - s.posterior_shape / s.posterior_rate).abs() < 1e-14);
-    assert!((f.mean.unwrap() - ((1. - s.history_weight) + s.history_weight * 10. / 9.6)).abs() < 1e-14);
+    assert!(
+        (f.mean.unwrap() - ((1. - s.history_weight) + s.history_weight * 10. / 9.6)).abs() < 1e-14
+    );
 }
 
 #[test]
@@ -116,7 +118,10 @@ fn absent_support_deserializes_and_unavailable_has_no_ledger() {
     let f = read(&h).finishing_research.unwrap();
     let mut legacy = serde_json::to_value(&f).unwrap();
     legacy.as_object_mut().unwrap().remove("support");
-    assert!(serde_json::from_value::<e::Readout>(legacy).unwrap().support.is_none());
+    assert!(serde_json::from_value::<e::Readout>(legacy)
+        .unwrap()
+        .support
+        .is_none());
     h.finishing_research = Some(json!({"invalid": true}));
     assert!(read(&h).finishing_research.unwrap().support.is_none());
 }

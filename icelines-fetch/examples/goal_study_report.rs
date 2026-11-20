@@ -121,51 +121,99 @@ fn main() -> Result<()> {
             &report["audit"]["events"][0],
             &record["documentary_annotation"],
         )?;
-        record["goal_geometry"]=icelines_fetch::goal_geometry::assess(&report["audit"]["events"][0],&report["summary"]);
-        record["goalie_geometry"]=icelines_fetch::goalie_geometry::assess(&report["audit"]["events"][0],&record["goal_geometry"]);
-        let event=&report["audit"]["events"][0];
-        record["opposition_geometry"]=icelines_fetch::opposition_geometry::assess(event,&record["goal_geometry"]);
-        let mut windows=icelines_fetch::goal_event_windows::assess(event,&record["goal_geometry"]);
-        let order:Vec<_>=record["credited_contributions"]["credited_touch_order"].as_array().context("credited touch order")?.iter().filter_map(Value::as_u64).collect();
-        for window in windows["candidates"].as_array_mut().context("candidate windows")? {
-            let end=window["from_frame_index"].as_u64().unwrap() as usize;
-            let start=window["comparison_start_frame_index"].as_u64().unwrap() as usize;
-            window["pre_crossing_credited_anchors"]=contributors::ordered_anchors(&event["frames"].as_array().context("frames")?[..=end],&order);
-            let mut sequences=icelines_fetch::goal_sequence_summary::assess(&record["opposition_geometry"],&window["pre_crossing_credited_anchors"]);
-            for example in sequences["examples"].as_array_mut().context("sequence examples")? {
-                for phase in example["phases"].as_array_mut().context("sequence phases")? {
-                    let first=phase["from_frame_index"].as_u64().context("phase start")? as usize;
-                    let last=phase["to_frame_index"].as_u64().context("phase end")? as usize;
-                    phase["same_identity_motion"]=icelines_fetch::goal_marker_motion::assess(event,&record["goal_geometry"],first,last);
-                    phase["same_identity_motion"]["goalie_endpoint_reference"]=json!({
+        record["goal_geometry"] = icelines_fetch::goal_geometry::assess(
+            &report["audit"]["events"][0],
+            &report["summary"],
+        );
+        record["goalie_geometry"] = icelines_fetch::goalie_geometry::assess(
+            &report["audit"]["events"][0],
+            &record["goal_geometry"],
+        );
+        let event = &report["audit"]["events"][0];
+        record["opposition_geometry"] =
+            icelines_fetch::opposition_geometry::assess(event, &record["goal_geometry"]);
+        let mut windows =
+            icelines_fetch::goal_event_windows::assess(event, &record["goal_geometry"]);
+        let order: Vec<_> = record["credited_contributions"]["credited_touch_order"]
+            .as_array()
+            .context("credited touch order")?
+            .iter()
+            .filter_map(Value::as_u64)
+            .collect();
+        for window in windows["candidates"]
+            .as_array_mut()
+            .context("candidate windows")?
+        {
+            let end = window["from_frame_index"].as_u64().unwrap() as usize;
+            let start = window["comparison_start_frame_index"].as_u64().unwrap() as usize;
+            window["pre_crossing_credited_anchors"] = contributors::ordered_anchors(
+                &event["frames"].as_array().context("frames")?[..=end],
+                &order,
+            );
+            let mut sequences = icelines_fetch::goal_sequence_summary::assess(
+                &record["opposition_geometry"],
+                &window["pre_crossing_credited_anchors"],
+            );
+            for example in sequences["examples"]
+                .as_array_mut()
+                .context("sequence examples")?
+            {
+                for phase in example["phases"]
+                    .as_array_mut()
+                    .context("sequence phases")?
+                {
+                    let first = phase["from_frame_index"].as_u64().context("phase start")? as usize;
+                    let last = phase["to_frame_index"].as_u64().context("phase end")? as usize;
+                    phase["same_identity_motion"] = icelines_fetch::goal_marker_motion::assess(
+                        event,
+                        &record["goal_geometry"],
+                        first,
+                        last,
+                    );
+                    phase["same_identity_motion"]["goalie_endpoint_reference"] = json!({
                         "status":record["goalie_geometry"]["status"],"recorded_goalie_id":record["goalie_geometry"]["recorded_goalie_id"],
                         "recorded_goalie_name":record["goalie_geometry"]["recorded_goalie_name"],
                         "start_status":record["goalie_geometry"]["frames"][first]["status"],"end_status":record["goalie_geometry"]["frames"][last]["status"],
                         "start":record["goalie_geometry"]["frames"][first]["goalie_marker"],"end":record["goalie_geometry"]["frames"][last]["goalie_marker"]});
                 }
             }
-            window["opposition_sequence_summary"]=sequences;
-            window["goalie_marker_at_comparison_start"]=record["goalie_geometry"]["frames"][start].clone();
-            window["goalie_marker_at_comparison_end"]=record["goalie_geometry"]["frames"][end].clone();
+            window["opposition_sequence_summary"] = sequences;
+            window["goalie_marker_at_comparison_start"] =
+                record["goalie_geometry"]["frames"][start].clone();
+            window["goalie_marker_at_comparison_end"] =
+                record["goalie_geometry"]["frames"][end].clone();
         }
-        record["goal_event_windows"]=windows;
-        let last=event["frames"].as_array().context("full source frames")?.len().checked_sub(1).context("empty source clip")?;
-        let scene=icelines_fetch::goal_sample_scene::assess(event,0,last);
-        let history=icelines_fetch::goal_puck_distance_history::assess(&scene,&record["goal_geometry"]);
-        let control=icelines_fetch::goal_control_candidates::assess(&scene,&record["goal_geometry"],&icelines_fetch::goal_control_candidates::Policy::default());
-        let payload=json!({"schema":"icelines.full-puck-sequence.v0.1","target":record["target"],"frame_count":last+1,
+        record["goal_event_windows"] = windows;
+        let last = event["frames"]
+            .as_array()
+            .context("full source frames")?
+            .len()
+            .checked_sub(1)
+            .context("empty source clip")?;
+        let scene = icelines_fetch::goal_sample_scene::assess(event, 0, last);
+        let history =
+            icelines_fetch::goal_puck_distance_history::assess(&scene, &record["goal_geometry"]);
+        let control = icelines_fetch::goal_control_candidates::assess(
+            &scene,
+            &record["goal_geometry"],
+            &icelines_fetch::goal_control_candidates::Policy::default(),
+        );
+        let payload = json!({"schema":"icelines.full-puck-sequence.v0.1","target":record["target"],"frame_count":last+1,
             "candidate_windows":record["goal_event_windows"]["candidates"].as_array().context("windows")?.iter().map(|w|json!({"from_frame_index":w["from_frame_index"],"to_frame_index":w["to_frame_index"]})).collect::<Vec<_>>(),
             "exact_goal_frame_verified":false,"distance_history":history,"control_candidates":control,
             "phase":{"from_frame_index":0,"to_frame_index":last,"same_identity_motion":{
                 "snapshot_only":true,"show_all_observed":true,"hide_proximity":true,"markers":[],"puck_samples_native":[],
                 "synchronized_scene":scene,"target_goal_reference_native":record["goal_geometry"]["target_goal_reference"],
                 "goalie_endpoint_reference":{"status":record["goalie_geometry"]["status"],"recorded_goalie_id":record["goalie_geometry"]["recorded_goalie_id"],"recorded_goalie_name":record["goalie_geometry"]["recorded_goalie_name"]}}}});
-        let relative=format!("full-sequence/{}-{}.json",record["target"]["game_id"].as_u64().context("game ID")?,record["target"]["event_id"].as_u64().context("event ID")?);
-        let path=PathBuf::from(&args[1]).join(&relative);
-        icelines_fetch::atomic_write::write_json_atomic(&path,&payload)?;
-        let payload_bytes=std::fs::read(&path)?;
-        record["full_puck_sequence"]=json!({"schema":"icelines.full-puck-sequence-reference.v0.1","file":relative,"sha256":icelines_fetch::goal_visualizer::sha256_hex(&payload_bytes),"frame_count":last+1});
-
+        let relative = format!(
+            "full-sequence/{}-{}.json",
+            record["target"]["game_id"].as_u64().context("game ID")?,
+            record["target"]["event_id"].as_u64().context("event ID")?
+        );
+        let path = PathBuf::from(&args[1]).join(&relative);
+        icelines_fetch::atomic_write::write_json_atomic(&path, &payload)?;
+        let payload_bytes = std::fs::read(&path)?;
+        record["full_puck_sequence"] = json!({"schema":"icelines.full-puck-sequence-reference.v0.1","file":relative,"sha256":icelines_fetch::goal_visualizer::sha256_hex(&payload_bytes),"frame_count":last+1});
     }
     let mut summary = summarize(&records);
     summary["documentary_annotated_cases"] = json!(records
@@ -207,7 +255,12 @@ fn main() -> Result<()> {
         .replace('<', "\\u003c")
         .replace('>', "\\u003e")
         .replace('&', "\\u0026");
-    let html = HTML.replace("__FULL_SEQUENCE_SCRIPT__", include_str!("support/goal_full_puck_sequence.js")).replace("__STUDY_DATA__", &payload);
+    let html = HTML
+        .replace(
+            "__FULL_SEQUENCE_SCRIPT__",
+            include_str!("support/goal_full_puck_sequence.js"),
+        )
+        .replace("__STUDY_DATA__", &payload);
     std::fs::write(out.join("index.html"), html)?;
     println!("{}", serde_json::to_string_pretty(&summary)?);
     Ok(())

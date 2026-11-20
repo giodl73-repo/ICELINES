@@ -30,6 +30,9 @@ const RINKCRAFT_CHARACTER_CSS: &[u8] = include_bytes!("../static/rinkcraft-chara
 const RINKCRAFT_POSSESSION_JS: &[u8] = include_bytes!("../static/rinkcraft-possession.js");
 const RINKCRAFT_UNIT_STUDIO_JS: &[u8] = include_bytes!("../static/rinkcraft-unit-studio.js");
 const RINKCRAFT_GAME_JS: &[u8] = include_bytes!("../static/rinkcraft-game.js");
+const APPEARANCE_CSS: &[u8] = include_bytes!("../static/appearance.css");
+const QUERY_APPEARANCE_JS: &[u8] = include_bytes!("../static/query-appearance.js");
+const DATE_RANGE_CSS: &[u8] = include_bytes!("../static/date-range.css");
 const ICELINES_SVG: &[u8] = include_bytes!("../static/icelines.svg");
 const SITE_WEBMANIFEST: &[u8] = include_bytes!("../static/site.webmanifest");
 
@@ -55,10 +58,19 @@ pub async fn serve_static(Path(asset): Path<String>) -> Response {
         "htmx.min.js" => (HTMX_MIN_JS, "application/javascript; charset=utf-8"),
         "dashboard.js" => (DASHBOARD_JS, "application/javascript; charset=utf-8"),
         "style.css" => (STYLE_CSS, "text/css; charset=utf-8"),
-        "rinkcraft-possession.js" => (RINKCRAFT_POSSESSION_JS, "application/javascript; charset=utf-8"),
-        "rinkcraft-unit-studio.js" => (RINKCRAFT_UNIT_STUDIO_JS, "application/javascript; charset=utf-8"),
+        "rinkcraft-possession.js" => (
+            RINKCRAFT_POSSESSION_JS,
+            "application/javascript; charset=utf-8",
+        ),
+        "rinkcraft-unit-studio.js" => (
+            RINKCRAFT_UNIT_STUDIO_JS,
+            "application/javascript; charset=utf-8",
+        ),
         "rinkcraft-game.js" => (RINKCRAFT_GAME_JS, "application/javascript; charset=utf-8"),
         "rinkcraft-character.css" => (RINKCRAFT_CHARACTER_CSS, "text/css; charset=utf-8"),
+        "appearance.css" => (APPEARANCE_CSS, "text/css; charset=utf-8"),
+        "date-range.css" => (DATE_RANGE_CSS, "text/css; charset=utf-8"),
+        "query-appearance.js" => (QUERY_APPEARANCE_JS, "application/javascript; charset=utf-8"),
         "icelines.svg" => (ICELINES_SVG, "image/svg+xml; charset=utf-8"),
         "site.webmanifest" => (SITE_WEBMANIFEST, "application/manifest+json; charset=utf-8"),
         _ => return (StatusCode::NOT_FOUND, "static asset not found").into_response(),

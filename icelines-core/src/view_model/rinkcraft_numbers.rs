@@ -250,11 +250,11 @@ pub fn build(
 /// Presentation projection over already computed measures; no new hockey score.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EvidenceCard {
-    #[serde(default, skip_serializing_if="Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub estimated_record: Option<super::rinkcraft_stat_scores::EstimatedRecord>,
-    #[serde(default, skip_serializing_if="Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stat_attributes: Option<super::rinkcraft_stat_scores::Profile>,
-    #[serde(default,skip_serializing_if="Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub finishing_research: Option<super::rinkcraft_finishing_evidence::Readout>,
     #[serde(default)]
     pub context_evidence: Option<super::rinkcraft_context::ContextEvidence>,
@@ -425,10 +425,23 @@ impl NumericalCatalog {
             .map(|(_, key, _)| key.to_string())
             .collect();
         Ok(Some(EvidenceCard {
-            estimated_record: Some(super::rinkcraft_stat_scores::estimate_record(self.season, p.games, p.minutes, None,
-                &facets.iter().map(|f: &EvidenceFacet| super::rinkcraft_stat_scores::RecordMetric {
-                    key:f.measurement.key.clone(),label:f.label.clone(),unit:f.measurement.unit.clone(),value:f.measurement.value,
-                }).collect::<Vec<_>>())),
+            estimated_record: Some(super::rinkcraft_stat_scores::estimate_record(
+                self.season,
+                p.games,
+                p.minutes,
+                None,
+                &facets
+                    .iter()
+                    .map(
+                        |f: &EvidenceFacet| super::rinkcraft_stat_scores::RecordMetric {
+                            key: f.measurement.key.clone(),
+                            label: f.label.clone(),
+                            unit: f.measurement.unit.clone(),
+                            value: f.measurement.value,
+                        },
+                    )
+                    .collect::<Vec<_>>(),
+            )),
             stat_attributes: None,
             finishing_research: None,
             context_evidence: Some(super::rinkcraft_context::build(p)),

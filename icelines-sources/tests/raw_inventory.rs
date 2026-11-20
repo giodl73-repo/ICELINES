@@ -94,7 +94,6 @@ fn csv_category_budget_fails_instead_of_truncating() {
     for i in 0..513 {
         raw.push_str(&format!("category-{i}\n"));
     }
-    let error = icelines_sources::raw_inventory::csv_categories(&raw, "kind")
-        .unwrap_err();
+    let error = icelines_sources::raw_inventory::csv_categories(&raw, "kind").unwrap_err();
     assert!(error.contains("budget exceeded"));
 }

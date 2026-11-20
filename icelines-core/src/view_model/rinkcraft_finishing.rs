@@ -180,9 +180,21 @@ fn posterior(shape: f64, rate: f64) -> Result<GammaPosterior, String> {
 }
 /// Conditional Gamma-Poisson update for one declared observation window.
 /// The caller owns provenance/chronology; this is not a capability score.
-pub fn update_multiplier(shape:f64,rate:f64,goals:u64,xg:f64)->Result<GammaPosterior,String>{
-    if !positive(shape)||!positive(rate)||!nonnegative(xg)||(xg==0.&&goals>0)||goals>(1_u64<<53){return Err("invalid conditional finishing evidence".into());}
-    posterior(shape+goals as f64,rate+xg)
+pub fn update_multiplier(
+    shape: f64,
+    rate: f64,
+    goals: u64,
+    xg: f64,
+) -> Result<GammaPosterior, String> {
+    if !positive(shape)
+        || !positive(rate)
+        || !nonnegative(xg)
+        || (xg == 0. && goals > 0)
+        || goals > (1_u64 << 53)
+    {
+        return Err("invalid conditional finishing evidence".into());
+    }
+    posterior(shape + goals as f64, rate + xg)
 }
 pub fn predict(m: &Model, target: &Target, history: &[HistoryRow]) -> Result<Prediction, String> {
     if !season(m.calibration_season)
