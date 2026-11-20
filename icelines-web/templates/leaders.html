@@ -36,7 +36,7 @@
     </ul>
 </section>
 {% endif %}
-{% if rows.is_empty() %}<section class="empty-state"><h2>{{ empty_title }}</h2><p>{{ empty_detail }}</p>{% for action in empty_recovery %}<a href="{{ action.href }}">{{ action.label }}</a>{% endfor %}</section>{% endif %}
+{% if rows.is_empty() %}<section class="empty-state" data-empty-state="leaders" data-empty-kind="{{ empty_kind }}"><h2>{{ empty_title }}</h2><p>{{ empty_detail }}</p>{% for action in empty_recovery %}<a href="{{ action.href }}">{{ action.label }}</a>{% endfor %}</section>{% endif %}
 <details class="query-advanced"><summary>Advanced filters</summary>
 {# Filter form — King.2.3. Submits via GET so the URL is
    bookmarkable. Each row in the form becomes one ?filter= param.

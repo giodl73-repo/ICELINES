@@ -56,7 +56,7 @@ test('a deadline releases the lock even if an adapter stops responding', async (
 });
 
 test('manual fallback serializes locally and queued cancellation cannot bypass the current reader', async () => {
-  const coordinator = new LiveReadCoordinator(undefined), held = deferred();
+  const coordinator = new LiveReadCoordinator(null), held = deferred();
   assert.equal(coordinator.crossTab, false); const order = [];
   const one = coordinator.run(new AbortController().signal, async () => { order.push('one'); await held.promise; });
   const abort = new AbortController(); const two = coordinator.run(abort.signal, async () => { order.push('cancelled'); });
