@@ -44,40 +44,19 @@ fn finish_profiles(
             }
         }
     }
-    let mut references: BTreeMap<(u64, String, String), BTreeMap<u64, f64>> = BTreeMap::new();
+    let mut achievements = Vec::new();
     for (_, bytes) in files.iter() {
         let p: Value = serde_json::from_slice(bytes)?;
-        let a = &p["achievements"];
-        if a["games"].as_u64().unwrap_or(0) < a["minimum_games"].as_u64().unwrap_or(u64::MAX) {
-            continue;
-        }
-        for feat in a["feats"].as_array().into_iter().flatten() {
-            for c in feat["conditions"].as_array().into_iter().flatten() {
-                if let (Some(season), Some(group), Some(id), Some(key), Some(value)) = (
-                    a["season"].as_u64(),
-                    a["group"].as_str(),
-                    a["player_id"].as_u64(),
-                    c["key"].as_str(),
-                    c["value"].as_f64(),
-                ) {
-                    references
-                        .entry((season, group.into(), key.into()))
-                        .or_default()
-                        .insert(id, value);
-                }
-            }
+        if !p["achievements"].is_null() {
+            achievements.push(serde_json::from_value::<
+                icelines_core::view_model::rinkcraft_achievements::AchievementProfile,
+            >(p["achievements"].clone())?);
         }
     }
-    let cuts = references
+    icelines_core::view_model::rinkcraft_achievements::refresh_profiles(&mut achievements);
+    let refreshed = achievements
         .into_iter()
-        .map(|(key, values)| {
-            (
-                key,
-                icelines_core::view_model::rinkcraft_achievements::raw_thresholds(
-                    &values.into_values().collect::<Vec<_>>(),
-                ),
-            )
-        })
+        .map(|p| ((p.season, p.player_id), p))
         .collect::<BTreeMap<_, _>>();
     for (_, bytes) in files.iter_mut() {
         let p: Value = serde_json::from_slice(bytes)?;
@@ -128,25 +107,21 @@ fn finish_profiles(
             *bytes = serde_json::to_vec(&enriched)?;
         }
         let a = &p["achievements"];
-        let (Some(season), Some(group)) = (a["season"].as_u64(), a["group"].as_str()) else {
-            continue;
-        };
-        let mut root: RawMap = serde_json::from_slice(bytes)?;
-        let mut achievements: RawMap = serde_json::from_str(root["achievements"].get())?;
-        let mut feats: Vec<RawMap> = serde_json::from_str(achievements["feats"].get())?;
-        for f in &mut feats {
-            let mut conditions: Vec<RawMap> = serde_json::from_str(f["conditions"].get())?;
-            for c in &mut conditions {
-                let key: String = serde_json::from_str(c["key"].get())?;
-                if let Some(values) = cuts.get(&(season, group.into(), key)) {
-                    c.insert("raw_thresholds".into(), to_raw_value(values)?);
-                }
+        if let (Some(season), Some(id)) = (a["season"].as_u64(), a["player_id"].as_u64()) {
+            if let Some(updated) = refreshed.get(&(season as u32, id as u32)) {
+                let mut root: RawMap = serde_json::from_slice(bytes)?;
+                let mut record: RawMap = serde_json::from_str(root["achievements"].get())?;
+                record.insert("feats".into(), to_raw_value(&updated.feats)?);
+                record.insert("earned".into(), to_raw_value(&updated.earned)?);
+                record.insert(
+                    "minimum_games".into(),
+                    to_raw_value(&updated.minimum_games)?,
+                );
+                record.insert("notes".into(), to_raw_value(&updated.notes)?);
+                root.insert("achievements".into(), to_raw_value(&record)?);
+                *bytes = serde_json::to_vec(&root)?;
             }
-            f.insert("conditions".into(), to_raw_value(&conditions)?);
         }
-        achievements.insert("feats".into(), to_raw_value(&feats)?);
-        root.insert("achievements".into(), to_raw_value(&achievements)?);
-        *bytes = serde_json::to_vec(&root)?;
     }
     Ok(())
 }

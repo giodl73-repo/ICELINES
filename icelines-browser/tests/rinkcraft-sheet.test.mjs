@@ -50,6 +50,10 @@ test('stat feats populate five slots, retain the long list and gate actor/window
  const card=render(a),front=classed(card,'rk-front')[0];assert.equal(classed(front,'rk-stat-feats').length,5);assert.match(classed(front,'rk-front-skills')[0].textContent,/Hitter.*Hits: 2.00\/game.*Locked/);assert.match(classed(front,'rk-front-limitations')[0].textContent,/Flag/);assert.equal(classed(front,'rk-front-pressure')[0].textContent.includes('Hitter'),false);
  assert.ok(all(front).filter(n=>n.dataset.capabilityIndex!==undefined).every(n=>n.dataset.ratingState==='unassessed'));
  for(const wrong of [{...a,player_id:2},{...a,season:20252026},{...a,season_type:'playoff'},{...a,group:'Goalies'}])assert.equal(classed(render(wrong),'rk-stat-feats').length,0);
+ const early={...a,games:9,minimum_games:10,earned:0,feats:[f('Early hitter','task_skills','ineligible')]};
+ assert.match(classed(render(early),'rk-front-skills')[0].textContent,/Needs 10 GP \(9\/10\)/);
+ const qualified={...early,games:18,earned:1,feats:[f('Hitter','task_skills')]};
+ assert.doesNotMatch(classed(render(qualified),'rk-front-skills')[0].textContent,/Needs .*GP|No unlocked/);
 });
 
 test('workload requires matching actor, season, season type and position group',()=>{

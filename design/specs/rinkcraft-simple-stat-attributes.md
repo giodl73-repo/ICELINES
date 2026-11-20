@@ -44,6 +44,10 @@ existing Bronze/Silver/Gold rules, including ties and strict versus inclusive
 operators. The awards do not change. Percentiles live in the optional cutoff
 explanation instead of the main feat text.
 
+Stat feats use a common 10 GP minimum for players and reference cohorts, for
+skaters and goalies alike. At least 20 measured peers are required per stat.
+There is no further 20-game confirmation gate; observed GP stays visible.
+
 Estimated Record shows current-rate season totals with the per-game rate below.
 The loaded2026–27 window uses84 games; the loaded earlier windows use82. A supplied
 `max_possible_games` can replace that target, never below games already played.
