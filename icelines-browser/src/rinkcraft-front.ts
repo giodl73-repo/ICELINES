@@ -9,6 +9,7 @@ import {renderStatFeats} from './rinkcraft-achievements.js';
 import {renderObservations} from './rinkcraft-observations.js';
 import {openCapability} from './rinkcraft-capability.js';
 import {matchesEdge} from './rinkcraft-edge.js';
+import {matchesSkatingCandidate,renderSkatingCandidate,skatingRecordButton} from './rinkcraft-skating-candidate.js';
 import type {AchievementProfile} from './rinkcraft-achievements.js';
 import {renderRepertoire} from './rinkcraft-repertoire.js';
 import {renderDeploymentUsage} from './rinkcraft-deployment.js';
@@ -76,6 +77,7 @@ export function renderCharacterFront(
   const featGroup=goalie?'Goalies':['D','Defense'].includes(position)?'Defense':'Forwards';
   const statFeats=achievements&&achievements.player_id===(usageRequest?.player_id??sheet?.player_id)&&achievements.season===targetSeason&&achievements.season_type===usageRequest?.season_type&&achievements.group===featGroup?achievements:undefined;
   const edge=usageRequest?.season_type==='regular'&&matchesEdge(numerical?.edge_evidence,usageRequest?.player_id??sheet?.player_id,targetSeason,featGroup,numerical?.games)?numerical!.edge_evidence:undefined;
+  const skating=matchesSkatingCandidate(numerical?.edge_skating_candidate,edge,numerical?.minutes)?numerical!.edge_skating_candidate:undefined;
   const front=node('section');front.className='rk-front';front.dataset.layout='rinkcraft-profile-v2';front.dataset.class=sheet?.primary.id??'unscouted';front.dataset.profileKind='nhl_evidence';
   front.setAttribute('aria-label',`${name} compact player sheet`);
   const header=node('header');header.className='rk-front-header';
@@ -133,6 +135,7 @@ export function renderCharacterFront(
     if(edgeSpeed){response.dataset.movementState='observed_maximum';response.append(node('strong',`${edgeSpeed.value.toFixed(2)} mph`),node('small','EDGE season max · all strengths'));response.title=`Captured ${edge!.captured_at} · ${edgeSpeed.interpretation}`;}
     else if(speed){response.dataset.movementState='observed_maximum';response.append(node('strong',`${speed.value.toFixed(2)} mph`),node('small','Season max · all strengths'));response.title=`${speed.scope}. Observed maximum; not puck-carrying speed, acceleration or a capability grade.`;}
     else response.append(node('strong','—'),node('small','Unassessed'));
+    if(title==='Skating Detail'&&skating)response.append(skatingRecordButton(skating));
     responses.append(response);
   }
   const counters=box('Record Counters','rk-front-counters'),counterValues=node('dl');counterValues.className='rk-counter-values';
@@ -198,6 +201,7 @@ export function renderCharacterFront(
   distinctive.append(node('strong',sheet?.specialty??'Undocumented'));
   if(sheet)distinctive.append(node('p',sheet.summary));
   if(statFeats)distinctive.append(renderStatFeats(statFeats,'distinctive_features',2));
+  if(skating){const candidate=renderSkatingCandidate(skating);if(candidate)distinctive.append(candidate);}
   const questions=namesBox('Open Questions','rk-front-questions',sheet?.unknowns??[],sheet?'None recorded':'Undocumented');
   right.append(distinctive,questions);columns.append(left,center,right);front.append(columns);
 

@@ -7,6 +7,7 @@ export interface NumericalMeasurement {
 }
 export interface ContextEvidence {schema:string;title:string;note:string;facet_count:number;measured_facets:number;ranked_facets:number;groups:{label:string;note:string;facets:{key:string;label:string;measurement:NumericalMeasurement|null;explanation:{question:string;related_keys:string[];limit:string}}[]}[];}
 export interface NumericalEvidence {
+  edge_skating_candidate?:import('./rinkcraft-skating-candidate.js').SkatingCandidate;
   edge_evidence?:import('./rinkcraft-edge.js').EdgeEvidence;
   edge_capture_status?:{state:string;reason:string|null;source_url:string;attempted_at:string};
   career_audit?:import('./rinkcraft-career.js').CareerAudit;
