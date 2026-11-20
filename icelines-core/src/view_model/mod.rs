@@ -2362,3 +2362,4 @@ pub mod rinkcraft_edge;
 pub mod rinkcraft_edge_exposure;
 pub mod rinkcraft_seasonal_records;
 pub mod rinkcraft_finishing_fit;
+pub mod rinkcraft_task_measurements;
