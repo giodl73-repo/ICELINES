@@ -1,0 +1,35 @@
+{
+  "date": "2026-11-10",
+  "purpose": "Source preservation and local integration validation before machine migration",
+  "archive_manifest": "docs/laptop-archive/2026-10-30.json",
+  "exact_archive_refs_verified": 110,
+  "local_branch_tips_verified_remotely": 112,
+  "additional_custody_ref": "preserve/2026-11-10-integration-custody",
+  "dependency_integration_ref": "integration/dependency-cleanup-2026-11-10",
+  "merged_prs": [
+    122,
+    124
+  ],
+  "deferred_prs": [
+    {
+      "pr": 123,
+      "integration_pr": 125,
+      "reason": "Full Rust test compilation blocked by local disk exhaustion (os error 112) and linker PDB limit. No test pass claimed."
+    },
+    {
+      "pr": 110,
+      "reason": "Older stint optimization conflicts with current master and is retained on original and archive refs."
+    }
+  ],
+  "passed_checks": [
+    "cargo fmt --all",
+    "cargo clippy --workspace --all-targets --locked -- -D warnings",
+    "relay npm ci --ignore-scripts",
+    "relay npm test: seven passed",
+    "Five workflow YAML files parse and preserve exact triggers/job contracts apart from action references"
+  ],
+  "cleanup": "Stopped failed test build and removed only generated incremental cache in the validation worktree; restored over 13 GiB free",
+  "exclusions": [
+    "Git-ignored data, media, private captures and generated artifacts require separate backup; source preservation does not attest their backup"
+  ]
+}

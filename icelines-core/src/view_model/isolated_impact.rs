@@ -347,20 +347,25 @@ mod tests {
         ];
         let games = (0..84)
             .flat_map(|round| {
-                teams.chunks_exact(2).enumerate().map(move |(pair, chunk)| {
-                    let reverse = round % 2 == 1;
-                    TeamForecastGameInput {
-                        game_id: (round * 16 + pair) as u64,
-                        date: NaiveDate::from_ymd_opt(2026, 9, 29).unwrap()
-                            + chrono::Duration::days(round as i64),
-                        away_team: chunk[usize::from(reverse)].to_string(),
-                        home_team: chunk[usize::from(!reverse)].to_string(),
-                        away_score: None,
-                        home_score: None,
-                        final_result: false,
-                        last_period: None,
-                    }
-                })
+                teams
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .enumerate()
+                    .map(move |(pair, chunk)| {
+                        let reverse = round % 2 == 1;
+                        TeamForecastGameInput {
+                            game_id: (round * 16 + pair) as u64,
+                            date: NaiveDate::from_ymd_opt(2026, 9, 29).unwrap()
+                                + chrono::Duration::days(round as i64),
+                            away_team: chunk[usize::from(reverse)].to_string(),
+                            home_team: chunk[usize::from(!reverse)].to_string(),
+                            away_score: None,
+                            home_score: None,
+                            final_result: false,
+                            last_period: None,
+                        }
+                    })
             })
             .collect();
         let strengths = teams
