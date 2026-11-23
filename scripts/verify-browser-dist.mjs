@@ -10,7 +10,7 @@ const catalog = JSON.parse(await readFile(new URL('catalog.json', dist), 'utf8')
 assert.equal(shell.schema_version, 1); assert.equal(catalog.schema_version, 1);
 const allowed = new Set(['.nojekyll', 'sw.js', 'shell-manifest.json', 'pkg/icelines_wasm.d.ts', 'pkg/icelines_wasm_bg.wasm.d.ts']);
 for (const asset of shell.assets) {
-  assert.match(asset.path, /^(?:index\.html|appearance\.css|capability-rules\.json|style\.css|rinkcraft-character\.css|rinkcraft-game\.js|rinkcraft-possession\.js|rinkcraft-unit-studio\.js|rinkcraft-unit-blueprint\.json|rinkcraft-unit-rules\.json|rinkcraft-possession-rules\.json|rinkcraft-game-rules\.json|rinkcraft-characters\.json|rinkcraft-numbers\.json|rinkcraft-history\.json|catalog\.json|build-info\.json|src\/[a-z-]+\.js|pkg\/icelines_wasm(?:_bg)?\.(?:js|wasm))$/);
+  assert.match(asset.path, /^(?:index\.html|appearance\.css|capability-rules\.json|style\.css|rinkcraft-character\.css|rinkcraft-game\.js|rinkcraft-possession\.js|rinkcraft-unit-studio\.js|rinkcraft-unit-blueprint\.json|rinkcraft-unit-rules\.json|rinkcraft-possession-rules\.json|rinkcraft-game-rules\.json|rinkcraft-characters\.json|rinkcraft-numbers\.json|rinkcraft-history\.json|rinkcraft-stat-attributes\.json|catalog\.json|build-info\.json|src\/[a-z-]+\.js|pkg\/icelines_wasm(?:_bg)?\.(?:js|wasm))$/);
 
   const bytes = await readFile(new URL(asset.path, dist));
   assert.equal(hash(bytes), asset.sha256, 'Shell asset digest mismatch');

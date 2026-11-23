@@ -141,8 +141,89 @@ pub struct Profile {
     pub season: u32,
     pub group: String,
     pub scope: String,
+    #[serde(default)]
+    pub games: u32,
+    #[serde(default)]
+    pub minutes: f64,
     pub small_sample: bool,
     pub scores: Vec<Score>,
+}
+/// Portable estimates for the ordinary native and browser profile paths.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Catalog {
+    pub schema: String,
+    pub profiles: Vec<Profile>,
+}
+impl Catalog {
+    pub fn from_json(source: &str) -> Result<Self, String> {
+        if source.len() > 32 * 1024 * 1024 {
+            return Err("Stat attribute catalog exceeds 32 MiB".into());
+        }
+        let catalog: Self = serde_json::from_str(source).map_err(|e| e.to_string())?;
+        catalog.validate()?;
+        Ok(catalog)
+    }
+    pub fn validate(&self) -> Result<(), String> {
+        if self.schema != "rinkcraft.stat-attribute-catalog.v1" {
+            return Err("Unsupported stat attribute catalog".into());
+        }
+        let mut seen = BTreeSet::new();
+        let labels = [
+            "Skating",
+            "Handling",
+            "Passing",
+            "Shooting",
+            "Reading",
+            "Defending",
+        ];
+        for p in &self.profiles {
+            let year = p.season / 10000;
+            if p.schema != "rinkcraft.simple-stat-attributes.v1"
+                || p.player_id == 0
+                || !(1900..=2200).contains(&year)
+                || p.season % 10000 != year + 1
+                || !seen.insert((p.player_id, p.season))
+                || !["Forwards", "Defense"].contains(&p.group.as_str())
+                || !p.minutes.is_finite()
+                || p.minutes < 0.
+                || p.scope.trim().is_empty()
+                || p.scores.len() != labels.len()
+                || p.scores.iter().zip(labels).any(|(s, label)| {
+                    s.label != label
+                        || s.score != s.stat_points.map(level)
+                        || s.score.is_some_and(|v| !(1..=20).contains(&v))
+                        || s.stat_points
+                            .is_some_and(|v| !v.is_finite() || !(0. ..=100.).contains(&v))
+                        || s.parts.iter().any(|part| {
+                            part.value.is_some_and(|v| !v.is_finite() || v < 0.)
+                                || [part.percentile, part.favorable_percentile]
+                                    .into_iter()
+                                    .flatten()
+                                    .any(|v| !v.is_finite() || !(0. ..=100.).contains(&v))
+                        })
+                })
+                || p.scores.iter().any(|s| s.score.is_some()) && (p.games == 0 || p.minutes == 0.)
+            {
+                return Err("Invalid or duplicate stat attribute profile".into());
+            }
+        }
+        Ok(())
+    }
+    /// A season match alone is insufficient when the active snapshot has advanced.
+    pub fn profile(&self, player: u32, season: u32, games: u32) -> Option<&Profile> {
+        self.profiles
+            .iter()
+            .find(|p| p.player_id == player && p.season == season && p.games == games)
+    }
+}
+pub fn catalog_profile_json(
+    source: &str,
+    player: u32,
+    season: u32,
+    games: u32,
+) -> Result<String, String> {
+    let catalog = Catalog::from_json(source)?;
+    serde_json::to_string(&catalog.profile(player, season, games)).map_err(|e| e.to_string())
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RecordMetric {
@@ -357,6 +438,8 @@ pub fn build(season: u32, scope: &str, players: &[Player]) -> Result<Vec<Profile
             season,
             group: p.group.clone(),
             scope: scope.into(),
+            games: p.games,
+            minutes: p.minutes,
             small_sample: p.games < 10 || p.minutes < 100.,
             scores,
         });

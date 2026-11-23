@@ -70,14 +70,16 @@ function namesBox(title:string,className:string,names:readonly string[],empty="U
 export function renderCharacterFront(
   name:string,sheet:CharacterSheet|undefined,assessment:AttributeSeason|undefined,
   record:SeasonRecord|undefined,numerical:NumericalEvidence|undefined,
-  snapshot:SnapshotSelection|undefined,catalogAvailable:boolean|undefined,deploymentEvidence?:DeploymentEvidence,usageRequest?:{player_id?:number;season_type:string},achievements?:AchievementProfile,
+  snapshot:SnapshotSelection|undefined,catalogAvailable:boolean|undefined,deploymentEvidence?:DeploymentEvidence,usageRequest?:{player_id?:number;season_type:string},achievements?:AchievementProfile,statAttributeSeasons?:import('./rinkcraft-stat-scores.js').StatProfile[],
 ):HTMLElement {
   const position=record?.position??numerical?.group??assessment?.group??'Unknown';
   const goalie=['Goalie','Goalies','G'].includes(position);
   const targetSeason=numerical?.season??record?.season??assessment?.season;
   const usage=deploymentEvidence&&deploymentEvidence.season===targetSeason&&deploymentEvidence.goalie===goalie&&deploymentEvidence.player_id===(usageRequest?.player_id??sheet?.player_id)&&deploymentEvidence.season_type===usageRequest?.season_type?deploymentEvidence:undefined;
   const featGroup=goalie?'Goalies':['D','Defense'].includes(position)?'Defense':'Forwards';
-  const statScores=!goalie&&numerical?.player_id===(usageRequest?.player_id??sheet?.player_id)&&matchesStatScores(numerical?.stat_attributes,numerical?.player_id,targetSeason,featGroup)?numerical!.stat_attributes:undefined;
+  const statActor=usageRequest?.player_id??sheet?.player_id,targetGames=(numerical?.group===featGroup?numerical?.games:undefined)??record?.games;
+  const candidates=[numerical?.player_id===statActor?numerical?.stat_attributes:undefined,...(statAttributeSeasons??[]).filter(p=>p.games!==undefined)];
+  const statScores=usageRequest?.season_type==='regular'&&!goalie?candidates.find(p=>matchesStatScores(p,statActor,targetSeason,featGroup,targetGames)):undefined;
   const statFeats=achievements&&achievements.player_id===(usageRequest?.player_id??sheet?.player_id)&&achievements.season===targetSeason&&achievements.season_type===usageRequest?.season_type&&achievements.group===featGroup?achievements:undefined;
   const edge=usageRequest?.season_type==='regular'&&matchesEdge(numerical?.edge_evidence,usageRequest?.player_id??sheet?.player_id,targetSeason,featGroup,numerical?.games)?numerical!.edge_evidence:undefined;
   const skating=matchesSkatingCandidate(numerical?.edge_skating_candidate,edge,numerical?.minutes)?numerical!.edge_skating_candidate:undefined;

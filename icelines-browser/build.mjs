@@ -29,6 +29,7 @@ try {await cp(new URL('public/rinkcraft-characters.json',import.meta.url),new UR
 try {await cp(new URL('public/rinkcraft-numbers.json',import.meta.url),new URL('dist/rinkcraft-numbers.json',import.meta.url));}catch(error){if(error.code!=='ENOENT')throw error;}
 try {await cp(new URL('public/rinkcraft-history.json',import.meta.url),new URL('dist/rinkcraft-history.json',import.meta.url));}catch(error){if(error.code!=='ENOENT')throw error;}
 await cp(new URL('../icelines-web/static/appearance.css',import.meta.url),new URL('dist/appearance.css',import.meta.url));
+try {await cp(new URL('public/rinkcraft-stat-attributes.json',import.meta.url),new URL('dist/rinkcraft-stat-attributes.json',import.meta.url));}catch(error){if(error.code!=='ENOENT')throw error;}
 await cp(new URL('public/pkg/', import.meta.url), new URL('dist/pkg/', import.meta.url), { recursive: true });
 const catalog = JSON.parse(await readFile(new URL('public/catalog.json', import.meta.url), 'utf8'));
 const headers = {};

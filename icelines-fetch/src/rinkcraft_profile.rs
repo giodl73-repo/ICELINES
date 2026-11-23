@@ -34,6 +34,32 @@ pub fn attach_attribute_seasons(
     Ok(())
 }
 
+/// Shared optional source for the native CLI and HTML profile entry points.
+pub fn attach_configured_stat_attributes(
+    profile: &mut icelines_core::view_model::rinkcraft_profile::RinkcraftStatProfile,
+) {
+    if let Some(path) = std::env::var_os("ICELINES_RINKCRAFT_STAT_ATTRIBUTES") {
+        if let Err(cause) = attach_stat_attribute_catalog(profile, std::path::Path::new(&path)) {
+            profile.stat_attribute_seasons.clear();
+            profile
+                .limitations
+                .push(format!("Stat estimates unavailable: {cause}"));
+        }
+    }
+}
+
+pub fn attach_stat_attribute_catalog(
+    profile: &mut icelines_core::view_model::rinkcraft_profile::RinkcraftStatProfile,
+    path: &std::path::Path,
+) -> Result<(), String> {
+    if std::fs::metadata(path).map_err(|e| e.to_string())?.len() > 32 * 1024 * 1024 {
+        return Err("Stat attribute catalog exceeds 32 MiB".into());
+    }
+    let source = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
+    let catalog = icelines_core::view_model::rinkcraft_stat_scores::Catalog::from_json(&source)?;
+    icelines_core::view_model::rinkcraft_profile::attach_stat_attribute_catalog(profile, &catalog)
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum ProfileHydrationError {
     #[error(transparent)]

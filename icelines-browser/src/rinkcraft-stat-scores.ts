@@ -1,17 +1,17 @@
 // Display the simple attribute estimates computed by shared Rust.
 export interface StatPart {key:string;label:string;unit:string;weight:number;lower_is_better:boolean;value:number|null;percentile:number|null;favorable_percentile:number|null;peers:number;}
 export interface StatScore {label:string;score:number|null;stat_points:number|null;parts:StatPart[];note:string;}
-export interface StatProfile {schema:string;player_id:number;season:number;group:string;scope:string;small_sample:boolean;scores:StatScore[];}
+export interface StatProfile {schema:string;player_id:number;season:number;group:string;scope:string;games?:number;minutes?:number;small_sample:boolean;scores:StatScore[];}
 export interface EstimatedRecord {season:number;target_games:number;basis:string;metrics:{key:string;label:string;value:number|null;unit:string;per_game:number|null;projected_total:boolean}[];}
 const labels=['Skating','Handling','Passing','Shooting','Reading','Defending'];
-export function matchesStatScores(p:StatProfile|undefined,id:number|undefined,season:number|undefined,group:string):p is StatProfile {
- return !!p&&p.schema==='rinkcraft.simple-stat-attributes.v1'&&p.player_id===id&&p.season===season&&p.group===group&&p.scores.length===6&&p.scores.every((s,i)=>s.label===labels[i]&&(s.score===null||(Number.isInteger(s.score)&&s.score>=1&&s.score<=20)));
+export function matchesStatScores(p:StatProfile|undefined,id:number|undefined,season:number|undefined,group:string,games?:number):p is StatProfile {
+ return !!p&&p.schema==='rinkcraft.simple-stat-attributes.v1'&&p.player_id===id&&p.season===season&&p.group===group&&(games===undefined||p.games===undefined||p.games===games)&&p.scores.length===6&&p.scores.every((s,i)=>s.label===labels[i]&&(s.score===null||(Number.isInteger(s.score)&&s.score>=1&&s.score<=20)));
 }
 const node=<K extends keyof HTMLElementTagNameMap>(tag:K,text?:string):HTMLElementTagNameMap[K]=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e;};
 export function renderStatScore(profile:StatProfile,score:StatScore):HTMLElement {
  const body=node('section');body.className='rk-stat-score-detail';
  body.append(node('small','RINKCRAFT · STAT ESTIMATE'),node('h2',`${score.label} ${score.score??'—'}/20`),node('p',score.note));
- body.append(node('p',`${profile.scope} · same-season ${profile.group.toLowerCase()} comparison.`));
+ body.append(node('p',`${profile.scope}${profile.games===undefined?'':` · ${profile.games} GP`} · same-season ${profile.group.toLowerCase()} comparison.`));
  if(profile.small_sample)body.append(node('p','Small sample: fewer than 10 games or 100 minutes. This estimate can move quickly.'));
  const used=score.parts.filter(p=>p.favorable_percentile!==null).reduce((sum,p)=>sum+p.weight,0);
  const list=node('dl');list.className='rk-task-list';
@@ -32,4 +32,14 @@ export function openStatScore(profile:StatProfile,score:StatScore,player:string)
  const dialog=node('dialog');dialog.className='rk-capability-dialog';dialog.setAttribute('aria-label',`${score.label} stat estimate for ${player}`);
  const close=node('button','Close');close.type='button';close.onclick=()=>dialog.close();
  dialog.append(close,renderStatScore(profile,score));document.body.append(dialog);dialog.onclose=()=>dialog.remove();dialog.showModal();
+}
+
+let catalogPromise:Promise<unknown|undefined>|undefined;
+export function readStatAttributeCatalog():Promise<unknown|undefined> {
+ catalogPromise??=(async()=>{
+  let response:Response;try{response=await fetch(new URL('../rinkcraft-stat-attributes.json',import.meta.url));}catch{return undefined;}
+  if(response.status===404)return undefined;if(!response.ok)throw new Error('Stat estimates could not be loaded.');
+  const text=await response.text();if(text.length>32*1024*1024)throw new Error('Stat attribute catalog exceeds 32 MiB');
+  return JSON.parse(text) as unknown;
+ })();return catalogPromise;
 }

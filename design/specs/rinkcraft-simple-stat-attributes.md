@@ -40,6 +40,21 @@ catalog command is `rinkcraft_stat_score_profiles BASE NEW_DIRECTORY`; the WASM
 binding is `stat_attribute_catalog`. Native templates and the shared browser
 renderer accept the same score payload. No simulator bonuses are added here.
 
+The projector also writes `rinkcraft-stat-attributes.json`, using
+`rinkcraft.stat-attribute-catalog.v1`. Each estimate retains its observed GP and
+minutes. Set `ICELINES_RINKCRAFT_STAT_ATTRIBUTES` to that file for the ordinary
+native CLI and HTML profiles. For the browser, place it in
+`icelines-browser/public/` before building; it is included in the offline shell.
+The generated catalog remains a local data artifact, separate from source code.
+
+Shared Rust attaches estimates only for the exact player, regular season, GP and
+position family in the selected profile. A selected numerical snapshot supplies
+its own GP; canonical position and requested season bounds still apply. Browser
+requests stop at the active dataset's season. Estimates work without a numerical
+dossier. Missing or invalid optional catalogs leave the other profile facts
+usable; invalid supplied catalogs add an availability note. The WASM
+`profile_stat_attributes` binding uses the same attachment function as native.
+
 `observed_player` joins official counts, deployment and optional EDGE observations
 in shared Rust. Player, season, competition, group and GP must match. Per-60 rates
 use the deployment's all-strength total, independently of the evidence card's

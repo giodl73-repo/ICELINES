@@ -142,6 +142,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let catalog_bytes = fs::read(base.join("catalog.json"))?;
     let catalog: Value = serde_json::from_slice(&catalog_bytes)?;
     let mut rendered = Vec::new();
+    let mut attribute_profiles = Vec::new();
     let mut scored = 0;
     let mut complete = 0;
     for window in catalog["windows"]
@@ -259,10 +260,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             complete += usize::from(profile.scores.iter().all(|s| s.score.is_some()));
             rendered.push((url, serde_json::to_vec(&root)?));
         }
+        attribute_profiles.extend(profiles);
     }
+    let attributes = icelines_core::view_model::rinkcraft_stat_scores::Catalog {
+        schema: "rinkcraft.stat-attribute-catalog.v1".into(),
+        profiles: attribute_profiles,
+    };
+    attributes.validate()?;
     finish_profiles(&mut rendered, &catalog)?;
     fs::create_dir_all(out)?;
     fs::write(out.join("catalog.json"), catalog_bytes)?;
+    fs::write(
+        out.join("rinkcraft-stat-attributes.json"),
+        serde_json::to_vec(&attributes)?,
+    )?;
     if base.join("edge-coverage.json").exists() {
         let mut coverage: Value =
             serde_json::from_slice(&fs::read(base.join("edge-coverage.json"))?)?;

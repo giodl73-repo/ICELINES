@@ -160,3 +160,146 @@ fn conversion_noise_does_not_split_tied_stat_measurements() {
     let scores = build(20262027, "all strengths", &input).unwrap();
     assert_eq!(scores[0].scores[2].score, Some(20));
 }
+
+fn estimate_catalog() -> icelines_core::view_model::rinkcraft_stat_scores::Catalog {
+    use icelines_core::view_model::rinkcraft_stat_scores::{build, Catalog, Player};
+    let (record, usage, edge) = sources();
+    let row = observed_player(&record, &usage, Some(&edge)).unwrap();
+    let rows = (1..=20)
+        .map(|id| Player {
+            player_id: id,
+            ..row.clone()
+        })
+        .collect::<Vec<_>>();
+    Catalog {
+        schema: "rinkcraft.stat-attribute-catalog.v1".into(),
+        profiles: build(20262027, "all strengths", &rows).unwrap(),
+    }
+}
+fn ordinary_profile() -> icelines_core::view_model::rinkcraft_profile::RinkcraftStatProfile {
+    use icelines_core::{
+        fixtures,
+        stats_repository::StatsRepository,
+        view_model::rinkcraft_profile::{build_rinkcraft_stat_profile, RinkcraftProfileRequest},
+    };
+    let mut repo = StatsRepository::with_lru_cap(2);
+    repo.upsert_identity(fixtures::identity(1).build()).unwrap();
+    let mut row = fixtures::stats(1, 20262027, "AAA").build();
+    row.totals.gp = 20;
+    repo.upsert_stats(row).unwrap();
+    build_rinkcraft_stat_profile(
+        &repo,
+        RinkcraftProfileRequest {
+            player_id: PlayerId(1),
+            season_type: SeasonType::Regular,
+            first_season: Some(Season(20262027)),
+            last_season: Some(Season(20262027)),
+        },
+    )
+    .unwrap()
+}
+#[test]
+fn estimate_catalog_selector_requires_exact_actor_season_and_gp() {
+    use icelines_core::view_model::rinkcraft_stat_scores::{catalog_profile_json, Catalog};
+    let source = serde_json::to_string(&estimate_catalog()).unwrap();
+    let catalog = Catalog::from_json(&source).unwrap();
+    let profile = catalog.profile(1, 20262027, 20).unwrap();
+    assert_eq!(profile.games, 20);
+    assert_eq!(profile.minutes, 200.);
+    assert!(profile.scores.iter().all(|s| s.score == Some(10)));
+    for (id, season, gp) in [(999, 20262027, 20), (1, 20252026, 20), (1, 20262027, 21)] {
+        assert_eq!(
+            catalog_profile_json(&source, id, season, gp).unwrap(),
+            "null"
+        );
+    }
+    let mut invalid = estimate_catalog();
+    invalid.profiles.push(invalid.profiles[0].clone());
+    assert!(invalid.validate().is_err());
+    let mut invalid = estimate_catalog();
+    invalid.profiles[0].scores[0].score = Some(21);
+    assert!(invalid.validate().is_err());
+    let mut invalid = estimate_catalog();
+    invalid.profiles[0].games = 0;
+    assert!(invalid.validate().is_err());
+}
+#[test]
+fn ordinary_profiles_receive_estimates_without_a_numerical_dossier() {
+    use icelines_core::view_model::rinkcraft_profile::attach_stat_attribute_catalog;
+    let mut profile = ordinary_profile();
+    assert!(profile.numerical_evidence.is_none());
+    attach_stat_attribute_catalog(&mut profile, &estimate_catalog()).unwrap();
+    assert_eq!(profile.stat_attribute_seasons.len(), 1);
+    assert!(profile.stat_attribute_seasons[0]
+        .scores
+        .iter()
+        .all(|s| s.score == Some(10)));
+    let json = serde_json::to_value(&profile).unwrap();
+    assert_eq!(json["stat_attribute_seasons"][0]["games"], 20);
+    profile.timeline[0].games = 21;
+    attach_stat_attribute_catalog(&mut profile, &estimate_catalog()).unwrap();
+    assert!(profile.stat_attribute_seasons.is_empty());
+    assert!(profile.limitations.iter().any(|n| n.contains("withheld")));
+    profile.timeline[0].games = 20;
+    profile.request.season_type = SeasonType::Playoff;
+    attach_stat_attribute_catalog(&mut profile, &estimate_catalog()).unwrap();
+    assert!(profile.stat_attribute_seasons.is_empty());
+}
+#[test]
+fn canonical_position_cannot_receive_a_different_groups_estimates() {
+    use icelines_core::{
+        model::Position, view_model::rinkcraft_profile::attach_stat_attribute_catalog,
+    };
+    let mut profile = ordinary_profile();
+    for position in [Position::Defense, Position::Goalie] {
+        profile.timeline[0].position = position;
+        attach_stat_attribute_catalog(&mut profile, &estimate_catalog()).unwrap();
+        assert!(profile.stat_attribute_seasons.is_empty());
+    }
+}
+
+#[test]
+fn supplied_numeric_snapshot_controls_gp_without_bypassing_position_or_window() {
+    use icelines_core::{
+        model::Position,
+        view_model::{rinkcraft_numbers as n, rinkcraft_profile::attach_stat_attribute_catalog},
+    };
+    let catalog = n::NumericalCatalog {
+        schema: n::SCHEMA.into(),
+        protocol: n::PROTOCOL.into(),
+        season: 20262027,
+        competition: "regular".into(),
+        source_credit: "Synthetic".into(),
+        sources: vec![],
+        missing_players: vec![],
+        limitations: vec![],
+        profiles: vec![n::NumericalProfile {
+            style_evidence: None,
+            player_id: 1,
+            name: "Synthetic".into(),
+            group: "Forwards".into(),
+            situation: "5on5".into(),
+            games: 20,
+            minutes: 200.,
+            minimum_minutes: 100.,
+            eligible_peers: 20,
+            metrics: vec![],
+        }],
+    };
+    let mut profile = ordinary_profile();
+    profile.timeline[0].games = 21;
+    profile.numerical_evidence = catalog.card(1, None).unwrap();
+    attach_stat_attribute_catalog(&mut profile, &estimate_catalog()).unwrap();
+    assert_eq!(profile.stat_attribute_seasons[0].games, 20);
+    profile.numerical_evidence.as_mut().unwrap().games = 19;
+    attach_stat_attribute_catalog(&mut profile, &estimate_catalog()).unwrap();
+    assert!(profile.stat_attribute_seasons.is_empty());
+    profile.numerical_evidence.as_mut().unwrap().games = 20;
+    profile.timeline[0].position = Position::Goalie;
+    attach_stat_attribute_catalog(&mut profile, &estimate_catalog()).unwrap();
+    assert!(profile.stat_attribute_seasons.is_empty());
+    profile.timeline[0].position = Position::Center;
+    profile.request.last_season = Some(Season(20252026));
+    attach_stat_attribute_catalog(&mut profile, &estimate_catalog()).unwrap();
+    assert!(profile.stat_attribute_seasons.is_empty());
+}

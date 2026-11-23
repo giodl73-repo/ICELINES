@@ -262,6 +262,32 @@ impl BrowserEngine {
         icelines_core::view_model::rinkcraft_stat_scores::evaluate_json(input)
             .map_err(|e| JsValue::from_str(&e))
     }
+    /// Select precomputed estimates without crossing actor, season or GP boundaries.
+    pub fn stat_attribute_profile(
+        &self,
+        source: &str,
+        player_id: u32,
+        season: u32,
+        games: u32,
+    ) -> Result<String, JsValue> {
+        icelines_core::view_model::rinkcraft_stat_scores::catalog_profile_json(
+            source, player_id, season, games,
+        )
+        .map_err(|e| JsValue::from_str(&e))
+    }
+    /// Apply the same snapshot-aware attachment used by native profiles.
+    pub fn profile_stat_attributes(&self, source: &str, profile: &str) -> Result<String, JsValue> {
+        let catalog = icelines_core::view_model::rinkcraft_stat_scores::Catalog::from_json(source)
+            .map_err(|e| JsValue::from_str(&e))?;
+        let mut profile: icelines_core::view_model::rinkcraft_profile::RinkcraftStatProfile =
+            serde_json::from_str(profile).map_err(|e| JsValue::from_str(&e.to_string()))?;
+        icelines_core::view_model::rinkcraft_profile::attach_stat_attribute_catalog(
+            &mut profile,
+            &catalog,
+        )
+        .map_err(|e| JsValue::from_str(&e))?;
+        serde_json::to_string(&serde_json::json!({"stat_attribute_seasons":profile.stat_attribute_seasons,"limitations":profile.limitations})).map_err(|e|JsValue::from_str(&e.to_string()))
+    }
     /// Versioned one/two/three-stat conjunctions, separate from classes and abilities.
     pub fn achievement_catalog(&self, reports: &[u8], rules: &str) -> Result<String, JsValue> {
         let input = icelines_sources::nhl::achievements::parse(reports)
