@@ -1,0 +1,8 @@
+{% if !profile.stat_attribute_seasons.is_empty() %}
+<section class="rk-stat-history"><h3>Six-attribute season record</h3>
+<p>1–20 estimates against each season’s position peers. Changes can reflect deployment, opportunity or peer changes. These supplied windows are not a complete career. Select a score for its formula.</p>
+<div class="rc-scroll" tabindex="0" role="region" aria-label="Six-attribute season record"><table><thead><tr><th scope="col">Season</th><th scope="col">GP</th><th scope="col">Peers</th>{% for label in ["Skating", "Handling", "Passing", "Shooting", "Reading", "Defending"] %}<th scope="col">{{ label }}</th>{% endfor %}</tr></thead><tbody>
+{% for stats in profile.stat_attribute_seasons.iter().rev() %}<tr data-attribute-season="{{ stats.season }}"><th scope="row">{{ stats.season / 10000 }}–{{ "{:02}"|format(stats.season % 100) }}{% if stats.small_sample %}<small> · Small sample</small>{% endif %}</th><td>{{ stats.games }}</td><td>{{ stats.group }}</td>
+{% for score in stats.scores %}<td><details><summary>{% match score.score %}{% when Some with (value) %}{{ value }}{% when None %}—{% endmatch %}</summary>{% include "rinkcraft_stat_score_formula.html" %}</details></td>{% endfor %}</tr>{% endfor %}
+</tbody></table></div></section>
+{% endif %}

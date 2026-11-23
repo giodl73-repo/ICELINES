@@ -34,6 +34,26 @@ export function openStatScore(profile:StatProfile,score:StatScore,player:string)
  dialog.append(close,renderStatScore(profile,score));document.body.append(dialog);dialog.onclose=()=>dialog.remove();dialog.showModal();
 }
 
+export function renderStatHistory(profiles:StatProfile[],playerId:number|undefined,seasonType:string,player:string):HTMLElement {
+ const section=node('section');section.className='rk-stat-history';
+ section.append(node('h3','Six-attribute season record'),node('p','1–20 estimates against each season’s position peers. Changes can reflect deployment, opportunity or peer changes. These supplied windows are not a complete career. Select a score for its formula.'));
+ const rows=seasonType==='regular'?profiles.filter(p=>['Forwards','Defense'].includes(p.group)&&Number.isInteger(p.games)&&(p.games??0)>0&&matchesStatScores(p,playerId,p.season,p.group)):[];
+ if(!rows.length){section.append(node('p','No season-matched attribute estimates supplied.'));return section;}
+ const scroll=node('div');scroll.className='table-scroll';scroll.tabIndex=0;scroll.setAttribute('role','region');scroll.setAttribute('aria-label','Six-attribute season record');
+ const table=node('table'),head=node('thead'),header=node('tr');
+ for(const label of ['Season','GP','Peers',...labels]){const th=node('th',label);th.scope='col';header.append(th);}head.append(header);
+ const body=node('tbody');
+ for(const p of [...rows].sort((a,b)=>b.season-a.season)){
+  const row=node('tr');row.dataset.attributeSeason=String(p.season);
+  const season=node('th',`${Math.floor(p.season/10000)}–${String(p.season%100).padStart(2,'0')}`);season.scope='row';
+  if(p.small_sample)season.append(node('small',' · Small sample'));
+  row.append(season,node('td',String(p.games)),node('td',p.group));
+  for(const score of p.scores){const cell=node('td'),button=node('button',score.score===null?'—':String(score.score));button.type='button';button.setAttribute('aria-label',`${score.label} ${score.score??'unrated'} in ${p.season}`);button.onclick=()=>openStatScore(p,score,player);cell.append(button);row.append(cell);}
+  body.append(row);
+ }
+ table.append(head,body);scroll.append(table);section.append(scroll);return section;
+}
+
 let catalogPromise:Promise<unknown|undefined>|undefined;
 export function readStatAttributeCatalog():Promise<unknown|undefined> {
  catalogPromise??=(async()=>{

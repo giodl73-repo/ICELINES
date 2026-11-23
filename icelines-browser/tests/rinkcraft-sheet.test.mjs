@@ -276,3 +276,19 @@ test('ordinary profile estimates render without a numerical dossier and remain G
  for(const wrong of [{...stats,games:29},{...stats,season:20252026},{...stats,player_id:2},{...stats,group:'Defense'},{...stats,games:undefined}])assert.ok(all(render([wrong])).filter(n=>n.dataset.capabilityIndex!==undefined).every(n=>n.dataset.ratingState==='unassessed'));
  for(const [type,position] of [['playoff','Center'],['regular','Goalie']])assert.ok(all(render([stats],type,position)).filter(n=>n.dataset.capabilityIndex!==undefined).every(n=>n.dataset.ratingState==='unassessed'));
 });
+
+test('six-attribute history preserves season order, unknown scores, sample labels and source identity',async()=>{
+ const {renderStatHistory}=await import('../dist/src/rinkcraft-stat-scores.js');
+ const labels=['Skating','Handling','Passing','Shooting','Reading','Defending'];
+ const make=(season,games,score)=>({schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season,group:'Forwards',scope:'all strengths',games,minutes:games*10,small_sample:games<10,scores:labels.map(label=>({label,score,stat_points:score===null?null:score*5,parts:[],note:'Stat estimate'}))});
+ const old=make(20242025,40,10),recent=make(20252026,4,null);
+ const input=[old,recent,{...old,player_id:2},{...old,group:'Goalies'},{...old,games:undefined}];
+ const view=renderStatHistory(input,1,'regular','Example');
+ const rows=all(view).filter(n=>n.dataset.attributeSeason!==undefined);
+ assert.deepEqual(rows.map(n=>n.dataset.attributeSeason),['20252026','20242025']);
+ assert.match(rows[0].textContent,/Small sample/);
+ assert.deepEqual(all(rows[0]).filter(n=>n.tag==='button').map(n=>n.textContent),Array(6).fill('—'));
+ assert.deepEqual(all(rows[1]).filter(n=>n.tag==='button').map(n=>n.textContent),Array(6).fill('10'));
+ assert.equal(input[0],old);
+ assert.match(renderStatHistory(input,1,'playoff','Example').textContent,/No season-matched/);
+});

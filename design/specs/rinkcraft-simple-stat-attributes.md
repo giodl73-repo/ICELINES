@@ -55,6 +55,12 @@ dossier. Missing or invalid optional catalogs leave the other profile facts
 usable; invalid supplied catalogs add an availability note. The WASM
 `profile_stat_attributes` binding uses the same attachment function as native.
 
+The existing history disclosure includes a newest-first six-attribute season
+table, with GP, position peers and small-sample labels. Each score opens its own
+season's formula without changing the primary card. Missing scores remain dashes.
+These are comparisons with each season's peers, not a fixed-scale claim of skill
+growth, and supplied windows are not presented as a verified complete career.
+
 `observed_player` joins official counts, deployment and optional EDGE observations
 in shared Rust. Player, season, competition, group and GP must match. Per-60 rates
 use the deployment's all-strength total, independently of the evidence card's

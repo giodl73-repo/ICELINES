@@ -2,6 +2,7 @@ import type {NumericalEvidence} from './rinkcraft-numbers.js';
 import type {HistoryCard} from './rinkcraft-history.js';
 // Presentation only. Values, missingness, rates and changes come from Rust.
 import {renderAttributeSheet} from './rinkcraft-attributes.js';
+import {renderStatHistory} from './rinkcraft-stat-scores.js';
 import type {AttributeSeason} from './rinkcraft-attributes.js';
 import {renderCharacterCard} from './rinkcraft-character.js';
 import type {CharacterSheet} from './rinkcraft-character.js';
@@ -53,6 +54,7 @@ export function renderRinkcraftProfile(profile: RinkcraftProfile): HTMLElement {
   section.append(renderCharacterCard(profile.player_name,profile.character_sheet,cardAssessment,profile.timeline.find(s=>s.season===targetSeason)??profile.latest_available??undefined,profile.numerical_evidence,profile.numerical_history,profile.numerical_snapshot,profile.numerical_comparison_choices,profile.documentary_catalog_available,profile.evidence_guide,profile.deployment_evidence,profile.request,profile.achievements,profile.profile_window,profile.experimental_patterns,undefined,profile.record_milestones,profile.stat_attribute_seasons));
   const history=node('details');history.className='rk-history';history.append(node('summary','Trait evolution, time travel & statistical evidence'));section.append(history);
   const content=node('div');history.append(content);
+  content.append(renderStatHistory(profile.stat_attribute_seasons??[],profile.request.player_id,profile.request.season_type,profile.player_name));
   content.append(node('h3', 'Rinkcraft profile'), node('p', `${profile.request.season_type} · ${profile.included_seasons.length} loaded seasons · Latest: ${profile.latest_available ? seasonLabel(profile.latest_available.season) : 'unavailable'}`));
   content.append(node('p', 'Statistical evidence is separate from the documentary identity above. Resident windows are not a verified complete career.'));
   const controls = node('div'); controls.className = 'actions';

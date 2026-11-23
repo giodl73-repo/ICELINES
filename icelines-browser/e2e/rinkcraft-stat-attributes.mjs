@@ -58,8 +58,23 @@ try {
       await page.locator('#close-player').click();
     }
   }
+  await load('20242025-regular');await open('Connor McDavid');
+  await page.locator('#rinkcraft-profile > .rk-history > summary').click();
+  const history=page.locator('.rk-stat-history');
+  await expect(history.locator('[data-attribute-season]')).toHaveCount(2);
+  await expect(history.locator('[data-attribute-season] th')).toHaveText(['2024–25','2023–24']);
+  await history.getByRole('button',{name:'Passing 20 in 20232024',exact:true}).click();
+  await expect(page.locator('.rk-capability-dialog')).toContainText('76 GP');
+  await page.locator('.rk-capability-dialog').getByRole('button',{name:'Close',exact:true}).click();
+  await expect(grades).toHaveText(catalog.profiles.find(p=>p.player_id===8478402&&p.season===20242025).scores.map(s=>String(s.score??'—')));
+  await history.scrollIntoViewIfNeeded();await page.screenshot({path:resolve(output,'attribute-history.png')});
+  await page.setViewportSize({width:390,height:844});await history.scrollIntoViewIfNeeded();
+  assert.ok(await page.locator('#player-dialog').evaluate(e=>e.scrollWidth<=e.clientWidth));
+  await page.screenshot({path:resolve(output,'attribute-history-mobile.png')});
+  await page.setViewportSize({width:1280,height:900});
+  await page.locator('#close-player').click();
   // A newer resident window must not leak back into the selected older season.
-  await load('20242025-regular');await load('20232024-regular');
+  await load('20232024-regular');
   await context.setOffline(true);await open('Connor McDavid');
   const expected=catalog.profiles.find(p=>p.player_id===8478402&&p.season===20232024);
   await expect(grades).toHaveText(expected.scores.map(s=>String(s.score??'—')));
