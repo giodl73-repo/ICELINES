@@ -1,5 +1,5 @@
 //! Add simple Rust stat estimates to an existing player-preview catalog.
-use icelines_core::view_model::rinkcraft_stat_scores::{build, Player};
+use icelines_core::view_model::rinkcraft_stat_scores::{build, observed_player};
 use serde_json::{
     value::{to_raw_value, RawValue},
     Value,
@@ -127,13 +127,15 @@ fn finish_profiles(
 }
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = std::env::args().skip(1).collect::<Vec<_>>();
-    if args.len() != 2 {
+    if !(2..=3).contains(&args.len()) {
         return Err(
-            "Usage: rinkcraft_stat_score_profiles CATALOG_DIRECTORY NEW_OUTPUT_DIRECTORY".into(),
+            "Usage: rinkcraft_stat_score_profiles CATALOG_DIRECTORY NEW_OUTPUT_DIRECTORY [RETAINED_EDGE_DIRECTORY]".into(),
         );
     }
     let base = Path::new(&args[0]);
     let out = Path::new(&args[1]);
+    let retained_edge = args.get(2).map(Path::new);
+    let mut recovered = Vec::new();
     if out.exists() {
         return Err("Output directory already exists".into());
     }
@@ -160,7 +162,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             {
                 return Err("Player path must be relative".into());
             }
-            let bytes = fs::read(base.join(url))?;
+            let mut bytes = fs::read(base.join(url))?;
             let p: Value = serde_json::from_slice(&bytes)?;
             let n = &p["numerical_evidence"];
             let group = n["group"].as_str().unwrap_or("");
@@ -171,56 +173,73 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 {
                     return Err("Actor/window mismatch".into());
                 }
-                let minutes = n["minutes"].as_f64().unwrap_or(0.);
-                let mut metrics = BTreeMap::new();
-                for feat in p["achievements"]["feats"].as_array().into_iter().flatten() {
-                    for term in feat["conditions"].as_array().into_iter().flatten() {
-                        if let (Some(key), Some(count)) =
-                            (term["key"].as_str(), term["numerator"].as_f64())
-                        {
-                            if [
-                                "goals",
-                                "shots",
-                                "assists",
-                                "giveaways",
-                                "drawn",
-                                "takeaways",
-                                "taken",
-                                "blocks",
-                            ]
-                            .contains(&key)
-                                && minutes > 0.
-                            {
-                                metrics.entry(key.into()).or_insert(count * 60. / minutes);
+                let record: icelines_core::view_model::rinkcraft_achievements::AchievementProfile =
+                    serde_json::from_value(p["achievements"].clone())?;
+                let usage = serde_json::from_value(p["deployment_evidence"].clone())?;
+                let mut edge: Option<icelines_core::view_model::rinkcraft_edge::EdgeEvidence> =
+                    if n["edge_evidence"].is_null() {
+                        None
+                    } else {
+                        Some(serde_json::from_value(n["edge_evidence"].clone())?)
+                    };
+                if edge.is_none() {
+                    if let Some(dir) = retained_edge {
+                        match fs::read(dir.join(format!("{season}/{id}.json"))) {
+                            Ok(raw) => {
+                                let status = &n["edge_capture_status"];
+                                let parsed = icelines_sources::nhl::edge::parse(
+                                    &raw,
+                                    id,
+                                    season,
+                                    group,
+                                    record.games,
+                                    status["source_url"]
+                                        .as_str()
+                                        .ok_or("Retained EDGE source URL missing")?,
+                                    status["attempted_at"]
+                                        .as_str()
+                                        .ok_or("Retained EDGE capture date missing")?,
+                                );
+                                match parsed {
+                                    Ok(observation) => {
+                                        let mut root: RawMap = serde_json::from_slice(&bytes)?;
+                                        let mut frame: RawMap =
+                                            serde_json::from_str(root["numerical_evidence"].get())?;
+                                        let mut capture_status = status.clone();
+                                        capture_status["state"] = "available".into();
+                                        capture_status["reason"] = Value::Null;
+                                        frame.insert(
+                                            "edge_capture_status".into(),
+                                            to_raw_value(&capture_status)?,
+                                        );
+                                        frame.insert(
+                                            "edge_evidence".into(),
+                                            to_raw_value(&observation)?,
+                                        );
+                                        root.insert(
+                                            "numerical_evidence".into(),
+                                            to_raw_value(&frame)?,
+                                        );
+                                        bytes = serde_json::to_vec(&root)?;
+                                        edge = Some(observation);
+                                        recovered.push((season, id));
+                                    }
+                                    Err(reason) => eprintln!(
+                                        "EDGE remains unavailable for {season}/{id}: {reason}"
+                                    ),
+                                }
                             }
+                            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                            Err(e) => return Err(e.into()),
                         }
                     }
                 }
-                let edge = &n["edge_evidence"];
-                if edge["player_id"].as_u64() == Some(id as u64)
-                    && edge["season"].as_u64() == Some(season as u64)
-                {
-                    for m in edge["measures"].as_array().into_iter().flatten() {
-                        if let Some(value) = m["value"].as_f64() {
-                            match m["key"].as_str() {
-                                Some("max-skating-speed") => {
-                                    metrics.insert("peak-speed".into(), value);
-                                }
-                                Some("speed-bursts-over-20") if minutes > 0. => {
-                                    metrics.insert("bursts".into(), value * 60. / minutes);
-                                }
-                                _ => {}
-                            }
-                        }
-                    }
+                let input = observed_player(&record, &usage, edge.as_ref())
+                    .map_err(|e| format!("{season}/{id}: {e}"))?;
+                if input.player_id != id || input.group != group || record.season != season {
+                    return Err("Attribute source actor/window mismatch".into());
                 }
-                inputs.push(Player {
-                    player_id: id,
-                    group: group.into(),
-                    games: n["games"].as_u64().unwrap_or(0) as u32,
-                    minutes,
-                    metrics,
-                });
+                inputs.push(input);
                 originals.push((id, url.to_string(), bytes));
             } else {
                 rendered.push((url.to_string(), bytes));
@@ -245,11 +264,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     fs::create_dir_all(out)?;
     fs::write(out.join("catalog.json"), catalog_bytes)?;
     if base.join("edge-coverage.json").exists() {
-        fs::copy(
-            base.join("edge-coverage.json"),
+        let mut coverage: Value =
+            serde_json::from_slice(&fs::read(base.join("edge-coverage.json"))?)?;
+        if let Some(rows) = coverage["records"].as_array_mut() {
+            for row in rows {
+                if recovered
+                    .iter()
+                    .any(|&(season, id)| row["season"] == season && row["player_id"] == id)
+                {
+                    row["state"] = "available".into();
+                    row["reason"] = Value::Null;
+                }
+            }
+        }
+        let rows = coverage["records"]
+            .as_array()
+            .ok_or("EDGE coverage records missing")?;
+        let available = rows.iter().filter(|r| r["state"] == "available").count();
+        let unavailable = rows.len() - available;
+        coverage["available"] = available.into();
+        coverage["unavailable"] = unavailable.into();
+        fs::write(
             out.join("edge-coverage.json"),
+            serde_json::to_vec(&coverage)?,
         )?;
     }
+    println!("Recovered {} retained EDGE observations.", recovered.len());
     for (url, bytes) in rendered {
         let path = out.join(url);
         fs::create_dir_all(path.parent().ok_or("Invalid output path")?)?;

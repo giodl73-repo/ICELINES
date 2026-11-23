@@ -17,6 +17,8 @@ Giveaway share = giveaways / (shots + assists + giveaways). This is a recorded
 action proxy, not a measured touch or possession denominator. All-strength rates
 use official ice time. Ranks compare the same season and Forwards/Defense group.
 Lower-is-better stats use 100 minus their raw percentile. Ties use midranks.
+Ranking rounds measurements to nine decimal places to prevent floating-point
+unit-conversion noise from splitting ties; displayed source values are retained.
 
 Average the favorable percentiles with the listed weights, divide by5, round,
 and clamp to1–20. Fifty stat points gives10; ninety gives18. The weighted average
@@ -37,6 +39,18 @@ Math lives in `icelines-core::view_model::rinkcraft_stat_scores`. The native
 catalog command is `rinkcraft_stat_score_profiles BASE NEW_DIRECTORY`; the WASM
 binding is `stat_attribute_catalog`. Native templates and the shared browser
 renderer accept the same score payload. No simulator bonuses are added here.
+
+`observed_player` joins official counts, deployment and optional EDGE observations
+in shared Rust. Player, season, competition, group and GP must match. Per-60 rates
+use the deployment's all-strength total, independently of the evidence card's
+5v5 or other display scope. Conflicting counts, duplicate measurements and wrong
+units are rejected; missing measurements remain missing.
+
+The catalog command also accepts an optional third argument naming a retained
+EDGE capture directory. It can recover valid observations using the original
+capture date and exact player/window. Invalid shot-location data is withheld
+without erasing independent valid skating observations; the EDGE notes explain
+the partial coverage. No live fetch or cross-season substitution is performed.
 
 Feat summaries show actual stat cutoffs (for example, takeaways >0.30/game),
 with the player's own value below. Rust derives exact raw boundaries for the

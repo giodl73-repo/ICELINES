@@ -11,6 +11,109 @@ pub struct Player {
     /// Count metrics are rates per60; skating uses mph and bursts per60.
     pub metrics: BTreeMap<String, f64>,
 }
+/// Join recorded counts to official all-strength TOI before scoring.
+/// A 5v5 evidence card's minutes must never be used for all-strength counts.
+pub fn observed_player(
+    record: &super::rinkcraft_achievements::AchievementProfile,
+    usage: &super::rinkcraft_deployment::DeploymentEvidence,
+    edge: Option<&super::rinkcraft_edge::EdgeEvidence>,
+) -> Result<Player, String> {
+    use crate::season_stats::SeasonType;
+    if record.player_id == 0
+        || record.games == 0
+        || !["Forwards", "Defense"].contains(&record.group.as_str())
+        || record.season_type != "regular"
+        || usage.goalie
+        || usage.player_id.0 != record.player_id
+        || usage.season.0 != record.season
+        || usage.season_type != SeasonType::Regular
+        || usage.games != record.games
+    {
+        return Err(
+            "Stat attributes require matching regular-season skater counts and workload".into(),
+        );
+    }
+    let totals = usage
+        .rows
+        .iter()
+        .filter(|r| r.key == "total")
+        .collect::<Vec<_>>();
+    if totals.len() != 1 || totals[0].seconds == 0 {
+        return Err("Stat attributes require one positive all-strength TOI total".into());
+    }
+    let minutes = f64::from(totals[0].seconds) / 60.;
+    let mut counts = BTreeMap::new();
+    for c in record.feats.iter().flat_map(|f| &f.conditions) {
+        if ![
+            "goals",
+            "shots",
+            "assists",
+            "giveaways",
+            "drawn",
+            "takeaways",
+            "taken",
+            "blocks",
+        ]
+        .contains(&c.key.as_str())
+        {
+            continue;
+        }
+        let Some(count) = c.numerator else { continue };
+        if !count.is_finite()
+            || count < 0.
+            || c.unit != "PerGame"
+            || c.denominator != Some(f64::from(record.games))
+            || c.value.is_none_or(|v| {
+                !v.is_finite() || (v - count / f64::from(record.games)).abs() > 1e-10
+            })
+        {
+            return Err(format!("Incoherent recorded count: {}", c.key));
+        }
+        if counts
+            .insert(c.key.clone(), count)
+            .is_some_and(|old| old != count)
+        {
+            return Err(format!("Conflicting recorded counts: {}", c.key));
+        }
+    }
+    let mut metrics = counts
+        .into_iter()
+        .map(|(key, count)| (key, count * 60. / minutes))
+        .collect::<BTreeMap<_, _>>();
+    if let Some(edge) = edge {
+        if edge.schema != "icelines.rinkcraft-edge.v1"
+            || edge.player_id != record.player_id
+            || edge.season != record.season
+            || edge.season_type != "regular"
+            || edge.group != record.group
+            || edge.games != record.games
+            || edge.strength_scope != "all strengths"
+        {
+            return Err("EDGE and recorded workload must describe the same player/window".into());
+        }
+        for m in &edge.measures {
+            let (key, unit, rate) = match m.key.as_str() {
+                "max-skating-speed" => ("peak-speed", "Mph", m.value),
+                "speed-bursts-over-20" => ("bursts", "Count", m.value * 60. / minutes),
+                _ => continue,
+            };
+            if m.unit != unit
+                || !m.value.is_finite()
+                || m.value < 0.
+                || metrics.insert(key.into(), rate).is_some()
+            {
+                return Err(format!("Invalid or duplicate EDGE stat: {}", m.key));
+            }
+        }
+    }
+    Ok(Player {
+        player_id: record.player_id,
+        group: record.group.clone(),
+        games: record.games,
+        minutes,
+        metrics,
+    })
+}
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Part {
     pub key: String,
@@ -147,6 +250,16 @@ fn recipes() -> Vec<Recipe> {
 pub fn level(points: f64) -> u8 {
     (points / 5.).round().clamp(1., 20.) as u8
 }
+// Far finer than the source measurements: prevents unit-conversion rounding
+// noise from splitting ties. Keep the original values in the displayed parts.
+fn rank_value(value: f64) -> f64 {
+    let scaled = value * 1e9;
+    if scaled.is_finite() {
+        scaled.round() / 1e9
+    } else {
+        value
+    }
+}
 
 /// Same-season F/D ranks; 10GP/100min reference, with scores for smaller samples
 /// visibly marked. Missing terms use the available weights; no missing=zero.
@@ -193,10 +306,12 @@ pub fn build(season: u32, scope: &str, players: &[Player]) -> Result<Vec<Profile
                             .iter()
                             .filter(|r| r.group == p.group && r.games >= 10 && r.minutes >= 100.)
                             .filter_map(|r| r.metrics.get(key).copied())
+                            .map(rank_value)
                             .collect::<Vec<_>>();
                         let value = p.metrics.get(key).copied();
                         let percentile =
                             value.filter(|_| active && reference.len() >= 20).map(|v| {
+                                let v = rank_value(v);
                                 100. * (reference.iter().filter(|x| **x < v).count() as f64
                                     + 0.5 * reference.iter().filter(|x| **x == v).count() as f64)
                                     / reference.len() as f64
