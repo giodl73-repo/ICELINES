@@ -350,7 +350,7 @@ async function player(row: PlayerRow): Promise<void> {
   if(snapshot.season_type==='regular'){
     try {
       const catalog=await readStatAttributeCatalog();
-      if(catalog){const attached=await engine.request<Pick<RinkcraftProfile,'stat_attribute_seasons'|'limitations'>>('statAttributesForProfile',{catalog,profile});profile.stat_attribute_seasons=attached.stat_attribute_seasons;profile.limitations=attached.limitations;}
+      if(catalog){const attached=await engine.request<Pick<RinkcraftProfile,'stat_attribute_seasons'|'stat_attribute_changes'|'limitations'>>('statAttributesForProfile',{catalog,profile});profile.stat_attribute_seasons=attached.stat_attribute_seasons;profile.stat_attribute_changes=attached.stat_attribute_changes;profile.limitations=attached.limitations;}
     } catch(error) {if(error instanceof EngineStoppedError)throw error;profile.limitations.push('Stat estimates unavailable: '+(error instanceof Error?error.message:String(error)));}
   }
   if (result !== snapshot || generation !== engine.generation) return;

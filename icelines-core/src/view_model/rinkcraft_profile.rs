@@ -102,6 +102,8 @@ pub struct ProfileJobFamily {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RinkcraftStatProfile {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub stat_attribute_changes: Vec<super::rinkcraft_stat_scores::SeasonChange>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub stat_attribute_seasons: Vec<super::rinkcraft_stat_scores::Profile>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub achievements: Option<super::rinkcraft_achievements::AchievementProfile>,
@@ -352,6 +354,7 @@ pub fn attach_stat_attribute_catalog(
 ) -> Result<(), String> {
     catalog.validate()?;
     profile.stat_attribute_seasons.clear();
+    profile.stat_attribute_changes.clear();
     if profile.request.season_type != SeasonType::Regular {
         return Ok(());
     }
@@ -421,6 +424,8 @@ pub fn attach_stat_attribute_catalog(
             }
         }
     }
+    profile.stat_attribute_changes =
+        super::rinkcraft_stat_scores::season_changes(&profile.stat_attribute_seasons);
     Ok(())
 }
 
@@ -513,7 +518,7 @@ pub fn build_rinkcraft_stat_profile_from_views<R: SeasonStatsRead>(
         })
         .unwrap_or_default();
     Ok(RinkcraftStatProfile {
-        stat_attribute_seasons:Vec::new(),achievements:None,
+        stat_attribute_changes:Vec::new(),stat_attribute_seasons:Vec::new(),achievements:None,
         deployment_evidence:views.last().and_then(|v|super::rinkcraft_deployment::from_read(&v.stats)),
         evidence_guide:super::rinkcraft_evidence_guide::topics(),
         schema:RINKCRAFT_PROFILE_SCHEMA.into(),request,player_name:player_name.into(),

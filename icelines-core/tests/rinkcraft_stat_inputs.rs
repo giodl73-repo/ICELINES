@@ -303,3 +303,77 @@ fn supplied_numeric_snapshot_controls_gp_without_bypassing_position_or_window() 
     attach_stat_attribute_catalog(&mut profile, &estimate_catalog()).unwrap();
     assert!(profile.stat_attribute_seasons.is_empty());
 }
+
+#[test]
+fn season_deltas_require_matching_recipes_inputs_and_adjacent_supplied_windows() {
+    use icelines_core::view_model::rinkcraft_stat_scores::season_changes;
+    let mut old = estimate_catalog().profiles.remove(0);
+    old.season = 20252026;
+    for s in &mut old.scores {
+        s.score = Some(9);
+        s.stat_points = Some(45.);
+    }
+    let new = estimate_catalog().profiles.remove(0);
+    let check = |p: icelines_core::view_model::rinkcraft_stat_scores::Profile| {
+        season_changes(&[p, old.clone()])
+    };
+    let changes = check(new.clone());
+    assert_eq!(changes[0].previous_season, 20252026);
+    assert_eq!(changes[0].deltas, vec![Some(1); 6]);
+    for key in ["group", "scope"] {
+        let mut p = new.clone();
+        if key == "group" {
+            p.group = "Defense".into()
+        } else {
+            p.scope = "5v5".into()
+        };
+        assert_eq!(check(p)[0].deltas, vec![None; 6]);
+    }
+    let mut p = new.clone();
+    p.scores[0].parts[0].weight += 0.1;
+    assert_eq!(check(p)[0].deltas[0], None);
+    let mut p = new.clone();
+    p.scores[0].parts[0].favorable_percentile = None;
+    assert_eq!(check(p)[0].deltas[0], None);
+    let mut p = new.clone();
+    p.player_id = 2;
+    assert!(check(p).is_empty());
+    let mut middle = old.clone();
+    middle.season = 20262027;
+    middle.scores[0].score = None;
+    let mut latest = new.clone();
+    latest.season = 20272028;
+    let changes = season_changes(&[latest, middle, old.clone()]);
+    assert_eq!(changes.len(), 2);
+    assert!(changes.iter().all(|c| c.deltas[0].is_none()));
+    assert_eq!(changes[1].previous_season, 20262027);
+    assert_eq!(
+        season_changes(&[new.clone(), {
+            let mut p = new;
+            p.season = 20272028;
+            p
+        }])[0]
+            .deltas,
+        vec![Some(0); 6]
+    );
+}
+#[test]
+fn attached_history_changes_are_scoped_and_removed_for_playoffs() {
+    use icelines_core::view_model::rinkcraft_profile::attach_stat_attribute_catalog;
+    let mut p = ordinary_profile();
+    p.request.first_season = Some(Season(20252026));
+    let mut old = p.timeline[0].clone();
+    old.season = Season(20252026);
+    p.timeline.insert(0, old);
+    let mut catalog = estimate_catalog();
+    let mut old = catalog.profiles[0].clone();
+    old.season = 20252026;
+    old.scores[2].score = Some(9);
+    old.scores[2].stat_points = Some(45.);
+    catalog.profiles.push(old);
+    attach_stat_attribute_catalog(&mut p, &catalog).unwrap();
+    assert_eq!(p.stat_attribute_changes[0].deltas[2], Some(1));
+    p.request.season_type = SeasonType::Playoff;
+    attach_stat_attribute_catalog(&mut p, &catalog).unwrap();
+    assert!(p.stat_attribute_changes.is_empty());
+}

@@ -880,6 +880,29 @@ struct ProfileTemplate {
     changes: Vec<ChangeSection>,
     absent_json: String,
 }
+impl ProfileTemplate {
+    fn stat_change(
+        &self,
+        season: &u32,
+    ) -> Option<&icelines_core::view_model::rinkcraft_stat_scores::SeasonChange> {
+        self.profile
+            .stat_attribute_changes
+            .iter()
+            .find(|c| c.season == *season && c.player_id == self.id)
+    }
+    fn stat_delta_label(&self, season: &u32, index: &usize) -> String {
+        let delta = self
+            .stat_change(season)
+            .and_then(|c| c.deltas.get(*index))
+            .copied()
+            .flatten();
+        match delta {
+            Some(v) if v > 0 => format!("+{v}"),
+            Some(v) => v.to_string(),
+            None => "—".into(),
+        }
+    }
+}
 struct EvidenceView {
     estimated_record: Option<icelines_core::view_model::rinkcraft_stat_scores::EstimatedRecord>,
     front_maximum_speed: Option<String>,

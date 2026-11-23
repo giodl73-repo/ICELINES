@@ -292,3 +292,15 @@ test('six-attribute history preserves season order, unknown scores, sample label
  assert.equal(input[0],old);
  assert.match(renderStatHistory(input,1,'playoff','Example').textContent,/No season-matched/);
 });
+
+test('history changes display supplied Rust deltas and never fabricate comparisons',async()=>{
+ const {renderStatHistory}=await import('../dist/src/rinkcraft-stat-scores.js');
+ const labels=['Skating','Handling','Passing','Shooting','Reading','Defending'];
+ const make=season=>({schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season,group:'Forwards',scope:'all strengths',games:40,small_sample:false,scores:labels.map(label=>({label,score:10,stat_points:50,parts:[],note:'Estimate'}))});
+ const profiles=[make(20242025),make(20252026)];
+ const change={player_id:1,season:20252026,previous_season:20242025,deltas:[0,4,null,-1,-1,-2]};
+ const view=renderStatHistory(profiles,1,'regular','Example',[change]);
+ assert.deepEqual(all(view).filter(n=>n.dataset.attributeDelta!==undefined).map(n=>n.textContent),['Δ 0','Δ +4','Δ —','Δ -1','Δ -1','Δ -2']);
+ for(const invalid of [{...change,player_id:2},{...change,previous_season:20232024}])assert.equal(all(renderStatHistory(profiles,1,'regular','Example',[invalid])).filter(n=>n.dataset.attributeDelta!==undefined).length,0);
+ assert.equal(all(renderStatHistory(profiles,1,'regular','Example')).filter(n=>n.dataset.attributeDelta!==undefined).length,0);
+});

@@ -2,6 +2,7 @@
 export interface StatPart {key:string;label:string;unit:string;weight:number;lower_is_better:boolean;value:number|null;percentile:number|null;favorable_percentile:number|null;peers:number;}
 export interface StatScore {label:string;score:number|null;stat_points:number|null;parts:StatPart[];note:string;}
 export interface StatProfile {schema:string;player_id:number;season:number;group:string;scope:string;games?:number;minutes?:number;small_sample:boolean;scores:StatScore[];}
+export interface StatChange {player_id:number;season:number;previous_season:number;deltas:(number|null)[];}
 export interface EstimatedRecord {season:number;target_games:number;basis:string;metrics:{key:string;label:string;value:number|null;unit:string;per_game:number|null;projected_total:boolean}[];}
 const labels=['Skating','Handling','Passing','Shooting','Reading','Defending'];
 export function matchesStatScores(p:StatProfile|undefined,id:number|undefined,season:number|undefined,group:string,games?:number):p is StatProfile {
@@ -34,9 +35,9 @@ export function openStatScore(profile:StatProfile,score:StatScore,player:string)
  dialog.append(close,renderStatScore(profile,score));document.body.append(dialog);dialog.onclose=()=>dialog.remove();dialog.showModal();
 }
 
-export function renderStatHistory(profiles:StatProfile[],playerId:number|undefined,seasonType:string,player:string):HTMLElement {
+export function renderStatHistory(profiles:StatProfile[],playerId:number|undefined,seasonType:string,player:string,changes:StatChange[]=[]):HTMLElement {
  const section=node('section');section.className='rk-stat-history';
- section.append(node('h3','Six-attribute season record'),node('p','1–20 estimates against each season’s position peers. Changes can reflect deployment, opportunity or peer changes. These supplied windows are not a complete career. Select a score for its formula.'));
+ section.append(node('h3','Six-attribute season record'),node('p','1–20 estimates against each season’s position peers. Changes can reflect deployment, opportunity or peer changes. These supplied windows are not a complete career. Δ is the change from the previous supplied season; — means the comparison is unavailable. Select a score for its formula.'));
  const rows=seasonType==='regular'?profiles.filter(p=>['Forwards','Defense'].includes(p.group)&&Number.isInteger(p.games)&&(p.games??0)>0&&matchesStatScores(p,playerId,p.season,p.group)):[];
  if(!rows.length){section.append(node('p','No season-matched attribute estimates supplied.'));return section;}
  const scroll=node('div');scroll.className='table-scroll';scroll.tabIndex=0;scroll.setAttribute('role','region');scroll.setAttribute('aria-label','Six-attribute season record');
@@ -45,10 +46,12 @@ export function renderStatHistory(profiles:StatProfile[],playerId:number|undefin
  const body=node('tbody');
  for(const p of [...rows].sort((a,b)=>b.season-a.season)){
   const row=node('tr');row.dataset.attributeSeason=String(p.season);
+  const change=changes.find(c=>c.player_id===playerId&&c.season===p.season&&rows.some(r=>r.season===c.previous_season)&&c.deltas.length===6);
   const season=node('th',`${Math.floor(p.season/10000)}–${String(p.season%100).padStart(2,'0')}`);season.scope='row';
+  if(change)season.append(node('small',` · vs ${Math.floor(change.previous_season/10000)}–${String(change.previous_season%100).padStart(2,'0')}`));
   if(p.small_sample)season.append(node('small',' · Small sample'));
   row.append(season,node('td',String(p.games)),node('td',p.group));
-  for(const score of p.scores){const cell=node('td'),button=node('button',score.score===null?'—':String(score.score));button.type='button';button.setAttribute('aria-label',`${score.label} ${score.score??'unrated'} in ${p.season}`);button.onclick=()=>openStatScore(p,score,player);cell.append(button);row.append(cell);}
+  for(const [index,score] of p.scores.entries()){const cell=node('td'),button=node('button',score.score===null?'—':String(score.score));button.type='button';button.setAttribute('aria-label',`${score.label} ${score.score??'unrated'} in ${p.season}`);button.onclick=()=>openStatScore(p,score,player);cell.append(button);if(change){const delta=change.deltas[index];const badge=node('small',`Δ ${delta===null?'—':delta>0?'+'+delta:String(delta)}`);badge.dataset.attributeDelta=String(index);cell.append(badge);}row.append(cell);}
   body.append(row);
  }
  table.append(head,body);scroll.append(table);section.append(scroll);return section;

@@ -61,6 +61,14 @@ season's formula without changing the primary card. Missing scores remain dashes
 These are comparisons with each season's peers, not a fixed-scale claim of skill
 growth, and supplied windows are not presented as a verified complete career.
 
+Shared Rust supplies each row's change from the previous supplied season. A
+comparison requires the same actor, position group, scope, recipe and ranked
+input set. Missing scores or incompatible inputs produce an unavailable delta;
+an intervening supplied missing score is not skipped. The table names the
+comparison season, so gaps are not presented as annual changes. Zero means an
+unchanged estimate; it is distinct from an unavailable comparison. Changes are
+estimate points, not measured changes in technical skill.
+
 `observed_player` joins official counts, deployment and optional EDGE observations
 in shared Rust. Player, season, competition, group and GP must match. Per-60 rates
 use the deployment's all-strength total, independently of the evidence card's

@@ -148,6 +148,60 @@ pub struct Profile {
     pub small_sample: bool,
     pub scores: Vec<Score>,
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SeasonChange {
+    pub player_id: u32,
+    pub season: u32,
+    pub previous_season: u32,
+    /// Estimate-point differences, not measured changes in technical skill.
+    pub deltas: Vec<Option<i16>>,
+}
+
+/// Compare adjacent supplied windows for each actor after catalog validation.
+/// Do not skip over an intervening missing or incompatible measurement.
+pub fn season_changes(profiles: &[Profile]) -> Vec<SeasonChange> {
+    let mut ordered = profiles.iter().collect::<Vec<_>>();
+    ordered.sort_by_key(|p| (p.player_id, p.season));
+    ordered
+        .windows(2)
+        .filter_map(|pair| {
+            let (old, new) = (pair[0], pair[1]);
+            if old.player_id != new.player_id || old.season == new.season {
+                return None;
+            }
+            let comparable = old.group == new.group && old.scope == new.scope;
+            let deltas = new
+                .scores
+                .iter()
+                .enumerate()
+                .map(|(index, score)| {
+                    let previous = old.scores.get(index)?;
+                    if !comparable
+                        || score.label != previous.label
+                        || score.parts.len() != previous.parts.len()
+                        || score.parts.iter().zip(&previous.parts).any(|(a, b)| {
+                            a.key != b.key
+                                || a.unit != b.unit
+                                || a.weight != b.weight
+                                || a.lower_is_better != b.lower_is_better
+                                || a.favorable_percentile.is_some()
+                                    != b.favorable_percentile.is_some()
+                        })
+                    {
+                        return None;
+                    }
+                    Some(i16::from(score.score?) - i16::from(previous.score?))
+                })
+                .collect();
+            Some(SeasonChange {
+                player_id: new.player_id,
+                season: new.season,
+                previous_season: old.season,
+                deltas,
+            })
+        })
+        .collect()
+}
 /// Portable estimates for the ordinary native and browser profile paths.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Catalog {

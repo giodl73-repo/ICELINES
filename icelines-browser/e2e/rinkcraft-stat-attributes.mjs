@@ -62,7 +62,8 @@ try {
   await page.locator('#rinkcraft-profile > .rk-history > summary').click();
   const history=page.locator('.rk-stat-history');
   await expect(history.locator('[data-attribute-season]')).toHaveCount(2);
-  await expect(history.locator('[data-attribute-season] th')).toHaveText(['2024–25','2023–24']);
+  await expect(history.locator('[data-attribute-season] th')).toHaveText([/2024–25.*vs 2023–24/,'2023–24']);
+  await expect(history.locator('[data-attribute-season="20242025"] [data-attribute-delta]')).toHaveText(['Δ 0','Δ +4','Δ 0','Δ -1','Δ -1','Δ -2']);
   await history.getByRole('button',{name:'Passing 20 in 20232024',exact:true}).click();
   await expect(page.locator('.rk-capability-dialog')).toContainText('76 GP');
   await page.locator('.rk-capability-dialog').getByRole('button',{name:'Close',exact:true}).click();

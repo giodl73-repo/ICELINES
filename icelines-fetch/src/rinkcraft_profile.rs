@@ -41,6 +41,7 @@ pub fn attach_configured_stat_attributes(
     if let Some(path) = std::env::var_os("ICELINES_RINKCRAFT_STAT_ATTRIBUTES") {
         if let Err(cause) = attach_stat_attribute_catalog(profile, std::path::Path::new(&path)) {
             profile.stat_attribute_seasons.clear();
+            profile.stat_attribute_changes.clear();
             profile
                 .limitations
                 .push(format!("Stat estimates unavailable: {cause}"));

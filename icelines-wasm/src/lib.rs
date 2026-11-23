@@ -286,7 +286,7 @@ impl BrowserEngine {
             &catalog,
         )
         .map_err(|e| JsValue::from_str(&e))?;
-        serde_json::to_string(&serde_json::json!({"stat_attribute_seasons":profile.stat_attribute_seasons,"limitations":profile.limitations})).map_err(|e|JsValue::from_str(&e.to_string()))
+        serde_json::to_string(&serde_json::json!({"stat_attribute_seasons":profile.stat_attribute_seasons,"stat_attribute_changes":profile.stat_attribute_changes,"limitations":profile.limitations})).map_err(|e|JsValue::from_str(&e.to_string()))
     }
     /// Versioned one/two/three-stat conjunctions, separate from classes and abilities.
     pub fn achievement_catalog(&self, reports: &[u8], rules: &str) -> Result<String, JsValue> {
