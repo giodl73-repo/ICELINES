@@ -1,6 +1,14 @@
 # Complete skater attribute measurement program
 
-The active objective is to finish measurement work for **all six skater
+**Research track, superseded for the primary profile.** The owner's later
+direction selects simple public-stat estimates for all six skater attributes;
+the active scoring and completion rules are in
+[Simple stat attributes](rinkcraft-simple-stat-attributes.md). The 23-component
+technical measurement battery below remains a separate research program. It
+does not gate the six primary profile estimates or imply that they measure
+technical skills directly.
+
+The original research objective was to finish measurement work for **all six skater
 attributes**, rather than extend Finishing alone. The accepted registry requires
 23 components. This program preserves those constructs and does not replace
 them with easier aggregate-stat proxies. Goalies retain their separate battery;
