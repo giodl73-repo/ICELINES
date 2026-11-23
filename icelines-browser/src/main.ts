@@ -1,3 +1,4 @@
+import {readStatAttributeCatalog} from './rinkcraft-stat-scores.js';
 import {mountBrowserGameStudio} from './rinkcraft-game.js';
 import type {GameInspiration} from './rinkcraft-game.js';
 import { teamSeasonFilter, playerTeamCodes } from './team-focus.js';
@@ -334,7 +335,7 @@ async function player(row: PlayerRow): Promise<void> {
   const context = comparisonContext();
   if (!snapshot || !context) return;
   const detail = await engine.request<{ identity: { bio: unknown }; stats: unknown; history?: PlayerHistory }>('detail', row.player_id);
-  const profile = await engine.request<RinkcraftProfile>('rinkcraftProfile', { player_id:row.player_id, season_type:snapshot.season_type, first_season:null,last_season:null });
+  const profile = await engine.request<RinkcraftProfile>('rinkcraftProfile', { player_id:row.player_id, season_type:snapshot.season_type, first_season:null,last_season:snapshot.season });
   profile.documentary_catalog_available=false;
   try{const characterCatalog=await readCharacterCatalog();if(characterCatalog){profile.character_sheet=await engine.request<CharacterSheet|undefined>('characterSheet',{catalog:characterCatalog,player_id:row.player_id,season:snapshot.season})??undefined;profile.documentary_catalog_available=true;}}
   catch(error){if(error instanceof EngineStoppedError)throw error;}
@@ -345,6 +346,12 @@ async function player(row: PlayerRow): Promise<void> {
     profile.numerical_evidence=selected.card??undefined;profile.numerical_snapshot=selected.selection;
     if(selected.card){const c=selected.card;const peers=await engine.request<CatalogView>('numericalCatalog',{source:numericalSource,season:c.season});profile.numerical_comparison_choices=peers.catalog.profiles.filter(p=>p.group===c.group&&p.player_id!==c.player_id).map(p=>({player_id:p.player_id,name:p.name}));}
     profile.numerical_history=await engine.request<HistoryCard|undefined>('numericalHistory',{catalog:numericalSource,player_id:row.player_id,last:snapshot.season})??undefined;
+  }
+  if(snapshot.season_type==='regular'){
+    try {
+      const catalog=await readStatAttributeCatalog();
+      if(catalog){const attached=await engine.request<Pick<RinkcraftProfile,'stat_attribute_seasons'|'limitations'>>('statAttributesForProfile',{catalog,profile});profile.stat_attribute_seasons=attached.stat_attribute_seasons;profile.limitations=attached.limitations;}
+    } catch(error) {if(error instanceof EngineStoppedError)throw error;profile.limitations.push('Stat estimates unavailable: '+(error instanceof Error?error.message:String(error)));}
   }
   if (result !== snapshot || generation !== engine.generation) return;
   element('player-name').textContent = row.name;

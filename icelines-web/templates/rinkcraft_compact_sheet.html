@@ -15,9 +15,9 @@
 <div class="rk-front-columns">
 <div class="rk-front-left"><div class="rk-left-split">
 <section class="rk-front-attributes"><h2>Attributes</h2><small class="rk-rating-scale">1–20 scale</small><dl class="rk-front-values">
-{% match numerical %}{% when Some with (n) %}{% match n.stat_attributes %}{% when Some with (stats) %}
+{% match stat_attributes %}{% when Some with (stats) %}
 {% for score in stats.scores %}<div class="rk-field" data-capability-index="{{ loop.index0 }}" data-rating-state="stat_estimate"><dt title="{{ score.note }}">{{ score.label }}</dt><dd>{% match score.score %}{% when Some with (value) %}{{ value }}{% when None %}—{% endmatch %}</dd><small>{% if stats.small_sample %}Small sample{% else %}Estimate{% endif %}</small></div>{% endfor %}
-{% when None %}{% include "rinkcraft_attribute_fallback.html" %}{% endmatch %}{% when None %}{% include "rinkcraft_attribute_fallback.html" %}{% endmatch %}</dl></section>
+{% when None %}{% include "rinkcraft_attribute_fallback.html" %}{% endmatch %}</dl></section>
 <div class="rk-front-task-column">
 <section class="rk-form-box rk-repertoire rk-front-pressure"><h2>Under Pressure</h2>{% match profile.character_sheet %}{% when Some with (c) %}{% let repertoire = c.under_pressure.as_slice() %}{% let visible = 3 %}{% include "rinkcraft_repertoire.html" %}{% when None %}<p class="rk-repertoire-empty">Repertoire not yet catalogued.</p><small>A missing entry does not imply missing ability.</small>{% endmatch %}</section>
 <section class="rk-form-box rk-repertoire rk-front-skills"><h2>Task Skills</h2>{% match skills_feats %}{% when Some with (feat_section) %}{% include "rinkcraft_feats.html" %}<details class="rk-scouted-tasks"><summary>Scouted specialties</summary>{% when None %}{% endmatch %}{% match profile.character_sheet %}{% when Some with (c) %}{% let repertoire = c.task_skills.as_slice() %}{% let visible = 5 %}{% include "rinkcraft_repertoire.html" %}{% when None %}<p class="rk-repertoire-empty">Repertoire not yet catalogued.</p><small>A missing entry does not imply missing ability.</small>{% endmatch %}{% if skills_feats.is_some() %}</details>{% endif %}</section>

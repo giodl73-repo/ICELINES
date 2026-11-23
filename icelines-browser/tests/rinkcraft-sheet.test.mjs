@@ -265,3 +265,14 @@ test('career audit preserves source conflict without manufacturing a saving valu
  assert.match(view.textContent,/8840.*8839/);assert.match(view.textContent,/1466.*1606.*141/);assert.match(view.textContent,/same official provider/);assert.match(view.textContent,/No resolution inferred/);
  const {numericalValue}=await import('../dist/src/rinkcraft-numbers.js');assert.equal(numericalValue({value:0,unit:'Count'}),'0');assert.equal(numericalValue({value:0,unit:'PerGame'}),'0.00');
 });
+
+test('ordinary profile estimates render without a numerical dossier and remain GP/window/position scoped',()=>{
+ const labels=['Skating','Handling','Passing','Shooting','Reading','Defending'];
+ const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',scope:'all strengths',games:30,minutes:300,small_sample:false,scores:labels.map(label=>({label,score:10,stat_points:50,parts:[],note:'Stat estimate'}))};
+ const render=(scores,type='regular',position='Center')=>renderCharacterCard('Example',undefined,undefined,{season:20262027,position,games:30,metrics:[]},undefined,undefined,undefined,undefined,true,undefined,undefined,{player_id:1,season_type:type},undefined,undefined,undefined,undefined,undefined,scores);
+ const fields=all(render([stats])).filter(n=>n.dataset.capabilityIndex!==undefined);
+ assert.equal(fields.length,6);assert.ok(fields.every(n=>n.dataset.ratingState==='stat_estimate'));
+ assert.deepEqual(fields.map(n=>n.children[1].textContent),['10','10','10','10','10','10']);
+ for(const wrong of [{...stats,games:29},{...stats,season:20252026},{...stats,player_id:2},{...stats,group:'Defense'},{...stats,games:undefined}])assert.ok(all(render([wrong])).filter(n=>n.dataset.capabilityIndex!==undefined).every(n=>n.dataset.ratingState==='unassessed'));
+ for(const [type,position] of [['playoff','Center'],['regular','Goalie']])assert.ok(all(render([stats],type,position)).filter(n=>n.dataset.capabilityIndex!==undefined).every(n=>n.dataset.ratingState==='unassessed'));
+});

@@ -101,6 +101,8 @@ pub struct ProfileJobFamily {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RinkcraftStatProfile {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub stat_attribute_seasons: Vec<super::rinkcraft_stat_scores::Profile>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub achievements: Option<super::rinkcraft_achievements::AchievementProfile>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -343,6 +345,85 @@ pub fn build_rinkcraft_stat_profile(
     Ok(profile)
 }
 
+/// Attach estimates only to canonical rows from the same observed window.
+pub fn attach_stat_attribute_catalog(
+    profile: &mut RinkcraftStatProfile,
+    catalog: &super::rinkcraft_stat_scores::Catalog,
+) -> Result<(), String> {
+    catalog.validate()?;
+    profile.stat_attribute_seasons.clear();
+    if profile.request.season_type != SeasonType::Regular {
+        return Ok(());
+    }
+    for row in &profile.timeline {
+        if profile
+            .request
+            .first_season
+            .is_some_and(|first| row.season < first)
+            || profile
+                .request
+                .last_season
+                .is_some_and(|last| row.season > last)
+        {
+            continue;
+        }
+        let selected = profile
+            .numerical_evidence
+            .as_ref()
+            .filter(|n| n.player_id == profile.request.player_id.0 && n.season == row.season.0);
+        let group = match row.position {
+            Position::Goalie => continue,
+            Position::Defense => "Defense",
+            _ => "Forwards",
+        };
+        let games = selected
+            .filter(|n| n.group == group)
+            .map(|n| n.games)
+            .unwrap_or(row.games);
+        if let Some(scores) = catalog
+            .profile(profile.request.player_id.0, row.season.0, games)
+            .filter(|p| p.group == group)
+        {
+            profile.stat_attribute_seasons.push(scores.clone());
+        } else if catalog
+            .profiles
+            .iter()
+            .any(|p| p.player_id == profile.request.player_id.0 && p.season == row.season.0)
+        {
+            let note=format!("Stat estimates for {} withheld: supplied position/GP does not match the selected {}-GP row.",row.season.0,games);
+            if !profile.limitations.contains(&note) {
+                profile.limitations.push(note);
+            }
+        }
+    }
+    if let Some(n) = profile.numerical_evidence.as_ref().filter(|n| {
+        n.player_id == profile.request.player_id.0
+            && !profile.timeline.iter().any(|row| row.season.0 == n.season)
+            && profile
+                .request
+                .first_season
+                .is_none_or(|first| n.season >= first.0)
+            && profile
+                .request
+                .last_season
+                .is_none_or(|last| n.season <= last.0)
+    }) {
+        if !profile
+            .stat_attribute_seasons
+            .iter()
+            .any(|p| p.season == n.season)
+        {
+            if let Some(scores) = catalog
+                .profile(n.player_id, n.season, n.games)
+                .filter(|p| p.group == n.group)
+            {
+                profile.stat_attribute_seasons.push(scores.clone());
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Storage-independent builder for prepared native and browser windows.
 /// No loading occurs. For duplicate windows the first supplied view wins.
 pub fn build_rinkcraft_stat_profile_from_views<R: SeasonStatsRead>(
@@ -432,7 +513,7 @@ pub fn build_rinkcraft_stat_profile_from_views<R: SeasonStatsRead>(
         })
         .unwrap_or_default();
     Ok(RinkcraftStatProfile {
-        achievements:None,
+        stat_attribute_seasons:Vec::new(),achievements:None,
         deployment_evidence:views.last().and_then(|v|super::rinkcraft_deployment::from_read(&v.stats)),
         evidence_guide:super::rinkcraft_evidence_guide::topics(),
         schema:RINKCRAFT_PROFILE_SCHEMA.into(),request,player_name:player_name.into(),

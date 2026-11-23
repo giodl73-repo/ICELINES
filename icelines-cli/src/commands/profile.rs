@@ -94,6 +94,7 @@ pub async fn run(
     )?;
     profile.source_windows = source_windows;
     icelines_fetch::rinkcraft_profile::attach_attribute_seasons(&mut profile, &store)?;
+    icelines_fetch::rinkcraft_profile::attach_configured_stat_attributes(&mut profile);
     profile.limitations.extend(
         loaded
             .missing

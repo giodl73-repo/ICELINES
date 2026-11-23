@@ -1,4 +1,5 @@
-//! Strict, stateless parsing of a captured regular-season NHL EDGE detail.
+//! Source-bound parsing of captured regular-season NHL EDGE detail.
+//! Invalid shot locations do not erase independent valid observations.
 use icelines_core::view_model::rinkcraft_edge::{
     EdgeEvidence, EdgeLocation, EdgeMeasure, EdgeSource,
 };
@@ -153,7 +154,6 @@ pub fn parse(
         return Err("EDGE position group mismatch".into());
     }
     let mut measures = Vec::new();
-    let mut locations = Vec::new();
     if !goalie {
         push(&mut measures,&root["skatingSpeed"]["speedMax"],"max-skating-speed","Season maximum skating speed","Mph","skatingSpeed.speedMax",Some("CAP-SKATING"),Some("SKA-SPEED"),"Observed maximum, all strengths. It does not establish repeatable speed, acceleration, agility or puck-carrying speed.",true)?;
         push(&mut measures,&root["skatingSpeed"]["burstsOver20"],"speed-bursts-over-20","Bursts above 20 mph","Count","skatingSpeed.burstsOver20",Some("CAP-SKATING"),Some("SKA-SPEED"),"Recorded speed-threshold crossings; affected by exposure and deployment. Not an acceleration test.",false)?;
@@ -181,59 +181,72 @@ pub fn parse(
             }
         }
     }
-    let rows = if goalie {
-        &root["shotLocationSummary"]
-    } else {
-        &root["sogSummary"]
-    };
-    if let Some(rows) = rows.as_array() {
-        let mut codes = std::collections::BTreeSet::new();
-        for row in rows {
-            let code = row["locationCode"]
-                .as_str()
-                .ok_or("EDGE location code absent")?;
-            if !codes.insert(code) {
-                return Err("duplicate EDGE location summary".into());
-            }
-            let shots = count(&row["shots"])?;
-            let goals = count(&row["goals"])?;
-            let saves = count(&row["saves"])?;
-            let against = count(&row["goalsAgainst"])?;
-            if goals.zip(shots).is_some_and(|(g, s)| g > s) {
-                return Err("EDGE goals exceed shots".into());
-            }
-            let denom = if goalie {
-                saves.zip(against).map(|(s, a)| u64::from(s) + u64::from(a))
-            } else {
-                shots.map(u64::from)
-            };
-            let frac = if denom == Some(0) {
-                None
-            } else {
-                fraction(&row[if goalie { "savePctg" } else { "shootingPctg" }])?
-            };
-            locations.push(EdgeLocation {
-                code: code.into(),
-                shots,
-                goals,
-                saves,
-                goals_against: against,
-                fraction: frac,
-                provider_percentile: if frac.is_some() {
-                    fraction(
-                        &row[if goalie {
-                            "savePctgPercentile"
-                        } else {
-                            "shootingPctgPercentile"
-                        }],
-                    )?
+    let location_result = (|| -> Result<Vec<EdgeLocation>, String> {
+        let mut locations = Vec::new();
+        let rows = if goalie {
+            &root["shotLocationSummary"]
+        } else {
+            &root["sogSummary"]
+        };
+        if let Some(rows) = rows.as_array() {
+            let mut codes = std::collections::BTreeSet::new();
+            for row in rows {
+                let code = row["locationCode"]
+                    .as_str()
+                    .ok_or("EDGE location code absent")?;
+                if !codes.insert(code) {
+                    return Err("duplicate EDGE location summary".into());
+                }
+                let shots = count(&row["shots"])?;
+                let goals = count(&row["goals"])?;
+                let saves = count(&row["saves"])?;
+                let against = count(&row["goalsAgainst"])?;
+                if goals.zip(shots).is_some_and(|(g, s)| g > s) {
+                    return Err("EDGE goals exceed shots".into());
+                }
+                let denom = if goalie {
+                    saves.zip(against).map(|(s, a)| u64::from(s) + u64::from(a))
                 } else {
+                    shots.map(u64::from)
+                };
+                let frac = if denom == Some(0) {
                     None
-                },
-            });
+                } else {
+                    fraction(&row[if goalie { "savePctg" } else { "shootingPctg" }])?
+                };
+                locations.push(EdgeLocation {
+                    code: code.into(),
+                    shots,
+                    goals,
+                    saves,
+                    goals_against: against,
+                    fraction: frac,
+                    provider_percentile: if frac.is_some() {
+                        fraction(
+                            &row[if goalie {
+                                "savePctgPercentile"
+                            } else {
+                                "shootingPctgPercentile"
+                            }],
+                        )?
+                    } else {
+                        None
+                    },
+                });
+            }
         }
+        Ok(locations)
+    })();
+    let (locations, location_note) = match location_result {
+        Ok(locations) => (locations, None),
+        Err(reason) if !goalie && !measures.is_empty() => (Vec::new(), Some(format!("Shot-location data unavailable: {reason}. Other valid observations are retained independently."))),
+        Err(reason) => return Err(reason),
+    };
+    let mut evidence = EdgeEvidence{schema:"icelines.rinkcraft-edge.v1".into(),player_id,season,season_type:"regular".into(),group:group.into(),games,captured_at:captured_at.into(),strength_scope:"all strengths".into(),source:EdgeSource{url:url.into(),sha256:format!("{:x}",Sha256::digest(bytes)),bytes:bytes.len()},measures,locations,notes:vec!["NHL EDGE provider percentiles use provider-defined league references. Their eligibility and reference counts are not supplied in this response; they are not IceLines F/D/G midranks.".into(),"Maximum speeds and burst/distance counts are partial observations. They can support explicitly labelled stat estimates, not a complete technical capability assessment.".into(),"Location codes and fractions retain the provider's definitions. The location subgroups are not assumed to partition the all-location total.".into(),if goalie{"Saving by shot location is outcome context; it does not measure Tracking, Positioning, Movement, Rebounds, Recovery or Puck Play technique.".into()}else{"On-ice zone time describes puck location, not player routes or defensive responsibility.".into()}]};
+    if let Some(note) = location_note {
+        evidence.notes.push(note);
     }
-    Ok(EdgeEvidence{schema:"icelines.rinkcraft-edge.v1".into(),player_id,season,season_type:"regular".into(),group:group.into(),games,captured_at:captured_at.into(),strength_scope:"all strengths".into(),source:EdgeSource{url:url.into(),sha256:format!("{:x}",Sha256::digest(bytes)),bytes:bytes.len()},measures,locations,notes:vec!["NHL EDGE provider percentiles use provider-defined league references. Their eligibility and reference counts are not supplied in this response; they are not IceLines F/D/G midranks.".into(),"Maximum speeds and burst/distance counts are observations, not complete capability estimates. Do not combine missing facets or assign a 1–20 capability from them.".into(),"Location codes and fractions retain the provider's definitions. The location subgroups are not assumed to partition the all-location total.".into(),if goalie{"Saving by shot location is outcome context; it does not measure Tracking, Positioning, Movement, Rebounds, Recovery or Puck Play technique.".into()}else{"On-ice zone time describes puck location, not player routes or defensive responsibility.".into()}]})
+    Ok(evidence)
 }
 #[cfg(test)]
 mod tests {
@@ -297,6 +310,31 @@ mod tests {
         let p = run(v).unwrap();
         assert_eq!(p.measures.len(), 1);
         assert_eq!(p.measures[0].key, "speed-bursts-over-20");
+    }
+    #[test]
+    fn invalid_shot_locations_do_not_erase_valid_skating() {
+        let mut v = raw();
+        v["sogSummary"][0]["goals"] = json!(1);
+        let bytes = serde_json::to_vec(&v).unwrap();
+        let p = run(v.clone()).unwrap();
+        assert_eq!(p.measures.len(), 2);
+        assert_eq!(p.measures[0].value, 24.);
+        assert_eq!(p.measures[1].value, 0.);
+        assert!(p.locations.is_empty());
+        assert!(p
+            .notes
+            .iter()
+            .any(|n| n.contains("EDGE goals exceed shots")));
+        assert_eq!(p.source.sha256, format!("{:x}", Sha256::digest(&bytes)));
+        v["player"]["id"] = json!(2);
+        assert!(run(v).is_err());
+    }
+    #[test]
+    fn invalid_locations_without_independent_observations_stay_unavailable() {
+        let mut v = raw();
+        v["sogSummary"][0]["goals"] = json!(1);
+        v["skatingSpeed"] = Value::Null;
+        assert!(run(v).is_err());
     }
     #[test]
     fn unsupported_seasons_and_goalie_schema_are_explicit() {
