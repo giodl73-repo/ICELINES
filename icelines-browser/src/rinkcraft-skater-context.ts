@@ -1,4 +1,4 @@
-export interface SkaterContext {source_credit:string;notes:string[];values:Record<string,number>;rows:{attribute:string;label:string;value:string}[];defending?:import('./rinkcraft-defending-record.js').DefendingRecord;handling?:import('./rinkcraft-handling-record.js').HandlingRecord;reading?:import('./rinkcraft-reading-record.js').ReadingRecord;}
+export interface SkaterContext {source_credit:string;notes:string[];values:Record<string,number>;rows:{attribute:string;label:string;value:string}[];defending?:import('./rinkcraft-defending-record.js').DefendingRecord;handling?:import('./rinkcraft-handling-record.js').HandlingRecord;reading?:import('./rinkcraft-reading-record.js').ReadingRecord;passing?:import('./rinkcraft-passing-record.js').PassingRecord;}
 const el=(tag:string,text?:string)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;return n;};
 export function renderSkaterContext(context:SkaterContext,attribute?:string):HTMLElement {
  const block=el('div');block.className='rk-skater-context rk-shot-context';

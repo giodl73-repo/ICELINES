@@ -31,6 +31,16 @@ pub fn run(catalog: &Path, season: u32, output: &Path) -> anyhow::Result<()> {
         })
         .count();
     let bytes = serde_json::to_vec(&data)?;
+    let passing_records = data
+        .profiles
+        .iter()
+        .filter(|p| {
+            p.season == season
+                && p.skater_context
+                    .as_ref()
+                    .is_some_and(|c| c.passing.is_some())
+        })
+        .count();
     let reading_records = data
         .profiles
         .iter()
@@ -42,7 +52,7 @@ pub fn run(catalog: &Path, season: u32, output: &Path) -> anyhow::Result<()> {
         })
         .count();
     ensure!(bytes.len() <= 32 * 1024 * 1024, "Output exceeds 32 MiB");
-    let report = serde_json::json!({"schema":"rinkcraft.profile-records.v1","season":season,"handling_records":records,"reading_records":reading_records,"input_catalog_sha256":format!("{:x}",Sha256::digest(&raw)),"output_catalog_sha256":format!("{:x}",Sha256::digest(&bytes)),"production_grades_changed":false});
+    let report = serde_json::json!({"schema":"rinkcraft.profile-records.v1","season":season,"handling_records":records,"reading_records":reading_records,"passing_records":passing_records,"input_catalog_sha256":format!("{:x}",Sha256::digest(&raw)),"output_catalog_sha256":format!("{:x}",Sha256::digest(&bytes)),"production_grades_changed":false});
     fs::create_dir_all(output)?;
     fs::write(output.join("rinkcraft-stat-attributes.json"), bytes)?;
     fs::write(

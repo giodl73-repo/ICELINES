@@ -4,6 +4,7 @@ import {renderSkaterContext} from './rinkcraft-skater-context.js';
 import {defendingRecord,renderDefendingRecord} from './rinkcraft-defending-record.js';
 import {handlingRecord,handlingSummary} from './rinkcraft-handling-record.js';
 import {readingRecord,readingSummary} from './rinkcraft-reading-record.js';
+import {passingRecord,passingSummary} from './rinkcraft-passing-record.js';
 // Rinkcraft presentation categories. Unassessed capability fields stay unrated.
 // Numerical evidence and documentary identity are supplied independently by Rust.
 import type {CharacterSheet} from './rinkcraft-character.js';
@@ -124,6 +125,7 @@ export function renderCharacterFront(
     const rule=node('button',label);rule.type='button';rule.className='rk-capability-trigger';rule.setAttribute('aria-label',`How ${label} is scored`);rule.onclick=()=>{if(statScores&&estimate)openStatScore(statScores,estimate,name);else void openCapability(label,goalie,name,edge);};score.children[0].textContent='';score.children[0].append(rule);
     score.append(node('small',estimate?.score!==null&&estimate?.score!==undefined?(statScores?.small_sample?'Small sample':'Estimate'):'Unrated'));scores.append(score);
     if(label==='Handling'){const handling=handlingRecord(statScores);if(handling)score.append(handlingSummary(handling));}
+    if(label==='Passing'){const passing=passingRecord(statScores);if(passing)score.append(passingSummary(passing));}
   }
   attributes.append(scores);
   const tasks=node('div');tasks.className='rk-front-task-column';
