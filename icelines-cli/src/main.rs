@@ -181,12 +181,19 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             println!("{}", serde_json::to_string_pretty(&result)?);
         }
         Commands::ProfileCalibrate {
+            focus,
             season,
             catalog,
             season_package,
             output_dir,
         } => {
-            commands::profile_calibrate::run(&catalog, &season_package, season, &output_dir)?;
+            commands::profile_calibrate::run(
+                &catalog,
+                &season_package,
+                season,
+                &output_dir,
+                &focus,
+            )?;
         }
         Commands::ProfileCalibrationInputs {
             season,

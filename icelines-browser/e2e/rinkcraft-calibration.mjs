@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {chromium} from 'playwright';
 const base=process.env.ICELINES_CALIBRATION_URL??'http://127.0.0.1:8780/calibration/';
 const data=await(await fetch(new URL('calibration.json',base))).json();
+const prefix=data.candidates[0].attribute==='Defending'?'defending-':'';
 const output=new URL('../../target/attribute-calibration/screenshots/',import.meta.url);
 await mkdir(output,{recursive:true});
 const browser=await chromium.launch({channel:process.env.ICELINES_BROWSER_CHANNEL??'msedge',headless:true});
@@ -12,7 +13,7 @@ try{
  const page=await browser.newPage({viewport:{width:1280,height:1000}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto(base);await page.locator('#players tr').first().waitFor();
- assert.equal(await page.locator('#recipe option').count(),5);
+ assert.equal(await page.locator('#recipe option').count(),Number(process.env.ICELINES_EXPECTED_RECIPES??5));
  for(const c of data.candidates){
   await page.selectOption('#recipe',c.id);
   assert.equal(await page.locator('#formula').textContent(),c.formula);
@@ -28,14 +29,16 @@ try{
  await page.locator('#search').fill('Beniers');
  assert.equal(await page.locator('#players tr').count(),1);
  const row=last.rows.find(r=>r.name==='Matty Beniers');
- assert.deepEqual((await page.locator('#players tr td').allTextContents()).slice(1,4),[String(row.baseline),String(row.candidate),String(row.delta)]);
- assert.equal(await page.locator('#players a').getAttribute('href'),`../?player=${row.player_id}`);
+ assert.deepEqual((await page.locator('#players tr td').allTextContents()).slice(1,4),[String(row.baseline),String(row.candidate),`${row.delta>0?'+':''}${row.delta}`]);
+ if(last.attribute==='Defending'){assert.match(await page.locator('#outcome').textContent(),/5v5.*lower/);assert.match(await page.locator('#players tr').textContent(),/5v5 minutes.*PK time.*DZ/);}else{assert.equal(await page.locator('#players a').getAttribute('href'),`../?player=${row.player_id}`);}
+ const missing=last.rows.find(r=>r.exposure_missing);
+ if(missing){await page.locator('#search').fill(missing.name);assert.match(await page.locator('#players tr').textContent(),/unavailable 5v5 minutes/);assert.equal(await page.locator('#players tr td').nth(2).textContent(),'—');}
  await page.locator('#search').fill('');await page.selectOption('#sort','name');
- assert.equal(await page.locator('#players a').first().textContent(),last.rows.map(r=>r.name).sort((a,b)=>a.localeCompare(b))[0]);
- await page.screenshot({path:fileURLToPath(new URL('desktop.png',output))});
+ assert.equal(await page.locator('#players tr td').first().locator('a,span').first().textContent(),last.rows.map(r=>r.name).sort((a,b)=>a.localeCompare(b))[0]);
+ await page.screenshot({path:fileURLToPath(new URL(`${prefix}desktop.png`,output))});
  await page.setViewportSize({width:390,height:844});
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
- await page.screenshot({path:fileURLToPath(new URL('mobile.png',output))});
+ await page.screenshot({path:fileURLToPath(new URL(`${prefix}mobile.png`,output))});
  assert.deepEqual(errors,[]);
- console.log('Passed five recipes, peer filters, cohort counts, search, sorting, player links and mobile overflow.');
+ console.log(`Passed ${data.candidates.length} recipes, peer filters, cohort counts, search, sorting, player identity, missing exposure and mobile overflow.`);
 }finally{await browser.close();}

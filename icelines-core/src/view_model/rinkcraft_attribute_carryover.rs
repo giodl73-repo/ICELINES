@@ -26,6 +26,9 @@ pub struct Comparison {
     pub component_repeatability: Option<f64>,
     pub baseline_mean_absolute_change: Option<f64>,
     pub candidate_mean_absolute_change: Option<f64>,
+    pub outcome_label: String,
+    pub outcome_higher_is_better: bool,
+    pub exposure_label: String,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct History {
@@ -50,7 +53,11 @@ fn correlation(p: &[(f64, f64)]) -> Option<f64> {
 }
 fn validate(report: &Report) -> Result<(), String> {
     let year = report.season / 10000;
-    if report.schema != "rinkcraft.attribute-calibration.v1"
+    if ![
+        "rinkcraft.attribute-calibration.v1",
+        "rinkcraft.attribute-calibration.v2",
+    ]
+    .contains(&report.schema.as_str())
         || !(2008..=2200).contains(&year)
         || report.season % 10000 != year + 1
     {
@@ -58,6 +65,19 @@ fn validate(report: &Report) -> Result<(), String> {
     }
     let mut ids = BTreeSet::new();
     for c in &report.candidates {
+        if (report.schema.ends_with(".v2") && c.outcome.is_none())
+            || (report.schema.ends_with(".v1")
+                && (c.outcome.is_some()
+                    || !["Passing", "Shooting"].contains(&c.attribute.as_str())))
+        {
+            return Err("Outcome metadata requires calibration v2; legacy v1 supports Passing/Shooting only".into());
+        }
+        if c.outcome
+            .as_ref()
+            .is_some_and(|o| o.label.is_empty() || o.exposure.is_empty())
+        {
+            return Err("Missing outcome/exposure label".into());
+        }
         if !ids.insert(&c.id) {
             return Err("Duplicate candidate".into());
         }
@@ -111,16 +131,40 @@ pub fn compare(reports: &[Report]) -> Result<History, String> {
                 || ca.formula != cb.formula
                 || ca.prior_attempts != cb.prior_attempts
                 || ca.component_unit != cb.component_unit
+                || ca.outcome != cb.outcome
             {
                 return Err("Recipe changed between seasons".into());
             }
             let next: BTreeMap<_, _> = cb.rows.iter().map(|r| (r.player_id, r)).collect();
+            let higher = ca.outcome.as_ref().map_or(true, |o| o.higher_is_better);
+            let exposure = ca
+                .outcome
+                .as_ref()
+                .map_or("all-strength minutes", |o| o.exposure.as_str());
+            let target = ca
+                .outcome
+                .as_ref()
+                .map(|o| o.label.clone())
+                .unwrap_or_else(|| {
+                    format!(
+                        "NHL all-strength {}/60",
+                        if ca.attribute == "Passing" {
+                            "assists"
+                        } else {
+                            "goals"
+                        }
+                    )
+                });
             for group in ["Forwards", "Defense"] {
                 for (sample, gp, minutes) in
                     [("10 GP / 100 min", 10, 100.), ("40 GP / 500 min", 40, 500.)]
                 {
-                    let eligible =
-                        |r: &&Row| r.group == group && r.games >= gp && r.minutes >= minutes;
+                    let eligible = |r: &&Row| {
+                        !r.exposure_missing
+                            && r.group == group
+                            && r.games >= gp
+                            && r.minutes >= minutes
+                    };
                     let before = ca.rows.iter().filter(eligible).collect::<Vec<_>>();
                     let eligible_after = cb.rows.iter().filter(eligible).count();
                     let mut matched = vec![];
@@ -128,7 +172,10 @@ pub fn compare(reports: &[Report]) -> Result<History, String> {
                     let mut no_next = 0;
                     for ra in &before {
                         let Some(rb) = next.get(&ra.player_id).filter(|rb| {
-                            rb.group == group && rb.games >= gp && rb.minutes >= minutes
+                            !rb.exposure_missing
+                                && rb.group == group
+                                && rb.games >= gp
+                                && rb.minutes >= minutes
                         }) else {
                             no_next += 1;
                             continue;
@@ -151,7 +198,13 @@ pub fn compare(reports: &[Report]) -> Result<History, String> {
                                 Some(va),
                                 Some(vb),
                             ) => matched.push((
-                                ba as f64, ca as f64, bb as f64, cb as f64, outcome, va, vb,
+                                ba as f64,
+                                ca as f64,
+                                bb as f64,
+                                cb as f64,
+                                if higher { outcome } else { -outcome },
+                                va,
+                                vb,
                             )),
                             _ => unavailable += 1,
                         }
@@ -185,15 +238,19 @@ pub fn compare(reports: &[Report]) -> Result<History, String> {
                         component_repeatability: cor(|p| (p.5, p.6)),
                         baseline_mean_absolute_change: mean(|p| (p.0 - p.2).abs()),
                         candidate_mean_absolute_change: mean(|p| (p.1 - p.3).abs()),
+                        outcome_label: target.clone(),
+                        outcome_higher_is_better: higher,
+                        exposure_label: exposure.into(),
                     });
                 }
             }
         }
     }
-    Ok(History {schema:"rinkcraft.attribute-carryover.v1".into(),seasons:reports.iter().map(|r|r.season).collect(),comparisons,notes:vec![
+    Ok(History {schema:if reports.iter().any(|r|r.schema.ends_with(".v2")){"rinkcraft.attribute-carryover.v2"}else{"rinkcraft.attribute-carryover.v1"}.into(),seasons:reports.iter().map(|r|r.season).collect(),comparisons,notes:vec![
         "Forward-only season pairs; recipes are unchanged and no weights are fitted. Production card grades remain unchanged.".into(),
         "Each row uses the same players for baseline and candidate, with the sample threshold met in both seasons and unchanged F/D group. Missing outcomes are excluded from both; attrition is reported.".into(),
-        "Repeatability correlates grades with the next season's corresponding grades. Production correlates each earlier grade with a common next-season NHL outcome: assists/60 for Passing, goals/60 for Shooting, all strengths.".into(),
+        "Repeatability correlates grades with the next season's corresponding grades. Future outcome correlates both earlier grades with the same next-season rate. The outcome and workload basis are labelled on each comparison.".into(),
+        "For lower-better outcomes (Defending five-on-five xGA/60), the target sign is reversed before correlation: a positive value means association with lower future xGA/60. Passing and Shooting retain higher-better NHL assists/60 and goals/60.".into(),
         "Component repeatability correlates the raw recipe component across seasons. All correlations are Pearson; constant values or fewer than three pairs are unavailable.".into(),
         "Survivor selection, deployment, teammates, aging and injuries remain confounders. No confidence intervals or causal skill claims; small differences are not proof of a better recipe. The larger-sample filter does not rebuild the original reference ranks.".into(),
     ]})

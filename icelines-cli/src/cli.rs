@@ -170,6 +170,8 @@ pub enum Commands {
     },
     /// Compare experimental skater attribute recipes.
     ProfileCalibrate {
+        #[arg(long,default_value="passing-shooting",value_parser=["passing-shooting","defending"])]
+        focus: String,
         #[arg(long)]
         season: u32,
         #[arg(long)]

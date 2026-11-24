@@ -47,11 +47,14 @@ pub async fn capture(r: Request) -> Result<Value, String> {
     );
     let (csv, capture) = store.get(&url, true, false).await?;
     receipts.push(capture);
-    let assists = context::season_assists(
-        Cursor::new(csv.ok_or("Missing skater CSV")?),
+    let csv = csv.ok_or("Missing skater CSV")?;
+    let assists = context::season_assists(Cursor::new(&csv), r.season, &summary)?;
+    let mut defending = icelines_sources::rinkcraft_defending_context::parse(
+        Cursor::new(&csv),
         r.season,
-        &summary,
+        &players,
     )?;
+    let defending_matched = defending.len();
     let url = format!("https://peter-tanner.com/moneypuck/downloads/shots_{year}.zip");
     let (raw, capture) = store.get(&url, true, false).await?;
     receipts.push(capture);
@@ -76,6 +79,18 @@ pub async fn capture(r: Request) -> Result<Value, String> {
         let mut c = contexts
             .remove(&p.player_id)
             .ok_or("Missing skater context")?;
+        if let Some(values) = defending.remove(&p.player_id) {
+            c.values.extend(values);
+        }
+        if let Some(seconds) = toi
+            .iter()
+            .find(|t| t["playerId"].as_u64() == Some(p.player_id as u64))
+            .and_then(|t| t["shTimeOnIce"].as_f64())
+            .filter(|v| v.is_finite() && *v >= 0. && p.minutes > 0.)
+        {
+            c.values
+                .insert("def-pk-share".into(), seconds / (p.minutes * 60.));
+        }
         if let Some(a) = assists.get(&p.player_id) {
             c.values.insert("primary".into(), a.primary as f64);
             c.values.insert("secondary".into(), a.secondary as f64);
@@ -87,7 +102,7 @@ pub async fn capture(r: Request) -> Result<Value, String> {
         } else {
             c.notes.push("Assist-type detail unavailable: missing MoneyPuck row or GP/total-assist mismatch with NHL.".into());
         }
-        c.source_credit = "NHL public season reports; MoneyPuck.com season assist credits and goalie-in-net shot data".into();
+        c.source_credit = "NHL public season reports; MoneyPuck.com assist credits, goalie-in-net shot data and five-on-five on/off results".into();
         p.skater_context = Some(Context::new(c.values, c.source_credit, c.notes));
     }
     let catalog = scores::Catalog {
@@ -106,7 +121,7 @@ pub async fn capture(r: Request) -> Result<Value, String> {
         stats: serde_json::from_value(json!(summary)).map_err(|e| e.to_string())?,
         goalies: vec![],
     };
-    let report = json!({"schema":"rinkcraft.calibration-inputs.v1","season":r.season,"players":players.len(),"reconciled_assist_players":matched,"source_credit":"NHL; MoneyPuck.com","captures":receipts,"notes":["Diagnostic catalog only: no EDGE acquisition. Passing and Shooting use the unchanged baseline recipes. Missing assist detail is not zero."]});
+    let report = json!({"schema":"rinkcraft.calibration-inputs.v1","season":r.season,"players":players.len(),"reconciled_assist_players":matched,"matched_defending_players":defending_matched,"source_credit":"NHL; MoneyPuck.com","captures":receipts,"notes":["Diagnostic catalog only: no EDGE acquisition. Baseline recipes unchanged. Missing assist detail is not zero. Five-on-five defense is on-ice team performance; on/off differences do not isolate player impact."]});
     fs::create_dir_all(&r.output_dir).map_err(|e| e.to_string())?;
     write(
         &r.output_dir.join("rinkcraft-stat-attributes.json"),

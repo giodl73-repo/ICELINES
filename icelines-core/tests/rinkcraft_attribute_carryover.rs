@@ -12,6 +12,7 @@ fn report(season: u32, next: bool) -> Report {
                 group: "Forwards".into(),
                 games: if i == 3 { 20 } else { 60 },
                 minutes: 600.,
+                exposure_missing: false,
                 reference_eligible: true,
                 baseline: Some(baseline),
                 candidate: Some(if next { baseline } else { 21 - baseline }),
@@ -40,6 +41,7 @@ fn report(season: u32, next: bool) -> Report {
             component_unit: "credits/60".into(),
             groups: vec![],
             rows,
+            outcome: None,
         }],
         notes: vec![],
     }
@@ -94,5 +96,29 @@ fn refuses_gaps_duplicates_and_recipe_drift() {
     let mut b = report(20242025, true);
     let duplicate = b.candidates[0].rows[0].clone();
     b.candidates[0].rows.push(duplicate);
+    assert!(study::compare(&[a, b]).is_err());
+}
+#[test]
+fn lower_better_targets_reverse_only_the_outcome_correlation_and_reject_direction_drift() {
+    use icelines_core::view_model::rinkcraft_attribute_calibration::Outcome;
+    let mut a = report(20232024, false);
+    let mut b = report(20242025, true);
+    let metadata = Outcome {
+        label: "5v5 xGA/60".into(),
+        higher_is_better: false,
+        exposure: "5v5 minutes".into(),
+    };
+    for r in [&mut a, &mut b] {
+        r.schema = "rinkcraft.attribute-calibration.v2".into();
+        r.candidates[0].attribute = "Defending".into();
+        r.candidates[0].outcome = Some(metadata.clone());
+    }
+    let result = study::compare(&[a.clone(), b.clone()]).unwrap();
+    let c = &result.comparisons[0];
+    assert_eq!(c.baseline_repeatability, Some(1.));
+    assert!(c.baseline_next_production.unwrap() < -0.99);
+    assert!(c.candidate_next_production.unwrap() > 0.99);
+    assert_eq!(c.exposure_label, "5v5 minutes");
+    b.candidates[0].outcome.as_mut().unwrap().higher_is_better = true;
     assert!(study::compare(&[a, b]).is_err());
 }

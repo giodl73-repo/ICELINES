@@ -32,16 +32,23 @@ pub fn carryover(paths: &[std::path::PathBuf], output: &Path) -> anyhow::Result<
     for note in &result.notes {
         md.push_str(&format!("- {note}\n"));
     }
-    md.push_str("\n| Seasons | Recipe | Group | Sample | Pairs | Repeatability baseline → candidate | Next production baseline → candidate |\n| --- | --- | --- | --- | ---: | --- | --- |\n");
+    md.push_str("\n| Seasons | Recipe | Group | Sample / exposure | Future outcome | Pairs | Repeatability baseline → candidate | Favorable future-outcome correlation baseline → candidate |\n| --- | --- | --- | --- | --- | ---: | --- | --- |\n");
     let fmt = |v: Option<f64>| v.map(|v| format!("{v:.3}")).unwrap_or_else(|| "—".into());
     for c in &result.comparisons {
         md.push_str(&format!(
-            "| {} → {} | {} | {} | {} | {} | {} → {} | {} → {} |\n",
+            "| {} → {} | {} | {} | {} · {} | {} ({}) | {} | {} → {} | {} → {} |\n",
             c.from,
             c.to,
             c.label,
             c.group,
             c.sample,
+            c.exposure_label,
+            c.outcome_label,
+            if c.outcome_higher_is_better {
+                "higher better"
+            } else {
+                "lower better; sign reversed"
+            },
             c.matched_players,
             fmt(c.baseline_repeatability),
             fmt(c.candidate_repeatability),
@@ -65,7 +72,13 @@ pub fn carryover(paths: &[std::path::PathBuf], output: &Path) -> anyhow::Result<
     );
     Ok(())
 }
-pub fn run(catalog: &Path, package: &Path, season: u32, output: &Path) -> anyhow::Result<()> {
+pub fn run(
+    catalog: &Path,
+    package: &Path,
+    season: u32,
+    output: &Path,
+    focus: &str,
+) -> anyhow::Result<()> {
     anyhow::ensure!(!output.exists(), "Choose a new output directory");
     anyhow::ensure!(
         fs::metadata(catalog)?.len() <= 32 * 1024 * 1024,
@@ -108,7 +121,14 @@ pub fn run(catalog: &Path, package: &Path, season: u32, output: &Path) -> anyhow
         .into_iter()
         .map(|(id, b)| (id, b.skater_full_name.clone()))
         .collect();
-    let report = study::compare(&catalog, season, &names).map_err(anyhow::Error::msg)?;
+    let report = match focus {
+        "passing-shooting" => study::compare(&catalog, season, &names),
+        "defending" => icelines_core::view_model::rinkcraft_defending_calibration::compare(
+            &catalog, season, &names,
+        ),
+        _ => return Err(anyhow::anyhow!("Unknown calibration focus")),
+    }
+    .map_err(anyhow::Error::msg)?;
     let mut value = serde_json::to_value(&report)?;
     value["input_catalog_sha256"] = format!("{:x}", Sha256::digest(&raw)).into();
     value["input_package_sha256"] = format!("{:x}", Sha256::digest(&package_raw)).into();

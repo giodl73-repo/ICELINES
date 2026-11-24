@@ -9,6 +9,10 @@ pub struct Row {
     pub group: String,
     pub games: u32,
     pub minutes: f64,
+    /// When true, minutes is only an internal zero placeholder and must not be
+    /// displayed as measured exposure or admitted to a reference/paired cohort.
+    #[serde(default)]
+    pub exposure_missing: bool,
     pub reference_eligible: bool,
     pub baseline: Option<u8>,
     pub candidate: Option<u8>,
@@ -18,8 +22,8 @@ pub struct Row {
     pub reference_players: usize,
     pub pp_share: Option<f64>,
     pub input_detail: String,
-    /// NHL all-strength assists/60 or goals/60; a common future outcome for all
-    /// candidates of this attribute, not a recipe-specific target.
+    /// Common future outcome rate. Candidate outcome metadata supplies its
+    /// label/direction; legacy reports use NHL all-strength assists/60 or goals/60.
     #[serde(default)]
     pub production_rate: Option<f64>,
 }
@@ -38,6 +42,12 @@ pub struct Summary {
     pub candidate_pp_correlation: Option<f64>,
     pub pp_pairs: usize,
 }
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Outcome {
+    pub label: String,
+    pub higher_is_better: bool,
+    pub exposure: String,
+}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Candidate {
     pub id: String,
@@ -48,6 +58,8 @@ pub struct Candidate {
     pub component_unit: String,
     pub groups: Vec<Summary>,
     pub rows: Vec<Row>,
+    #[serde(default)]
+    pub outcome: Option<Outcome>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Report {
@@ -115,7 +127,7 @@ fn metric(p: &Profile, kind: usize, prior: f64) -> Option<f64> {
     }
 }
 /// Quantized midranks match the current attribute system, including signed measurements.
-fn percentile(v: f64, reference: &[f64]) -> Option<f64> {
+pub(super) fn percentile(v: f64, reference: &[f64]) -> Option<f64> {
     if reference.len() < 20 {
         return None;
     }
@@ -126,7 +138,7 @@ fn percentile(v: f64, reference: &[f64]) -> Option<f64> {
             / reference.len() as f64,
     )
 }
-fn correlation(pairs: &[(f64, f64)]) -> Option<f64> {
+pub(super) fn correlation(pairs: &[(f64, f64)]) -> Option<f64> {
     if pairs.len() < 2 {
         return None;
     }
@@ -184,7 +196,7 @@ pub fn compare(
    let display=|k:&str|value(p,k).map(|v|format!("{v:.2}")).unwrap_or_else(||"—".into());
    let detail=if kind<2 {format!("{} primary · {} secondary · {} primary/60",display("primary"),display("secondary"),display("primary-rate"))}
     else{format!("{} archive goals − {} xG · {} attempts · prior {prior:.0}",display("quality-goals"),display("ixg"),display("quality-attempts"))};
-   rows.push(Row{player_id:p.player_id,name:names.get(&p.player_id).cloned().unwrap_or_else(||format!("Player {}",p.player_id)),group:p.group.clone(),games:p.games,minutes:p.minutes,reference_eligible:eligible(p),baseline:baseline.score,candidate,delta,component_value:v,component_percentile:rank,reference_players:reference.len(),pp_share:value(p,"pp-share"),input_detail:detail,production_rate:value(p,if attribute=="Passing"{"assists"}else{"goals"})});
+   rows.push(Row{player_id:p.player_id,name:names.get(&p.player_id).cloned().unwrap_or_else(||format!("Player {}",p.player_id)),group:p.group.clone(),games:p.games,minutes:p.minutes,exposure_missing:false,reference_eligible:eligible(p),baseline:baseline.score,candidate,delta,component_value:v,component_percentile:rank,reference_players:reference.len(),pp_share:value(p,"pp-share"),input_detail:detail,production_rate:value(p,if attribute=="Passing"{"assists"}else{"goals"})});
   }
   let groups=["Forwards","Defense"].into_iter().enumerate().map(|(i,group)|{
    let eligible=rows.iter().filter(|r|r.group==group&&r.reference_eligible).collect::<Vec<_>>();
@@ -192,7 +204,7 @@ pub fn compare(
    let pp=paired.iter().filter_map(|r|Some((r.baseline? as f64,r.candidate? as f64,r.pp_share?))).collect::<Vec<_>>();
    Summary{group:group.into(),reference_players:references[i].len(),paired_players:paired.len(),unavailable_players:eligible.len()-paired.len(),up:paired.iter().filter(|r|r.delta.unwrap()>0).count(),down:paired.iter().filter(|r|r.delta.unwrap()<0).count(),unchanged:paired.iter().filter(|r|r.delta==Some(0)).count(),mean_absolute_change:(!paired.is_empty()).then(||paired.iter().map(|r|r.delta.unwrap().unsigned_abs() as f64).sum::<f64>()/paired.len() as f64),largest_change:paired.iter().map(|r|r.delta.unwrap().abs()).max(),baseline_pp_correlation:correlation(&pp.iter().map(|p|(p.0,p.2)).collect::<Vec<_>>()),candidate_pp_correlation:correlation(&pp.iter().map(|p|(p.1,p.2)).collect::<Vec<_>>()),pp_pairs:pp.len()}
   }).collect();
-  candidates.push(Candidate{id:id.into(),label:label.into(),attribute:attribute.into(),formula:formula.into(),prior_attempts:prior,component_unit:if kind<2{"credits/60"}else{"excess goals /100 adjusted attempts"}.into(),groups,rows});
+  candidates.push(Candidate{id:id.into(),label:label.into(),attribute:attribute.into(),formula:formula.into(),prior_attempts:prior,component_unit:if kind<2{"credits/60"}else{"excess goals /100 adjusted attempts"}.into(),groups,rows,outcome:None});
  }
     Ok(Report{schema:"rinkcraft.attribute-calibration.v1".into(),season,candidates,notes:vec![
   "Diagnostic comparison only. No candidate is promoted and no card grades or simulator bonuses are changed.".into(),

@@ -42,3 +42,4 @@ pub use adapter::{
 pub mod raw_inventory;
 pub mod rinkcraft_stat_inputs;
 pub mod rinkcraft_skater_context;
+pub mod rinkcraft_defending_context;
