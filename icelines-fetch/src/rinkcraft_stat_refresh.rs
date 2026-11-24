@@ -20,6 +20,7 @@ pub struct Request {
     pub output_dir: PathBuf,
     pub previous_catalog: Option<PathBuf>,
     pub edge_captures: Option<PathBuf>,
+    pub game_cache_dir: Option<PathBuf>,
     pub offline: bool,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -214,6 +215,15 @@ async fn edge_observation(
                 "speed-bursts-over-20" if p.minutes > 0. => {
                     p.metrics.insert("bursts".into(), m.value * 60. / p.minutes);
                 }
+                "skating-distance" => {
+                    p.metrics.insert("edge-distance".into(), m.value);
+                }
+                "max-shot-speed" => {
+                    p.metrics.insert("edge-shot-speed".into(), m.value);
+                }
+                "defensive-zone-puck-time" => {
+                    p.metrics.insert("edge-dz".into(), m.value);
+                }
                 _ => {}
             }
         }
@@ -263,6 +273,7 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
     let mut receipts = vec![];
     let mut observations = vec![];
     let mut shot_contexts = BTreeMap::new();
+    let mut skater_sources = None;
     let mut notes = BTreeMap::<u32, Vec<String>>::new();
     if request.kind != "skaters" {
         eprintln!("Refreshing goalie public sources for {}", request.season);
@@ -354,6 +365,7 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
             &penalties,
             &toi,
         )?;
+        skater_sources = Some((summary, realtime, toi));
         let mut retained = BTreeMap::<u32, Capture>::new();
         if let Some(root) = &request.edge_captures {
             let manifest: Value = serde_json::from_slice(
@@ -428,8 +440,81 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
         }
     }
     observations.sort_by_key(|p| p.player_id);
+    let mut skater_contexts = BTreeMap::new();
+    if let Some((summary, realtime, toi)) = skater_sources {
+        let mut assists = None;
+        if let Some(root) = &request.game_cache_dir {
+            let games_store = Store {
+                root: root.join(request.season.to_string()),
+                ..store.clone()
+            };
+            let teams = crate::teams::nhl_teams_for_season(&request.season.to_string())
+                .into_iter()
+                .map(str::to_owned)
+                .collect();
+            let (games, captures) = puck::capture_games(
+                games_store,
+                request.season,
+                teams,
+                icelines_sources::rinkcraft_skater_context::goal_assists,
+            )
+            .await?;
+            receipts.extend(captures);
+            let mut totals =
+                BTreeMap::<u32, icelines_sources::rinkcraft_skater_context::Assists>::new();
+            for game in games {
+                for (id, a) in game {
+                    let sum = totals.entry(id).or_default();
+                    sum.primary += a.primary;
+                    sum.secondary += a.secondary;
+                }
+            }
+            assists = Some(totals);
+        }
+        let url = format!(
+            "https://peter-tanner.com/moneypuck/downloads/shots_{}.zip",
+            request.season / 10000
+        );
+        let mut shooting = None;
+        let mut shot_date = None;
+        if let Ok((Some(raw), capture)) = store.get(&url, request.kind != "skaters", false).await {
+            let mut zip = zip::ZipArchive::new(Cursor::new(raw)).map_err(|e| e.to_string())?;
+            if zip.len() != 1 {
+                return Err("Expected one shot CSV".into());
+            }
+            let file = zip.by_index(0).map_err(|e| e.to_string())?;
+            if file.size() > 256 * 1024 * 1024 {
+                return Err("Shot CSV exceeds bound".into());
+            }
+            shooting = Some(icelines_sources::rinkcraft_skater_context::shooting(
+                file,
+                request.season,
+            )?);
+            shot_date = Some(capture.captured_at.clone());
+            receipts.push(capture);
+        }
+        let players = observations
+            .iter()
+            .filter(|p| p.group != "Goalies")
+            .cloned()
+            .collect::<Vec<_>>();
+        skater_contexts = icelines_sources::rinkcraft_skater_context::build(
+            &players,
+            &summary,
+            &realtime,
+            &toi,
+            assists.as_ref(),
+            shooting.as_ref(),
+        )?;
+        for context in skater_contexts.values_mut() {
+            if let Some(date) = &shot_date {
+                context.notes.push(format!("MoneyPuck.com shot archive captured {date}; shot-quality counts use its own goalie-in-net attempts and goals, independently of the NHL time/production snapshot."));
+            }
+        }
+    }
     let mut profiles = scores::build(request.season, "all strengths · rates per60", &observations)?;
     for p in &mut profiles {
+        p.skater_context = skater_contexts.remove(&p.player_id);
         if p.group == "Goalies" {
             p.shot_context = shot_contexts.remove(&p.player_id);
             p.scope = "all strengths · NHL and MoneyPuck observations".into();

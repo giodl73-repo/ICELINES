@@ -187,6 +187,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             output_dir,
             previous_catalog,
             edge_captures,
+            game_cache_dir,
             offline,
         } => {
             let result = icelines_fetch::rinkcraft_stat_refresh::refresh(
@@ -197,6 +198,7 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                     output_dir,
                     previous_catalog,
                     edge_captures,
+                    game_cache_dir,
                     offline: offline || !config::live_feeds_enabled(),
                 },
             )

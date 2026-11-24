@@ -64,6 +64,7 @@ fn request(root: &Path, name: &str) -> Request {
         output_dir: root.join(name),
         previous_catalog: None,
         edge_captures: None,
+        game_cache_dir: None,
         offline: true,
     }
 }

@@ -451,6 +451,19 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 .rk-shot-context{border-top:1px solid var(--sheet-line,#ccd5de);margin-top:.4rem;padding-top:.3rem;font-size:.9em}
 .rk-shot-context small{display:block}.rk-shot-context dl>div{margin:.25rem 0}.rk-shot-context dd{margin:0;font-size:9px}
 .rk-shot-context summary,.rk-shot-context a{color:var(--sheet-blue,#315a8b)}
+.rk-front .rk-feat-trigger,.rk-front .rk-stat-feat p,.rk-front .rk-stat-feat small{color:var(--sheet-ink,#183247)}
+.rk-front summary{color:var(--sheet-blue,#315a8b)}
+@media print{.rk-front .rk-feat-trigger{min-height:0;height:auto;padding:0;line-height:1.1}}
+@media print{
+ .rk-front:has(.rk-skater-context){padding:12px;gap:3px}
+ .rk-front:has(.rk-skater-context) .rk-front-left,.rk-front:has(.rk-skater-context) .rk-front-center,.rk-front:has(.rk-skater-context) .rk-front-right,.rk-front:has(.rk-skater-context) .rk-front-task-column{gap:4px}
+ .rk-front:has(.rk-skater-context) .rk-front-identity .rk-field{padding-top:4px;padding-bottom:4px}
+ .rk-front:has(.rk-skater-context) .rk-front-coverage{padding-top:6px}
+ .rk-front:has(.rk-skater-context) .rk-front-footer{padding-top:4px}
+ .rk-front:has(.rk-skater-context) .rk-form-box{padding:4px}
+ .rk-front:has(.rk-skater-context) .rk-form-box p{font-size:9px;line-height:1.2;margin-top:3px}
+ .rk-front:has(.rk-skater-context) .rk-stat-feats>small,.rk-front:has(.rk-skater-context) .rk-front-traits>details{display:none}
+}
 @media print{.rk-shot-context details{display:none}.rk-shot-context dl>div{margin:1px 0}.rk-shot-context dt,.rk-shot-context dd{font-size:7px}}
 .rk-puck-record>small,.rk-puck-record details small{display:block;overflow-wrap:anywhere}
 .rk-puck-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.15rem .5rem;margin:.25rem 0}

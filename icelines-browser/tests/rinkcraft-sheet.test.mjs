@@ -18,6 +18,18 @@ globalThis.document = {
 const all = n => [n, ...n.children.flatMap(all)];
 const classed = (n, name) => all(n).filter(e => e.className?.split(' ').includes(name));
 
+test('skater attribute records retain measured zeroes and filter per-attribute detail',()=>{
+ const context={source_credit:'NHL / MoneyPuck.com',notes:['Shot quality and credited assists are outcome context.'],values:{},rows:[
+ {attribute:'Passing',label:'Primary assists',value:'13'},{attribute:'Passing',label:'Secondary assists',value:'7'},
+ {attribute:'Shooting',label:'Goals minus expected (goalie in net)',value:'+1.20'},{attribute:'Defending',label:'Penalty-kill deployment',value:'0:00 /GP'}]};
+ const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:20,minutes:400,scope:'all strengths',small_sample:false,
+ scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'})),skater_context:context};
+ const args=Array(18).fill(undefined);args[0]='Skater';args[3]={season:20262027,games:20,position:'Center',metrics:[]};args[11]={player_id:1,season_type:'regular'};args[17]=[stats];
+ const block=classed(renderCharacterCard(...args),'rk-skater-context')[0];assert.match(block.textContent,/Primary assists 13.*Secondary assists 7.*0:00 \/GP/);
+ const passing=renderStatScore(stats,stats.scores[2]);assert.match(passing.textContent,/Passing record.*Primary assists 13/);
+ args[17]=[{...stats,season:20252026}];assert.equal(classed(renderCharacterCard(...args),'rk-skater-context').length,0);
+});
+
 test('goalie shot contexts show Rust counts and keep attribute details separate',()=>{
  const context={source_url:'https://peter-tanner.com/moneypuck/downloads/shots_2026.zip',captured_at:'2026-11-24T00:17:34Z',sha256:'a'.repeat(64),
   headline:[{attribute:'Movement',label:'Cross-slot rebound shots on goal',value:'1/2 saved · 50.0%'}],

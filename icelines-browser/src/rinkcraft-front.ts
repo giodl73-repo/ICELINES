@@ -1,5 +1,6 @@
 import {renderGoaliePuck} from './rinkcraft-goalie-puck.js';
 import {renderShotContext} from './rinkcraft-goalie-shots.js';
+import {renderSkaterContext} from './rinkcraft-skater-context.js';
 // Rinkcraft presentation categories. Unassessed capability fields stay unrated.
 // Numerical evidence and documentary identity are supplied independently by Rust.
 import type {CharacterSheet} from './rinkcraft-character.js';
@@ -218,6 +219,7 @@ export function renderCharacterFront(
   if(sheet)distinctive.append(node('p',sheet.summary));
   if(statFeats)distinctive.append(renderStatFeats(statFeats,'distinctive_features',2));
   if(goalie&&statScores?.shot_context)distinctive.append(renderShotContext(statScores.shot_context));
+  if(!goalie&&statScores?.skater_context)distinctive.append(renderSkaterContext(statScores.skater_context));
   if(goalie&&goaliePuck&&goaliePuck.player_id===statActor&&goaliePuck.season===targetSeason&&goaliePuck.season_type===usageRequest?.season_type)distinctive.append(renderGoaliePuck(goaliePuck));
   const seasonal=node('div');seasonal.className='rk-seasonal-records';
   if(skating){const candidate=renderSkatingCandidate(skating);if(candidate)seasonal.append(candidate);}

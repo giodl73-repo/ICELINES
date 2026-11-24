@@ -137,6 +137,8 @@ pub struct Score {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Profile {
     #[serde(default,skip_serializing_if="Option::is_none")]
+    pub skater_context:Option<super::rinkcraft_skater_context::Context>,
+    #[serde(default,skip_serializing_if="Option::is_none")]
     pub shot_context:Option<super::rinkcraft_goalie_shots::Context>,
     pub schema: String,
     pub player_id: u32,
@@ -225,6 +227,7 @@ impl Catalog {
         }
         let mut seen = BTreeSet::new();
         for p in &self.profiles {
+            if let Some(context)=&p.skater_context {if p.group=="Goalies"{return Err("Goalie has skater context".into());}context.validate()?;}
             if let Some(context)=&p.shot_context {if p.group!="Goalies"{return Err("Skater has goalie shot context".into());}context.validate()?;}
             let labels = attribute_labels(&p.group);
             let year = p.season / 10000;
@@ -514,6 +517,7 @@ pub fn build(season: u32, scope: &str, players: &[Player]) -> Result<Vec<Profile
             })
             .collect();
         output.push(Profile {
+            skater_context:None,
             shot_context:None,
             schema: "rinkcraft.simple-stat-attributes.v1".into(),
             player_id: p.player_id,

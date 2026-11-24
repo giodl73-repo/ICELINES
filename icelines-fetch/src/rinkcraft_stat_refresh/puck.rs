@@ -28,34 +28,23 @@ struct Summary {
     giveaways_followed_by_opponent_attempt_within_10s: u32,
     penalties_by_description: BTreeMap<String, u32>,
 }
-pub async fn refresh(r: Request) -> Result<Value, String> {
-    let year = r.season / 10000;
-    if !(2008..=2200).contains(&year) || r.season % 10000 != year + 1 {
-        return Err("Use a YYYYZZZZ season since 2008-09".into());
-    }
-    if r.output_dir.exists() {
-        return Err("Choose a new output directory".into());
-    }
-    let valid = nhl_teams_for_season(&r.season.to_string());
-    let teams: BTreeSet<String> = if r.teams.is_empty() {
-        valid.iter().map(|s| s.to_string()).collect()
-    } else {
-        r.teams.iter().map(|s| s.to_ascii_uppercase()).collect()
-    };
-    if teams.iter().any(|t| !valid.contains(&t.as_str())) {
-        return Err("Unknown team for season".into());
-    }
-    let store = Store {
-        root: r.cache_dir.join(r.season.to_string()),
-        offline: r.offline,
-        client: NhlApiClient::production(),
-    };
+pub(super) async fn capture_games<T, F>(
+    store: Store,
+    season: u32,
+    teams: BTreeSet<String>,
+    parse: F,
+) -> Result<(Vec<T>, Vec<Capture>), String>
+where
+    T: Send + 'static,
+    F: Fn(&[u8], u64, u32) -> Result<T, String> + Copy + Send + 'static,
+{
+    let year = season / 10000;
     let mut captures: Vec<Capture> = vec![];
     let mut ids = BTreeSet::new();
     for team in &teams {
         let url = format!(
             "https://api-web.nhle.com/v1/club-schedule-season/{team}/{}",
-            r.season
+            season
         );
         let (body, c) = store.get(&url, false, false).await?;
         let v: Value =
@@ -84,11 +73,11 @@ pub async fn refresh(r: Request) -> Result<Value, String> {
         let mut jobs = vec![];
         for &id in chunk {
             let s = store.clone();
-            let season = r.season;
+            let season = season;
             jobs.push(tokio::spawn(async move {
                 let url = format!("https://api-web.nhle.com/v1/gamecenter/{id}/play-by-play");
                 let (body, c) = s.get(&url, true, false).await?;
-                let game = goalie_puck::parse(&body.ok_or("Missing game")?, id, season)?;
+                let game = parse(&body.ok_or("Missing game")?, id, season)?;
                 Ok::<_, String>((game, c))
             }));
         }
@@ -98,6 +87,34 @@ pub async fn refresh(r: Request) -> Result<Value, String> {
             captures.push(c);
         }
     }
+    Ok((games, captures))
+}
+
+pub async fn refresh(r: Request) -> Result<Value, String> {
+    let year = r.season / 10000;
+    if !(2008..=2200).contains(&year) || r.season % 10000 != year + 1 {
+        return Err("Use a YYYYZZZZ season since 2008-09".into());
+    }
+    if r.output_dir.exists() {
+        return Err("Choose a new output directory".into());
+    }
+    let valid = nhl_teams_for_season(&r.season.to_string());
+    let teams: BTreeSet<String> = if r.teams.is_empty() {
+        valid.iter().map(|s| s.to_string()).collect()
+    } else {
+        r.teams.iter().map(|s| s.to_ascii_uppercase()).collect()
+    };
+    if teams.iter().any(|t| !valid.contains(&t.as_str())) {
+        return Err("Unknown team for season".into());
+    }
+    let store = Store {
+        root: r.cache_dir.join(r.season.to_string()),
+        offline: r.offline,
+        client: NhlApiClient::production(),
+    };
+    let (games, captures) =
+        capture_games(store, r.season, teams.clone(), goalie_puck::parse).await?;
+    let captured_games = games.len();
     let mut summaries: BTreeMap<u64, Summary> = BTreeMap::new();
     for game in &games {
         for g in &game.goalies_on_roster {
@@ -140,7 +157,7 @@ pub async fn refresh(r: Request) -> Result<Value, String> {
     }
     let event_count: usize = games.iter().map(|g| g.events.len()).sum();
     let report = json!({"schema_version":1,"season":r.season,"season_type":"regular",
-        "teams":teams,"expected_games":ids.len(),"captured_games":games.len(),
+        "teams":teams,"expected_games":captured_games,"captured_games":games.len(),
         "event_count":event_count,"goalies":summaries.into_values().collect::<Vec<_>>(),
         "limits":["Counts are credited events in captured logs, not all puck actions.",
           "Roster games include backups and are not appearances or puck-touch opportunities.",
@@ -155,7 +172,7 @@ pub async fn refresh(r: Request) -> Result<Value, String> {
     )
     .map_err(|e| e.to_string())?;
     Ok(
-        json!({"season":r.season,"captured_games":ids.len(),"event_count":event_count,
+        json!({"season":r.season,"captured_games":captured_games,"event_count":event_count,
         "output":r.output_dir.join("goalie-puck-events.json")}),
     )
 }
