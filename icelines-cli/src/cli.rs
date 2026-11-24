@@ -150,6 +150,24 @@ pub enum Commands {
         #[arg(long)]
         offline: bool,
     },
+    /// Acquire one season of diagnostic inputs without EDGE requests.
+    ProfileCalibrationInputs {
+        #[arg(long)]
+        season: u32,
+        #[arg(long)]
+        cache_dir: PathBuf,
+        #[arg(long)]
+        output_dir: PathBuf,
+        #[arg(long)]
+        offline: bool,
+    },
+    /// Compare unchanged recipes across consecutive seasons.
+    ProfileCarryover {
+        #[arg(long, required=true, num_args=2..)]
+        reports: Vec<PathBuf>,
+        #[arg(long)]
+        output_dir: PathBuf,
+    },
     /// Compare experimental skater attribute recipes.
     ProfileCalibrate {
         #[arg(long)]

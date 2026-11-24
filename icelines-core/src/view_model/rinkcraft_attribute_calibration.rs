@@ -18,6 +18,10 @@ pub struct Row {
     pub reference_players: usize,
     pub pp_share: Option<f64>,
     pub input_detail: String,
+    /// NHL all-strength assists/60 or goals/60; a common future outcome for all
+    /// candidates of this attribute, not a recipe-specific target.
+    #[serde(default)]
+    pub production_rate: Option<f64>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Summary {
@@ -180,7 +184,7 @@ pub fn compare(
    let display=|k:&str|value(p,k).map(|v|format!("{v:.2}")).unwrap_or_else(||"—".into());
    let detail=if kind<2 {format!("{} primary · {} secondary · {} primary/60",display("primary"),display("secondary"),display("primary-rate"))}
     else{format!("{} archive goals − {} xG · {} attempts · prior {prior:.0}",display("quality-goals"),display("ixg"),display("quality-attempts"))};
-   rows.push(Row{player_id:p.player_id,name:names.get(&p.player_id).cloned().unwrap_or_else(||format!("Player {}",p.player_id)),group:p.group.clone(),games:p.games,minutes:p.minutes,reference_eligible:eligible(p),baseline:baseline.score,candidate,delta,component_value:v,component_percentile:rank,reference_players:reference.len(),pp_share:value(p,"pp-share"),input_detail:detail});
+   rows.push(Row{player_id:p.player_id,name:names.get(&p.player_id).cloned().unwrap_or_else(||format!("Player {}",p.player_id)),group:p.group.clone(),games:p.games,minutes:p.minutes,reference_eligible:eligible(p),baseline:baseline.score,candidate,delta,component_value:v,component_percentile:rank,reference_players:reference.len(),pp_share:value(p,"pp-share"),input_detail:detail,production_rate:value(p,if attribute=="Passing"{"assists"}else{"goals"})});
   }
   let groups=["Forwards","Defense"].into_iter().enumerate().map(|(i,group)|{
    let eligible=rows.iter().filter(|r|r.group==group&&r.reference_eligible).collect::<Vec<_>>();

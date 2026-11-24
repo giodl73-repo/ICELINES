@@ -3,6 +3,34 @@ use icelines_sources::rinkcraft_skater_context as c;
 use serde_json::json;
 use std::collections::BTreeMap;
 #[test]
+fn season_assists_require_same_gp_and_totals_and_never_fill_missing_zeroes() {
+    let csv="playerId,season,situation,games_played,I_F_primaryAssists,I_F_secondaryAssists\n1,2023,5on5,80,2,1\n1,2023,all,80,3,2\n2,2023,all,79,0,0\n3,2023,all,80,0,0\n4,2023,all,80,2,2\n";
+    let nhl = vec![
+        json!({"playerId":1,"gamesPlayed":80,"assists":5}),
+        json!({"playerId":2,"gamesPlayed":80,"assists":0}),
+        json!({"playerId":3,"gamesPlayed":80,"assists":0}),
+        json!({"playerId":4,"gamesPlayed":80,"assists":5}),
+        json!({"playerId":5,"gamesPlayed":80,"assists":0}),
+    ];
+    let rows = c::season_assists(csv.as_bytes(), 20232024, &nhl).unwrap();
+    assert_eq!(rows.len(), 2);
+    assert_eq!((rows[&1].primary, rows[&1].secondary), (3, 2));
+    assert_eq!(rows[&3].primary, 0);
+    assert!(!rows.contains_key(&2)); // GP differs
+    assert!(!rows.contains_key(&4)); // total differs
+    assert!(!rows.contains_key(&5)); // missing even though NHL has zero
+    assert!(c::season_assists(csv.replace(",2023,", ",2024,").as_bytes(), 20232024, &nhl).is_err());
+    assert!(c::season_assists(
+        format!("{csv}1,2023,all,80,3,2\n").as_bytes(),
+        20232024,
+        &nhl
+    )
+    .is_err());
+    assert!(
+        c::season_assists(csv.replace("80,3,2", "80,3.5,2").as_bytes(), 20232024, &nhl).is_err()
+    );
+}
+#[test]
 fn assists_follow_official_order_and_exclude_shootout_and_wrong_actors() {
     let game = json!({"id":2026020001_u64,"season":20262027,"gameType":2,"gameState":"OFF","rosterSpots":[{"playerId":1,"teamId":10},{"playerId":2,"teamId":10}],
  "plays":[{"eventId":1,"typeDescKey":"goal","periodDescriptor":{"periodType":"REG"},"details":{"eventOwnerTeamId":10,"assist1PlayerId":2,"assist2PlayerId":1}},
@@ -27,6 +55,20 @@ fn shooting_uses_same_archive_goals_and_xg_excludes_empty_nets_and_misses_are_at
     assert_eq!(s[&1].attempts, 2);
     assert_eq!(s[&1].goals, 1);
     assert!((s[&1].xg - 0.4).abs() < 1e-10);
+    assert_eq!(
+        c::shooting(
+            csv.replace(",0,1,1,0.3", ",0,1.0,1,0.3").as_bytes(),
+            20262027
+        )
+        .unwrap()[&1]
+            .attempts,
+        2
+    );
+    assert!(c::shooting(
+        csv.replace(",0,1,1,0.3", ",0,1.5,1,0.3").as_bytes(),
+        20262027
+    )
+    .is_err());
     assert!(c::shooting(csv.replace(",2026,", ",2025,").as_bytes(), 20262027).is_err());
 }
 #[test]

@@ -188,6 +188,30 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
         } => {
             commands::profile_calibrate::run(&catalog, &season_package, season, &output_dir)?;
         }
+        Commands::ProfileCalibrationInputs {
+            season,
+            cache_dir,
+            output_dir,
+            offline,
+        } => {
+            let result = icelines_fetch::rinkcraft_stat_refresh::calibration::capture(
+                icelines_fetch::rinkcraft_stat_refresh::calibration::Request {
+                    season,
+                    cache_dir,
+                    output_dir,
+                    offline: offline || !config::live_feeds_enabled(),
+                },
+            )
+            .await
+            .map_err(anyhow::Error::msg)?;
+            println!("{}", serde_json::to_string_pretty(&result)?);
+        }
+        Commands::ProfileCarryover {
+            reports,
+            output_dir,
+        } => {
+            commands::profile_calibrate::carryover(&reports, &output_dir)?;
+        }
         Commands::ProfileRefresh {
             season,
             kind,

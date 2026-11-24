@@ -9,6 +9,74 @@ pub struct Assists {
     pub primary: u32,
     pub secondary: u32,
 }
+/// MoneyPuck regular-season all-situation credits, admitted only when GP and
+/// total assists reconcile with the NHL season summary. Missing rows stay absent.
+pub fn season_assists(
+    input: impl Read,
+    season: u32,
+    summary: &[Value],
+) -> Result<BTreeMap<u32, Assists>, String> {
+    let mut csv = csv::Reader::from_reader(input);
+    let headers = csv.headers().map_err(|e| e.to_string())?.clone();
+    let columns = [
+        "playerId",
+        "season",
+        "situation",
+        "games_played",
+        "I_F_primaryAssists",
+        "I_F_secondaryAssists",
+    ]
+    .map(|key| {
+        headers
+            .iter()
+            .position(|h| h == key)
+            .ok_or_else(|| format!("Missing {key}"))
+    })
+    .into_iter()
+    .collect::<Result<Vec<_>, _>>()?;
+    let nhl: BTreeMap<_, _> = summary
+        .iter()
+        .filter_map(|r| r["playerId"].as_u64().map(|id| (id, r)))
+        .collect();
+    let mut seen = BTreeSet::new();
+    let mut out = BTreeMap::new();
+    for row in csv.records() {
+        let row = row.map_err(|e| e.to_string())?;
+        let count = |i: usize| -> Result<u32, String> {
+            let n: f64 = row[columns[i]]
+                .parse()
+                .map_err(|_| "Invalid season-assist count")?;
+            if !n.is_finite() || n < 0. || n.fract() != 0. || n > u32::MAX as f64 {
+                return Err("Invalid season-assist count".into());
+            }
+            Ok(n as u32)
+        };
+        if count(1)? != season / 10000 {
+            return Err("Wrong assist season".into());
+        }
+        if &row[columns[2]] != "all" {
+            continue;
+        }
+        let id = count(0)?;
+        if id == 0 || !seen.insert(id) {
+            return Err("Duplicate/invalid all-situation actor".into());
+        }
+        let (games, primary, secondary) = (count(3)?, count(4)?, count(5)?);
+        let total = primary
+            .checked_add(secondary)
+            .ok_or("Assist count overflow")?;
+        if nhl.get(&(id as u64)).is_some_and(|r| {
+            r["gamesPlayed"].as_u64() == Some(games as u64)
+                && r["assists"].as_u64() == Some(total as u64)
+        }) {
+            out.insert(id, Assists { primary, secondary });
+        }
+    }
+    if seen.is_empty() {
+        return Err("No all-situation assist rows".into());
+    }
+    Ok(out)
+}
 /// Credited scoring involvement, not all passes or passing success.
 pub fn goal_assists(bytes: &[u8], id: u64, season: u32) -> Result<BTreeMap<u32, Assists>, String> {
     let v: Value = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
@@ -126,10 +194,15 @@ pub fn shooting(input: impl Read, season: u32) -> Result<BTreeMap<u32, Shooting>
         if integer(3)? == 1 || integer(4)? >= 5 || integer(5)? == 1 {
             continue;
         }
-        let Some(id) = row.get(at[6]).filter(|v| !v.is_empty() && *v != "0") else {
+        let Some(_) = row.get(at[6]).filter(|v| !v.is_empty()) else {
             continue;
         };
-        let id = id.parse::<u32>().map_err(|e| e.to_string())?;
+        // Older published CSVs serialize IDs as e.g. 8478178.0. Accept whole
+        // numeric identities using the same bounded parser as the other counts.
+        let id = integer(6)?;
+        if id == 0 {
+            continue;
+        }
         let goal = integer(7)?;
         let xg = n(8)?;
         let on = integer(10)?;

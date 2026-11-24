@@ -4,6 +4,67 @@ use icelines_core::view_model::{
 };
 use sha2::{Digest, Sha256};
 use std::{collections::BTreeMap, fs, path::Path};
+pub fn carryover(paths: &[std::path::PathBuf], output: &Path) -> anyhow::Result<()> {
+    anyhow::ensure!(!output.exists(), "Choose a new output directory");
+    anyhow::ensure!(
+        (2..=10).contains(&paths.len()),
+        "Use two to ten season reports"
+    );
+    let mut reports = vec![];
+    let mut inputs = vec![];
+    for path in paths {
+        anyhow::ensure!(
+            fs::metadata(path)?.len() <= 32 * 1024 * 1024,
+            "Report exceeds 32 MiB"
+        );
+        let raw = fs::read(path)?;
+        let value: serde_json::Value = serde_json::from_slice(&raw)?;
+        let report: study::Report = serde_json::from_slice(&raw)?;
+        inputs.push(serde_json::json!({"season":report.season,"report_sha256":format!("{:x}",Sha256::digest(&raw)),"input_catalog_sha256":value["input_catalog_sha256"],"input_package_sha256":value["input_package_sha256"]}));
+        reports.push(report);
+    }
+    let result = icelines_core::view_model::rinkcraft_attribute_carryover::compare(&reports)
+        .map_err(anyhow::Error::msg)?;
+    inputs.sort_by_key(|v| v["season"].as_u64());
+    let mut value = serde_json::to_value(&result)?;
+    value["inputs"] = serde_json::json!(inputs);
+    let mut md=String::from("# Attribute carryover\n\nNHL / MoneyPuck.com · unchanged diagnostic recipes; no production grades change.\n\n");
+    for note in &result.notes {
+        md.push_str(&format!("- {note}\n"));
+    }
+    md.push_str("\n| Seasons | Recipe | Group | Sample | Pairs | Repeatability baseline → candidate | Next production baseline → candidate |\n| --- | --- | --- | --- | ---: | --- | --- |\n");
+    let fmt = |v: Option<f64>| v.map(|v| format!("{v:.3}")).unwrap_or_else(|| "—".into());
+    for c in &result.comparisons {
+        md.push_str(&format!(
+            "| {} → {} | {} | {} | {} | {} | {} → {} | {} → {} |\n",
+            c.from,
+            c.to,
+            c.label,
+            c.group,
+            c.sample,
+            c.matched_players,
+            fmt(c.baseline_repeatability),
+            fmt(c.candidate_repeatability),
+            fmt(c.baseline_next_production),
+            fmt(c.candidate_next_production)
+        ));
+    }
+    fs::create_dir_all(output)?;
+    fs::write(
+        output.join("carryover.json"),
+        serde_json::to_vec_pretty(&value)?,
+    )?;
+    fs::write(output.join("carryover.md"), md)?;
+    fs::write(
+        output.join("index.html"),
+        include_str!("../../../design/previews/rinkcraft-carryover.html"),
+    )?;
+    println!(
+        "{}",
+        serde_json::json!({"seasons":result.seasons,"comparisons":result.comparisons.len(),"output":output,"production_grades_changed":false})
+    );
+    Ok(())
+}
 pub fn run(catalog: &Path, package: &Path, season: u32, output: &Path) -> anyhow::Result<()> {
     anyhow::ensure!(!output.exists(), "Choose a new output directory");
     anyhow::ensure!(
