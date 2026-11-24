@@ -150,6 +150,17 @@ pub enum Commands {
         #[arg(long)]
         offline: bool,
     },
+    /// Compare experimental skater attribute recipes.
+    ProfileCalibrate {
+        #[arg(long)]
+        season: u32,
+        #[arg(long)]
+        catalog: PathBuf,
+        #[arg(long)]
+        season_package: PathBuf,
+        #[arg(long)]
+        output_dir: PathBuf,
+    },
     /// Refresh public-source six-attribute estimates for a whole season.
     ProfileRefresh {
         #[arg(long)]

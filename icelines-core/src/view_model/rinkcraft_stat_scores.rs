@@ -417,7 +417,7 @@ pub fn level(points: f64) -> u8 {
 }
 // Far finer than the source measurements: prevents unit-conversion rounding
 // noise from splitting ties. Keep the original values in the displayed parts.
-fn rank_value(value: f64) -> f64 {
+pub(super) fn rank_value(value: f64) -> f64 {
     let scaled = value * 1e9;
     if scaled.is_finite() {
         scaled.round() / 1e9

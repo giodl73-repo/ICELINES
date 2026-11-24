@@ -2365,5 +2365,6 @@ pub mod rinkcraft_stat_scores;
 pub mod rinkcraft_goalie_puck;
 pub mod rinkcraft_goalie_shots;
 pub mod rinkcraft_skater_context;
+pub mod rinkcraft_attribute_calibration;
 pub mod rinkcraft_task_measurements;
 pub mod rinkcraft_whistle;

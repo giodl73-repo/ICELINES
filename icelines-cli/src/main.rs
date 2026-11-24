@@ -180,6 +180,14 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             .map_err(anyhow::Error::msg)?;
             println!("{}", serde_json::to_string_pretty(&result)?);
         }
+        Commands::ProfileCalibrate {
+            season,
+            catalog,
+            season_package,
+            output_dir,
+        } => {
+            commands::profile_calibrate::run(&catalog, &season_package, season, &output_dir)?;
+        }
         Commands::ProfileRefresh {
             season,
             kind,

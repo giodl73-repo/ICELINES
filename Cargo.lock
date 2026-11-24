@@ -1757,6 +1757,7 @@ dependencies = [
  "icelines-core",
  "icelines-fetch",
  "icelines-query",
+ "icelines-sources",
  "icelines-web",
  "image",
  "libc",

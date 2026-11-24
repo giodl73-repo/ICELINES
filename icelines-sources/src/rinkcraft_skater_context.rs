@@ -186,6 +186,9 @@ pub fn build(
                 }
             }
             if let Some(t) = toi.get(&p.player_id) {
+                if let Some(seconds) = number(t, "ppTimeOnIce").filter(|_| p.minutes > 0.) {
+                    values.insert("pp-share".into(), seconds / (p.minutes * 60.));
+                }
                 for (key, points, goals, time) in [
                     ("ev-assists", "evPoints", "evGoals", "evTimeOnIce"),
                     ("pp-assists", "ppPoints", "ppGoals", "ppTimeOnIce"),
@@ -234,6 +237,8 @@ pub fn build(
             .filter(|s| s.attempts > 0)
         {
             values.insert("ixg".into(), s.xg);
+            values.insert("quality-attempts".into(), s.attempts as f64);
+            values.insert("quality-goals".into(), s.goals as f64);
             values.insert("finishing".into(), s.goals as f64 - s.xg);
             values.insert("shot-quality".into(), s.xg / s.attempts as f64);
             values.insert("shot-distance".into(), s.distance / s.attempts as f64);
