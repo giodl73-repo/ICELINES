@@ -506,3 +506,11 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 .rk-handling-axes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.rk-handling-axes>div{padding:10px;border:1px solid currentColor;border-radius:5px}.rk-handling-axes h4{margin:0 0 4px}.rk-handling-axes strong{font-size:1.3em}
 .rk-handling-record dl>div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #7893a1}.rk-handling-record dd{margin:0;text-align:right}
 @media print{.rk-handling-summary{font-size:6px;margin-top:2px}}
+.rk-reading-summary dl{margin:0}.rk-reading-summary dl>div{display:flex;justify-content:space-between;gap:4px;margin:3px 0}.rk-reading-summary dt{font-size:8px}.rk-reading-summary dd{margin:0;font-size:9px;font-weight:700}.rk-reading-summary>small{display:block;font-size:7px}
+.rk-reading-record dl>div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #7893a1}.rk-reading-record dd{margin:0;text-align:right}
+@media print{.rk-reading-summary dt,.rk-reading-summary dd,.rk-reading-summary>small{font-size:6px}}
+.rk-capability-dialog .rk-stat-score-detail,.rk-capability-dialog .rk-stat-score-detail :is(h2,h3,h4,p,small,dt,dd){color:#183247}
+.rk-capability-dialog .rk-stat-score-detail .rk-task-list .rk-field{padding:6px 0}
+.rk-capability-dialog .rk-stat-score-detail .rk-task-list dt{font-size:13px}
+.rk-capability-dialog .rk-stat-score-detail .rk-task-list dd{font-size:14px;text-align:left}
+.rk-capability-dialog .rk-stat-score-detail .rk-task-list small{font-size:12px}

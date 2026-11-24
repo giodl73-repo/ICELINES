@@ -3,6 +3,7 @@ import {renderShotContext} from './rinkcraft-goalie-shots.js';
 import {renderSkaterContext} from './rinkcraft-skater-context.js';
 import {defendingRecord,renderDefendingRecord} from './rinkcraft-defending-record.js';
 import {handlingRecord,handlingSummary} from './rinkcraft-handling-record.js';
+import {readingRecord,readingSummary} from './rinkcraft-reading-record.js';
 // Rinkcraft presentation categories. Unassessed capability fields stay unrated.
 // Numerical evidence and documentary identity are supplied independently by Rust.
 import type {CharacterSheet} from './rinkcraft-character.js';
@@ -129,7 +130,7 @@ export function renderCharacterFront(
   tasks.append(renderRepertoire('Under Pressure','rk-front-pressure',sheet?.under_pressure,3,sheet));
   if(statFeats){const skills=box('Task Skills','rk-front-skills');skills.append(renderStatFeats(statFeats,'task_skills',3));const scouted=node('details');scouted.className='rk-scouted-tasks';scouted.append(node('summary','Scouted specialties'),renderRepertoire('Scouted tasks','rk-scouted-task-list',sheet?.task_skills,5,sheet));skills.append(scouted);tasks.append(skills);}
   else tasks.append(renderRepertoire('Task Skills','rk-front-skills',sheet?.task_skills,5,sheet));
-  tasks.append(taskBox('Read & React','rk-front-reading',['Anticipation']));
+  const reading=readingRecord(statScores);if(reading){const section=box('Read & React','rk-front-reading');section.append(readingSummary(reading));tasks.append(section);}else tasks.append(taskBox('Read & React','rk-front-reading',['Anticipation']));
   split.append(attributes,tasks);left.append(split);
   const coverage=box('Role Coverage','rk-front-role-coverage');
   const positions=node('dl');positions.className='rk-task-list';

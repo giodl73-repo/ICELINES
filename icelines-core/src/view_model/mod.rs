@@ -2370,5 +2370,6 @@ pub mod rinkcraft_attribute_carryover;
 pub mod rinkcraft_defending_calibration;
 pub mod rinkcraft_defending_record;
 pub mod rinkcraft_handling_record;
+pub mod rinkcraft_reading_record;
 pub mod rinkcraft_task_measurements;
 pub mod rinkcraft_whistle;

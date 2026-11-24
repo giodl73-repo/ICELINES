@@ -3,6 +3,7 @@ import {renderShotContext} from './rinkcraft-goalie-shots.js';
 import {renderSkaterContext} from './rinkcraft-skater-context.js';
 import {defendingRecord,renderDefendingRecord} from './rinkcraft-defending-record.js';
 import {handlingRecord,renderHandlingRecord} from './rinkcraft-handling-record.js';
+import {readingRecord,renderReadingRecord} from './rinkcraft-reading-record.js';
 export interface StatPart {key:string;label:string;unit:string;weight:number;lower_is_better:boolean;value:number|null;percentile:number|null;favorable_percentile:number|null;peers:number;}
 export interface StatScore {label:string;score:number|null;stat_points:number|null;parts:StatPart[];note:string;}
 export interface StatProfile {schema:string;player_id:number;season:number;group:string;scope:string;games?:number;minutes?:number;small_sample:boolean;scores:StatScore[];shot_context?:import('./rinkcraft-goalie-shots.js').GoalieShotContext;skater_context?:import('./rinkcraft-skater-context.js').SkaterContext;}
@@ -20,6 +21,7 @@ export function renderStatScore(profile:StatProfile,score:StatScore):HTMLElement
  body.append(node('p',`${profile.scope}${profile.games===undefined?'':` · ${profile.games} GP`} · same-season ${profile.group.toLowerCase()} comparison.`));
  if(profile.small_sample)body.append(node('p','Small sample: fewer than 10 games or 100 minutes. This estimate can move quickly.'));
  const handling=score.label==='Handling'?handlingRecord(profile):undefined;if(handling)body.append(renderHandlingRecord(handling));
+ const reading=score.label==='Reading'?readingRecord(profile):undefined;if(reading)body.append(renderReadingRecord(reading));
  const used=score.parts.filter(p=>p.favorable_percentile!==null).reduce((sum,p)=>sum+p.weight,0);
  const list=node('dl');list.className='rk-task-list';
  for(const part of score.parts){
@@ -34,7 +36,7 @@ export function renderStatScore(profile:StatProfile,score:StatScore):HTMLElement
  }
  body.append(list,node('p',score.stat_points===null?'No ranked stats available.':`${score.stat_points.toFixed(1)} stat points ÷ 5 → ${score.score}/20.`),node('p','Average the favorable stat percentiles using these weights, divide by 5, round and cap at 1–20. Missing stats are omitted; remaining weights scale to 100%. Reference players have at least 10 games and 100 minutes.'));
  if(profile.group==='Goalies'&&profile.shot_context&&['Movement','Recovery','Rebounds'].includes(score.label))body.append(renderShotContext(profile.shot_context,score.label));
- if(profile.group!=='Goalies'&&profile.skater_context&&!handling)body.append(renderSkaterContext(profile.skater_context,score.label));
+ if(profile.group!=='Goalies'&&profile.skater_context&&!handling&&!reading)body.append(renderSkaterContext(profile.skater_context,score.label));
  if(score.label==='Defending'){const record=defendingRecord(profile);if(record)body.append(renderDefendingRecord(record));}
  return body;
 }

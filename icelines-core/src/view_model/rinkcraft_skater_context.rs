@@ -10,6 +10,8 @@ pub struct Row {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Context {
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reading: Option<super::rinkcraft_reading_record::Record>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub handling: Option<super::rinkcraft_handling_record::Record>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub defending: Option<super::rinkcraft_defending_record::Record>,
@@ -106,6 +108,7 @@ impl Context {
             });
         }
         Self {
+            reading: None,
             handling: None,
             defending: None,
             values,
@@ -115,6 +118,9 @@ impl Context {
         }
     }
     pub fn validate(&self) -> Result<(), String> {
+        if let Some(record) = &self.reading {
+            record.validate()?;
+        }
         if let Some(record) = &self.handling {
             record.validate()?;
         }
@@ -142,4 +148,5 @@ impl Context {
 pub fn attach_records(profiles: &mut [super::rinkcraft_stat_scores::Profile], season: u32) {
     super::rinkcraft_defending_record::attach(profiles, season);
     super::rinkcraft_handling_record::attach(profiles, season);
+    super::rinkcraft_reading_record::attach(profiles, season);
 }
