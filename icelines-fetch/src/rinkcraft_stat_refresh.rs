@@ -1,4 +1,5 @@
 //! Repeatable public-source refresh; generated catalogs remain separate from source code.
+pub mod puck;
 use crate::{error::FetchError, nhl_api::NhlApiClient};
 use icelines_core::view_model::rinkcraft_stat_scores::{self as scores, Catalog, Player};
 use serde::{Deserialize, Serialize};

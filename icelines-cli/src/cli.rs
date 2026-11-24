@@ -136,6 +136,20 @@ pub enum Commands {
         #[arg(long, value_delimiter = ',')]
         player: Vec<u32>,
     },
+    /// Collect credited goalie puck events; does not invent pass/touch statistics.
+    ProfilePuckPlay {
+        #[arg(long)]
+        season: u32,
+        /// Optional teams (comma-separated); default all NHL teams.
+        #[arg(long, value_delimiter = ',')]
+        team: Vec<String>,
+        #[arg(long)]
+        cache_dir: PathBuf,
+        #[arg(long)]
+        output_dir: PathBuf,
+        #[arg(long)]
+        offline: bool,
+    },
     /// Refresh public-source six-attribute estimates for a whole season.
     ProfileRefresh {
         #[arg(long)]

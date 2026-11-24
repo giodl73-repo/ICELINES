@@ -85,6 +85,10 @@ enable a scheduler.
 
 ## Next technical measurements
 
+The [goalie puck-event ledger](rinkcraft-goalie-puck-events.md) now collects
+officially credited goalie actions with source-complete game coverage. It adds
+event detail without treating giveaways as failed passes or roster games as GP.
+
 The first deeper priorities are puck-touch/pass opportunities for Puck Play,
 lateral movement and reset timing for Movement/Recovery, and rebound destination
 and threat for Rebounds. Those observations can replace these specific proxies

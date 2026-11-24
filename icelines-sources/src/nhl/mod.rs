@@ -7,6 +7,7 @@ pub mod deployment;
 pub mod draft_picks;
 pub mod edge;
 pub mod gamecenter;
+pub mod goalie_puck;
 pub mod official_identity_landing;
 pub mod player_landing;
 pub mod playoff_bracket;
