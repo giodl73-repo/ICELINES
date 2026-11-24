@@ -195,6 +195,21 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 &focus,
             )?;
         }
+        Commands::ProfileDefendingRecords {
+            season,
+            catalog,
+            season_summary,
+            captured_at,
+            output_dir,
+        } => {
+            commands::profile_defending_records::run(
+                &catalog,
+                season,
+                &season_summary,
+                &captured_at,
+                &output_dir,
+            )?;
+        }
         Commands::ProfileCalibrationInputs {
             season,
             cache_dir,

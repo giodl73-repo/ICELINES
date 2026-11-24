@@ -4,6 +4,49 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     io::Read,
 };
+/// Refresh only the selected window's defensive context; ability grades stay intact.
+pub fn enrich(
+    profiles: &mut [icelines_core::view_model::rinkcraft_stat_scores::Profile],
+    season: u32,
+    input: impl Read,
+    source_note: &str,
+) -> Result<usize, String> {
+    let players = profiles
+        .iter()
+        .filter(|p| p.season == season && p.group != "Goalies")
+        .map(|p| Player {
+            player_id: p.player_id,
+            group: p.group.clone(),
+            games: p.games,
+            minutes: p.minutes,
+            metrics: BTreeMap::new(),
+        })
+        .collect::<Vec<_>>();
+    let mut measured = parse(input, season, &players)?;
+    let matched = measured.len();
+    for p in profiles
+        .iter_mut()
+        .filter(|p| p.season == season && p.group != "Goalies")
+    {
+        if let Some(c) = &mut p.skater_context {
+            c.values.retain(|key, _| !key.starts_with("def-5v5-"));
+            if let Some(values) = measured.remove(&p.player_id) {
+                c.values.extend(values);
+            }
+            c.notes
+                .retain(|n| !n.starts_with("MoneyPuck.com five-on-five source:"));
+            c.notes
+                .push(format!("MoneyPuck.com five-on-five source: {source_note}"));
+            if !c.source_credit.contains("MoneyPuck.com") {
+                c.source_credit
+                    .push_str("; MoneyPuck.com five-on-five results");
+            }
+            c.defending = None;
+        }
+    }
+    icelines_core::view_model::rinkcraft_defending_record::attach(profiles, season);
+    Ok(matched)
+}
 
 pub fn parse(
     input: impl Read,

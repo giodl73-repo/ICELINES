@@ -1,6 +1,7 @@
 // Display the simple attribute estimates computed by shared Rust.
 import {renderShotContext} from './rinkcraft-goalie-shots.js';
 import {renderSkaterContext} from './rinkcraft-skater-context.js';
+import {defendingRecord,renderDefendingRecord} from './rinkcraft-defending-record.js';
 export interface StatPart {key:string;label:string;unit:string;weight:number;lower_is_better:boolean;value:number|null;percentile:number|null;favorable_percentile:number|null;peers:number;}
 export interface StatScore {label:string;score:number|null;stat_points:number|null;parts:StatPart[];note:string;}
 export interface StatProfile {schema:string;player_id:number;season:number;group:string;scope:string;games?:number;minutes?:number;small_sample:boolean;scores:StatScore[];shot_context?:import('./rinkcraft-goalie-shots.js').GoalieShotContext;skater_context?:import('./rinkcraft-skater-context.js').SkaterContext;}
@@ -32,6 +33,7 @@ export function renderStatScore(profile:StatProfile,score:StatScore):HTMLElement
  body.append(list,node('p',score.stat_points===null?'No ranked stats available.':`${score.stat_points.toFixed(1)} stat points ÷ 5 → ${score.score}/20.`),node('p','Average the favorable stat percentiles using these weights, divide by 5, round and cap at 1–20. Missing stats are omitted; remaining weights scale to 100%. Reference players have at least 10 games and 100 minutes.'));
  if(profile.group==='Goalies'&&profile.shot_context&&['Movement','Recovery','Rebounds'].includes(score.label))body.append(renderShotContext(profile.shot_context,score.label));
  if(profile.group!=='Goalies'&&profile.skater_context)body.append(renderSkaterContext(profile.skater_context,score.label));
+ if(score.label==='Defending'){const record=defendingRecord(profile);if(record)body.append(renderDefendingRecord(record));}
  return body;
 }
 export function openStatScore(profile:StatProfile,score:StatScore,player:string):void {

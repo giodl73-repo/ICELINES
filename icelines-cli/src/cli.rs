@@ -168,6 +168,19 @@ pub enum Commands {
         #[arg(long)]
         output_dir: PathBuf,
     },
+    /// Import window-matched defensive records without changing grades.
+    ProfileDefendingRecords {
+        #[arg(long)]
+        season: u32,
+        #[arg(long)]
+        catalog: PathBuf,
+        #[arg(long)]
+        season_summary: PathBuf,
+        #[arg(long)]
+        captured_at: String,
+        #[arg(long)]
+        output_dir: PathBuf,
+    },
     /// Compare experimental skater attribute recipes.
     ProfileCalibrate {
         #[arg(long,default_value="passing-shooting",value_parser=["passing-shooting","defending"])]

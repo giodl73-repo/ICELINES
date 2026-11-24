@@ -1,6 +1,7 @@
 import {renderGoaliePuck} from './rinkcraft-goalie-puck.js';
 import {renderShotContext} from './rinkcraft-goalie-shots.js';
 import {renderSkaterContext} from './rinkcraft-skater-context.js';
+import {defendingRecord,renderDefendingRecord} from './rinkcraft-defending-record.js';
 // Rinkcraft presentation categories. Unassessed capability fields stay unrated.
 // Numerical evidence and documentary identity are supplied independently by Rust.
 import type {CharacterSheet} from './rinkcraft-character.js';
@@ -142,7 +143,9 @@ export function renderCharacterFront(
     const speed=!goalie&&title==='Skating Detail'&&['Forwards','Defense'].includes(numerical?.group??'')&&numerical?.style_evidence?.season===numerical?.season
       ?numerical?.style_evidence?.measured.find(m=>m.key==='max-skating-speed'&&m.unit==='Mph'&&Number.isFinite(m.value)&&m.value>=0&&typeof m.scope==='string'&&m.scope.startsWith('All strengths')):undefined;
     const edgeSpeed=!goalie&&title==='Skating Detail'?edge?.measures.find(m=>m.key==='max-skating-speed'&&m.unit==='Mph'):undefined;
-    if(edgeSpeed){response.dataset.movementState='observed_maximum';response.append(node('strong',`${edgeSpeed.value.toFixed(2)} mph`),node('small','EDGE season max · all strengths'));response.title=`Captured ${edge!.captured_at} · ${edgeSpeed.interpretation}`;}
+    const defense=title==='Threat Denial'&&!goalie?defendingRecord(statScores):undefined;
+    if(defense){response.className+=' rk-front-defense';response.append(renderDefendingRecord(defense));}
+    else if(edgeSpeed){response.dataset.movementState='observed_maximum';response.append(node('strong',`${edgeSpeed.value.toFixed(2)} mph`),node('small','EDGE season max · all strengths'));response.title=`Captured ${edge!.captured_at} · ${edgeSpeed.interpretation}`;}
     else if(speed){response.dataset.movementState='observed_maximum';response.append(node('strong',`${speed.value.toFixed(2)} mph`),node('small','Season max · all strengths'));response.title=`${speed.scope}. Observed maximum; not puck-carrying speed, acceleration or a capability grade.`;}
     else response.append(node('strong','—'),node('small','Unassessed'));
     if(title==='Skating Detail'&&skating)response.append(skatingRecordButton(skating));

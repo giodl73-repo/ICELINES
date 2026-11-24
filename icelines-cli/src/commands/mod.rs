@@ -19,6 +19,7 @@ pub mod playoffs;
 pub mod poach;
 pub mod profile;
 pub mod profile_calibrate;
+pub mod profile_defending_records;
 pub mod project;
 pub mod query;
 pub mod query_career;

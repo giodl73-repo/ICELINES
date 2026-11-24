@@ -9,6 +9,8 @@ pub struct Row {
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Context {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub defending: Option<super::rinkcraft_defending_record::Record>,
     pub values: BTreeMap<String, f64>,
     pub source_credit: String,
     pub notes: Vec<String>,
@@ -102,6 +104,7 @@ impl Context {
             });
         }
         Self {
+            defending: None,
             values,
             source_credit,
             notes,
@@ -109,6 +112,9 @@ impl Context {
         }
     }
     pub fn validate(&self) -> Result<(), String> {
+        if let Some(record) = &self.defending {
+            record.validate()?;
+        }
         if self.values.values().any(|v| !v.is_finite())
             || self
                 .values

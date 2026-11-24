@@ -275,6 +275,7 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
     let mut observations = vec![];
     let mut shot_contexts = BTreeMap::new();
     let mut skater_sources = None;
+    let mut defending_source=None;
     let mut notes = BTreeMap::<u32, Vec<String>>::new();
     if request.kind != "skaters" {
         eprintln!("Refreshing goalie public sources for {}", request.season);
@@ -512,6 +513,10 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
                 context.notes.push(format!("MoneyPuck.com shot archive captured {date}; shot-quality counts use its own goalie-in-net attempts and goals, independently of the NHL time/production snapshot."));
             }
         }
+        let url=format!("https://moneypuck.com/moneypuck/playerData/seasonSummary/{year}/regular/skaters.csv");
+        if let Ok((Some(raw),capture))=store.get(&url,false,true).await {
+            defending_source=Some((raw,capture.clone()));receipts.push(capture);
+        }
     }
     let mut profiles = scores::build(request.season, "all strengths · rates per60", &observations)?;
     for p in &mut profiles {
@@ -529,6 +534,9 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
             }
         }
     }
+    if let Some((raw,capture))=defending_source {
+        icelines_sources::rinkcraft_defending_context::enrich(&mut profiles,request.season,Cursor::new(raw),&format!("{} · {} · SHA-256 {}",capture.captured_at,capture.url,capture.sha256))?;
+    }else{icelines_core::view_model::rinkcraft_defending_record::attach(&mut profiles,request.season);}
     let refreshed = profiles.len();
     let complete = profiles
         .iter()

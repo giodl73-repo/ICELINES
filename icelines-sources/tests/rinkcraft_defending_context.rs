@@ -1,6 +1,47 @@
 use icelines_core::view_model::rinkcraft_stat_scores::Player;
 use icelines_sources::rinkcraft_defending_context as source;
 use std::collections::BTreeMap;
+#[test]
+fn enrichment_replaces_stale_context_and_preserves_grades_and_other_seasons() {
+    use icelines_core::view_model::{
+        rinkcraft_skater_context::Context, rinkcraft_stat_scores as scores,
+    };
+    let mut profiles = scores::build(20232024, "Synthetic", &[player()]).unwrap();
+    profiles[0].skater_context = Some(Context::new(
+        BTreeMap::from([("def-5v5-xga60".into(), 99.), ("blocks".into(), 3.)]),
+        "NHL".into(),
+        vec![],
+    ));
+    let mut other = profiles[0].clone();
+    other.season = 20242025;
+    profiles.push(other);
+    let before = serde_json::to_value(&profiles[1]).unwrap();
+    let grades = serde_json::to_value(&profiles[0].scores).unwrap();
+    assert_eq!(
+        source::enrich(&mut profiles, 20232024, CSV.as_bytes(), "fixture capture").unwrap(),
+        1
+    );
+    assert_eq!(
+        profiles[0].skater_context.as_ref().unwrap().values["def-5v5-xga60"],
+        2.
+    );
+    assert_eq!(grades, serde_json::to_value(&profiles[0].scores).unwrap());
+    assert_eq!(before, serde_json::to_value(&profiles[1]).unwrap());
+    let mismatched = CSV.replace(",5on5,60,", ",5on5,59,");
+    assert_eq!(
+        source::enrich(
+            &mut profiles,
+            20232024,
+            mismatched.as_bytes(),
+            "new capture"
+        )
+        .unwrap(),
+        0
+    );
+    let c = profiles[0].skater_context.as_ref().unwrap();
+    assert!(!c.values.contains_key("def-5v5-xga60"));
+    assert_eq!(c.defending.as_ref().unwrap().chances, "Unavailable");
+}
 fn player() -> Player {
     Player {
         player_id: 1,
