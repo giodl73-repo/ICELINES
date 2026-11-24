@@ -10,6 +10,8 @@ pub struct Row {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Context {
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub handling: Option<super::rinkcraft_handling_record::Record>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub defending: Option<super::rinkcraft_defending_record::Record>,
     pub values: BTreeMap<String, f64>,
     pub source_credit: String,
@@ -104,6 +106,7 @@ impl Context {
             });
         }
         Self {
+            handling: None,
             defending: None,
             values,
             source_credit,
@@ -112,6 +115,9 @@ impl Context {
         }
     }
     pub fn validate(&self) -> Result<(), String> {
+        if let Some(record) = &self.handling {
+            record.validate()?;
+        }
         if let Some(record) = &self.defending {
             record.validate()?;
         }
@@ -131,4 +137,9 @@ impl Context {
         }
         Ok(())
     }
+}
+/// Rebuild selected-season view records from admitted measurements. Scores stay intact.
+pub fn attach_records(profiles: &mut [super::rinkcraft_stat_scores::Profile], season: u32) {
+    super::rinkcraft_defending_record::attach(profiles, season);
+    super::rinkcraft_handling_record::attach(profiles, season);
 }

@@ -44,7 +44,7 @@ pub fn enrich(
             c.defending = None;
         }
     }
-    icelines_core::view_model::rinkcraft_defending_record::attach(profiles, season);
+    icelines_core::view_model::rinkcraft_skater_context::attach_records(profiles, season);
     Ok(matched)
 }
 

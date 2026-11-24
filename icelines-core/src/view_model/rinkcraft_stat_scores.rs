@@ -227,6 +227,7 @@ impl Catalog {
         }
         let mut seen = BTreeSet::new();
         for p in &self.profiles {
+            if let Some(r)=p.skater_context.as_ref().and_then(|c|c.handling.as_ref()){if r.player_id!=p.player_id||r.season!=p.season||r.group!=p.group||r.games!=p.games||(r.minutes-p.minutes).abs()>1e-9{return Err("Handling record does not match profile window".into());}}
             if let Some(r)=p.skater_context.as_ref().and_then(|c|c.defending.as_ref()){if r.player_id!=p.player_id||r.season!=p.season||r.group!=p.group||r.games!=p.games||r.minutes_5v5.is_some_and(|m|m>p.minutes+1./60.){return Err("Defending record does not match profile window".into());}}
             if let Some(context)=&p.skater_context {if p.group=="Goalies"{return Err("Goalie has skater context".into());}context.validate()?;}
             if let Some(context)=&p.shot_context {if p.group!="Goalies"{return Err("Skater has goalie shot context".into());}context.validate()?;}

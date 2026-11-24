@@ -536,7 +536,7 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
     }
     if let Some((raw,capture))=defending_source {
         icelines_sources::rinkcraft_defending_context::enrich(&mut profiles,request.season,Cursor::new(raw),&format!("{} · {} · SHA-256 {}",capture.captured_at,capture.url,capture.sha256))?;
-    }else{icelines_core::view_model::rinkcraft_defending_record::attach(&mut profiles,request.season);}
+    }else{icelines_core::view_model::rinkcraft_skater_context::attach_records(&mut profiles,request.season);}
     let refreshed = profiles.len();
     let complete = profiles
         .iter()

@@ -502,3 +502,7 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 .rk-defense-record>p{grid-column:2;grid-row:2/4;align-self:center}
 .rk-defense-details{grid-column:1/-1}
 @media print{.rk-defense-record{font-size:6.5px;break-inside:avoid}.rk-defense-record>strong{font-size:9px}.rk-defense-details{display:none!important}}
+.rk-handling-summary{margin-top:4px;font-size:7px;line-height:1.4;font-variant-numeric:tabular-nums}.rk-handling-summary>span{display:block}
+.rk-handling-axes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.rk-handling-axes>div{padding:10px;border:1px solid currentColor;border-radius:5px}.rk-handling-axes h4{margin:0 0 4px}.rk-handling-axes strong{font-size:1.3em}
+.rk-handling-record dl>div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #7893a1}.rk-handling-record dd{margin:0;text-align:right}
+@media print{.rk-handling-summary{font-size:6px;margin-top:2px}}

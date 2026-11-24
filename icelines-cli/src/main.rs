@@ -210,6 +210,11 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 &output_dir,
             )?;
         }
+        Commands::ProfileRecords {
+            season,
+            catalog,
+            output_dir,
+        } => commands::profile_records::run(&catalog, season, &output_dir)?,
         Commands::ProfileCalibrationInputs {
             season,
             cache_dir,

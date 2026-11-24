@@ -181,6 +181,15 @@ pub enum Commands {
         #[arg(long)]
         output_dir: PathBuf,
     },
+    /// Rebuild descriptive records from an existing stat catalog, without fetching.
+    ProfileRecords {
+        #[arg(long)]
+        season: u32,
+        #[arg(long)]
+        catalog: PathBuf,
+        #[arg(long)]
+        output_dir: PathBuf,
+    },
     /// Compare experimental skater attribute recipes.
     ProfileCalibrate {
         #[arg(long,default_value="passing-shooting",value_parser=["passing-shooting","defending"])]
