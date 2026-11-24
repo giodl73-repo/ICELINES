@@ -79,7 +79,7 @@ export function renderCharacterFront(
   const featGroup=goalie?'Goalies':['D','Defense'].includes(position)?'Defense':'Forwards';
   const statActor=usageRequest?.player_id??sheet?.player_id,targetGames=(numerical?.group===featGroup?numerical?.games:undefined)??record?.games;
   const candidates=[numerical?.player_id===statActor?numerical?.stat_attributes:undefined,...(statAttributeSeasons??[]).filter(p=>p.games!==undefined)];
-  const statScores=usageRequest?.season_type==='regular'&&!goalie?candidates.find(p=>matchesStatScores(p,statActor,targetSeason,featGroup,targetGames)):undefined;
+  const statScores=usageRequest?.season_type==='regular'?candidates.find(p=>matchesStatScores(p,statActor,targetSeason,featGroup,targetGames)):undefined;
   const statFeats=achievements&&achievements.player_id===(usageRequest?.player_id??sheet?.player_id)&&achievements.season===targetSeason&&achievements.season_type===usageRequest?.season_type&&achievements.group===featGroup?achievements:undefined;
   const edge=usageRequest?.season_type==='regular'&&matchesEdge(numerical?.edge_evidence,usageRequest?.player_id??sheet?.player_id,targetSeason,featGroup,numerical?.games)?numerical!.edge_evidence:undefined;
   const skating=matchesSkatingCandidate(numerical?.edge_skating_candidate,edge,numerical?.minutes)?numerical!.edge_skating_candidate:undefined;
@@ -147,7 +147,7 @@ export function renderCharacterFront(
   }
   const counters=box('Record Counters','rk-front-counters'),counterValues=node('dl');counterValues.className='rk-counter-values';
   counters.append(counterValues);counterValues.append(field('GP',String(numerical?.games??record?.games??assessment?.games??'—')),
-    field('MIN',numerical?numerical.minutes.toFixed(0):'—'));
+    field('MIN',numerical?numerical.minutes.toFixed(0):statScores?.minutes===undefined?'—':statScores.minutes.toFixed(0)));
   const methods=namesBox('Signature Methods','rk-front-methods',sheet?.features.map(f=>f.name)??[]);
   // Keep the hockey action visible; the same short name can describe different tasks.
   for(const [index,feature] of (sheet?.features??[]).entries()){
@@ -228,5 +228,6 @@ export function renderCharacterFront(
     field('Dossier Through',sheet?.evidence_through??'Unknown'),field('Assessed',sheet?.assessed??'Unknown'));
   front.append(sources);
   const footer=node('footer',statScores?'Stat-based attribute estimates · selected season · click an attribute for its formula':sheet?'Provisional documentary class · capability ratings unassessed · evidence below':catalogAvailable===false?'Class dossier unavailable · statistics do not assign a class':'No supported class dossier · statistics do not assign a class');
+  if(statScores?.group==='Goalies')footer.append(node('span',' · Sources: NHL / MoneyPuck.com'));
   footer.className='rk-front-footer';front.append(footer);return front;
 }

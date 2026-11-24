@@ -160,6 +160,30 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             )
             .await?;
         }
+        Commands::ProfileRefresh {
+            season,
+            kind,
+            cache_dir,
+            output_dir,
+            previous_catalog,
+            edge_captures,
+            offline,
+        } => {
+            let result = icelines_fetch::rinkcraft_stat_refresh::refresh(
+                icelines_fetch::rinkcraft_stat_refresh::Request {
+                    season,
+                    kind,
+                    cache_dir,
+                    output_dir,
+                    previous_catalog,
+                    edge_captures,
+                    offline: offline || !config::live_feeds_enabled(),
+                },
+            )
+            .await
+            .map_err(anyhow::Error::msg)?;
+            println!("{}", serde_json::to_string_pretty(&result)?);
+        }
         Commands::ProfileAssess {
             history,
             player,

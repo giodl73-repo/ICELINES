@@ -23,7 +23,7 @@ use icelines_data::{
 use icelines_query::{
     DataProvider, EvalCtx, FetchError, FetchEvent, FilterInput, PlanRequirement, StrictMode,
 };
-use icelines_sources::schema::{GoalieStats, SkaterBio, SkaterStats};
+use icelines_sources::schema::SkaterStats;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
@@ -35,21 +35,7 @@ const MAX_PACKAGE_BYTES: usize = 100 * 1024 * 1024;
 const MAX_RESIDENT_WINDOWS: usize = 8;
 const MAX_RESIDENT_INPUT_BYTES: usize = 64 * 1024 * 1024;
 
-/// Versioned interchange envelope. Missing optional reports stay unavailable.
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct SeasonPackage {
-    pub schema_version: u32,
-    pub season: u32,
-    pub season_type: SeasonType,
-    pub source: String,
-    pub observed_at: Option<String>,
-    pub fetched_at: Option<String>,
-    pub bios: Vec<SkaterBio>,
-    pub stats: Vec<SkaterStats>,
-    #[serde(default)]
-    pub goalies: Vec<GoalieStats>,
-}
+pub use icelines_sources::schema::SeasonPackage;
 
 #[derive(Debug, Error)]
 pub enum EngineError {

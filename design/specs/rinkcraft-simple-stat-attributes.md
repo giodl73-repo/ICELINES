@@ -34,6 +34,8 @@ favorable percentiles, effective weights and formula. No research receipts are
 needed in this flow. These are practical game/profile approximations, without
 claims of technical skill measurement or inferred coaching assignments. Goalies
 keep their separate attributes; these skater recipes are never applied to them.
+Their six public-stat recipes and the routine refresh command are defined in
+[Goalie stat estimates and routine refresh](rinkcraft-goalie-stat-attributes.md).
 
 Math lives in `icelines-core::view_model::rinkcraft_stat_scores`. The native
 catalog command is `rinkcraft_stat_score_profiles BASE NEW_DIRECTORY`; the WASM

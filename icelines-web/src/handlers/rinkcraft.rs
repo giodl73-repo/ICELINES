@@ -1901,11 +1901,11 @@ pub async fn get_html(
                         .iter()
                         .filter(|row| row.season.0 == n.season)
                         .all(|row| match row.position {
-                            icelines_core::model::Position::Goalie => false,
+                            icelines_core::model::Position::Goalie => s.group == "Goalies",
                             icelines_core::model::Position::Defense => s.group == "Defense",
                             _ => s.group == "Forwards",
                         })
-                    && matches!(s.group.as_str(), "Forwards" | "Defense")
+                    && matches!(s.group.as_str(), "Forwards" | "Defense" | "Goalies")
             })
         })
         .or_else(|| {

@@ -375,7 +375,7 @@ pub fn attach_stat_attribute_catalog(
             .as_ref()
             .filter(|n| n.player_id == profile.request.player_id.0 && n.season == row.season.0);
         let group = match row.position {
-            Position::Goalie => continue,
+            Position::Goalie => "Goalies",
             Position::Defense => "Defense",
             _ => "Forwards",
         };

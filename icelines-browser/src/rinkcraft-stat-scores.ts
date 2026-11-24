@@ -4,9 +4,10 @@ export interface StatScore {label:string;score:number|null;stat_points:number|nu
 export interface StatProfile {schema:string;player_id:number;season:number;group:string;scope:string;games?:number;minutes?:number;small_sample:boolean;scores:StatScore[];}
 export interface StatChange {player_id:number;season:number;previous_season:number;deltas:(number|null)[];}
 export interface EstimatedRecord {season:number;target_games:number;basis:string;metrics:{key:string;label:string;value:number|null;unit:string;per_game:number|null;projected_total:boolean}[];}
+const goalieLabels=['Tracking','Positioning','Movement','Rebounds','Recovery','Puck Play'];
 const labels=['Skating','Handling','Passing','Shooting','Reading','Defending'];
 export function matchesStatScores(p:StatProfile|undefined,id:number|undefined,season:number|undefined,group:string,games?:number):p is StatProfile {
- return !!p&&p.schema==='rinkcraft.simple-stat-attributes.v1'&&p.player_id===id&&p.season===season&&p.group===group&&(games===undefined||p.games===undefined||p.games===games)&&p.scores.length===6&&p.scores.every((s,i)=>s.label===labels[i]&&(s.score===null||(Number.isInteger(s.score)&&s.score>=1&&s.score<=20)));
+ return !!p&&p.schema==='rinkcraft.simple-stat-attributes.v1'&&p.player_id===id&&p.season===season&&p.group===group&&(games===undefined||p.games===undefined||p.games===games)&&p.scores.length===6&&p.scores.every((s,i)=>s.label===(group==='Goalies'?goalieLabels:labels)[i]&&(s.score===null||(Number.isInteger(s.score)&&s.score>=1&&s.score<=20)));
 }
 const node=<K extends keyof HTMLElementTagNameMap>(tag:K,text?:string):HTMLElementTagNameMap[K]=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e;};
 export function renderStatScore(profile:StatProfile,score:StatScore):HTMLElement {
@@ -38,11 +39,11 @@ export function openStatScore(profile:StatProfile,score:StatScore,player:string)
 export function renderStatHistory(profiles:StatProfile[],playerId:number|undefined,seasonType:string,player:string,changes:StatChange[]=[]):HTMLElement {
  const section=node('section');section.className='rk-stat-history';
  section.append(node('h3','Six-attribute season record'),node('p','1–20 estimates against each season’s position peers. Changes can reflect deployment, opportunity or peer changes. These supplied windows are not a complete career. Δ is the change from the previous supplied season; — means the comparison is unavailable. Select a score for its formula.'));
- const rows=seasonType==='regular'?profiles.filter(p=>['Forwards','Defense'].includes(p.group)&&Number.isInteger(p.games)&&(p.games??0)>0&&matchesStatScores(p,playerId,p.season,p.group)):[];
+ const rows=seasonType==='regular'?profiles.filter(p=>['Forwards','Defense','Goalies'].includes(p.group)&&Number.isInteger(p.games)&&(p.games??0)>0&&matchesStatScores(p,playerId,p.season,p.group)):[];
  if(!rows.length){section.append(node('p','No season-matched attribute estimates supplied.'));return section;}
  const scroll=node('div');scroll.className='table-scroll';scroll.tabIndex=0;scroll.setAttribute('role','region');scroll.setAttribute('aria-label','Six-attribute season record');
  const table=node('table'),head=node('thead'),header=node('tr');
- for(const label of ['Season','GP','Peers',...labels]){const th=node('th',label);th.scope='col';header.append(th);}head.append(header);
+ for(const label of ['Season','GP','Peers',...(rows[0].group==='Goalies'?goalieLabels:labels)]){const th=node('th',label);th.scope='col';header.append(th);}head.append(header);
  const body=node('tbody');
  for(const p of [...rows].sort((a,b)=>b.season-a.season)){
   const row=node('tr');row.dataset.attributeSeason=String(p.season);

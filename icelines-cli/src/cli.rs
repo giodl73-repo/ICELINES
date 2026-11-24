@@ -136,6 +136,26 @@ pub enum Commands {
         #[arg(long, value_delimiter = ',')]
         player: Vec<u32>,
     },
+    /// Refresh public-source six-attribute estimates for a whole season.
+    ProfileRefresh {
+        #[arg(long)]
+        season: u32,
+        #[arg(long,default_value="all",value_parser=["all","skaters","goalies"])]
+        kind: String,
+        #[arg(long)]
+        cache_dir: PathBuf,
+        #[arg(long)]
+        output_dir: PathBuf,
+        /// Preserve other seasons and unselected position families.
+        #[arg(long)]
+        previous_catalog: Option<PathBuf>,
+        /// Optional retained NHL EDGE source captures, grouped by season/id.json.
+        #[arg(long)]
+        edge_captures: Option<PathBuf>,
+        /// Replay checksum-verified local sources without network requests.
+        #[arg(long)]
+        offline: bool,
+    },
     /// Compute a source-aware career/season statistical profile for one player.
     Profile {
         /// Full player name or numeric NHL player id.
