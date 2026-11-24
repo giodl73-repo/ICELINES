@@ -1,40 +1,7 @@
 //! Credited goalie puck events, not a complete touch log or handling rating.
-use serde::{Deserialize, Serialize};
+pub use icelines_core::view_model::rinkcraft_goalie_puck::{Attempt, Event, Game, Goalie};
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct Goalie {
-    pub player_id: u64,
-    pub name: String,
-    pub team_id: u64,
-}
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct Event {
-    pub game_id: u64,
-    pub event_id: u64,
-    pub player_id: u64,
-    pub team_id: u64,
-    pub period: u64,
-    pub time_in_period: String,
-    pub kind: String,
-    pub penalty_description: Option<String>,
-    /// First opponent shot on goal / goal within ten seconds, before a stoppage.
-    /// Temporal context only: this does not establish possession or causation.
-    pub following_opponent_attempt: Option<Attempt>,
-}
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct Attempt {
-    pub event_id: u64,
-    pub kind: String,
-    pub seconds_after: u64,
-}
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct Game {
-    pub game_id: u64,
-    pub goalies_on_roster: Vec<Goalie>,
-    pub events: Vec<Event>,
-}
 fn clock(v: &Value) -> Result<u64, String> {
     let (m, s) = v
         .as_str()

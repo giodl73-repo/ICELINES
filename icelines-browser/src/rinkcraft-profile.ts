@@ -14,6 +14,7 @@ export interface ProfileMetric {
 }
 export interface ProfileSeason { season: number; games: number; position: string; teams: string[]; traded: boolean; metrics: ProfileMetric[]; }
 export interface RinkcraftProfile {
+  goalie_puck_events?:import('./rinkcraft-goalie-puck.js').GoaliePuckEvidence;
   stat_attribute_changes?:import('./rinkcraft-stat-scores.js').StatChange[];
   stat_attribute_seasons?:import('./rinkcraft-stat-scores.js').StatProfile[];
   record_milestones?:import('./rinkcraft-records.js').RecordMilestones;
@@ -52,7 +53,7 @@ export function renderRinkcraftProfile(profile: RinkcraftProfile): HTMLElement {
   const section = node('section'); section.id = 'rinkcraft-profile'; section.className = 'rinkcraft-profile';
   const targetSeason=profile.numerical_evidence?.season??profile.latest_available?.season;
   const cardAssessment=profile.attribute_seasons?.find(s=>s.season===targetSeason);
-  section.append(renderCharacterCard(profile.player_name,profile.character_sheet,cardAssessment,profile.timeline.find(s=>s.season===targetSeason)??profile.latest_available??undefined,profile.numerical_evidence,profile.numerical_history,profile.numerical_snapshot,profile.numerical_comparison_choices,profile.documentary_catalog_available,profile.evidence_guide,profile.deployment_evidence,profile.request,profile.achievements,profile.profile_window,profile.experimental_patterns,undefined,profile.record_milestones,profile.stat_attribute_seasons));
+  section.append(renderCharacterCard(profile.player_name,profile.character_sheet,cardAssessment,profile.timeline.find(s=>s.season===targetSeason)??profile.latest_available??undefined,profile.numerical_evidence,profile.numerical_history,profile.numerical_snapshot,profile.numerical_comparison_choices,profile.documentary_catalog_available,profile.evidence_guide,profile.deployment_evidence,profile.request,profile.achievements,profile.profile_window,profile.experimental_patterns,undefined,profile.record_milestones,profile.stat_attribute_seasons,profile.goalie_puck_events));
   const history=node('details');history.className='rk-history';history.append(node('summary','Trait evolution, time travel & statistical evidence'));section.append(history);
   const content=node('div');history.append(content);
   content.append(renderStatHistory(profile.stat_attribute_seasons??[],profile.request.player_id,profile.request.season_type,profile.player_name,profile.stat_attribute_changes));

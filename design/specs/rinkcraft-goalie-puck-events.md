@@ -46,6 +46,33 @@ Missed and blocked shots are not counted as shots on goal.
 
 ## Profile use
 
+The player card now has a compact **Puck Record** inside Distinctive Features:
+goals, primary/secondary assists, giveaways, takeaways and committed penalties.
+Expand **Games & penalties** for penalty descriptions, game/period/clock,
+official event-source links and the following-attempt context. Zero remains zero;
+no matching captured ledger means no block. These are actual recorded counts,
+separate from the Estimated Record's season pace.
+
+The shared Rust projection recomputes counts from game-level events rather than
+trusting the cached summary. It requires complete selected-game coverage and a
+matching goalie/regular-season window. Skater and playoff cards do not receive
+these records. Each block states its own capture date and selected-game coverage;
+that sample is not the player's appearances or exposure denominator.
+
+Native configuration:
+
+```powershell
+$env:ICELINES_RINKCRAFT_GOALIE_PUCK='C:/path/to/goalie-puck-events.json'
+```
+
+For the browser, stage the same report as
+`icelines-browser/public/rinkcraft-goalie-puck-events.json` before the normal
+local build, with WASM bindings generated from the matching source revision.
+The file is optional and joins the offline shell when present. No network fetch
+of game logs happens when opening a card: the worker projects the captured report.
+The selected source snapshot remains explicit even when season statistics have a
+different observation date.
+
 These are measured event counts that can sit below Puck Play or support a future
 specialty. There is no new 1–20 rating, feat unlock, pass-completion percentage or
 giveaway-per-touch rate. A zero means no credited event in the captured games.

@@ -16,6 +16,21 @@ globalThis.document = {
 };
 const all = n => [n, ...n.children.flatMap(all)];
 const classed = (n, name) => all(n).filter(e => e.className?.split(' ').includes(name));
+
+test('goalie puck record preserves counts and links without leaking across card scopes',()=>{
+ const puck={player_id:1,season:20262027,season_type:'regular',coverage:'377 captured games · 32 selected clubs',captured_through:'2026-11-24T00:36:35Z',
+ metrics:[{label:'Goals',count:0},{label:'Giveaways',count:5}],penalty_types:[{label:'tripping',count:1}],
+ plays:[{label:'Giveaway',game_id:2026020001,event_id:3,period:1,clock:'01:00',game_url:'https://www.nhl.com/gamecenter/2026020001',source_url:'https://api-web.nhle.com/v1/gamecenter/2026020001/play-by-play',following_attempt:'Opponent shot on goal 5s later; timing, not causation.'}],note:'Recorded counts, not projected totals or handling success rates.'};
+ const render=(p=puck,position='Goalie',type='regular')=>renderCharacterCard('Example',undefined,undefined,{season:20262027,games:5,position,metrics:[]},undefined,undefined,undefined,undefined,true,undefined,undefined,{player_id:1,season_type:type},undefined,undefined,undefined,undefined,undefined,undefined,p);
+ const block=classed(render(),'rk-puck-record')[0];assert.ok(block);assert.match(block.textContent,/Puck Record.*Goals 0.*Giveaways 5.*tripping: 1/);
+ assert.match(block.textContent,/timing, not causation/);assert.equal(all(block).find(n=>n.tag==='a').href,puck.plays[0].game_url);
+ for(const p of [undefined,{...puck,player_id:2},{...puck,season:20252026},{...puck,season_type:'playoff'}]){
+  const args=p===undefined?null:p;
+  assert.equal(classed(render(args),'rk-puck-record').length,0);
+ }
+ assert.equal(classed(render(puck,'Center'),'rk-puck-record').length,0);
+ assert.equal(classed(render(puck,'Goalie','playoff'),'rk-puck-record').length,0);
+});
 test('estimated record shows season totals with per-game rates rather than percentile codes',()=>{
  const numerical={player_id:1,season:20262027,group:'Forwards',situation:'all strengths',games:20,minutes:300,eligible_peers:200,facets:[],metrics:[],leading:[],source_credit:'NHL',unknowns:[],estimated_record:{season:20262027,target_games:84,basis:'84-game pace',metrics:[{key:'points',label:'Points',value:168,unit:'Count',per_game:2,projected_total:true},{key:'missing',label:'Missing',value:null,unit:'Count',per_game:null,projected_total:true}]}};
  const record=classed(renderCharacterCard('Example',undefined,undefined,undefined,numerical),'rk-front-record')[0];

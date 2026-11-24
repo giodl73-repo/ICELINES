@@ -1,3 +1,4 @@
+import {renderGoaliePuck} from './rinkcraft-goalie-puck.js';
 // Rinkcraft presentation categories. Unassessed capability fields stay unrated.
 // Numerical evidence and documentary identity are supplied independently by Rust.
 import type {CharacterSheet} from './rinkcraft-character.js';
@@ -70,7 +71,7 @@ function namesBox(title:string,className:string,names:readonly string[],empty="U
 export function renderCharacterFront(
   name:string,sheet:CharacterSheet|undefined,assessment:AttributeSeason|undefined,
   record:SeasonRecord|undefined,numerical:NumericalEvidence|undefined,
-  snapshot:SnapshotSelection|undefined,catalogAvailable:boolean|undefined,deploymentEvidence?:DeploymentEvidence,usageRequest?:{player_id?:number;season_type:string},achievements?:AchievementProfile,statAttributeSeasons?:import('./rinkcraft-stat-scores.js').StatProfile[],
+  snapshot:SnapshotSelection|undefined,catalogAvailable:boolean|undefined,deploymentEvidence?:DeploymentEvidence,usageRequest?:{player_id?:number;season_type:string},achievements?:AchievementProfile,statAttributeSeasons?:import('./rinkcraft-stat-scores.js').StatProfile[],goaliePuck?:import('./rinkcraft-goalie-puck.js').GoaliePuckEvidence,
 ):HTMLElement {
   const position=record?.position??numerical?.group??assessment?.group??'Unknown';
   const goalie=['Goalie','Goalies','G'].includes(position);
@@ -215,6 +216,7 @@ export function renderCharacterFront(
   distinctive.append(node('strong',sheet?.specialty??'Undocumented'));
   if(sheet)distinctive.append(node('p',sheet.summary));
   if(statFeats)distinctive.append(renderStatFeats(statFeats,'distinctive_features',2));
+  if(goalie&&goaliePuck&&goaliePuck.player_id===statActor&&goaliePuck.season===targetSeason&&goaliePuck.season_type===usageRequest?.season_type)distinctive.append(renderGoaliePuck(goaliePuck));
   const seasonal=node('div');seasonal.className='rk-seasonal-records';
   if(skating){const candidate=renderSkatingCandidate(skating);if(candidate)seasonal.append(candidate);}
   if(shooting){const candidate=renderShootingCandidate(shooting);if(candidate)seasonal.append(candidate);}

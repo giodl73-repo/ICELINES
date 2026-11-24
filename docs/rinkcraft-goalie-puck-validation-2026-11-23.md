@@ -66,3 +66,53 @@ ledger. Counts and following-shot context are available for profile evidence and
 play review; they are not automatically capability ratings or error probabilities.
 
 See the [source contract and command guide](../design/specs/rinkcraft-goalie-puck-events.md).
+
+## Profile integration checkpoint
+
+The native and browser cards now consume the same Rust `goalie_puck_events`
+projection. The input game/event transport structs are shared with the source
+parser. Counts are rebuilt from those events, not copied from summary counters.
+Each record states its separate capture date and selected-game sample; none of
+these counts is used as a capability score, projected total or exposure rate.
+
+Completed local validation:
+
+- Three focused core tests: event-derived counts despite contradictory summary
+  counters, explicit zero for roster-listed backups, scope selection, stale-field
+  clearing, incomplete coverage, missing captures, duplicate games and actor/team
+  mismatches.
+- `cargo check -p icelines-web -p icelines-cli --locked` passes, including the
+  native Askama include and configured-source loading.
+- Rust 1.95.0 WASM build and matching web bindings pass.
+- Browser build and all 243 browser unit tests pass, including wrong-player,
+  wrong-season, playoff and skater presentation checks.
+- All 78 current goalie profiles were projected by the actual WASM export;
+  468 counts match an independent count over captured game events. All 78 also
+  return no evidence for playoff or skater variants.
+- Three contrasting real profiles pass the committed browser acceptance script:
+  a goalie goal, the largest event record and a zero-event record. Actual worker
+  responses equal the saved Rust projection; game/source links and penalty
+  descriptions render; details start closed; no page errors or 390px overflow.
+- All three exported PDFs independently contain one 612×792-point Letter page
+  with Attributes and Puck Record. Print testing exposed oversized attribute
+  buttons inherited from screen styles; scoped print rules now remove that
+  interactive sizing while preserving the numeric fields.
+- Desktop/mobile screenshots were inspected. The new disclosure and links use
+  card accent colors to stay readable within the paper card on a dark app theme.
+
+Ignored artifacts: `target/goalie-puck-profile/` contains matching WASM bindings,
+`projection-acceptance.json`, `browser-acceptance.json`, desktop/mobile images
+and three Letter PDFs. The running 8777 preview serves generated profile
+snapshots from `target/goalie-refresh/site/`, not a hosted deployment. It also
+serves the actual worker and matching WASM used by the acceptance test.
+
+Replay the prepared preview check with:
+
+```powershell
+node icelines-browser/e2e/rinkcraft-goalie-puck.mjs
+```
+
+Set `ICELINES_GOALIE_PUCK_URL` for a different prepared preview URL. The script
+requires its player list, projected profile fixtures and source ledger; it does
+not start a server. No publication or full native application runtime validation
+is claimed at this checkpoint.

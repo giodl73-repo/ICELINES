@@ -1,0 +1,10 @@
+{% match profile.goalie_puck_events %}{% when Some with (puck) %}
+<div class="rk-puck-record" data-puck-player="{{ puck.player_id }}" data-puck-season="{{ puck.season }}">
+<strong>Puck Record</strong><small>Recorded game logs</small>
+<dl class="rk-puck-values">{% for metric in puck.metrics %}<div><dt>{{ metric.label }}</dt><dd>{{ metric.count }}</dd></div>{% endfor %}</dl>
+<details><summary>Games &amp; penalties</summary><p>{{ puck.coverage }}</p><small>Captured through {{ puck.captured_through }}</small><p>{{ puck.note }}</p>
+{% for metric in puck.penalty_types %}<p>{{ metric.label }}: {{ metric.count }}</p>{% endfor %}
+{% if puck.plays.is_empty() %}<p>No credited puck events in these captured games.</p>{% endif %}
+{% for play in puck.plays %}<p><a href="{{ play.game_url }}">{{ play.label }} · P{{ play.period }} {{ play.clock }}</a><small>Game {{ play.game_id }}</small><a href="{{ play.source_url }}">Event {{ play.event_id }} source</a>{% match play.following_attempt %}{% when Some with (text) %}<small>{{ text }}</small>{% when None %}{% endmatch %}</p>{% endfor %}
+</details></div>
+{% when None %}{% endmatch %}

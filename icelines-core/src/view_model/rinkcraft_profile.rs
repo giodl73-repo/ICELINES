@@ -101,6 +101,8 @@ pub struct ProfileJobFamily {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RinkcraftStatProfile {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub goalie_puck_events: Option<super::rinkcraft_goalie_puck::Evidence>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub stat_attribute_changes: Vec<super::rinkcraft_stat_scores::SeasonChange>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -517,7 +519,7 @@ pub fn build_rinkcraft_stat_profile_from_views<R: SeasonStatsRead>(
                 .collect()
         })
         .unwrap_or_default();
-    Ok(RinkcraftStatProfile {
+    Ok(RinkcraftStatProfile { goalie_puck_events:None,
         stat_attribute_changes:Vec::new(),stat_attribute_seasons:Vec::new(),achievements:None,
         deployment_evidence:views.last().and_then(|v|super::rinkcraft_deployment::from_read(&v.stats)),
         evidence_guide:super::rinkcraft_evidence_guide::topics(),
