@@ -19,7 +19,7 @@ const candidates=[profiles.find(p=>p.goalie_puck_events.metrics.find(m=>m.label=
 assert.ok(candidates.length>=2,'Need contrasting samples.');
 const browser=await chromium.launch({channel:process.env.ICELINES_BROWSER_CHANNEL??'msedge',headless:true});
 try {
- const page=await browser.newPage({viewport:{width:1280,height:1100}}),errors=[];
+ const page=await browser.newPage({viewport:{width:1280,height:1100}}),errors=[];let shotCases=0;
  page.on('pageerror',e=>errors.push(e.message));
  for(const [i,p] of candidates.entries()){
   const id=p.request.player_id,evidence=p.goalie_puck_events;
@@ -44,10 +44,20 @@ try {
   },{ledger,profile:p});
   assert.deepEqual(projected,evidence);
   await block.locator('summary').click();
+  const stats=p.stat_attribute_seasons?.find(s=>s.season===p.latest_available?.season&&s.shot_context);
+  if(stats){
+   const shot=page.locator('.rk-front .rk-shot-context');await shot.waitFor();
+   assert.deepEqual(await shot.locator(':scope > dl dd').allTextContents(),stats.shot_context.headline.map(r=>r.value));
+   await shot.locator('summary').click();assert.match(await shot.textContent(),/after missed shots/);await shot.locator('summary').click();
+   for(const i of [2,3,4]){await page.locator('.rk-front-values .rk-capability-trigger').nth(i).click();const dialog=page.locator('dialog');assert.match(await dialog.textContent(),/Observed shot contexts/);await dialog.getByRole('button',{name:'Close',exact:true}).click();}
+   shotCases++;
+  }
+  await page.evaluate(()=>scrollTo(0,0));
   if(i===0)await page.screenshot({path:fileURLToPath(new URL('puck-desktop.png',output)),fullPage:true});
   await page.setViewportSize({width:390,height:844});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   const grid=await block.locator('.rk-puck-values').boundingBox();assert.ok(grid&&grid.width<=390);
+  await page.evaluate(()=>scrollTo(0,0));
   if(i===0)await page.screenshot({path:fileURLToPath(new URL('puck-mobile.png',output)),fullPage:true});
   await page.setViewportSize({width:1280,height:1100});
   await page.emulateMedia({media:'print'});
@@ -56,6 +66,6 @@ try {
   await page.emulateMedia({media:'screen'});
  }
  assert.deepEqual(errors,[]);
- await writeFile(new URL('browser-acceptance.json',output),JSON.stringify({players:profiles.length,cases:candidates.map(p=>p.request.player_id),workerParity:true,mobile:true,pageErrors:errors},null,2));
+ await writeFile(new URL('browser-acceptance.json',output),JSON.stringify({players:profiles.length,cases:candidates.map(p=>p.request.player_id),shotCases,workerParity:true,mobile:true,pageErrors:errors},null,2));
  console.log(`Passed ${candidates.length} goalie cases; real worker/WASM parity and 390px layout.`);
 }finally{await browser.close();}

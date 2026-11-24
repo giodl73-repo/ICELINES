@@ -85,6 +85,43 @@ enable a scheduler.
 
 ## Next technical measurements
 
+### Shot-sequence detail
+
+The routine refresh now embeds optional `shot_context` data in each goalie
+attribute profile. It travels through the existing GP/season/player-matched
+catalog attachment for native and WASM; there is no second import or extra API
+request when opening a card. Existing catalogs without this detail still load.
+
+The compact **Shot Record** shows cross-slot rebound saving, all rebound saving
+and generated follow-ups versus MoneyPuck's expected rebound total. Its expanded
+breakdown and the Movement/Recovery/Rebounds formula views include:
+
+- High-danger on-goal saves/faced, using the provider's xG ≥ 0.20 threshold.
+- Cross-slot on-goal saves/faced, requiring both rebound and royal-road flags.
+- Follow-up outcomes within 0–1 second and over 1 through 3 seconds.
+- Follow-up outcomes after `SHOT` versus `MISS` previous events.
+- Generated follow-up count and summed expected rebounds over the same unblocked
+  attempts; rebound-attempt xG, attempts and misses.
+
+All save fractions use on-goal opportunities. A missed follow-up is not a save;
+no on-goal opportunity displays as unavailable rather than 0% or 100%. The
+archive's `timeSinceLastEvent` is an event interval, not measured goalie reset
+time. Cross-slot classification is the provider's shot-location flag, not tracked
+goalie travel. In the inspected current archive, rebound flags include attempts
+after misses, so these cannot all be attributed to a goalie surrendering a rebound.
+Generated-follow-up figures likewise remain provider/model outcomes with team effects.
+
+Detailed shot contexts require both sequence columns. Older minimal inputs with
+neither column retain their existing grades and omit this optional detail;
+partially supplied sequence columns fail explicitly. The refresh binds contexts
+to the shot archive's URL, capture time and SHA-256. MoneyPuck.com is credited
+on the primary record and in the expanded view.
+
+This adds interpretable support to the existing estimates; it does not change
+the six scoring recipes or translate event intervals into technique ratings.
+The probability and expected-rebound definitions follow the
+[MoneyPuck glossary](https://www.moneypuck.com/glossary.htm).
+
 The [goalie puck-event ledger](rinkcraft-goalie-puck-events.md) now collects
 officially credited goalie actions with source-complete game coverage. It adds
 event detail without treating giveaways as failed passes or roster games as GP.

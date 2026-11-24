@@ -8,6 +8,7 @@ use std::{
 
 #[derive(Debug)]
 pub struct Observation {
+    pub shot_context: Option<icelines_core::view_model::rinkcraft_goalie_shots::Data>,
     pub player: Player,
     pub notes: Vec<String>,
 }
@@ -44,6 +45,8 @@ fn rows_by_id(rows: &[Value], season: u32) -> Result<BTreeMap<u32, &Value>, Stri
 }
 #[derive(Default, Debug)]
 struct Shots {
+    context: icelines_core::view_model::rinkcraft_goalie_shots::Data,
+    context_available: bool,
     on: u32,
     goals: u32,
     low: u32,
@@ -86,6 +89,11 @@ fn shot_totals(input: impl Read, season: u32) -> Result<BTreeMap<u32, Shots>, St
         })
         .collect::<Result<Vec<_>, _>>()?;
     let mut seen = BTreeSet::new();
+    let timing = headers.iter().position(|h| h == "timeSinceLastEvent");
+    let previous = headers.iter().position(|h| h == "lastEventCategory");
+    if timing.is_some() != previous.is_some() {
+        return Err("Incomplete shot-sequence columns".into());
+    }
     let mut out = BTreeMap::<u32, Shots>::new();
     for (number, row) in reader.records().enumerate() {
         if number >= 500_000 {
@@ -139,6 +147,39 @@ fn shot_totals(input: impl Read, season: u32) -> Result<BTreeMap<u32, Shots>, St
             return Err("Inconsistent shot outcomes/probabilities".into());
         }
         let s = out.entry(id).or_default();
+        if let Some((timing, previous)) = timing.zip(previous) {
+            s.context_available = true;
+            s.context.attempts += 1;
+            s.context.generated += u32::from(generated);
+            s.context.expected += xr;
+            let elapsed = if rebound {
+                Some(
+                    r.get(timing)
+                        .and_then(|v| v.parse::<u32>().ok())
+                        .filter(|v| *v <= 3)
+                        .ok_or("Invalid rebound interval")?,
+                )
+            } else {
+                None
+            };
+            for (key, include) in [
+                ("high", xg >= 0.2),
+                ("cross", cross && rebound),
+                ("rebound", rebound),
+                ("fast", elapsed.is_some_and(|v| v <= 1)),
+                ("later", elapsed.is_some_and(|v| v > 1)),
+                ("after-shot", rebound && r.get(previous) == Some("SHOT")),
+                ("after-miss", rebound && r.get(previous) == Some("MISS")),
+            ] {
+                if include {
+                    s.context
+                        .buckets
+                        .entry(key.into())
+                        .or_default()
+                        .record(on, goal, xg);
+                }
+            }
+        }
         s.generated += u32::from(generated);
         s.expected += xr;
         if on {
@@ -261,6 +302,10 @@ pub fn goalie_inputs(
             notes.push("No attributed regular-season MoneyPuck shots supplied; four shot-derived attributes remain unavailable.".into());
         }
         out.push(Observation {
+            shot_context: totals
+                .get(&id)
+                .filter(|s| s.context_available)
+                .map(|s| s.context.clone()),
             player: Player {
                 player_id: id,
                 group: "Goalies".into(),

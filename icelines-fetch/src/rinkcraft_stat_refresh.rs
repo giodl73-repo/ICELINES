@@ -262,6 +262,7 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
     };
     let mut receipts = vec![];
     let mut observations = vec![];
+    let mut shot_contexts = BTreeMap::new();
     let mut notes = BTreeMap::<u32, Vec<String>>::new();
     if request.kind != "skaters" {
         eprintln!("Refreshing goalie public sources for {}", request.season);
@@ -278,6 +279,7 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
         let csv = String::from_utf8(csv.ok_or("Missing goalie CSV")?).map_err(|e| e.to_string())?;
         let url = format!("https://peter-tanner.com/moneypuck/downloads/shots_{year}.zip");
         let (zip, c) = store.get(&url, false, false).await?;
+        let shot_capture = c.clone();
         receipts.push(c);
         let mut archive = zip::ZipArchive::new(Cursor::new(zip.ok_or("Missing shots ZIP")?))
             .map_err(|e| e.to_string())?;
@@ -296,6 +298,17 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
             &csv,
             file,
         )? {
+            if let Some(data) = o.shot_context {
+                shot_contexts.insert(
+                    o.player.player_id,
+                    icelines_core::view_model::rinkcraft_goalie_shots::Context::new(
+                        data,
+                        shot_capture.url.clone(),
+                        shot_capture.captured_at.clone(),
+                        shot_capture.sha256.clone(),
+                    ),
+                );
+            }
             notes.insert(o.player.player_id, o.notes);
             observations.push(o.player);
         }
@@ -418,6 +431,7 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
     let mut profiles = scores::build(request.season, "all strengths · rates per60", &observations)?;
     for p in &mut profiles {
         if p.group == "Goalies" {
+            p.shot_context = shot_contexts.remove(&p.player_id);
             p.scope = "all strengths · NHL and MoneyPuck observations".into();
         }
         if let Some(ns) = notes.get(&p.player_id) {

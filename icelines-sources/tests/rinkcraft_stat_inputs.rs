@@ -10,6 +10,58 @@ fn summary() -> &'static str {
     "playerId,season,situation,games_played,ongoal\n1,2025,all,20,2\n"
 }
 #[test]
+fn shot_sequences_separate_misses_fast_followups_and_cross_slot_opportunities() {
+    let mut csv = SHOTS
+        .lines()
+        .enumerate()
+        .map(|(i, line)| {
+            format!(
+                "{line},{}",
+                if i == 0 {
+                    "timeSinceLastEvent,lastEventCategory"
+                } else {
+                    "1,SHOT"
+                }
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    csv.push_str("\n6,20001,2025,0,1,1,0,0,0,1,0,0,0.3,0.1,2,MISS\n7,20001,2025,0,1,1,0,1,0,1,1,0,0.3,0.1,0,SHOT\n");
+    let rows = goalie_inputs(20252026, &nhl(), summary(), csv.as_bytes()).unwrap();
+    let data = rows[0].shot_context.clone().unwrap();
+    assert_eq!(data.attempts, 5);
+    assert_eq!(data.buckets["rebound"].attempts, 3);
+    assert_eq!(data.buckets["rebound"].on_goal, 2);
+    assert_eq!(data.buckets["rebound"].goals, 1);
+    assert_eq!(data.buckets["after-miss"].attempts, 1);
+    assert_eq!(data.buckets["after-miss"].on_goal, 0);
+    assert_eq!(data.buckets["fast"].on_goal, 2);
+    assert_eq!(data.buckets["cross"].on_goal, 2);
+    let mut c = icelines_core::view_model::rinkcraft_goalie_shots::Context::new(
+        data,
+        "https://peter-tanner.com/moneypuck/downloads/shots_2025.zip".into(),
+        "2026-11-23T00:00:00Z".into(),
+        "a".repeat(64),
+    );
+    c.validate().unwrap();
+    assert_eq!(c.headline[0].value, "1/2 saved · 50.0%");
+    assert!(c.rows[6].value.contains("No on-goal opportunities"));
+    c.rows[0].value = "Invented".into();
+    assert!(c.validate().is_err());
+    assert!(goalie_inputs(
+        20252026,
+        &nhl(),
+        summary(),
+        csv.replace(",2,MISS", ",4,MISS").as_bytes()
+    )
+    .is_err());
+    assert!(
+        goalie_inputs(20252026, &nhl(), summary(), SHOTS.as_bytes()).unwrap()[0]
+            .shot_context
+            .is_none()
+    );
+}
+#[test]
 fn goalie_sources_keep_sog_denominators_flags_competition_and_zero_separate() {
     let rows = goalie_inputs(20252026, &nhl(), summary(), SHOTS.as_bytes()).unwrap();
     let p = &rows[0].player;

@@ -1,0 +1,7 @@
+{% match stat_attributes %}{% when Some with (stats) %}{% match stats.shot_context %}{% when Some with (context) %}
+<div class="rk-shot-context"><strong>Shot Record</strong><small>MoneyPuck.com · recorded shot sequences</small>
+<dl>{% for row in context.headline %}<div><dt>{{ row.label }}</dt><dd>{{ row.value }}</dd></div>{% endfor %}</dl>
+<details><summary>Sequence breakdown</summary><dl>{% for row in context.rows %}<div><dt>{{ row.label }}</dt><dd>{{ row.value }}</dd></div>{% endfor %}</dl>
+<p>Shot-sequence outcomes, not measured goalie travel or reset time. Follow-ups can follow missed shots. Expected rebounds and xG are model estimates.</p>
+<a href="{{ context.source_url }}">MoneyPuck.com shot archive</a><small>Captured {{ context.captured_at }}</small></details></div>
+{% when None %}{% endmatch %}{% when None %}{% endmatch %}

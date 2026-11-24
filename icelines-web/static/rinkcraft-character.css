@@ -448,6 +448,10 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 
 .rk-seasonal-records-heading{display:flex;justify-content:space-between;align-items:baseline;gap:.3rem;border-top:1px solid var(--rk-rule,#ccd5de);margin-top:.5rem;padding-top:.3rem}
 .rk-puck-record{border-top:1px solid var(--rk-rule,#ccd5de);margin-top:.4rem;padding-top:.3rem;font-size:.9em}
+.rk-shot-context{border-top:1px solid var(--sheet-line,#ccd5de);margin-top:.4rem;padding-top:.3rem;font-size:.9em}
+.rk-shot-context small{display:block}.rk-shot-context dl>div{margin:.25rem 0}.rk-shot-context dd{margin:0;font-size:9px}
+.rk-shot-context summary,.rk-shot-context a{color:var(--sheet-blue,#315a8b)}
+@media print{.rk-shot-context details{display:none}.rk-shot-context dl>div{margin:1px 0}.rk-shot-context dt,.rk-shot-context dd{font-size:7px}}
 .rk-puck-record>small,.rk-puck-record details small{display:block;overflow-wrap:anywhere}
 .rk-puck-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.15rem .5rem;margin:.25rem 0}
 .rk-puck-values>div{display:flex;justify-content:space-between;gap:.25rem;min-width:0}

@@ -1,4 +1,5 @@
 import {renderGoaliePuck} from './rinkcraft-goalie-puck.js';
+import {renderShotContext} from './rinkcraft-goalie-shots.js';
 // Rinkcraft presentation categories. Unassessed capability fields stay unrated.
 // Numerical evidence and documentary identity are supplied independently by Rust.
 import type {CharacterSheet} from './rinkcraft-character.js';
@@ -79,7 +80,7 @@ export function renderCharacterFront(
   const usage=deploymentEvidence&&deploymentEvidence.season===targetSeason&&deploymentEvidence.goalie===goalie&&deploymentEvidence.player_id===(usageRequest?.player_id??sheet?.player_id)&&deploymentEvidence.season_type===usageRequest?.season_type?deploymentEvidence:undefined;
   const featGroup=goalie?'Goalies':['D','Defense'].includes(position)?'Defense':'Forwards';
   const statActor=usageRequest?.player_id??sheet?.player_id,targetGames=(numerical?.group===featGroup?numerical?.games:undefined)??record?.games;
-  const candidates=[numerical?.player_id===statActor?numerical?.stat_attributes:undefined,...(statAttributeSeasons??[]).filter(p=>p.games!==undefined)];
+  const candidates=[...(statAttributeSeasons??[]).filter(p=>p.games!==undefined),numerical?.player_id===statActor?numerical?.stat_attributes:undefined];
   const statScores=usageRequest?.season_type==='regular'?candidates.find(p=>matchesStatScores(p,statActor,targetSeason,featGroup,targetGames)):undefined;
   const statFeats=achievements&&achievements.player_id===(usageRequest?.player_id??sheet?.player_id)&&achievements.season===targetSeason&&achievements.season_type===usageRequest?.season_type&&achievements.group===featGroup?achievements:undefined;
   const edge=usageRequest?.season_type==='regular'&&matchesEdge(numerical?.edge_evidence,usageRequest?.player_id??sheet?.player_id,targetSeason,featGroup,numerical?.games)?numerical!.edge_evidence:undefined;
@@ -216,6 +217,7 @@ export function renderCharacterFront(
   distinctive.append(node('strong',sheet?.specialty??'Undocumented'));
   if(sheet)distinctive.append(node('p',sheet.summary));
   if(statFeats)distinctive.append(renderStatFeats(statFeats,'distinctive_features',2));
+  if(goalie&&statScores?.shot_context)distinctive.append(renderShotContext(statScores.shot_context));
   if(goalie&&goaliePuck&&goaliePuck.player_id===statActor&&goaliePuck.season===targetSeason&&goaliePuck.season_type===usageRequest?.season_type)distinctive.append(renderGoaliePuck(goaliePuck));
   const seasonal=node('div');seasonal.className='rk-seasonal-records';
   if(skating){const candidate=renderSkatingCandidate(skating);if(candidate)seasonal.append(candidate);}

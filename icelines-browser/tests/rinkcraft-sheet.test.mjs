@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {renderCharacterCard} from '../dist/src/rinkcraft-character.js';
+import {renderStatScore} from '../dist/src/rinkcraft-stat-scores.js';
 
 class Element {
   children = []; attributes = {}; dataset = {}; style = {};
@@ -16,6 +17,23 @@ globalThis.document = {
 };
 const all = n => [n, ...n.children.flatMap(all)];
 const classed = (n, name) => all(n).filter(e => e.className?.split(' ').includes(name));
+
+test('goalie shot contexts show Rust counts and keep attribute details separate',()=>{
+ const context={source_url:'https://peter-tanner.com/moneypuck/downloads/shots_2026.zip',captured_at:'2026-11-24T00:17:34Z',sha256:'a'.repeat(64),
+  headline:[{attribute:'Movement',label:'Cross-slot rebound shots on goal',value:'1/2 saved · 50.0%'}],
+  rows:[{attribute:'Movement',label:'Cross-slot rebound shots on goal',value:'1/2 saved · 50.0%'},{attribute:'Recovery',label:'Follow-ups after missed shots',value:'No on-goal opportunities'}]};
+ const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Goalies',games:20,minutes:1000,scope:'all strengths',small_sample:false,
+  scores:['Tracking','Positioning','Movement','Rebounds','Recovery','Puck Play'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'})),shot_context:context};
+ const args=Array(18).fill(undefined);args[0]='Goalie';args[3]={season:20262027,games:20,position:'Goalie',metrics:[]};args[11]={player_id:1,season_type:'regular'};args[17]=[stats];
+ const block=classed(renderCharacterCard(...args),'rk-shot-context')[0];assert.match(block.textContent,/Shot Record.*MoneyPuck.com.*1\/2 saved/);
+ args[4]={player_id:1,season:20262027,group:'Goalies',situation:'all strengths',games:20,minutes:1000,eligible_peers:20,facets:[],metrics:[],leading:[],unknowns:[],source_credit:'NHL',stat_attributes:{...stats,shot_context:undefined}};
+ assert.equal(classed(renderCharacterCard(...args),'rk-shot-context').length,1,'New attached catalog supplies detail ahead of a legacy embedded estimate.');
+ args[4]=undefined;
+ const popup=renderStatScore(stats,stats.scores[2]);assert.match(popup.textContent,/Observed shot contexts.*Cross-slot/);
+ assert.match(popup.textContent,/not measured goalie travel or reset time/);
+ assert.equal(classed(renderStatScore(stats,stats.scores[0]),'rk-shot-context').length,0);
+ args[17]=[{...stats,season:20252026}];assert.equal(classed(renderCharacterCard(...args),'rk-shot-context').length,0);
+});
 
 test('goalie puck record preserves counts and links without leaking across card scopes',()=>{
  const puck={player_id:1,season:20262027,season_type:'regular',coverage:'377 captured games · 32 selected clubs',captured_through:'2026-11-24T00:36:35Z',
