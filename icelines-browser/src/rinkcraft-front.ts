@@ -5,6 +5,7 @@ import {defendingRecord,renderDefendingRecord} from './rinkcraft-defending-recor
 import {handlingRecord,handlingSummary} from './rinkcraft-handling-record.js';
 import {readingRecord,readingSummary} from './rinkcraft-reading-record.js';
 import {passingRecord,passingSummary} from './rinkcraft-passing-record.js';
+import {shootingRecord,shootingSummary} from './rinkcraft-shooting-record.js';
 // Rinkcraft presentation categories. Unassessed capability fields stay unrated.
 // Numerical evidence and documentary identity are supplied independently by Rust.
 import type {CharacterSheet} from './rinkcraft-character.js';
@@ -126,6 +127,7 @@ export function renderCharacterFront(
     score.append(node('small',estimate?.score!==null&&estimate?.score!==undefined?(statScores?.small_sample?'Small sample':'Estimate'):'Unrated'));scores.append(score);
     if(label==='Handling'){const handling=handlingRecord(statScores);if(handling)score.append(handlingSummary(handling));}
     if(label==='Passing'){const passing=passingRecord(statScores);if(passing)score.append(passingSummary(passing));}
+    if(label==='Shooting'){const shooting=shootingRecord(statScores);if(shooting)score.append(shootingSummary(shooting));}
   }
   attributes.append(scores);
   const tasks=node('div');tasks.className='rk-front-task-column';

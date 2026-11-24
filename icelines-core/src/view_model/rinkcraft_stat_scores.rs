@@ -227,6 +227,7 @@ impl Catalog {
         }
         let mut seen = BTreeSet::new();
         for p in &self.profiles {
+            if let Some(r)=p.skater_context.as_ref().and_then(|c|c.shooting.as_ref()){if r.player_id!=p.player_id||r.season!=p.season||r.group!=p.group||r.games!=p.games||(r.minutes-p.minutes).abs()>1e-9{return Err("Shooting record does not match profile window".into());}}
             if let Some(r)=p.skater_context.as_ref().and_then(|c|c.passing.as_ref()){if r.player_id!=p.player_id||r.season!=p.season||r.group!=p.group||r.games!=p.games||(r.minutes-p.minutes).abs()>1e-9{return Err("Passing record does not match profile window".into());}}
             if let Some(r)=p.skater_context.as_ref().and_then(|c|c.reading.as_ref()){if r.player_id!=p.player_id||r.season!=p.season||r.group!=p.group||r.games!=p.games||(r.minutes-p.minutes).abs()>1e-9{return Err("Reading record does not match profile window".into());}}
             if let Some(r)=p.skater_context.as_ref().and_then(|c|c.handling.as_ref()){if r.player_id!=p.player_id||r.season!=p.season||r.group!=p.group||r.games!=p.games||(r.minutes-p.minutes).abs()>1e-9{return Err("Handling record does not match profile window".into());}}

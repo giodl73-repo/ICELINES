@@ -10,6 +10,8 @@ pub struct Row {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Context {
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shooting: Option<super::rinkcraft_shooting_record::Record>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub passing: Option<super::rinkcraft_passing_record::Record>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reading: Option<super::rinkcraft_reading_record::Record>,
@@ -110,6 +112,7 @@ impl Context {
             });
         }
         Self {
+            shooting: None,
             passing: None,
             reading: None,
             handling: None,
@@ -121,6 +124,9 @@ impl Context {
         }
     }
     pub fn validate(&self) -> Result<(), String> {
+        if let Some(record) = &self.shooting {
+            record.validate()?;
+        }
         if let Some(record) = &self.passing {
             record.validate()?;
         }
@@ -156,4 +162,5 @@ pub fn attach_records(profiles: &mut [super::rinkcraft_stat_scores::Profile], se
     super::rinkcraft_handling_record::attach(profiles, season);
     super::rinkcraft_reading_record::attach(profiles, season);
     super::rinkcraft_passing_record::attach(profiles, season);
+    super::rinkcraft_shooting_record::attach(profiles, season);
 }

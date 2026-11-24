@@ -517,3 +517,7 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 .rk-passing-summary{margin-top:4px;font-size:7px;line-height:1.4;font-variant-numeric:tabular-nums}.rk-passing-summary>span{display:block}
 .rk-passing-record dl>div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #7893a1}.rk-passing-record dd{margin:0;text-align:right}
 @media print{.rk-passing-summary{font-size:6px;margin-top:2px}.rk-front-values{gap:5px}.rk-front-values dd{font-size:25px}.rk-front:has(.rk-skater-context) .rk-front-right .rk-form-box{padding:3px}.rk-front-right .rk-form-box>h2,.rk-front-right .rk-form-box>h4{margin-bottom:3px}}
+
+.rk-shooting-summary{margin-top:4px;font-size:7px;line-height:1.4;font-variant-numeric:tabular-nums}.rk-shooting-summary>span,.rk-shooting-record>small{display:block}
+.rk-shooting-record dl>div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #7893a1}.rk-shooting-record dd{margin:0;text-align:right}
+@media print{.rk-shooting-summary{font-size:6px;margin-top:2px}}
