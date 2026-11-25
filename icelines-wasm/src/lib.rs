@@ -283,6 +283,11 @@ impl BrowserEngine {
         serde_json::to_string(&profile.goalie_puck_events).map_err(|e| JsValue::from_str(&e.to_string()))
     }
     /// Versioned one/two/three-stat conjunctions, separate from classes and abilities.
+    /// Select front-card tasks without altering earned feats or their measurements.
+    pub fn task_repertoire(&self, source: &str) -> Result<String, JsValue> {
+        let profile: icelines_core::view_model::rinkcraft_achievements::AchievementProfile = serde_json::from_str(source).map_err(|e| JsValue::from_str(&e.to_string()))?;
+        serde_json::to_string(&icelines_core::view_model::rinkcraft_task_repertoire::select(&profile)).map_err(|e| JsValue::from_str(&e.to_string()))
+    }
     pub fn achievement_catalog(&self, reports: &[u8], rules: &str) -> Result<String, JsValue> {
         let input = icelines_sources::nhl::achievements::parse(reports)
             .map_err(|e| JsValue::from_str(&e))?;

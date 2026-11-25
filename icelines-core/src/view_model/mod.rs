@@ -2339,6 +2339,7 @@ mod tests {
 }
 
 pub mod rinkcraft_achievements;
+pub mod rinkcraft_task_repertoire;
 pub mod rinkcraft_contest;
 pub mod rinkcraft_deployment;
 pub mod rinkcraft_events;

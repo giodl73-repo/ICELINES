@@ -132,7 +132,7 @@ export function renderCharacterFront(
   attributes.append(scores);
   const tasks=node('div');tasks.className='rk-front-task-column';
   tasks.append(renderRepertoire('Under Pressure','rk-front-pressure',sheet?.under_pressure,3,sheet));
-  if(statFeats){const skills=box('Task Skills','rk-front-skills');skills.append(renderStatFeats(statFeats,'task_skills',3));const scouted=node('details');scouted.className='rk-scouted-tasks';scouted.append(node('summary','Scouted specialties'),renderRepertoire('Scouted tasks','rk-scouted-task-list',sheet?.task_skills,5,sheet));skills.append(scouted);tasks.append(skills);}
+  if(statFeats){const skills=box('Task Skills','rk-front-skills');skills.append(renderStatFeats(statFeats,'task_skills',5));const scouted=node('details');scouted.className='rk-scouted-tasks';scouted.append(node('summary','Scouted specialties'),renderRepertoire('Scouted tasks','rk-scouted-task-list',sheet?.task_skills,5,sheet));skills.append(scouted);tasks.append(skills);}
   else tasks.append(renderRepertoire('Task Skills','rk-front-skills',sheet?.task_skills,5,sheet));
   const reading=readingRecord(statScores);if(reading){const section=box('Read & React','rk-front-reading');section.append(readingSummary(reading));tasks.append(section);}else tasks.append(taskBox('Read & React','rk-front-reading',['Anticipation']));
   split.append(attributes,tasks);left.append(split);

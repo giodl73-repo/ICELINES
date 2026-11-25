@@ -917,6 +917,7 @@ struct EvidenceView {
     credit: String,
 }
 struct FeatSectionView {
+    is_tasks: bool,
     earned: usize,
     total: usize,
     visible: Vec<FeatRowView>,
@@ -927,6 +928,8 @@ struct FeatSectionView {
     source: String,
 }
 struct FeatRowView {
+    is_task: bool,
+    measured: String,
     id: String,
     name: String,
     state: String,
@@ -1010,14 +1013,20 @@ fn feat_section(
             .then_with(|| score(b).total_cmp(&score(a)))
             .then_with(|| a.id.cmp(&b.id))
     });
+    let repertoire = icelines_core::view_model::rinkcraft_task_repertoire::select(a);
+    if placement == "task_skills" {
+        feats.sort_by_key(|f| repertoire.skills.iter().position(|s| s.feat_id == f.id).unwrap_or(usize::MAX));
+    }
     let earned = feats.iter().filter(|f| f.state == "earned").count();
     let total = feats.len();
     let mut visible = Vec::new();
     let mut other = Vec::new();
     for f in feats {
         let row = FeatRowView {
+            is_task: placement == "task_skills" && repertoire.skills.iter().any(|s| s.feat_id == f.id),
+            measured: f.conditions.iter().map(|c| format!("{} {}",c.label.replace(" / GP", ""),c.value.map(|v| if c.unit == "Pct" {format!("{:.1}%",v*100.)} else if c.unit == "Count" {format!("{v:.0}")} else {format!("{v:.2}/game")} ).unwrap_or_else(||"Unavailable".into()))).collect::<Vec<_>>().join(" / "),
             id: f.id.clone(),
-            name: f.name.clone(),
+            name: if placement == "task_skills" { repertoire.skills.iter().find(|s| s.feat_id == f.id).map(|s| s.name.clone()).unwrap_or_else(|| f.name.clone()) } else { f.name.clone() },
             state: f.state.clone(),
             tier: f.tier.clone().unwrap_or_else(|| {
                 if f.state == "unavailable" {
@@ -1056,13 +1065,14 @@ fn feat_section(
                 })
                 .collect(),
         };
-        if f.state == "earned" && visible.len() < limit {
+        if f.state == "earned" && visible.len() < limit && (placement != "task_skills" || repertoire.skills.iter().any(|s| s.feat_id == f.id)) {
             visible.push(row)
         } else {
             other.push(row)
         }
     }
     Some(FeatSectionView {
+        is_tasks: placement == "task_skills",
         earned,
         total,
         visible,
@@ -1917,7 +1927,7 @@ pub async fn get_html(
     let template = ProfileTemplate {
         stat_attributes,
         role_feats: feat_section(&view, "role_coverage", 2),
-        skills_feats: feat_section(&view, "task_skills", 3),
+        skills_feats: feat_section(&view, "task_skills", 5),
         tendency_feats: feat_section(&view, "playing_tendencies", 2),
         distinctive_feats: feat_section(&view, "distinctive_features", 2),
         risk_feats: feat_section(&view, "risk_flags", 2),

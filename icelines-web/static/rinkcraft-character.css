@@ -521,3 +521,7 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 .rk-shooting-summary{margin-top:4px;font-size:7px;line-height:1.4;font-variant-numeric:tabular-nums}.rk-shooting-summary>span,.rk-shooting-record>small{display:block}
 .rk-shooting-record dl>div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #7893a1}.rk-shooting-record dd{margin:0;text-align:right}
 @media print{.rk-shooting-summary{font-size:6px;margin-top:2px}}
+
+/* Earned tasks are a repertoire, separate from numeric attribute ratings. */
+.rk-task-repertoire>.rk-task-feat{border-left:2px solid var(--sheet-blue,#315a8b);padding-left:6px;margin:5px 0}.rk-task-measured{display:block;font-size:7px;color:var(--sheet-ink,#183247);line-height:1.3;margin-top:2px;font-variant-numeric:tabular-nums}.rk-task-repertoire>.rk-task-feat>summary>strong{font-size:10px}.rk-task-repertoire>.rk-task-feat .rk-feat-trigger{color:var(--sheet-blue,#315a8b)}
+@media print{.rk-task-repertoire>.rk-task-feat{margin:3px 0;padding:3px 0 3px 4px}.rk-task-repertoire>.rk-task-feat>summary>strong{font-size:8px}.rk-task-measured{font-size:6px}}

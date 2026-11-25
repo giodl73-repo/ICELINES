@@ -2,6 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {renderCharacterCard} from '../dist/src/rinkcraft-character.js';
 import {renderStatScore} from '../dist/src/rinkcraft-stat-scores.js';
+import {renderStatFeats} from '../dist/src/rinkcraft-achievements.js';
+
+test('task repertoire uses Rust order and names while preserving the complete feat library',()=>{
+ const feat=(id,state='earned')=>({id,name:id,state,tier:'Silver',placements:['task_skills'],matched:1,required:1,conditions:[{key:id,label:'Shots / GP',value:2,unit:'PerGame',numerator:40,denominator:20,percentile:80,peers:100,reference_sha256:'ref',qualifies:true}]});
+ const p={player_id:1,season:20262027,season_type:'regular',group:'Forwards',games:20,minimum_games:10,rules_sha256:'rules',source_sha256:'input',source_urls:[],earned:2,notes:[],feats:[feat('a'),feat('b'),feat('locked','not_earned')]};
+ p.task_repertoire={schema:'rinkcraft.task-repertoire.v1',player_id:1,season:20262027,season_type:'regular',group:'Forwards',games:20,skills:[{feat_id:'b',name:'Draw penalties',family:'drawing'}],note:'Selection only'};
+ const r=renderStatFeats(p,'task_skills',5);assert.equal(classed(r,'rk-task-feat').length,1);assert.match(classed(r,'rk-task-feat')[0].textContent,/Draw penalties.*Silver.*Shots 2.00\/game/);assert.equal(classed(r,'rk-stat-feat').length,3);assert.match(r.textContent,/1 selected \/ 2 earned.*2026-27.*20 GP/);
+ for(const stale of [{...p.task_repertoire,season:20252026},{...p.task_repertoire,games:19},{...p.task_repertoire,skills:[{feat_id:'locked',name:'Invalid',family:'drawing'}]}])assert.equal(classed(renderStatFeats({...p,task_repertoire:stale},'task_skills',5),'rk-task-repertoire').length,0);
+ assert.equal(classed(renderStatFeats(p,'playing_tendencies',2),'rk-task-repertoire').length,0);
+});
 
 class Element {
   children = []; attributes = {}; dataset = {}; style = {};
