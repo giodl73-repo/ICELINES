@@ -1,0 +1,1 @@
+{% if score.label == "Shooting" %}{% match stats.skater_context %}{% when Some with (context) %}{% match context.shooting %}{% when Some with (shooting_record) %}<div class="rk-shooting-summary"><span>Shots {{ shooting_record.shots }}</span><span>Conversion {{ shooting_record.conversion }}</span></div>{% when None %}{% endmatch %}{% when None %}{% endmatch %}{% endif %}

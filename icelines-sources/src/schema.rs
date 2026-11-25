@@ -480,3 +480,19 @@ mod tests {
         assert_eq!(b.season_id, Some(20242025));
     }
 }
+
+/// Versioned interchange envelope. Missing optional reports stay unavailable.
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SeasonPackage {
+    pub schema_version: u32,
+    pub season: u32,
+    pub season_type: icelines_core::season_stats::SeasonType,
+    pub source: String,
+    pub observed_at: Option<String>,
+    pub fetched_at: Option<String>,
+    pub bios: Vec<SkaterBio>,
+    pub stats: Vec<SkaterStats>,
+    #[serde(default)]
+    pub goalies: Vec<GoalieStats>,
+}

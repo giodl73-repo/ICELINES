@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {renderCharacterCard} from '../dist/src/rinkcraft-character.js';
+import {renderStatScore} from '../dist/src/rinkcraft-stat-scores.js';
 
 class Element {
   children = []; attributes = {}; dataset = {}; style = {};
@@ -16,6 +17,50 @@ globalThis.document = {
 };
 const all = n => [n, ...n.children.flatMap(all)];
 const classed = (n, name) => all(n).filter(e => e.className?.split(' ').includes(name));
+
+test('skater attribute records retain measured zeroes and filter per-attribute detail',()=>{
+ const context={source_credit:'NHL / MoneyPuck.com',notes:['Shot quality and credited assists are outcome context.'],values:{},rows:[
+ {attribute:'Passing',label:'Primary assists',value:'13'},{attribute:'Passing',label:'Secondary assists',value:'7'},
+ {attribute:'Shooting',label:'Goals minus expected (goalie in net)',value:'+1.20'},{attribute:'Defending',label:'Penalty-kill deployment',value:'0:00 /GP'}]};
+ const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:20,minutes:400,scope:'all strengths',small_sample:false,
+ scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'})),skater_context:context};
+ const args=Array(18).fill(undefined);args[0]='Skater';args[3]={season:20262027,games:20,position:'Center',metrics:[]};args[11]={player_id:1,season_type:'regular'};args[17]=[stats];
+ const block=classed(renderCharacterCard(...args),'rk-skater-context')[0];assert.match(block.textContent,/Primary assists 13.*Secondary assists 7.*0:00 \/GP/);
+ const passing=renderStatScore(stats,stats.scores[2]);assert.match(passing.textContent,/Passing record.*Primary assists 13/);
+ args[17]=[{...stats,season:20252026}];assert.equal(classed(renderCharacterCard(...args),'rk-skater-context').length,0);
+});
+
+test('goalie shot contexts show Rust counts and keep attribute details separate',()=>{
+ const context={source_url:'https://peter-tanner.com/moneypuck/downloads/shots_2026.zip',captured_at:'2026-11-24T00:17:34Z',sha256:'a'.repeat(64),
+  headline:[{attribute:'Movement',label:'Cross-slot rebound shots on goal',value:'1/2 saved · 50.0%'}],
+  rows:[{attribute:'Movement',label:'Cross-slot rebound shots on goal',value:'1/2 saved · 50.0%'},{attribute:'Recovery',label:'Follow-ups after missed shots',value:'No on-goal opportunities'}]};
+ const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Goalies',games:20,minutes:1000,scope:'all strengths',small_sample:false,
+  scores:['Tracking','Positioning','Movement','Rebounds','Recovery','Puck Play'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'})),shot_context:context};
+ const args=Array(18).fill(undefined);args[0]='Goalie';args[3]={season:20262027,games:20,position:'Goalie',metrics:[]};args[11]={player_id:1,season_type:'regular'};args[17]=[stats];
+ const block=classed(renderCharacterCard(...args),'rk-shot-context')[0];assert.match(block.textContent,/Shot Record.*MoneyPuck.com.*1\/2 saved/);
+ args[4]={player_id:1,season:20262027,group:'Goalies',situation:'all strengths',games:20,minutes:1000,eligible_peers:20,facets:[],metrics:[],leading:[],unknowns:[],source_credit:'NHL',stat_attributes:{...stats,shot_context:undefined}};
+ assert.equal(classed(renderCharacterCard(...args),'rk-shot-context').length,1,'New attached catalog supplies detail ahead of a legacy embedded estimate.');
+ args[4]=undefined;
+ const popup=renderStatScore(stats,stats.scores[2]);assert.match(popup.textContent,/Observed shot contexts.*Cross-slot/);
+ assert.match(popup.textContent,/not measured goalie travel or reset time/);
+ assert.equal(classed(renderStatScore(stats,stats.scores[0]),'rk-shot-context').length,0);
+ args[17]=[{...stats,season:20252026}];assert.equal(classed(renderCharacterCard(...args),'rk-shot-context').length,0);
+});
+
+test('goalie puck record preserves counts and links without leaking across card scopes',()=>{
+ const puck={player_id:1,season:20262027,season_type:'regular',coverage:'377 captured games · 32 selected clubs',captured_through:'2026-11-24T00:36:35Z',
+ metrics:[{label:'Goals',count:0},{label:'Giveaways',count:5}],penalty_types:[{label:'tripping',count:1}],
+ plays:[{label:'Giveaway',game_id:2026020001,event_id:3,period:1,clock:'01:00',game_url:'https://www.nhl.com/gamecenter/2026020001',source_url:'https://api-web.nhle.com/v1/gamecenter/2026020001/play-by-play',following_attempt:'Opponent shot on goal 5s later; timing, not causation.'}],note:'Recorded counts, not projected totals or handling success rates.'};
+ const render=(p=puck,position='Goalie',type='regular')=>renderCharacterCard('Example',undefined,undefined,{season:20262027,games:5,position,metrics:[]},undefined,undefined,undefined,undefined,true,undefined,undefined,{player_id:1,season_type:type},undefined,undefined,undefined,undefined,undefined,undefined,p);
+ const block=classed(render(),'rk-puck-record')[0];assert.ok(block);assert.match(block.textContent,/Puck Record.*Goals 0.*Giveaways 5.*tripping: 1/);
+ assert.match(block.textContent,/timing, not causation/);assert.equal(all(block).find(n=>n.tag==='a').href,puck.plays[0].game_url);
+ for(const p of [undefined,{...puck,player_id:2},{...puck,season:20252026},{...puck,season_type:'playoff'}]){
+  const args=p===undefined?null:p;
+  assert.equal(classed(render(args),'rk-puck-record').length,0);
+ }
+ assert.equal(classed(render(puck,'Center'),'rk-puck-record').length,0);
+ assert.equal(classed(render(puck,'Goalie','playoff'),'rk-puck-record').length,0);
+});
 test('estimated record shows season totals with per-game rates rather than percentile codes',()=>{
  const numerical={player_id:1,season:20262027,group:'Forwards',situation:'all strengths',games:20,minutes:300,eligible_peers:200,facets:[],metrics:[],leading:[],source_credit:'NHL',unknowns:[],estimated_record:{season:20262027,target_games:84,basis:'84-game pace',metrics:[{key:'points',label:'Points',value:168,unit:'Count',per_game:2,projected_total:true},{key:'missing',label:'Missing',value:null,unit:'Count',per_game:null,projected_total:true}]}};
  const record=classed(renderCharacterCard('Example',undefined,undefined,undefined,numerical),'rk-front-record')[0];
@@ -275,4 +320,43 @@ test('ordinary profile estimates render without a numerical dossier and remain G
  assert.deepEqual(fields.map(n=>n.children[1].textContent),['10','10','10','10','10','10']);
  for(const wrong of [{...stats,games:29},{...stats,season:20252026},{...stats,player_id:2},{...stats,group:'Defense'},{...stats,games:undefined}])assert.ok(all(render([wrong])).filter(n=>n.dataset.capabilityIndex!==undefined).every(n=>n.dataset.ratingState==='unassessed'));
  for(const [type,position] of [['playoff','Center'],['regular','Goalie']])assert.ok(all(render([stats],type,position)).filter(n=>n.dataset.capabilityIndex!==undefined).every(n=>n.dataset.ratingState==='unassessed'));
+});
+
+test('six-attribute history preserves season order, unknown scores, sample labels and source identity',async()=>{
+ const {renderStatHistory}=await import('../dist/src/rinkcraft-stat-scores.js');
+ const labels=['Skating','Handling','Passing','Shooting','Reading','Defending'];
+ const make=(season,games,score)=>({schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season,group:'Forwards',scope:'all strengths',games,minutes:games*10,small_sample:games<10,scores:labels.map(label=>({label,score,stat_points:score===null?null:score*5,parts:[],note:'Stat estimate'}))});
+ const old=make(20242025,40,10),recent=make(20252026,4,null);
+ const input=[old,recent,{...old,player_id:2},{...old,group:'Goalies'},{...old,games:undefined}];
+ const view=renderStatHistory(input,1,'regular','Example');
+ const rows=all(view).filter(n=>n.dataset.attributeSeason!==undefined);
+ assert.deepEqual(rows.map(n=>n.dataset.attributeSeason),['20252026','20242025']);
+ assert.match(rows[0].textContent,/Small sample/);
+ assert.deepEqual(all(rows[0]).filter(n=>n.tag==='button').map(n=>n.textContent),Array(6).fill('—'));
+ assert.deepEqual(all(rows[1]).filter(n=>n.tag==='button').map(n=>n.textContent),Array(6).fill('10'));
+ assert.equal(input[0],old);
+ assert.match(renderStatHistory(input,1,'playoff','Example').textContent,/No season-matched/);
+});
+
+test('history changes display supplied Rust deltas and never fabricate comparisons',async()=>{
+ const {renderStatHistory}=await import('../dist/src/rinkcraft-stat-scores.js');
+ const labels=['Skating','Handling','Passing','Shooting','Reading','Defending'];
+ const make=season=>({schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season,group:'Forwards',scope:'all strengths',games:40,small_sample:false,scores:labels.map(label=>({label,score:10,stat_points:50,parts:[],note:'Estimate'}))});
+ const profiles=[make(20242025),make(20252026)];
+ const change={player_id:1,season:20252026,previous_season:20242025,deltas:[0,4,null,-1,-1,-2]};
+ const view=renderStatHistory(profiles,1,'regular','Example',[change]);
+ assert.deepEqual(all(view).filter(n=>n.dataset.attributeDelta!==undefined).map(n=>n.textContent),['Δ 0','Δ +4','Δ —','Δ -1','Δ -1','Δ -2']);
+ for(const invalid of [{...change,player_id:2},{...change,previous_season:20232024}])assert.equal(all(renderStatHistory(profiles,1,'regular','Example',[invalid])).filter(n=>n.dataset.attributeDelta!==undefined).length,0);
+ assert.equal(all(renderStatHistory(profiles,1,'regular','Example')).filter(n=>n.dataset.attributeDelta!==undefined).length,0);
+});
+
+test('goalies receive their own six estimates and reject skater labels',async()=>{
+ const labels=['Tracking','Positioning','Movement','Rebounds','Recovery','Puck Play'];
+ const scores={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Goalies',scope:'all strengths',games:20,minutes:1000,small_sample:false,scores:labels.map(label=>({label,score:10,stat_points:50,parts:[],note:'Stat estimate'}))};
+ const render=s=>renderCharacterCard('Goalie',undefined,undefined,{season:20262027,position:'Goalie',games:20,metrics:[]},undefined,undefined,undefined,undefined,true,undefined,undefined,{player_id:1,season_type:'regular'},undefined,undefined,undefined,undefined,undefined,[s]);
+ assert.match(classed(render(scores),'rk-front-counters')[0].textContent,/MIN.*1000/);
+ assert.match(classed(render(scores),'rk-front-footer')[0].textContent,/MoneyPuck.com/);
+ const fields=all(render(scores)).filter(n=>n.dataset.capabilityIndex!==undefined);assert.equal(fields.length,6);assert.ok(fields.every(n=>n.dataset.ratingState==='stat_estimate'));assert.deepEqual(fields.map(n=>n.children[0].textContent),labels);
+ assert.ok(all(render({...scores,group:'Forwards'})).filter(n=>n.dataset.capabilityIndex!==undefined).every(n=>n.dataset.ratingState==='unassessed'));
+ const {renderStatHistory}=await import('../dist/src/rinkcraft-stat-scores.js');assert.match(renderStatHistory([scores],1,'regular','Goalie').textContent,/Tracking.*Positioning.*Movement.*Rebounds.*Recovery.*Puck Play/);
 });

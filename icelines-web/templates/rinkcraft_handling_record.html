@@ -1,0 +1,3 @@
+<section class="rk-handling-record"><h3>Handling record</h3><p>{{ handling_record.season / 10000 }}–{{ "{:02}"|format(handling_record.season % 100) }} · {{ handling_record.games }} GP · all strengths · NHL</p>
+<div class="rk-handling-axes"><div><h4>Recorded Giveaways</h4><strong>{{ handling_record.giveaways }}</strong></div><div><h4>Penalty Drawing</h4><strong>{{ handling_record.drawn }}</strong></div></div>
+<dl>{% for row in handling_record.rows %}<div><dt>{{ row.label }}</dt><dd>{{ row.value }}</dd></div>{% endfor %}</dl><p>{{ handling_record.formula }}</p><p>{{ handling_record.note }}</p></section>

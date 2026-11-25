@@ -40,3 +40,6 @@ pub use adapter::{
 
 /// Bounded raw JSON/CSV field receipts, without task-semantic inference.
 pub mod raw_inventory;
+pub mod rinkcraft_stat_inputs;
+pub mod rinkcraft_skater_context;
+pub mod rinkcraft_defending_context;

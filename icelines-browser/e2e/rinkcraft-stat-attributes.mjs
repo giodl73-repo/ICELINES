@@ -57,9 +57,40 @@ try {
       checked.push({player:id,season,games:expected.games,scores:expected.scores.map(s=>s.score)});
       await page.locator('#close-player').click();
     }
+    if(catalog.profiles.some(p=>p.group==='Goalies'&&p.season===season)){
+      await page.locator('#kind').selectOption('goalies');
+      await page.locator('#table-view').selectOption('all');
+      for(const [id,name] of [[8478048,'Igor Shesterkin'],[8476945,'Connor Hellebuyck']]){
+        const expected=catalog.profiles.find(p=>p.player_id===id&&p.season===season);assert.ok(expected);
+        await open(name);await expect(grades).toHaveText(expected.scores.map(s=>String(s.score??'—')));
+        await expect(front.locator('[data-capability-index] dt')).toHaveText(['Tracking','Positioning','Movement','Rebounds','Recovery','Puck Play']);
+        await front.getByRole('button',{name:'How Puck Play is scored',exact:true}).click();
+        await expect(page.locator('.rk-capability-dialog')).toContainText('NHL assists');
+        await page.locator('.rk-capability-dialog').getByRole('button',{name:'Close',exact:true}).click();
+        checked.push({player:id,season,games:expected.games,scores:expected.scores.map(s=>s.score)});
+        await page.locator('#close-player').click();
+      }
+      await page.locator('#kind').selectOption('skaters');
+    }
   }
+  await load('20242025-regular');await open('Connor McDavid');
+  await page.locator('#rinkcraft-profile > .rk-history > summary').click();
+  const history=page.locator('.rk-stat-history');
+  await expect(history.locator('[data-attribute-season]')).toHaveCount(2);
+  await expect(history.locator('[data-attribute-season] th')).toHaveText([/2024–25.*vs 2023–24/,'2023–24']);
+  await expect(history.locator('[data-attribute-season="20242025"] [data-attribute-delta]')).toHaveText(['Δ 0','Δ +4','Δ 0','Δ -1','Δ -1','Δ -2']);
+  await history.getByRole('button',{name:'Passing 20 in 20232024',exact:true}).click();
+  await expect(page.locator('.rk-capability-dialog')).toContainText('76 GP');
+  await page.locator('.rk-capability-dialog').getByRole('button',{name:'Close',exact:true}).click();
+  await expect(grades).toHaveText(catalog.profiles.find(p=>p.player_id===8478402&&p.season===20242025).scores.map(s=>String(s.score??'—')));
+  await history.scrollIntoViewIfNeeded();await page.screenshot({path:resolve(output,'attribute-history.png')});
+  await page.setViewportSize({width:390,height:844});await history.scrollIntoViewIfNeeded();
+  assert.ok(await page.locator('#player-dialog').evaluate(e=>e.scrollWidth<=e.clientWidth));
+  await page.screenshot({path:resolve(output,'attribute-history-mobile.png')});
+  await page.setViewportSize({width:1280,height:900});
+  await page.locator('#close-player').click();
   // A newer resident window must not leak back into the selected older season.
-  await load('20242025-regular');await load('20232024-regular');
+  await load('20232024-regular');
   await context.setOffline(true);await open('Connor McDavid');
   const expected=catalog.profiles.find(p=>p.player_id===8478402&&p.season===20232024);
   await expect(grades).toHaveText(expected.scores.map(s=>String(s.score??'—')));
@@ -68,8 +99,10 @@ try {
   await page.screenshot({path:resolve(output,'ordinary-profile-mobile.png')});
   await page.locator('#close-player').click();await context.setOffline(false);
   await page.locator('#kind').selectOption('goalies');await expect(page.locator('#rows')).toHaveJSProperty('inert',false);
-  await page.locator('#rows td:nth-child(2) button').first().click();await expect(page.locator('#player-dialog')).toBeVisible();
-  await expect(front.locator('[data-rating-state="stat_estimate"]')).toHaveCount(0);
+  await page.locator('#table-view').selectOption('all');await open('Igor Shesterkin');
+  const goalie=catalog.profiles.find(p=>p.player_id===8478048&&p.season===20232024);
+  if(goalie)await expect(grades).toHaveText(goalie.scores.map(s=>String(s.score??'—')));
+  else await expect(front.locator('[data-rating-state="stat_estimate"]')).toHaveCount(0);
   await page.setViewportSize({width:1280,height:900});
   const absentCases=[
     {name:'missing',status:404,body:'',note:undefined},
@@ -85,7 +118,25 @@ try {
     if(scenario.note)await expect(page.locator('#rinkcraft-profile')).toContainText(scenario.note);
     await page.unroute('**/rinkcraft-stat-attributes.json');
   }
+  if(process.env.ICELINES_REFRESH_PACKAGE){
+    const path=resolve(process.env.ICELINES_REFRESH_PACKAGE);
+    const data=JSON.parse(await readFile(path,'utf8'));
+    await page.goto(base);await page.locator('#import').setInputFiles(path);
+    await expect(page.locator('#context')).toHaveText(`${data.season} · regular`);
+    await page.locator('#kind').selectOption('goalies');await page.locator('#table-view').selectOption('all');
+    for(const [id,name] of [[8478048,'Igor Shesterkin'],[8476945,'Connor Hellebuyck'],[8475683,'Sergei Bobrovsky']]){
+      const expected=catalog.profiles.find(p=>p.player_id===id&&p.season===data.season);assert.ok(expected);
+      await open(name);await expect(grades).toHaveText(expected.scores.map(s=>String(s.score??'—')));
+      await expect(front.locator('.rk-front-counters')).toContainText(expected.minutes.toFixed(0));
+      await front.getByRole('button',{name:'How Tracking is scored',exact:true}).click();
+      await expect(page.locator('.rk-capability-dialog')).toContainText(`${expected.games} GP`);
+      await page.locator('.rk-capability-dialog').getByRole('button',{name:'Close',exact:true}).click();
+      checked.push({player:id,season:data.season,games:expected.games,scores:expected.scores.map(s=>s.score)});
+      if(id===8478048){await page.screenshot({path:resolve(output,'current-goalie.png')});await page.setViewportSize({width:390,height:844});assert.ok(await page.locator('#player-dialog').evaluate(e=>e.scrollWidth<=e.clientWidth));await page.screenshot({path:resolve(output,'current-goalie-mobile.png')});await page.setViewportSize({width:1280,height:900});}
+      await page.locator('#close-player').click();
+    }
+  }
   assert.deepEqual(errors,[]);
-  await writeFile(resolve(output,'results.json'),JSON.stringify({passed:true,checked,offline:true,mobile:390,goaliesExcluded:true,unavailableCases:absentCases.map(s=>s.name),debugBindingOverride:!!pkg},null,2));
-  console.log('Ordinary browser attributes passed: two skaters × two seasons, formulas, resident-window isolation, offline reopen, mobile, goalie exclusion and missing/invalid/stale catalogs.');
+  await writeFile(resolve(output,'results.json'),JSON.stringify({passed:true,checked,offline:true,mobile:390,goalieFamilyIsolated:true,unavailableCases:absentCases.map(s=>s.name),debugBindingOverride:!!pkg},null,2));
+  console.log('Ordinary browser attributes passed: players across two seasons, formulas, resident-window isolation, offline reopen, mobile, separate goalie attributes and missing/invalid/stale catalogs.');
 } finally {await browser.close();await new Promise(done=>server.close(done));}

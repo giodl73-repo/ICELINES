@@ -160,6 +160,111 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             )
             .await?;
         }
+        Commands::ProfilePuckPlay {
+            season,
+            team,
+            cache_dir,
+            output_dir,
+            offline,
+        } => {
+            let result = icelines_fetch::rinkcraft_stat_refresh::puck::refresh(
+                icelines_fetch::rinkcraft_stat_refresh::puck::Request {
+                    season,
+                    teams: team,
+                    cache_dir,
+                    output_dir,
+                    offline: offline || !config::live_feeds_enabled(),
+                },
+            )
+            .await
+            .map_err(anyhow::Error::msg)?;
+            println!("{}", serde_json::to_string_pretty(&result)?);
+        }
+        Commands::ProfileCalibrate {
+            focus,
+            season,
+            catalog,
+            season_package,
+            output_dir,
+        } => {
+            commands::profile_calibrate::run(
+                &catalog,
+                &season_package,
+                season,
+                &output_dir,
+                &focus,
+            )?;
+        }
+        Commands::ProfileDefendingRecords {
+            season,
+            catalog,
+            season_summary,
+            captured_at,
+            output_dir,
+        } => {
+            commands::profile_defending_records::run(
+                &catalog,
+                season,
+                &season_summary,
+                &captured_at,
+                &output_dir,
+            )?;
+        }
+        Commands::ProfileRecords {
+            season,
+            catalog,
+            output_dir,
+        } => commands::profile_records::run(&catalog, season, &output_dir)?,
+        Commands::ProfileCalibrationInputs {
+            season,
+            cache_dir,
+            output_dir,
+            offline,
+        } => {
+            let result = icelines_fetch::rinkcraft_stat_refresh::calibration::capture(
+                icelines_fetch::rinkcraft_stat_refresh::calibration::Request {
+                    season,
+                    cache_dir,
+                    output_dir,
+                    offline: offline || !config::live_feeds_enabled(),
+                },
+            )
+            .await
+            .map_err(anyhow::Error::msg)?;
+            println!("{}", serde_json::to_string_pretty(&result)?);
+        }
+        Commands::ProfileCarryover {
+            reports,
+            output_dir,
+        } => {
+            commands::profile_calibrate::carryover(&reports, &output_dir)?;
+        }
+        Commands::ProfileRefresh {
+            season,
+            kind,
+            cache_dir,
+            output_dir,
+            previous_catalog,
+            edge_captures,
+            game_cache_dir,
+            offline,
+        } => {
+            let result = icelines_fetch::rinkcraft_stat_refresh::refresh(
+                icelines_fetch::rinkcraft_stat_refresh::Request {
+                    season,
+                    kind,
+                    cache_dir,
+                    output_dir,
+                    previous_catalog,
+                    edge_captures,
+                    game_cache_dir,
+                    offline: offline || !config::live_feeds_enabled(),
+                },
+            )
+            .await
+            .map_err(anyhow::Error::msg)?;
+            println!("{}", serde_json::to_string_pretty(&result)?);
+        }
         Commands::ProfileAssess {
             history,
             player,

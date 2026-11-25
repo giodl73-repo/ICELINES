@@ -1,4 +1,5 @@
 import {readStatAttributeCatalog} from './rinkcraft-stat-scores.js';
+import {readGoaliePuckLedger} from './rinkcraft-goalie-puck.js';
 import {mountBrowserGameStudio} from './rinkcraft-game.js';
 import type {GameInspiration} from './rinkcraft-game.js';
 import { teamSeasonFilter, playerTeamCodes } from './team-focus.js';
@@ -350,8 +351,12 @@ async function player(row: PlayerRow): Promise<void> {
   if(snapshot.season_type==='regular'){
     try {
       const catalog=await readStatAttributeCatalog();
-      if(catalog){const attached=await engine.request<Pick<RinkcraftProfile,'stat_attribute_seasons'|'limitations'>>('statAttributesForProfile',{catalog,profile});profile.stat_attribute_seasons=attached.stat_attribute_seasons;profile.limitations=attached.limitations;}
+      if(catalog){const attached=await engine.request<Pick<RinkcraftProfile,'stat_attribute_seasons'|'stat_attribute_changes'|'limitations'>>('statAttributesForProfile',{catalog,profile});profile.stat_attribute_seasons=attached.stat_attribute_seasons;profile.stat_attribute_changes=attached.stat_attribute_changes;profile.limitations=attached.limitations;}
     } catch(error) {if(error instanceof EngineStoppedError)throw error;profile.limitations.push('Stat estimates unavailable: '+(error instanceof Error?error.message:String(error)));}
+  }
+  if(snapshot.season_type==='regular'&&profile.latest_available?.position==='Goalie'){
+    try {const ledger=await readGoaliePuckLedger();if(ledger)profile.goalie_puck_events=await engine.request('goaliePuckForProfile',{ledger,profile})??undefined;}
+    catch(error){if(error instanceof EngineStoppedError)throw error;profile.limitations.push('Goalie puck events unavailable: '+(error instanceof Error?error.message:String(error)));}
   }
   if (result !== snapshot || generation !== engine.generation) return;
   element('player-name').textContent = row.name;

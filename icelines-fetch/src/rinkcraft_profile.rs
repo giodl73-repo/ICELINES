@@ -38,9 +38,26 @@ pub fn attach_attribute_seasons(
 pub fn attach_configured_stat_attributes(
     profile: &mut icelines_core::view_model::rinkcraft_profile::RinkcraftStatProfile,
 ) {
+    if let Some(path) = std::env::var_os("ICELINES_RINKCRAFT_GOALIE_PUCK") {
+        let result = (|| {
+            let path = std::path::Path::new(&path);
+            if std::fs::metadata(path).map_err(|e| e.to_string())?.len() > 16 * 1024 * 1024 {
+                return Err("Goalie puck ledger exceeds 16 MiB".into());
+            }
+            let source = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
+            icelines_core::view_model::rinkcraft_goalie_puck::attach(profile, &source)
+        })();
+        if let Err(cause) = result {
+            profile.goalie_puck_events = None;
+            profile
+                .limitations
+                .push(format!("Goalie puck events unavailable: {cause}"));
+        }
+    }
     if let Some(path) = std::env::var_os("ICELINES_RINKCRAFT_STAT_ATTRIBUTES") {
         if let Err(cause) = attach_stat_attribute_catalog(profile, std::path::Path::new(&path)) {
             profile.stat_attribute_seasons.clear();
+            profile.stat_attribute_changes.clear();
             profile
                 .limitations
                 .push(format!("Stat estimates unavailable: {cause}"));

@@ -1,6 +1,7 @@
 import type { EngineRequest, EngineResponse, QueryRequest } from './types.js';
 import { importArchive } from './archive.js';
 interface Engine {
+  profile_goalie_puck(source:string,profile:string):string;
   seasonal_record_catalog(bytes:Uint8Array):string;
   load_package(bytes: Uint8Array): string; package_metadata(): string; query(request: string): string;
   player_detail(id: number): string; current_season(): number; free(): void;
@@ -73,6 +74,7 @@ self.onmessage = (event: MessageEvent<EngineRequest>) => {
         case 'unitStudio': response.value=JSON.parse(engine.unit_studio(JSON.stringify(request.payload)));break;
         case 'importGameCharacter': {const p=request.payload as {rules:unknown;character:unknown};response.value=JSON.parse(engine.import_game_character(JSON.stringify(p.rules),JSON.stringify(p.character)));break;}
         case 'statAttributesForProfile': {const p=request.payload as {catalog:unknown;profile:unknown};response.value=JSON.parse(engine.profile_stat_attributes(JSON.stringify(p.catalog),JSON.stringify(p.profile)));break;}
+        case 'goaliePuckForProfile': {const p=request.payload as {ledger:unknown;profile:unknown};response.value=JSON.parse(engine.profile_goalie_puck(JSON.stringify(p.ledger),JSON.stringify(p.profile)));break;}
         case 'statAttributeProfile': {const p=request.payload as {catalog:unknown;player_id:number;season:number;games:number};response.value=JSON.parse(engine.stat_attribute_profile(JSON.stringify(p.catalog),p.player_id,p.season,p.games));break;}
         case 'characterSheet': {const p=request.payload as {catalog:unknown;player_id:number;season:number};response.value=JSON.parse(engine.character_sheet(JSON.stringify(p.catalog),p.player_id,p.season));break;}
         case 'numericalCatalog': {const p=request.payload as {source:unknown;season?:number};response.value=JSON.parse(engine.numerical_catalog(JSON.stringify(p.source),p.season));break;}

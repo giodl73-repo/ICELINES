@@ -447,8 +447,77 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 .rk-skating-dialog>button{float:none;display:block;margin:0 0 .6rem auto}
 
 .rk-seasonal-records-heading{display:flex;justify-content:space-between;align-items:baseline;gap:.3rem;border-top:1px solid var(--rk-rule,#ccd5de);margin-top:.5rem;padding-top:.3rem}
+.rk-puck-record{border-top:1px solid var(--rk-rule,#ccd5de);margin-top:.4rem;padding-top:.3rem;font-size:.9em}
+.rk-shot-context{border-top:1px solid var(--sheet-line,#ccd5de);margin-top:.4rem;padding-top:.3rem;font-size:.9em}
+.rk-shot-context small{display:block}.rk-shot-context dl>div{margin:.25rem 0}.rk-shot-context dd{margin:0;font-size:9px}
+.rk-shot-context summary,.rk-shot-context a{color:var(--sheet-blue,#315a8b)}
+.rk-front .rk-feat-trigger,.rk-front .rk-stat-feat p,.rk-front .rk-stat-feat small{color:var(--sheet-ink,#183247)}
+.rk-front summary{color:var(--sheet-blue,#315a8b)}
+@media print{.rk-front .rk-feat-trigger{min-height:0;height:auto;padding:0;line-height:1.1}}
+@media print{
+ .rk-front:has(.rk-skater-context){padding:12px;gap:3px}
+ .rk-front:has(.rk-skater-context) .rk-front-left,.rk-front:has(.rk-skater-context) .rk-front-center,.rk-front:has(.rk-skater-context) .rk-front-right,.rk-front:has(.rk-skater-context) .rk-front-task-column{gap:4px}
+ .rk-front:has(.rk-skater-context) .rk-front-identity .rk-field{padding-top:4px;padding-bottom:4px}
+ .rk-front:has(.rk-skater-context) .rk-front-coverage{padding-top:6px}
+ .rk-front:has(.rk-skater-context) .rk-front-footer{padding-top:4px}
+ .rk-front:has(.rk-skater-context) .rk-form-box{padding:4px}
+ .rk-front:has(.rk-skater-context) .rk-form-box p{font-size:9px;line-height:1.2;margin-top:3px}
+ .rk-front:has(.rk-skater-context) .rk-stat-feats>small,.rk-front:has(.rk-skater-context) .rk-front-traits>details{display:none}
+}
+@media print{.rk-shot-context details{display:none}.rk-shot-context dl>div{margin:1px 0}.rk-shot-context dt,.rk-shot-context dd{font-size:7px}}
+.rk-puck-record>small,.rk-puck-record details small{display:block;overflow-wrap:anywhere}
+.rk-puck-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.15rem .5rem;margin:.25rem 0}
+.rk-puck-values>div{display:flex;justify-content:space-between;gap:.25rem;min-width:0}
+.rk-puck-values dt{font-size:.85em}.rk-puck-values dd{margin:0;font-weight:750;font-variant-numeric:tabular-nums}
+.rk-puck-record details>p{margin:.4rem 0}.rk-puck-record a{overflow-wrap:anywhere}
+.rk-puck-record summary,.rk-puck-record a{color:var(--rk-accent,#315a8b)}
+@media print{
+ .rk-puck-record details{display:none}.rk-puck-record{break-inside:avoid}
+ .rk-front-values .rk-capability-trigger{min-height:0;height:auto;padding:0;line-height:1.15;font-size:8px}
+ .rk-front-values .rk-field{padding:5px 3px}
+}
 .rk-seasonal-records{display:flex;flex-wrap:wrap;gap:.3rem}.rk-seasonal-records>div{flex:1 1 6.5rem;min-width:0}
 .rk-shooting-candidate{margin-top:.45rem;padding:.35rem .45rem;border-left:3px solid var(--rk-accent,#315a8b);background:color-mix(in srgb,var(--rk-accent,#315a8b) 7%,transparent)}
 .rk-shooting-candidate button,.rk-shooting-record-trigger{font:inherit;color:var(--rk-accent,#315a8b);background:transparent;border:0;text-align:left;text-decoration:underline;text-underline-offset:.15em;cursor:pointer;padding:0}
 .rk-shooting-candidate button{display:block;font-weight:750}.rk-shooting-candidate small{display:block}.rk-shooting-record-trigger{font-size:.85em}
 @media print{.rk-shooting-record-trigger{display:none}.rk-seasonal-records{break-inside:avoid}}
+.rk-defense-record{font-size:.82em;line-height:1.3;min-width:0}
+.rk-defense-record>small{display:block;font-size:.85em;line-height:1.3}
+.rk-defense-record>strong{display:block;font-size:1.45em;margin:.12rem 0}
+.rk-defense-record>p{margin:.15rem 0 .25rem;font-weight:650;font-size:.9em}
+.rk-defense-record>small:nth-of-type(3){border-top:1px solid var(--rk-line,#b4bec9);padding-top:.28rem;margin-top:.28rem}
+.rk-defense-details{margin-top:.2rem;font-size:.9em;text-align:left}
+.rk-defense-details>summary{cursor:pointer;color:var(--rk-accent,#315a8b)}
+.rk-defense-details>div{padding:.4rem;background:var(--rk-paper,#f5f1e8);color:var(--rk-ink,#192330);border:1px solid var(--rk-line,#b4bec9)}
+.rk-defense-details dl{margin:0}.rk-defense-details dl>div{display:flex;justify-content:space-between;gap:.5rem;padding:.2rem 0;border-bottom:1px solid var(--rk-line,#b4bec9)}
+.rk-defense-details dd{margin:0;text-align:right}.rk-defense-details p{font-weight:400}
+.rk-response-row:has(.rk-defense-record){grid-template-columns:repeat(2,minmax(0,1fr))}
+.rk-response-row>section:has(.rk-defense-record){grid-column:1/-1}
+.rk-response-row>section:has(.rk-defense-record)>h2{min-height:0}
+.rk-defense-record{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:.5rem}
+.rk-defense-record>small:nth-of-type(1){grid-column:1;grid-row:1}
+.rk-defense-record>strong{grid-column:1;grid-row:2;white-space:nowrap}
+.rk-defense-record>small:nth-of-type(2){grid-column:1;grid-row:3}
+.rk-defense-record>small:nth-of-type(3){grid-column:2;grid-row:1;border:0;padding:0;margin:0}
+.rk-defense-record>p{grid-column:2;grid-row:2/4;align-self:center}
+.rk-defense-details{grid-column:1/-1}
+@media print{.rk-defense-record{font-size:6.5px;break-inside:avoid}.rk-defense-record>strong{font-size:9px}.rk-defense-details{display:none!important}}
+.rk-handling-summary{margin-top:4px;font-size:7px;line-height:1.4;font-variant-numeric:tabular-nums}.rk-handling-summary>span{display:block}
+.rk-handling-axes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.rk-handling-axes>div{padding:10px;border:1px solid currentColor;border-radius:5px}.rk-handling-axes h4{margin:0 0 4px}.rk-handling-axes strong{font-size:1.3em}
+.rk-handling-record dl>div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #7893a1}.rk-handling-record dd{margin:0;text-align:right}
+@media print{.rk-handling-summary{font-size:6px;margin-top:2px}}
+.rk-reading-summary dl{margin:0}.rk-reading-summary dl>div{display:flex;justify-content:space-between;gap:4px;margin:3px 0}.rk-reading-summary dt{font-size:8px}.rk-reading-summary dd{margin:0;font-size:9px;font-weight:700}.rk-reading-summary>small{display:block;font-size:7px}
+.rk-reading-record dl>div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #7893a1}.rk-reading-record dd{margin:0;text-align:right}
+@media print{.rk-reading-summary dt,.rk-reading-summary dd,.rk-reading-summary>small{font-size:6px}}
+.rk-capability-dialog .rk-stat-score-detail,.rk-capability-dialog .rk-stat-score-detail :is(h2,h3,h4,p,small,dt,dd){color:#183247}
+.rk-capability-dialog .rk-stat-score-detail .rk-task-list .rk-field{padding:6px 0}
+.rk-capability-dialog .rk-stat-score-detail .rk-task-list dt{font-size:13px}
+.rk-capability-dialog .rk-stat-score-detail .rk-task-list dd{font-size:14px;text-align:left}
+.rk-capability-dialog .rk-stat-score-detail .rk-task-list small{font-size:12px}
+.rk-passing-summary{margin-top:4px;font-size:7px;line-height:1.4;font-variant-numeric:tabular-nums}.rk-passing-summary>span{display:block}
+.rk-passing-record dl>div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #7893a1}.rk-passing-record dd{margin:0;text-align:right}
+@media print{.rk-passing-summary{font-size:6px;margin-top:2px}.rk-front-values{gap:5px}.rk-front-values dd{font-size:25px}.rk-front:has(.rk-skater-context) .rk-front-right .rk-form-box{padding:3px}.rk-front-right .rk-form-box>h2,.rk-front-right .rk-form-box>h4{margin-bottom:3px}}
+
+.rk-shooting-summary{margin-top:4px;font-size:7px;line-height:1.4;font-variant-numeric:tabular-nums}.rk-shooting-summary>span,.rk-shooting-record>small{display:block}
+.rk-shooting-record dl>div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #7893a1}.rk-shooting-record dd{margin:0;text-align:right}
+@media print{.rk-shooting-summary{font-size:6px;margin-top:2px}}

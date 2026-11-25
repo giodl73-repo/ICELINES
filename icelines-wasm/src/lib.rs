@@ -23,7 +23,7 @@ use icelines_data::{
 use icelines_query::{
     DataProvider, EvalCtx, FetchError, FetchEvent, FilterInput, PlanRequirement, StrictMode,
 };
-use icelines_sources::schema::{GoalieStats, SkaterBio, SkaterStats};
+use icelines_sources::schema::SkaterStats;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
@@ -35,21 +35,7 @@ const MAX_PACKAGE_BYTES: usize = 100 * 1024 * 1024;
 const MAX_RESIDENT_WINDOWS: usize = 8;
 const MAX_RESIDENT_INPUT_BYTES: usize = 64 * 1024 * 1024;
 
-/// Versioned interchange envelope. Missing optional reports stay unavailable.
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct SeasonPackage {
-    pub schema_version: u32,
-    pub season: u32,
-    pub season_type: SeasonType,
-    pub source: String,
-    pub observed_at: Option<String>,
-    pub fetched_at: Option<String>,
-    pub bios: Vec<SkaterBio>,
-    pub stats: Vec<SkaterStats>,
-    #[serde(default)]
-    pub goalies: Vec<GoalieStats>,
-}
+pub use icelines_sources::schema::SeasonPackage;
 
 #[derive(Debug, Error)]
 pub enum EngineError {
@@ -286,7 +272,15 @@ impl BrowserEngine {
             &catalog,
         )
         .map_err(|e| JsValue::from_str(&e))?;
-        serde_json::to_string(&serde_json::json!({"stat_attribute_seasons":profile.stat_attribute_seasons,"limitations":profile.limitations})).map_err(|e|JsValue::from_str(&e.to_string()))
+        serde_json::to_string(&serde_json::json!({"stat_attribute_seasons":profile.stat_attribute_seasons,"stat_attribute_changes":profile.stat_attribute_changes,"limitations":profile.limitations})).map_err(|e|JsValue::from_str(&e.to_string()))
+    }
+    /// Same goalie-event projection used by native profiles; never scores abilities.
+    pub fn profile_goalie_puck(&self, source: &str, profile: &str) -> Result<String, JsValue> {
+        let mut profile: icelines_core::view_model::rinkcraft_profile::RinkcraftStatProfile =
+            serde_json::from_str(profile).map_err(|e| JsValue::from_str(&e.to_string()))?;
+        icelines_core::view_model::rinkcraft_goalie_puck::attach(&mut profile, source)
+            .map_err(|e| JsValue::from_str(&e))?;
+        serde_json::to_string(&profile.goalie_puck_events).map_err(|e| JsValue::from_str(&e.to_string()))
     }
     /// Versioned one/two/three-stat conjunctions, separate from classes and abilities.
     pub fn achievement_catalog(&self, reports: &[u8], rules: &str) -> Result<String, JsValue> {

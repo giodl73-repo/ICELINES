@@ -1,0 +1,1 @@
+{% if score.label == "Passing" %}{% match stats.skater_context %}{% when Some with (context) %}{% match context.passing %}{% when Some with (passing_record) %}<div class="rk-passing-summary"><span>Primary {{ passing_record.primary }}</span><span>Secondary {{ passing_record.secondary }}</span></div>{% when None %}{% endmatch %}{% when None %}{% endmatch %}{% endif %}

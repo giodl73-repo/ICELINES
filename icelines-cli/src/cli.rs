@@ -136,6 +136,96 @@ pub enum Commands {
         #[arg(long, value_delimiter = ',')]
         player: Vec<u32>,
     },
+    /// Collect credited goalie puck events; does not invent pass/touch statistics.
+    ProfilePuckPlay {
+        #[arg(long)]
+        season: u32,
+        /// Optional teams (comma-separated); default all NHL teams.
+        #[arg(long, value_delimiter = ',')]
+        team: Vec<String>,
+        #[arg(long)]
+        cache_dir: PathBuf,
+        #[arg(long)]
+        output_dir: PathBuf,
+        #[arg(long)]
+        offline: bool,
+    },
+    /// Acquire one season of diagnostic inputs without EDGE requests.
+    ProfileCalibrationInputs {
+        #[arg(long)]
+        season: u32,
+        #[arg(long)]
+        cache_dir: PathBuf,
+        #[arg(long)]
+        output_dir: PathBuf,
+        #[arg(long)]
+        offline: bool,
+    },
+    /// Compare unchanged recipes across consecutive seasons.
+    ProfileCarryover {
+        #[arg(long, required=true, num_args=2..)]
+        reports: Vec<PathBuf>,
+        #[arg(long)]
+        output_dir: PathBuf,
+    },
+    /// Import window-matched defensive records without changing grades.
+    ProfileDefendingRecords {
+        #[arg(long)]
+        season: u32,
+        #[arg(long)]
+        catalog: PathBuf,
+        #[arg(long)]
+        season_summary: PathBuf,
+        #[arg(long)]
+        captured_at: String,
+        #[arg(long)]
+        output_dir: PathBuf,
+    },
+    /// Rebuild descriptive records from an existing stat catalog, without fetching.
+    ProfileRecords {
+        #[arg(long)]
+        season: u32,
+        #[arg(long)]
+        catalog: PathBuf,
+        #[arg(long)]
+        output_dir: PathBuf,
+    },
+    /// Compare experimental skater attribute recipes.
+    ProfileCalibrate {
+        #[arg(long,default_value="passing-shooting",value_parser=["passing-shooting","defending"])]
+        focus: String,
+        #[arg(long)]
+        season: u32,
+        #[arg(long)]
+        catalog: PathBuf,
+        #[arg(long)]
+        season_package: PathBuf,
+        #[arg(long)]
+        output_dir: PathBuf,
+    },
+    /// Refresh public-source six-attribute estimates for a whole season.
+    ProfileRefresh {
+        #[arg(long)]
+        season: u32,
+        #[arg(long,default_value="all",value_parser=["all","skaters","goalies"])]
+        kind: String,
+        #[arg(long)]
+        cache_dir: PathBuf,
+        #[arg(long)]
+        output_dir: PathBuf,
+        /// Preserve other seasons and unselected position families.
+        #[arg(long)]
+        previous_catalog: Option<PathBuf>,
+        /// Optional retained NHL EDGE source captures, grouped by season/id.json.
+        #[arg(long)]
+        edge_captures: Option<PathBuf>,
+        /// Optional complete NHL game-source cache for primary/secondary assist detail.
+        #[arg(long)]
+        game_cache_dir: Option<PathBuf>,
+        /// Replay checksum-verified local sources without network requests.
+        #[arg(long)]
+        offline: bool,
+    },
     /// Compute a source-aware career/season statistical profile for one player.
     Profile {
         /// Full player name or numeric NHL player id.

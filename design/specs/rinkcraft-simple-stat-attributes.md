@@ -34,6 +34,54 @@ favorable percentiles, effective weights and formula. No research receipts are
 needed in this flow. These are practical game/profile approximations, without
 claims of technical skill measurement or inferred coaching assignments. Goalies
 keep their separate attributes; these skater recipes are never applied to them.
+Their six public-stat recipes and the routine refresh command are defined in
+[Goalie stat estimates and routine refresh](rinkcraft-goalie-stat-attributes.md).
+
+## Deeper skater records
+
+The optional `skater_context` on an attribute profile supplies 25 readable
+measurement rows. The six grades retain the recipes above; these observations
+support testing better recipes without quietly changing the existing scale.
+
+| Attribute | Additional record detail |
+| --- | --- |
+| Skating | Recorded maximum speed, speed bursts/60 and total distance |
+| Handling | Giveaways/60, drawn penalties/60 and recorded-action loss share |
+| Passing | Primary/secondary assists, primary assists/60, separate EV and PP assist rates |
+| Shooting | Shot volume, goalie-in-net xG, goals minus xG, expected goals per attempt, average attempt distance and tracked maximum shot speed |
+| Reading | Takeaways, penalties taken and net penalties per60 |
+| Defending | Blocks, hits, PK time per appearance and defensive-zone exposure |
+
+Primary/secondary credits come from complete selected-season official goal logs.
+They are used only when their sum equals the player's NHL summary assist total;
+otherwise they remain unavailable with an explanatory note. These are scoring
+credits, not a count of completed passes. Even-strength assist rates use EV ice
+time (including formats beyond 5v5); PP rates use PP time. No PP exposure gives
+an unavailable rate, rather than a fictitious 0% success rate.
+
+Shot-quality comparisons use MoneyPuck.com's own goals, xG and unblocked attempts
+from the same archive, excluding empty nets, shootouts and playoffs. Average
+distance includes unblocked misses. They never combine NHL goal totals with a
+different MoneyPuck shot denominator. Missing attributed attempts stay unavailable.
+The shot capture date is retained in the context note and raw hashes in the
+refresh report. MoneyPuck.com is credited on the card and in the expanded record.
+
+Reading and Defending remain limited public-event approximations. Anticipation
+and isolated defensive effectiveness are not established by takeaways, blocks,
+hits or deployment; the added records expose this distinction rather than adding
+an unsupported ability bonus. No coaching assignment or simulation modifier is
+inferred from the context.
+
+`profile-refresh` produces this detail with its ordinary sources and optional
+`--game-cache-dir DIRECTORY` for the complete official goal-log captures. The
+existing `--edge-captures DIRECTORY` can recover retained raw EDGE observations
+after the same actor/season/GP/source validation. Fresh matching cache data keeps
+precedence. Omit the game cache to leave assist-type details unavailable.
+
+The primary card adds **Attribute Record** in Distinctive Features. Each attribute
+opens its own measurements; the full six-part record remains expandable. Existing
+catalogs load without the optional field. Native and WASM retain the same strict
+player/season/GP/position attachment, and the underlying math lives in Rust.
 
 Math lives in `icelines-core::view_model::rinkcraft_stat_scores`. The native
 catalog command is `rinkcraft_stat_score_profiles BASE NEW_DIRECTORY`; the WASM
@@ -54,6 +102,20 @@ requests stop at the active dataset's season. Estimates work without a numerical
 dossier. Missing or invalid optional catalogs leave the other profile facts
 usable; invalid supplied catalogs add an availability note. The WASM
 `profile_stat_attributes` binding uses the same attachment function as native.
+
+The existing history disclosure includes a newest-first six-attribute season
+table, with GP, position peers and small-sample labels. Each score opens its own
+season's formula without changing the primary card. Missing scores remain dashes.
+These are comparisons with each season's peers, not a fixed-scale claim of skill
+growth, and supplied windows are not presented as a verified complete career.
+
+Shared Rust supplies each row's change from the previous supplied season. A
+comparison requires the same actor, position group, scope, recipe and ranked
+input set. Missing scores or incompatible inputs produce an unavailable delta;
+an intervening supplied missing score is not skipped. The table names the
+comparison season, so gaps are not presented as annual changes. Zero means an
+unchanged estimate; it is distinct from an unavailable comparison. Changes are
+estimate points, not measured changes in technical skill.
 
 `observed_player` joins official counts, deployment and optional EDGE observations
 in shared Rust. Player, season, competition, group and GP must match. Per-60 rates

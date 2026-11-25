@@ -1,3 +1,11 @@
+import {renderGoaliePuck} from './rinkcraft-goalie-puck.js';
+import {renderShotContext} from './rinkcraft-goalie-shots.js';
+import {renderSkaterContext} from './rinkcraft-skater-context.js';
+import {defendingRecord,renderDefendingRecord} from './rinkcraft-defending-record.js';
+import {handlingRecord,handlingSummary} from './rinkcraft-handling-record.js';
+import {readingRecord,readingSummary} from './rinkcraft-reading-record.js';
+import {passingRecord,passingSummary} from './rinkcraft-passing-record.js';
+import {shootingRecord,shootingSummary} from './rinkcraft-shooting-record.js';
 // Rinkcraft presentation categories. Unassessed capability fields stay unrated.
 // Numerical evidence and documentary identity are supplied independently by Rust.
 import type {CharacterSheet} from './rinkcraft-character.js';
@@ -70,7 +78,7 @@ function namesBox(title:string,className:string,names:readonly string[],empty="U
 export function renderCharacterFront(
   name:string,sheet:CharacterSheet|undefined,assessment:AttributeSeason|undefined,
   record:SeasonRecord|undefined,numerical:NumericalEvidence|undefined,
-  snapshot:SnapshotSelection|undefined,catalogAvailable:boolean|undefined,deploymentEvidence?:DeploymentEvidence,usageRequest?:{player_id?:number;season_type:string},achievements?:AchievementProfile,statAttributeSeasons?:import('./rinkcraft-stat-scores.js').StatProfile[],
+  snapshot:SnapshotSelection|undefined,catalogAvailable:boolean|undefined,deploymentEvidence?:DeploymentEvidence,usageRequest?:{player_id?:number;season_type:string},achievements?:AchievementProfile,statAttributeSeasons?:import('./rinkcraft-stat-scores.js').StatProfile[],goaliePuck?:import('./rinkcraft-goalie-puck.js').GoaliePuckEvidence,
 ):HTMLElement {
   const position=record?.position??numerical?.group??assessment?.group??'Unknown';
   const goalie=['Goalie','Goalies','G'].includes(position);
@@ -78,8 +86,8 @@ export function renderCharacterFront(
   const usage=deploymentEvidence&&deploymentEvidence.season===targetSeason&&deploymentEvidence.goalie===goalie&&deploymentEvidence.player_id===(usageRequest?.player_id??sheet?.player_id)&&deploymentEvidence.season_type===usageRequest?.season_type?deploymentEvidence:undefined;
   const featGroup=goalie?'Goalies':['D','Defense'].includes(position)?'Defense':'Forwards';
   const statActor=usageRequest?.player_id??sheet?.player_id,targetGames=(numerical?.group===featGroup?numerical?.games:undefined)??record?.games;
-  const candidates=[numerical?.player_id===statActor?numerical?.stat_attributes:undefined,...(statAttributeSeasons??[]).filter(p=>p.games!==undefined)];
-  const statScores=usageRequest?.season_type==='regular'&&!goalie?candidates.find(p=>matchesStatScores(p,statActor,targetSeason,featGroup,targetGames)):undefined;
+  const candidates=[...(statAttributeSeasons??[]).filter(p=>p.games!==undefined),numerical?.player_id===statActor?numerical?.stat_attributes:undefined];
+  const statScores=usageRequest?.season_type==='regular'?candidates.find(p=>matchesStatScores(p,statActor,targetSeason,featGroup,targetGames)):undefined;
   const statFeats=achievements&&achievements.player_id===(usageRequest?.player_id??sheet?.player_id)&&achievements.season===targetSeason&&achievements.season_type===usageRequest?.season_type&&achievements.group===featGroup?achievements:undefined;
   const edge=usageRequest?.season_type==='regular'&&matchesEdge(numerical?.edge_evidence,usageRequest?.player_id??sheet?.player_id,targetSeason,featGroup,numerical?.games)?numerical!.edge_evidence:undefined;
   const skating=matchesSkatingCandidate(numerical?.edge_skating_candidate,edge,numerical?.minutes)?numerical!.edge_skating_candidate:undefined;
@@ -117,13 +125,16 @@ export function renderCharacterFront(
     const score=field(label,estimate?.score===null||estimate?.score===undefined?'—':String(estimate.score));score.dataset.capabilityIndex=String(index);score.dataset.ratingState=estimate?.score!==null&&estimate?.score!==undefined?'stat_estimate':'unassessed';
     const rule=node('button',label);rule.type='button';rule.className='rk-capability-trigger';rule.setAttribute('aria-label',`How ${label} is scored`);rule.onclick=()=>{if(statScores&&estimate)openStatScore(statScores,estimate,name);else void openCapability(label,goalie,name,edge);};score.children[0].textContent='';score.children[0].append(rule);
     score.append(node('small',estimate?.score!==null&&estimate?.score!==undefined?(statScores?.small_sample?'Small sample':'Estimate'):'Unrated'));scores.append(score);
+    if(label==='Handling'){const handling=handlingRecord(statScores);if(handling)score.append(handlingSummary(handling));}
+    if(label==='Passing'){const passing=passingRecord(statScores);if(passing)score.append(passingSummary(passing));}
+    if(label==='Shooting'){const shooting=shootingRecord(statScores);if(shooting)score.append(shootingSummary(shooting));}
   }
   attributes.append(scores);
   const tasks=node('div');tasks.className='rk-front-task-column';
   tasks.append(renderRepertoire('Under Pressure','rk-front-pressure',sheet?.under_pressure,3,sheet));
   if(statFeats){const skills=box('Task Skills','rk-front-skills');skills.append(renderStatFeats(statFeats,'task_skills',3));const scouted=node('details');scouted.className='rk-scouted-tasks';scouted.append(node('summary','Scouted specialties'),renderRepertoire('Scouted tasks','rk-scouted-task-list',sheet?.task_skills,5,sheet));skills.append(scouted);tasks.append(skills);}
   else tasks.append(renderRepertoire('Task Skills','rk-front-skills',sheet?.task_skills,5,sheet));
-  tasks.append(taskBox('Read & React','rk-front-reading',['Anticipation']));
+  const reading=readingRecord(statScores);if(reading){const section=box('Read & React','rk-front-reading');section.append(readingSummary(reading));tasks.append(section);}else tasks.append(taskBox('Read & React','rk-front-reading',['Anticipation']));
   split.append(attributes,tasks);left.append(split);
   const coverage=box('Role Coverage','rk-front-role-coverage');
   const positions=node('dl');positions.className='rk-task-list';
@@ -139,7 +150,9 @@ export function renderCharacterFront(
     const speed=!goalie&&title==='Skating Detail'&&['Forwards','Defense'].includes(numerical?.group??'')&&numerical?.style_evidence?.season===numerical?.season
       ?numerical?.style_evidence?.measured.find(m=>m.key==='max-skating-speed'&&m.unit==='Mph'&&Number.isFinite(m.value)&&m.value>=0&&typeof m.scope==='string'&&m.scope.startsWith('All strengths')):undefined;
     const edgeSpeed=!goalie&&title==='Skating Detail'?edge?.measures.find(m=>m.key==='max-skating-speed'&&m.unit==='Mph'):undefined;
-    if(edgeSpeed){response.dataset.movementState='observed_maximum';response.append(node('strong',`${edgeSpeed.value.toFixed(2)} mph`),node('small','EDGE season max · all strengths'));response.title=`Captured ${edge!.captured_at} · ${edgeSpeed.interpretation}`;}
+    const defense=title==='Threat Denial'&&!goalie?defendingRecord(statScores):undefined;
+    if(defense){response.className+=' rk-front-defense';response.append(renderDefendingRecord(defense));}
+    else if(edgeSpeed){response.dataset.movementState='observed_maximum';response.append(node('strong',`${edgeSpeed.value.toFixed(2)} mph`),node('small','EDGE season max · all strengths'));response.title=`Captured ${edge!.captured_at} · ${edgeSpeed.interpretation}`;}
     else if(speed){response.dataset.movementState='observed_maximum';response.append(node('strong',`${speed.value.toFixed(2)} mph`),node('small','Season max · all strengths'));response.title=`${speed.scope}. Observed maximum; not puck-carrying speed, acceleration or a capability grade.`;}
     else response.append(node('strong','—'),node('small','Unassessed'));
     if(title==='Skating Detail'&&skating)response.append(skatingRecordButton(skating));
@@ -147,7 +160,7 @@ export function renderCharacterFront(
   }
   const counters=box('Record Counters','rk-front-counters'),counterValues=node('dl');counterValues.className='rk-counter-values';
   counters.append(counterValues);counterValues.append(field('GP',String(numerical?.games??record?.games??assessment?.games??'—')),
-    field('MIN',numerical?numerical.minutes.toFixed(0):'—'));
+    field('MIN',numerical?numerical.minutes.toFixed(0):statScores?.minutes===undefined?'—':statScores.minutes.toFixed(0)));
   const methods=namesBox('Signature Methods','rk-front-methods',sheet?.features.map(f=>f.name)??[]);
   // Keep the hockey action visible; the same short name can describe different tasks.
   for(const [index,feature] of (sheet?.features??[]).entries()){
@@ -215,6 +228,9 @@ export function renderCharacterFront(
   distinctive.append(node('strong',sheet?.specialty??'Undocumented'));
   if(sheet)distinctive.append(node('p',sheet.summary));
   if(statFeats)distinctive.append(renderStatFeats(statFeats,'distinctive_features',2));
+  if(goalie&&statScores?.shot_context)distinctive.append(renderShotContext(statScores.shot_context));
+  if(!goalie&&statScores?.skater_context)distinctive.append(renderSkaterContext(statScores.skater_context));
+  if(goalie&&goaliePuck&&goaliePuck.player_id===statActor&&goaliePuck.season===targetSeason&&goaliePuck.season_type===usageRequest?.season_type)distinctive.append(renderGoaliePuck(goaliePuck));
   const seasonal=node('div');seasonal.className='rk-seasonal-records';
   if(skating){const candidate=renderSkatingCandidate(skating);if(candidate)seasonal.append(candidate);}
   if(shooting){const candidate=renderShootingCandidate(shooting);if(candidate)seasonal.append(candidate);}
@@ -228,5 +244,6 @@ export function renderCharacterFront(
     field('Dossier Through',sheet?.evidence_through??'Unknown'),field('Assessed',sheet?.assessed??'Unknown'));
   front.append(sources);
   const footer=node('footer',statScores?'Stat-based attribute estimates · selected season · click an attribute for its formula':sheet?'Provisional documentary class · capability ratings unassessed · evidence below':catalogAvailable===false?'Class dossier unavailable · statistics do not assign a class':'No supported class dossier · statistics do not assign a class');
+  if(statScores?.group==='Goalies')footer.append(node('span',' · Sources: NHL / MoneyPuck.com'));
   footer.className='rk-front-footer';front.append(footer);return front;
 }

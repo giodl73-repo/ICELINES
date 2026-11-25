@@ -1,4 +1,4 @@
-//! Simple, owner-selected stat approximations for the six skater attributes.
+//! Simple public-stat estimates with separate six-attribute skater and goalie families.
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -8,7 +8,7 @@ pub struct Player {
     pub group: String,
     pub games: u32,
     pub minutes: f64,
-    /// Count metrics are rates per60; skating uses mph and bursts per60.
+    /// Counts use per-60 rates; skating uses mph/bursts; goalies also use save fractions and a rebound ratio.
     pub metrics: BTreeMap<String, f64>,
 }
 /// Join recorded counts to official all-strength TOI before scoring.
@@ -136,6 +136,10 @@ pub struct Score {
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Profile {
+    #[serde(default,skip_serializing_if="Option::is_none")]
+    pub skater_context:Option<super::rinkcraft_skater_context::Context>,
+    #[serde(default,skip_serializing_if="Option::is_none")]
+    pub shot_context:Option<super::rinkcraft_goalie_shots::Context>,
     pub schema: String,
     pub player_id: u32,
     pub season: u32,
@@ -147,6 +151,60 @@ pub struct Profile {
     pub minutes: f64,
     pub small_sample: bool,
     pub scores: Vec<Score>,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SeasonChange {
+    pub player_id: u32,
+    pub season: u32,
+    pub previous_season: u32,
+    /// Estimate-point differences, not measured changes in technical skill.
+    pub deltas: Vec<Option<i16>>,
+}
+
+/// Compare adjacent supplied windows for each actor after catalog validation.
+/// Do not skip over an intervening missing or incompatible measurement.
+pub fn season_changes(profiles: &[Profile]) -> Vec<SeasonChange> {
+    let mut ordered = profiles.iter().collect::<Vec<_>>();
+    ordered.sort_by_key(|p| (p.player_id, p.season));
+    ordered
+        .windows(2)
+        .filter_map(|pair| {
+            let (old, new) = (pair[0], pair[1]);
+            if old.player_id != new.player_id || old.season == new.season {
+                return None;
+            }
+            let comparable = old.group == new.group && old.scope == new.scope;
+            let deltas = new
+                .scores
+                .iter()
+                .enumerate()
+                .map(|(index, score)| {
+                    let previous = old.scores.get(index)?;
+                    if !comparable
+                        || score.label != previous.label
+                        || score.parts.len() != previous.parts.len()
+                        || score.parts.iter().zip(&previous.parts).any(|(a, b)| {
+                            a.key != b.key
+                                || a.unit != b.unit
+                                || a.weight != b.weight
+                                || a.lower_is_better != b.lower_is_better
+                                || a.favorable_percentile.is_some()
+                                    != b.favorable_percentile.is_some()
+                        })
+                    {
+                        return None;
+                    }
+                    Some(i16::from(score.score?) - i16::from(previous.score?))
+                })
+                .collect();
+            Some(SeasonChange {
+                player_id: new.player_id,
+                season: new.season,
+                previous_season: old.season,
+                deltas,
+            })
+        })
+        .collect()
 }
 /// Portable estimates for the ordinary native and browser profile paths.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -168,22 +226,22 @@ impl Catalog {
             return Err("Unsupported stat attribute catalog".into());
         }
         let mut seen = BTreeSet::new();
-        let labels = [
-            "Skating",
-            "Handling",
-            "Passing",
-            "Shooting",
-            "Reading",
-            "Defending",
-        ];
         for p in &self.profiles {
+            if let Some(r)=p.skater_context.as_ref().and_then(|c|c.shooting.as_ref()){if r.player_id!=p.player_id||r.season!=p.season||r.group!=p.group||r.games!=p.games||(r.minutes-p.minutes).abs()>1e-9{return Err("Shooting record does not match profile window".into());}}
+            if let Some(r)=p.skater_context.as_ref().and_then(|c|c.passing.as_ref()){if r.player_id!=p.player_id||r.season!=p.season||r.group!=p.group||r.games!=p.games||(r.minutes-p.minutes).abs()>1e-9{return Err("Passing record does not match profile window".into());}}
+            if let Some(r)=p.skater_context.as_ref().and_then(|c|c.reading.as_ref()){if r.player_id!=p.player_id||r.season!=p.season||r.group!=p.group||r.games!=p.games||(r.minutes-p.minutes).abs()>1e-9{return Err("Reading record does not match profile window".into());}}
+            if let Some(r)=p.skater_context.as_ref().and_then(|c|c.handling.as_ref()){if r.player_id!=p.player_id||r.season!=p.season||r.group!=p.group||r.games!=p.games||(r.minutes-p.minutes).abs()>1e-9{return Err("Handling record does not match profile window".into());}}
+            if let Some(r)=p.skater_context.as_ref().and_then(|c|c.defending.as_ref()){if r.player_id!=p.player_id||r.season!=p.season||r.group!=p.group||r.games!=p.games||r.minutes_5v5.is_some_and(|m|m>p.minutes+1./60.){return Err("Defending record does not match profile window".into());}}
+            if let Some(context)=&p.skater_context {if p.group=="Goalies"{return Err("Goalie has skater context".into());}context.validate()?;}
+            if let Some(context)=&p.shot_context {if p.group!="Goalies"{return Err("Skater has goalie shot context".into());}context.validate()?;}
+            let labels = attribute_labels(&p.group);
             let year = p.season / 10000;
             if p.schema != "rinkcraft.simple-stat-attributes.v1"
                 || p.player_id == 0
                 || !(1900..=2200).contains(&year)
                 || p.season % 10000 != year + 1
                 || !seen.insert((p.player_id, p.season))
-                || !["Forwards", "Defense"].contains(&p.group.as_str())
+                || !["Forwards", "Defense", "Goalies"].contains(&p.group.as_str())
                 || !p.minutes.is_finite()
                 || p.minutes < 0.
                 || p.scope.trim().is_empty()
@@ -318,7 +376,38 @@ struct Recipe {
     terms: Vec<Term>,
     note: &'static str,
 }
-fn recipes() -> Vec<Recipe> {
+pub fn attribute_labels(group: &str) -> [&'static str; 6] {
+    if group == "Goalies" {
+        [
+            "Tracking",
+            "Positioning",
+            "Movement",
+            "Rebounds",
+            "Recovery",
+            "Puck Play",
+        ]
+    } else {
+        [
+            "Skating",
+            "Handling",
+            "Passing",
+            "Shooting",
+            "Reading",
+            "Defending",
+        ]
+    }
+}
+fn recipes(goalie: bool) -> Vec<Recipe> {
+    if goalie {
+        return vec![
+        Recipe {label:"Tracking",terms:vec![("goalie-save-fraction","NHL saves / shots on goal","%",1.,false)],note:"Overall shot-stopping approximation from NHL counts; not a measurement of visual tracking."},
+        Recipe {label:"Positioning",terms:vec![("goalie-low-save","Low-danger shots on goal saved","%",1.,false)],note:"MoneyPuck.com low-danger saving outcome (xG < 0.08); not measured positioning or angle control."},
+        Recipe {label:"Movement",terms:vec![("goalie-high-save","High-danger shots on goal saved","%",0.5,false),("goalie-cross-save","Cross-slot rebound shots on goal saved","%",0.5,false)],note:"MoneyPuck.com difficult-shot and royal-road rebound saving approximation; not measured lateral speed or technique."},
+        Recipe {label:"Rebounds",terms:vec![("goalie-rebound-ratio","Rebounds generated / expected rebounds","ratio",1.,true)],note:"MoneyPuck.com follow-up rebound attempts relative to its expected-rebound model. Includes team effects; not a direct rebound-placement assessment."},
+        Recipe {label:"Recovery",terms:vec![("goalie-rebound-save","Rebound shots on goal saved","%",1.,false)],note:"MoneyPuck.com rebound-shot saving approximation (provider three-second rebound flag); not measured reset time."},
+        Recipe {label:"Puck Play",terms:vec![("goalie-assists","NHL assists","/60",1.,false)],note:"NHL assist-production approximation. Rare events create many tied scores; this does not measure pass completion or every puck touch."},
+    ];
+    }
     vec![
         Recipe { label: "Skating", terms: vec![("peak-speed", "Top speed", "mph", 0.5, false), ("bursts", "20+ mph bursts", "/60", 0.5, false)], note: "Speed-based approximation; turning and pivots are not scored." },
         Recipe { label: "Handling", terms: vec![("puck-loss-share", "Giveaway share of recorded offensive actions", "%", 0.5, true), ("drawn", "Penalties drawn", "/60", 0.5, false)], note: "Puck-management proxy. Loss share = giveaways / (shots + assists + giveaways); these actions are not a touch count." },
@@ -333,7 +422,7 @@ pub fn level(points: f64) -> u8 {
 }
 // Far finer than the source measurements: prevents unit-conversion rounding
 // noise from splitting ties. Keep the original values in the displayed parts.
-fn rank_value(value: f64) -> f64 {
+pub(super) fn rank_value(value: f64) -> f64 {
     let scaled = value * 1e9;
     if scaled.is_finite() {
         scaled.round() / 1e9
@@ -342,7 +431,7 @@ fn rank_value(value: f64) -> f64 {
     }
 }
 
-/// Same-season F/D ranks; 10GP/100min reference, with scores for smaller samples
+/// Same-season F/D/G ranks; 10GP/100min reference, with scores for smaller samples
 /// visibly marked. Missing terms use the available weights; no missing=zero.
 pub fn build(season: u32, scope: &str, players: &[Player]) -> Result<Vec<Profile>, String> {
     let mut ids = BTreeSet::new();
@@ -350,12 +439,12 @@ pub fn build(season: u32, scope: &str, players: &[Player]) -> Result<Vec<Profile
     for p in &mut rows {
         if p.player_id == 0
             || !ids.insert(p.player_id)
-            || !["Forwards", "Defense"].contains(&p.group.as_str())
+            || !["Forwards", "Defense", "Goalies"].contains(&p.group.as_str())
             || !p.minutes.is_finite()
             || p.minutes < 0.
             || p.metrics.values().any(|v| !v.is_finite() || *v < 0.)
         {
-            return Err("Invalid or duplicate skater stat input".into());
+            return Err("Invalid or duplicate stat input".into());
         }
         if let (Some(g), Some(s)) = (p.metrics.get("goals"), p.metrics.get("shots")) {
             if *s > 0. && g <= s {
@@ -376,7 +465,7 @@ pub fn build(season: u32, scope: &str, players: &[Player]) -> Result<Vec<Profile
     let mut output = Vec::new();
     for p in &rows {
         let active = p.games > 0 && p.minutes > 0.;
-        let scores = recipes()
+        let scores = recipes(p.group == "Goalies")
             .into_iter()
             .map(|recipe| {
                 let parts = recipe
@@ -433,6 +522,8 @@ pub fn build(season: u32, scope: &str, players: &[Player]) -> Result<Vec<Profile
             })
             .collect();
         output.push(Profile {
+            skater_context:None,
+            shot_context:None,
             schema: "rinkcraft.simple-stat-attributes.v1".into(),
             player_id: p.player_id,
             season,

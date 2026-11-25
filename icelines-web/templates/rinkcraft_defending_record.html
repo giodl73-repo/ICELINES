@@ -1,0 +1,4 @@
+<div class="rk-defense-record" data-defense-coverage="{% if defense_record.minutes_5v5.is_some() %}measured{% else %}unavailable{% endif %}">
+<small>Chance Control · 5v5</small><strong>{{ defense_record.chances }}</strong><small>{{ defense_record.on_off }}</small><small>Defensive Work · all strengths</small><p>{{ defense_record.activity }}</p>
+<details class="rk-defense-details"><summary>Defense record</summary><div><p>{{ defense_record.season / 10000 }}–{{ "{:02}"|format(defense_record.season % 100) }} · {{ defense_record.games }} GP · {{ defense_record.group }} · NHL / MoneyPuck.com</p><dl>{% for row in defense_record.rows %}<div><dt>{{ row.label }}</dt><dd>{{ row.value }}</dd></div>{% endfor %}</dl><p>Rates = source event totals × 60 / source minutes. On/off improvement = off-ice xGA/60 − on-ice xGA/60. Lower on-ice xGA/60 is favorable.</p><p>{{ defense_record.note }}</p></div></details>
+</div>

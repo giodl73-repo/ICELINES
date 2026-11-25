@@ -101,6 +101,10 @@ pub struct ProfileJobFamily {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RinkcraftStatProfile {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub goalie_puck_events: Option<super::rinkcraft_goalie_puck::Evidence>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub stat_attribute_changes: Vec<super::rinkcraft_stat_scores::SeasonChange>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub stat_attribute_seasons: Vec<super::rinkcraft_stat_scores::Profile>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -352,6 +356,7 @@ pub fn attach_stat_attribute_catalog(
 ) -> Result<(), String> {
     catalog.validate()?;
     profile.stat_attribute_seasons.clear();
+    profile.stat_attribute_changes.clear();
     if profile.request.season_type != SeasonType::Regular {
         return Ok(());
     }
@@ -372,7 +377,7 @@ pub fn attach_stat_attribute_catalog(
             .as_ref()
             .filter(|n| n.player_id == profile.request.player_id.0 && n.season == row.season.0);
         let group = match row.position {
-            Position::Goalie => continue,
+            Position::Goalie => "Goalies",
             Position::Defense => "Defense",
             _ => "Forwards",
         };
@@ -421,6 +426,8 @@ pub fn attach_stat_attribute_catalog(
             }
         }
     }
+    profile.stat_attribute_changes =
+        super::rinkcraft_stat_scores::season_changes(&profile.stat_attribute_seasons);
     Ok(())
 }
 
@@ -512,8 +519,8 @@ pub fn build_rinkcraft_stat_profile_from_views<R: SeasonStatsRead>(
                 .collect()
         })
         .unwrap_or_default();
-    Ok(RinkcraftStatProfile {
-        stat_attribute_seasons:Vec::new(),achievements:None,
+    Ok(RinkcraftStatProfile { goalie_puck_events:None,
+        stat_attribute_changes:Vec::new(),stat_attribute_seasons:Vec::new(),achievements:None,
         deployment_evidence:views.last().and_then(|v|super::rinkcraft_deployment::from_read(&v.stats)),
         evidence_guide:super::rinkcraft_evidence_guide::topics(),
         schema:RINKCRAFT_PROFILE_SCHEMA.into(),request,player_name:player_name.into(),

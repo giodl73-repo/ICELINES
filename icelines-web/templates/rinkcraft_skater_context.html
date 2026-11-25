@@ -1,0 +1,6 @@
+{% match stat_attributes %}{% when Some with (stats) %}{% match stats.skater_context %}{% when Some with (context) %}
+<div class="rk-skater-context rk-shot-context"><strong>Attribute Record</strong><small>NHL{% if context.source_credit.contains("EDGE") %} / EDGE{% endif %}{% if context.source_credit.contains("MoneyPuck.com") %} / MoneyPuck.com{% endif %}</small><dl>
+{% for row in context.rows %}{% if (row.label == "Primary assists" && !row.value.ends_with(" /60")) || row.label == "Secondary assists" || row.label == "Goals minus expected (goalie in net)" || row.label == "Penalty-kill deployment" %}<div><dt>{{ row.label }}</dt><dd>{{ row.value }}</dd></div>{% endif %}{% endfor %}</dl>
+<details><summary>All six attribute records</summary><p>{{ context.source_credit }}</p><dl>{% for row in context.rows %}<div><dt>{{ row.attribute }} · {{ row.label }}</dt><dd>{{ row.value }}</dd></div>{% endfor %}</dl>
+{% for note in context.notes %}<p>{{ note }}</p>{% endfor %}</details></div>
+{% when None %}{% endmatch %}{% when None %}{% endmatch %}

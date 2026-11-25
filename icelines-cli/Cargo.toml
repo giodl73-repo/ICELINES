@@ -13,6 +13,7 @@ path = "src/main.rs"
 
 [dependencies]
 icelines-core  = { path = "../icelines-core" }
+icelines-sources = { path = "../icelines-sources" }
 icelines-fetch = { path = "../icelines-fetch" }
 icelines-query = { path = "../icelines-query" }
 icelines-web   = { path = "../icelines-web" }
