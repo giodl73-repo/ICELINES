@@ -37,6 +37,7 @@ fn faceoffs() -> pressure::Faceoffs {
 fn contextual_actions_are_counts_not_opportunity_rates_and_survive_rebuild() {
     let mut p = player("Defense");
     let s = pressure::ActionSample {
+        exposure: None,
         season: p.season,
         player_id: p.player_id,
         counts: pressure::ActionCounts {
@@ -100,6 +101,69 @@ fn score_state_partitions_reconcile_and_do_not_invent_missing_splits() {
     let legacy = pressure::build(&p, Some(faceoffs()));
     assert!(legacy.entries[1].breakdown.is_empty());
     pressure::validate(&p, &legacy).unwrap();
+}
+#[test]
+fn matched_exposure_is_bounded_and_only_retained_for_identical_event_samples() {
+    let mut p = player("Defense");
+    let f = faceoffs();
+    let s = pressure::ActionSample {
+        exposure: Some(pressure::Exposure {
+            game_ids: vec![2026020001],
+            late_lead_seconds: 90,
+            unresolved_team_seconds: 10,
+            late_lead_blocks: 1,
+            late_lead_takeaways: 0,
+            source_sha256: "b".repeat(64),
+        }),
+        season: p.season,
+        player_id: p.player_id,
+        counts: pressure::ActionCounts {
+            blocks: 20,
+            takeaways: 2,
+            late_lead_blocks: 3,
+            late_lead_takeaways: 0,
+        },
+        roster_games: 20,
+        coverage_games: 200,
+        captured_at: f.captured_at,
+        source_sha256: f.source_sha256,
+    };
+    let r = pressure::build_with_actions(&p, None, Some(s.clone()));
+    pressure::validate(&p, &r).unwrap();
+    assert!(r.actions[0]
+        .exposure
+        .as_ref()
+        .unwrap()
+        .contains("1:30 on ice"));
+    p.under_pressure = Some(r.clone());
+    let mut replay = s.clone();
+    replay.exposure = None;
+    assert_eq!(
+        pressure::build_with_actions(&p, None, Some(replay.clone())),
+        r
+    );
+    replay.source_sha256 = "c".repeat(64);
+    assert!(
+        pressure::build_with_actions(&p, None, Some(replay)).actions[0]
+            .exposure
+            .is_none()
+    );
+    for edit in 0..6 {
+        let mut bad = s.clone();
+        let e = bad.exposure.as_mut().unwrap();
+        match edit {
+            0 => e.late_lead_seconds = 301,
+            1 => e.game_ids.push(2026020001),
+            2 => e.game_ids = vec![2026030001],
+            3 => e.game_ids = vec![2025020001],
+            4 => e.late_lead_blocks = 4,
+            _ => e.source_sha256 = "bad".into(),
+        };
+        assert!(
+            pressure::validate(&p, &pressure::build_with_actions(&p, None, Some(bad))).is_err(),
+            "case {edit}"
+        );
+    }
 }
 #[test]
 fn observed_empty_state_is_not_a_zero_percent_result() {

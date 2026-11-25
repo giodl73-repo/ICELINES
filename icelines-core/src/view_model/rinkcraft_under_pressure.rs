@@ -26,6 +26,8 @@ impl ActionCounts {
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ActionSample {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exposure: Option<Exposure>,
     pub season: u32,
     pub player_id: u32,
     pub counts: ActionCounts,
@@ -34,8 +36,19 @@ pub struct ActionSample {
     pub captured_at: String,
     pub source_sha256: String,
 }
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct Exposure {
+    pub game_ids: Vec<u64>,
+    pub late_lead_seconds: u32,
+    pub unresolved_team_seconds: u32,
+    pub late_lead_blocks: u32,
+    pub late_lead_takeaways: u32,
+    pub source_sha256: String,
+}
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ActionObservation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exposure: Option<String>,
     pub name: String,
     pub result: String,
     pub baseline: String,
@@ -125,11 +138,27 @@ pub fn rebuild(p: &Profile) -> Record {
 pub fn build_with_actions(
     p: &Profile,
     faceoffs: Option<Faceoffs>,
-    action_sample: Option<ActionSample>,
+    mut action_sample: Option<ActionSample>,
 ) -> Record {
+    // A routine replay can retain a paired shift study only while its parent
+    // event sample remains exactly the same. Changed event captures drop it.
+    if let Some(s) = action_sample.as_mut().filter(|s| s.exposure.is_none()) {
+        if let Some(old) = p
+            .under_pressure
+            .as_ref()
+            .and_then(|r| r.action_sample.as_ref())
+        {
+            let mut bare = old.clone();
+            bare.exposure = None;
+            if bare == *s {
+                s.exposure = old.exposure.clone();
+            }
+        }
+    }
     let mut entries = vec![];
     let mut gaps = vec![];
     let actions = action_sample.as_ref().map(|s| vec![ActionObservation {
+        exposure: s.exposure.as_ref().map(|e| format!("Matched shift subset: {} roster games; {}:{:02} on ice protecting a late one-goal lead. In those games: {} blocks · {} takeaways. {}:{:02} of team-context clock unresolved. Second-resolution intervals; no opportunity success rate.",e.game_ids.len(),e.late_lead_seconds/60,e.late_lead_seconds%60,e.late_lead_blocks,e.late_lead_takeaways,e.unresolved_team_seconds/60,e.unresolved_team_seconds%60)),
         name: "Protecting lead".into(),
         result: format!("{} blocks · {} takeaways", s.counts.late_lead_blocks, s.counts.late_lead_takeaways),
         baseline: format!("All situations: {} blocks · {} takeaways", s.counts.blocks, s.counts.takeaways),
@@ -202,6 +231,23 @@ pub fn build_with_actions(
 }
 pub fn validate(p: &Profile, r: &Record) -> Result<(), String> {
     if let Some(s) = &r.action_sample {
+        if let Some(e) = &s.exposure {
+            let limit = e.game_ids.len() as u64 * 300;
+            if e.game_ids.is_empty()
+                || e.game_ids.len() > s.roster_games as usize
+                || e.game_ids.windows(2).any(|w| w[0] >= w[1])
+                || e.game_ids.iter().any(|id| {
+                    *id / 1_000_000 != (p.season / 10000) as u64 || (*id / 10000) % 100 != 2
+                })
+                || u64::from(e.late_lead_seconds) + u64::from(e.unresolved_team_seconds) > limit
+                || e.late_lead_blocks > s.counts.late_lead_blocks
+                || e.late_lead_takeaways > s.counts.late_lead_takeaways
+                || e.source_sha256.len() != 64
+                || !e.source_sha256.bytes().all(|c| c.is_ascii_hexdigit())
+            {
+                return Err("Invalid matched shift exposure".into());
+            }
+        }
         if p.group == "Goalies"
             || s.player_id != p.player_id
             || s.season != p.season

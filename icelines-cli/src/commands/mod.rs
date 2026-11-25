@@ -43,3 +43,4 @@ pub mod tonight;
 pub mod transactions;
 
 pub mod profile_pressure;
+pub mod profile_pressure_exposure;

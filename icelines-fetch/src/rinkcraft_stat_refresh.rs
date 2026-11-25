@@ -473,7 +473,7 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
                 BTreeMap::<u32, icelines_sources::rinkcraft_skater_context::Assists>::new();
             for (game,draws) in games {
                 for (id,c) in draws {
-                    let a=action_samples.entry(id).or_insert_with(||icelines_core::view_model::rinkcraft_under_pressure::ActionSample {season:request.season,player_id:id,counts:Default::default(),roster_games:0,coverage_games,captured_at:captured_at.clone(),source_sha256:source_sha256.clone()});
+                    let a=action_samples.entry(id).or_insert_with(||icelines_core::view_model::rinkcraft_under_pressure::ActionSample {exposure:None,season:request.season,player_id:id,counts:Default::default(),roster_games:0,coverage_games,captured_at:captured_at.clone(),source_sha256:source_sha256.clone()});
                     a.counts.add(&c.actions);a.roster_games+=c.roster_games;
                     let f=faceoff_samples.entry(id).or_insert_with(||icelines_core::view_model::rinkcraft_under_pressure::Faceoffs {season:request.season,player_id:id,taken:0,won:0,late_taken:0,late_won:0,late_states:Some(BTreeMap::new()),coverage_games,captured_at:captured_at.clone(),source_sha256:source_sha256.clone()});
                     f.taken+=c.taken;f.won+=c.won;f.late_taken+=c.late_taken;f.late_won+=c.late_won;
@@ -568,6 +568,15 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
     } else {
         vec![]
     };
+    // Retain a paired shift study only when the newly captured parent action
+    // sample is identical. The shared builder drops it for changed captures.
+    for p in profiles.iter_mut().filter(|p|p.group!="Goalies") {
+        let old=previous.iter().find(|o|o.player_id==p.player_id&&o.season==p.season&&o.group==p.group).and_then(|o|o.under_pressure.clone());
+        if let Some(fresh)=p.under_pressure.take() {
+            p.under_pressure=old;
+            p.under_pressure=Some(icelines_core::view_model::rinkcraft_under_pressure::build_with_actions(p,fresh.faceoffs,fresh.action_sample));
+        }
+    }
     previous.retain(|p| {
         p.season != request.season
             || match request.kind.as_str() {

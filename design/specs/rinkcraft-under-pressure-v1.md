@@ -72,6 +72,41 @@ whether the player was deployed while protecting a lead. Roster games are not
 exposure minutes. Missing samples produce no action row. Existing defensive
 measurement gaps remain, even when an action count is present.
 
+### Optional matched shift exposure
+
+An action sample can carry optional `exposure`: sorted unique matched game IDs,
+observed late-lead ice seconds, unresolved team-context clock seconds, late-lead
+blocks/takeaways from those same games, and a paired-source fingerprint. The
+disclosure renders this separately from the larger headline action sample.
+Missing exposure stays absent. No percentage, per60 rate or new ability follows.
+
+The explicit offline `profile-pressure-exposure` import requires checksum-verified
+finalized event captures, matching box scores and complete native NHL shift
+responses. HTML-derived shift products are a separate source category and are
+not admitted by this first import path. Full-game player shift totals, including
+overtime, must match the box score within an authored one-second tolerance;
+overlapping intervals or larger discrepancies exclude that player-game, rather
+than creating zero exposure. Exact duplicate intervals count once.
+
+The existing regulation participation reconstructor supplies half-open segments.
+Goal timestamps split the final-five-minute window: the post-goal score applies
+to the next duration interval. Same-second event order still controls credited
+action context, but does not establish on-ice event responsibility at a change.
+Overtime is excluded from late-regulation exposure. All manpower situations and
+empty-net conditions are included; this is not a five-on-five or PK grade.
+
+Conflicting shift spans and invalid occupancy censor time. Reported unresolved
+seconds describe team clock while leading, not additional player ice time.
+Observed player seconds are therefore conservative where clock is censored.
+Matched-game action counts are not divided by the retained seconds: an action
+could occur at a second-resolution boundary or inside censored clock. Nor does
+ice time enumerate attempted/available blocks or takeaways.
+
+Reprojection preserves the paired study. Routine refresh and offline record
+rebuilds retain it only if the parent action sample is identical, including its
+source fingerprint. Changed captures drop the study; rerun the explicit import
+against those captures. Generic shift synchronization stays disabled.
+
 ## Evidence interpretation
 
 Faceoff credits are not retained possession or downstream value. The primary

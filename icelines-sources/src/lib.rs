@@ -45,3 +45,4 @@ pub mod rinkcraft_skater_context;
 pub mod rinkcraft_defending_context;
 
 pub mod rinkcraft_pressure;
+pub mod rinkcraft_pressure_exposure;

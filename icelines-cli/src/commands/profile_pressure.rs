@@ -6,9 +6,10 @@ use sha2::{Digest, Sha256};
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,
-    path::Path,
+    path::{Path, PathBuf},
 };
 pub struct Cache {
+    pub bodies: BTreeMap<u64, (PathBuf, String)>,
     pub actions: BTreeMap<u32, icelines_core::view_model::rinkcraft_under_pressure::ActionSample>,
     pub samples: BTreeMap<u32, Faceoffs>,
     pub sources: Value,
@@ -17,6 +18,7 @@ pub struct Cache {
 pub fn read(root: &Path, season: u32) -> anyhow::Result<Cache> {
     let root = root.join(season.to_string());
     let mut captures = vec![];
+    let mut bodies = BTreeMap::new();
     let mut seen = BTreeSet::new();
     let mut totals = BTreeMap::<u32, icelines_sources::rinkcraft_pressure::Counts>::new();
     for entry in fs::read_dir(&root).with_context(|| format!("Read {}", root.display()))? {
@@ -61,13 +63,20 @@ pub fn read(root: &Path, season: u32) -> anyhow::Result<Cache> {
             fs::metadata(&raw)?.len() <= 16 * 1024 * 1024,
             "Game exceeds bound"
         );
-        let bytes = fs::read(raw)?;
+        let bytes = fs::read(&raw)?;
         ensure!(
             c["sha256"].as_str() == Some(format!("{:x}", Sha256::digest(&bytes)).as_str()),
             "Cached game checksum differs"
         );
         let game = icelines_sources::rinkcraft_pressure::parse_game(&bytes, id, season)
             .map_err(anyhow::Error::msg)?;
+        bodies.insert(
+            id,
+            (
+                raw,
+                c["sha256"].as_str().context("Missing game hash")?.into(),
+            ),
+        );
         for (id, n) in game {
             let s = totals.entry(id).or_default();
             s.actions.add(&n.actions);
@@ -103,6 +112,7 @@ pub fn read(root: &Path, season: u32) -> anyhow::Result<Cache> {
             (
                 player_id,
                 icelines_core::view_model::rinkcraft_under_pressure::ActionSample {
+                    exposure: None,
                     season,
                     player_id,
                     counts: c.actions.clone(),
@@ -135,6 +145,7 @@ pub fn read(root: &Path, season: u32) -> anyhow::Result<Cache> {
         })
         .collect();
     Ok(Cache {
+        bodies,
         actions,
         samples,
         sources: json!({"schema":"rinkcraft.pressure-sources.v1","season":season,"coverage_games":games,"source_sha256":fingerprint,"captured_at":captured_at,"captures":captures,"note":"Cached finalized-game sample, not a claim of full-season or player-GP coverage."}),

@@ -193,6 +193,19 @@ pub enum Commands {
         #[arg(long)]
         game_cache_dir: Option<PathBuf>,
     },
+    /// Import explicitly paired public shift exposure, without fetching or changing grades.
+    ProfilePressureExposure {
+        #[arg(long)]
+        season: u32,
+        #[arg(long)]
+        catalog: PathBuf,
+        #[arg(long)]
+        game_cache_dir: PathBuf,
+        #[arg(long)]
+        shift_manifest: PathBuf,
+        #[arg(long)]
+        output_dir: PathBuf,
+    },
     /// Compare experimental skater attribute recipes.
     ProfileCalibrate {
         #[arg(long,default_value="passing-shooting",value_parser=["passing-shooting","defending"])]
