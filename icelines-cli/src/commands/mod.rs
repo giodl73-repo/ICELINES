@@ -44,3 +44,4 @@ pub mod transactions;
 
 pub mod profile_pressure;
 pub mod profile_pressure_exposure;
+pub mod profile_shot_methods;

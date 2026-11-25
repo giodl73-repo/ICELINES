@@ -2382,3 +2382,5 @@ pub mod rinkcraft_whistle;
 pub mod rinkcraft_unit_links;
 
 pub mod rinkcraft_skating_detail;
+
+pub mod rinkcraft_shot_methods;

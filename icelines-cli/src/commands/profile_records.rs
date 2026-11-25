@@ -27,11 +27,13 @@ pub fn run(
         .map(|root| super::profile_pressure::read(root, season))
         .transpose()?;
     if let Some(cache) = &pressure_cache {
+        let methods=super::profile_shot_methods::collect(cache,season)?;
         for p in data
             .profiles
             .iter_mut()
             .filter(|p| p.season == season && p.group != "Goalies")
         {
+            p.shot_method_sample=methods.get(&p.player_id).cloned();p.shot_methods=None;
             p.under_pressure = Some(
                 icelines_core::view_model::rinkcraft_under_pressure::build_with_actions(
                     p,

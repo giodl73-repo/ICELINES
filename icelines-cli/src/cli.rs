@@ -193,7 +193,14 @@ pub enum Commands {
         #[arg(long)]
         game_cache_dir: Option<PathBuf>,
     },
-    /// Import explicitly paired public shift exposure, without fetching or changing grades.
+    /// Import observed shot types from a verified public game cache.
+    ProfileShotMethods {
+        #[arg(long)] season:u32,
+        #[arg(long)] catalog:PathBuf,
+        #[arg(long)] game_cache_dir:PathBuf,
+        #[arg(long)] output_dir:PathBuf,
+    },
+    /// Import observed personnel groups from explicitly paired shift captures.
     ProfileUnitLinks {
         #[arg(long)] season:u32,
         #[arg(long)] catalog:PathBuf,

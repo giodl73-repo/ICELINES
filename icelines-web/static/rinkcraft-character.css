@@ -454,6 +454,8 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 .rk-shot-context small{display:block}.rk-shot-context dl>div{margin:.25rem 0}.rk-shot-context dd{margin:0;font-size:9px}
 .rk-shot-context summary,.rk-shot-context a{color:var(--sheet-blue,#315a8b)}
 .rk-front .rk-feat-trigger,.rk-front .rk-stat-feat p,.rk-front .rk-stat-feat small{color:var(--sheet-ink,#183247)}
+.rk-shot-methods{font-size:8px;line-height:1.3}.rk-shot-methods>small{display:block;font-size:7px}.rk-shot-method{padding:5px 0;border-bottom:1px solid var(--sheet-line,#ccd5de)}.rk-shot-method>strong,.rk-shot-method>span,.rk-shot-method>small{display:block}.rk-shot-method>strong{font-size:9px}.rk-shot-method>small{font-size:7px}.rk-shot-method-scope,.rk-scouted-methods{font-size:8px;margin-top:5px}.rk-shot-method-scope>summary,.rk-scouted-methods>summary{cursor:pointer}.rk-shot-method-scope>strong{display:block;margin-top:6px}.rk-shot-method-scope>p{font-size:8px!important;line-height:1.3!important;margin:3px 0!important}
+@media print{.rk-shot-method-scope,.rk-scouted-methods,.rk-shot-method:nth-of-type(n+3){display:none!important}.rk-shot-methods{font-size:7px}.rk-shot-method{padding:2px 0}.rk-shot-method>strong{font-size:8px}.rk-shot-methods>small,.rk-shot-method>small{font-size:6px}.rk-shot-method>span,.rk-shot-method>small{display:inline}.rk-shot-method>small{margin-left:4px}}
 .rk-front summary{color:var(--sheet-blue,#315a8b)}
 @media print{.rk-front .rk-feat-trigger{min-height:0;height:auto;padding:0;line-height:1.1}}
 @media print{

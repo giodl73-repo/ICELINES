@@ -1,3 +1,4 @@
+import {shotMethods,renderShotMethods} from './rinkcraft-shot-methods.js';
 import {skatingDetail,renderSkatingDetail} from './rinkcraft-skating-detail.js';
 import {unitLinks,renderUnitLinks,renderUnitDeployment} from './rinkcraft-unit-links.js';
 import {pressureRecord,pressureEntries,pressureGaps} from './rinkcraft-under-pressure.js';
@@ -231,7 +232,8 @@ export function renderCharacterFront(
   if(usage)deployment.append(renderDeploymentUsage(usage));
   else {assignment.append(field('Unit','Undocumented'),field('Station','Undocumented'));deployment.append(assignment);}
   const observedUnits=unitLinks(statScores);if(observedUnits)deployment.append(renderUnitDeployment(observedUnits));
-  center.append(responses,counters,methods,measured,deployment);
+  let displayedMethods=methods;const observedMethods=shotMethods(statScores);if(observedMethods){displayedMethods=box('Signature Methods','rk-front-methods');displayedMethods.append(renderShotMethods(observedMethods));if(sheet?.features.length){const scouted=node('details');scouted.className='rk-scouted-methods';scouted.append(node('summary','Scouted methods'),methods.children[1]);displayedMethods.append(scouted);}}
+  center.append(responses,counters,displayedMethods,measured,deployment);
 
   const right=node('div');right.className='rk-front-right';
   const tendencies=statFeats?box('Playing Tendencies','rk-front-traits'):namesBox('Playing Tendencies','rk-front-traits',sheet?.traits.map(t=>t.name)??[]);if(statFeats){tendencies.append(renderStatFeats(statFeats,'playing_tendencies',2));if(sheet?.traits.length){const scouted=node('details');scouted.append(node('summary','Scouted tendencies'),namesBox('Accounts','rk-scouted-traits',sheet.traits.map(t=>t.name)));tendencies.append(scouted);}}right.append(tendencies);

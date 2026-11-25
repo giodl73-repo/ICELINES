@@ -40,6 +40,16 @@ test('skating detail renders supplied measurements and withholds stale or goalie
  assert.equal(skatingDetail({...p,group:'Goalies',skating_detail:{...r,group:'Goalies'}}),undefined);assert.equal(skatingDetail(undefined),undefined);
 });
 
+test('recorded shot methods retain scouted techniques and reject stale metadata',async()=>{
+ const {shotMethods,renderShotMethods}=await import('../dist/src/rinkcraft-shot-methods.js');
+ const m={id:'wrist',name:'Wrist shot',result:'Attempts 5 · Goals 1',share:'71.4% of typed attempts',outcomes:'On goal 4 · Misses 1'};
+ const r={schema:'rinkcraft.shot-methods.v1',player_id:1,season:20262027,group:'Forwards',games:20,typed_attempts:7,total_attempts:10,coverage:'7/10 attempts typed · 7 cached roster games',primary:[m],additional:[],unknown_display:'3 attempts without a supported type',captured_at:'2026-11-24T00:00:00Z',note:'Observed types, not mastery.'};
+ const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:20,minutes:400,scope:'all strengths',small_sample:false,shot_methods:r,scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'}))};
+ assert.equal(shotMethods(stats),r);for(const stale of [{...r,player_id:2},{...r,season:20252026},{...r,games:19},{...r,group:'Goalies'}])assert.equal(shotMethods({...stats,shot_methods:stale}),undefined);
+ const args=Array(18).fill(undefined);args[0]='Test';args[1]=sheet;args[3]={season:20262027,games:20,position:'Center',metrics:[]};args[11]={player_id:1,season_type:'regular'};args[17]=[stats];const front=renderCharacterCard(...args);assert.match(classed(front,'rk-front-methods')[0].textContent,/Recorded shot repertoire.*Wrist shot.*Attempts 5/);assert.match(classed(front,'rk-scouted-methods')[0].textContent,/Scouted methods.*Recover/);
+ assert.match(renderShotMethods({...r,primary:[]}).textContent,/No supported shot types recorded/);assert.equal(shotMethods(undefined),undefined);
+});
+
 test('selected snapshot pace fills contact and blocks while rejecting another season',()=>{
  const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:20,minutes:400,scope:'all strengths',small_sample:false,
   scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'})),

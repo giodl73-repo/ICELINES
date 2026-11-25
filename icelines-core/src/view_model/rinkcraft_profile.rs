@@ -392,6 +392,7 @@ pub fn attach_stat_attribute_catalog(
             let mut admitted = scores.clone();
             admitted.estimated_record = super::rinkcraft_snapshot_record::estimate(&admitted, None);
             admitted.skating_detail = super::rinkcraft_skating_detail::build(&admitted);
+            admitted.shot_methods = super::rinkcraft_shot_methods::build(&admitted);
             admitted.under_pressure = Some(super::rinkcraft_under_pressure::rebuild(&admitted));
             profile.stat_attribute_seasons.push(admitted);
         } else if catalog
@@ -429,6 +430,7 @@ pub fn attach_stat_attribute_catalog(
                 let mut admitted = scores.clone();
                 admitted.estimated_record = super::rinkcraft_snapshot_record::estimate(&admitted, None);
             admitted.skating_detail = super::rinkcraft_skating_detail::build(&admitted);
+            admitted.shot_methods = super::rinkcraft_shot_methods::build(&admitted);
             admitted.under_pressure = Some(super::rinkcraft_under_pressure::rebuild(&admitted));
                 profile.stat_attribute_seasons.push(admitted);
             }

@@ -444,6 +444,7 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
     observations.sort_by_key(|p| p.player_id);
     let mut skater_contexts = BTreeMap::new();
     let mut unit_parent_fingerprint:Option<String>=None;
+    let mut shot_method_samples=BTreeMap::<u32,icelines_core::view_model::rinkcraft_shot_methods::Sample>::new();
     let mut action_samples = BTreeMap::<u32,icelines_core::view_model::rinkcraft_under_pressure::ActionSample>::new();
     let mut faceoff_samples = BTreeMap::<u32,icelines_core::view_model::rinkcraft_under_pressure::Faceoffs>::new();
     if let Some((summary, realtime, toi)) = skater_sources {
@@ -461,7 +462,7 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
                 games_store,
                 request.season,
                 teams,
-                |bytes,id,season| Ok((icelines_sources::rinkcraft_skater_context::goal_assists(bytes,id,season)?,icelines_sources::rinkcraft_pressure::parse_game(bytes,id,season)?)),
+                |bytes,id,season| Ok((icelines_sources::rinkcraft_skater_context::goal_assists(bytes,id,season)?,icelines_sources::rinkcraft_pressure::parse_game(bytes,id,season)?,icelines_sources::rinkcraft_shot_methods::parse_game(bytes,id,season)?)),
             )
             .await?;
             let coverage_games=games.len() as u32;
@@ -473,7 +474,11 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
             receipts.extend(captures);
             let mut totals =
                 BTreeMap::<u32, icelines_sources::rinkcraft_skater_context::Assists>::new();
-            for (game,draws) in games {
+            for (game,draws,methods) in games {
+                for (id,types) in methods {
+                    let s=shot_method_samples.entry(id).or_insert_with(||icelines_core::view_model::rinkcraft_shot_methods::Sample {player_id:id,season:request.season,roster_games:0,coverage_games,by_type:BTreeMap::new(),captured_at:captured_at.clone(),source_sha256:source_sha256.clone()});
+                    s.roster_games+=1;for (key,c) in types {s.by_type.entry(key).or_default().add(&c);}
+                }
                 for (id,c) in draws {
                     let a=action_samples.entry(id).or_insert_with(||icelines_core::view_model::rinkcraft_under_pressure::ActionSample {exposure:None,season:request.season,player_id:id,counts:Default::default(),roster_games:0,coverage_games,captured_at:captured_at.clone(),source_sha256:source_sha256.clone()});
                     a.counts.add(&c.actions);a.roster_games+=c.roster_games;
@@ -536,6 +541,7 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
     }
     let mut profiles = scores::build(request.season, "all strengths · rates per60", &observations)?;
     for p in &mut profiles {
+        p.shot_method_sample=shot_method_samples.remove(&p.player_id);
         p.skater_context = skater_contexts.remove(&p.player_id);
         if p.group != "Goalies" {p.under_pressure=Some(icelines_core::view_model::rinkcraft_under_pressure::build_with_actions(p,faceoff_samples.remove(&p.player_id),action_samples.remove(&p.player_id)));}
         if p.group == "Goalies" {
