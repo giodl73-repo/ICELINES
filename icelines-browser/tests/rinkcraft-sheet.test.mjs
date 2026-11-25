@@ -4,6 +4,18 @@ import {renderCharacterCard} from '../dist/src/rinkcraft-character.js';
 import {renderStatScore} from '../dist/src/rinkcraft-stat-scores.js';
 import {renderStatFeats} from '../dist/src/rinkcraft-achievements.js';
 
+test('point mix shows supplied composition without treating assist detail as extra points',async()=>{
+ const {productionMix,renderProductionMix}=await import('../dist/src/rinkcraft-production-mix.js');
+ const r={schema:'rinkcraft.production-mix.v1',player_id:1,season:20262027,group:'Forwards',games:4,minutes:80,headline:'25.0% goal share',rows:[{label:'Goals',rate:'1.00 /60',share:'25.0% of points'},{label:'Assists',rate:'3.00 /60',share:'75.0% of points'}],assist_detail:[{label:'Primary assists',rate:'2.00 /60',share:'50.0% of points'},{label:'Secondary assists',rate:'1.00 /60',share:'25.0% of points'}],note:'Recorded production, not a class.'};
+ const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:4,minutes:80,scope:'all strengths',small_sample:true,production_mix:r,scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'}))};
+ assert.equal(productionMix(stats),r);
+ const args=Array(18).fill(undefined);args[0]='Test';args[1]=sheet;args[3]={season:20262027,games:4,position:'Center',metrics:[]};args[11]={player_id:1,season_type:'regular'};args[17]=[stats];
+ assert.match(classed(renderCharacterCard(...args),'rk-front-traits')[0].textContent,/Point mix.*25.0% goal share.*Assist detail.*included above.*Primary assists/);
+ for(const stale of [{...r,player_id:2},{...r,season:20252026},{...r,games:3},{...r,minutes:81},{...r,group:'Goalies'}])assert.equal(productionMix({...stats,production_mix:stale}),undefined);
+ assert.match(renderProductionMix({...r,assist_detail:[]}).textContent,/Matched primary\/secondary assist detail unavailable/);
+ assert.equal(productionMix({...stats,group:'Goalies',production_mix:{...r,group:'Goalies'}}),undefined);assert.equal(productionMix(undefined),undefined);
+});
+
 test('penalty balance renders supplied rates within tendencies and withholds stale records',async()=>{
  const {penaltyBalance}=await import('../dist/src/rinkcraft-penalty-balance.js');
  const r={schema:'rinkcraft.penalty-balance.v1',player_id:1,season:20262027,group:'Forwards',games:20,minutes:400,drawn:'1.23 /60',taken:'0.79 /60',balance:'+0.45 /60',formula:'Drawn minus taken before rounding.',note:'Recorded calls, not power plays created.'};

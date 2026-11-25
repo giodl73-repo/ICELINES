@@ -394,6 +394,7 @@ pub fn attach_stat_attribute_catalog(
             admitted.skating_detail = super::rinkcraft_skating_detail::build(&admitted);
             admitted.shot_methods = super::rinkcraft_shot_methods::build(&admitted);
             admitted.penalty_balance = super::rinkcraft_penalty_balance::build(&admitted);
+            admitted.production_mix = super::rinkcraft_production_mix::build(&admitted);
             admitted.under_pressure = Some(super::rinkcraft_under_pressure::rebuild(&admitted));
             profile.stat_attribute_seasons.push(admitted);
         } else if catalog
@@ -433,6 +434,7 @@ pub fn attach_stat_attribute_catalog(
             admitted.skating_detail = super::rinkcraft_skating_detail::build(&admitted);
             admitted.shot_methods = super::rinkcraft_shot_methods::build(&admitted);
             admitted.penalty_balance = super::rinkcraft_penalty_balance::build(&admitted);
+            admitted.production_mix = super::rinkcraft_production_mix::build(&admitted);
             admitted.under_pressure = Some(super::rinkcraft_under_pressure::rebuild(&admitted));
                 profile.stat_attribute_seasons.push(admitted);
             }

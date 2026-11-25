@@ -847,6 +847,7 @@ pub async fn get_json(
 #[derive(Template)]
 #[template(path = "rinkcraft.html")]
 struct ProfileTemplate {
+    production_mix: Option<icelines_core::view_model::rinkcraft_production_mix::Record>,
     penalty_balance: Option<icelines_core::view_model::rinkcraft_penalty_balance::Record>,
     shot_methods: Option<icelines_core::view_model::rinkcraft_shot_methods::Record>,
     skating_detail: Option<icelines_core::view_model::rinkcraft_skating_detail::Record>,
@@ -1936,7 +1937,9 @@ pub async fn get_html(
     let skating_detail=stat_attributes.as_ref().and_then(icelines_core::view_model::rinkcraft_skating_detail::build);
     let shot_methods=stat_attributes.as_ref().and_then(icelines_core::view_model::rinkcraft_shot_methods::build);
     let penalty_balance=stat_attributes.as_ref().and_then(icelines_core::view_model::rinkcraft_penalty_balance::build);
+    let production_mix=stat_attributes.as_ref().and_then(icelines_core::view_model::rinkcraft_production_mix::build);
     let template = ProfileTemplate {
+        production_mix,
         penalty_balance,
         shot_methods,
         skating_detail,
