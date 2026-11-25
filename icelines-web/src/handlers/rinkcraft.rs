@@ -847,6 +847,7 @@ pub async fn get_json(
 #[derive(Template)]
 #[template(path = "rinkcraft.html")]
 struct ProfileTemplate {
+    unit_links: Option<icelines_core::view_model::rinkcraft_unit_links::Record>,
     pressure_record: Option<icelines_core::view_model::rinkcraft_under_pressure::Record>,
     record_projection: Option<icelines_core::view_model::rinkcraft_stat_scores::EstimatedRecord>,
     stat_attributes: Option<icelines_core::view_model::rinkcraft_stat_scores::Profile>,
@@ -1928,7 +1929,9 @@ pub async fn get_html(
         .cloned();
     let record_projection = stat_attributes.as_ref().and_then(|s|s.estimated_record.clone()).or_else(|| view.numerical_evidence.as_ref().and_then(|n|n.estimated_record.clone()));
     let pressure_record = stat_attributes.as_ref().and_then(|s|s.under_pressure.clone());
+    let unit_links=stat_attributes.as_ref().and_then(|s|s.unit_links.clone());
     let template = ProfileTemplate {
+        unit_links,
         pressure_record,
         record_projection,
         stat_attributes,

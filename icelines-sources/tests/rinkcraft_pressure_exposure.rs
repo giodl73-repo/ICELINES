@@ -153,3 +153,83 @@ fn overtime_toi_is_validated_but_never_added_to_regulation_context() {
     }
     assert_eq!(run(&p, &b, &s).unwrap().players[&5].late_lead_seconds, 120);
 }
+#[test]
+fn unit_links_distinguish_forward_trios_defense_pairs_and_goalies() {
+    let (p, mut b, s) = fixture();
+    b["homeTeam"]["abbrev"] = json!("NYR");
+    b["awayTeam"]["abbrev"] = json!("SEA");
+    let a = run(&p, &b, &s).unwrap();
+    let r = icelines_sources::rinkcraft_unit_links::from_analyzed(
+        &serde_json::to_vec(&b).unwrap(),
+        2026020001,
+        &a,
+    )
+    .unwrap();
+    assert_eq!(
+        r[&1].units["5v5"][0]
+            .members
+            .iter()
+            .map(|m| m.player_id)
+            .collect::<Vec<_>>(),
+        vec![1, 2, 3]
+    );
+    assert_eq!(
+        r[&4].units["5v5"][0]
+            .members
+            .iter()
+            .map(|m| m.player_id)
+            .collect::<Vec<_>>(),
+        vec![4, 5]
+    );
+    assert_eq!(
+        r[&6].units["5v5"][0]
+            .members
+            .iter()
+            .map(|m| m.player_id)
+            .collect::<Vec<_>>(),
+        vec![4, 5]
+    );
+    assert_eq!(r[&1].states["5v5"], 3600);
+    assert_eq!(r[&6].states["5v5"], 3600);
+    assert_eq!(r[&1].partners.len(), 4);
+    assert!(icelines_sources::rinkcraft_unit_links::from_analyzed(
+        &serde_json::to_vec(&b).unwrap(),
+        2026020002,
+        &a
+    )
+    .is_err());
+}
+#[test]
+fn unit_links_keep_special_teams_and_uncertain_participants_separate() {
+    let (p, mut b, mut s) = fixture();
+    b["homeTeam"]["abbrev"] = json!("NYR");
+    b["awayTeam"]["abbrev"] = json!("SEA");
+    s["data"]
+        .as_array_mut()
+        .unwrap()
+        .retain(|r| !(r["playerId"] == 12 && r["period"] == 3));
+    s["total"] = json!(s["data"].as_array().unwrap().len());
+    b["playerByGameStats"]["awayTeam"]["forwards"][1]["toi"] = json!("40:00");
+    let a = run(&p, &b, &s).unwrap();
+    let r = icelines_sources::rinkcraft_unit_links::from_analyzed(
+        &serde_json::to_vec(&b).unwrap(),
+        2026020001,
+        &a,
+    )
+    .unwrap();
+    assert_eq!(r[&1].states["5v4"], 1200);
+    assert_eq!(r[&11].states["4v5"], 1200);
+    assert_eq!(r[&1].units["5v4"][0].members.len(), 5);
+    assert_eq!(r[&11].units["4v5"][0].members.len(), 4);
+    b["playerByGameStats"]["homeTeam"]["defense"][0]["toi"] = json!("59:58");
+    let a = run(&p, &b, &s).unwrap();
+    let r = icelines_sources::rinkcraft_unit_links::from_analyzed(
+        &serde_json::to_vec(&b).unwrap(),
+        2026020001,
+        &a,
+    )
+    .unwrap();
+    assert!(!r.contains_key(&4));
+    assert_eq!(r[&1].unresolved_seconds, 3600);
+    assert!(r[&1].units.is_empty());
+}

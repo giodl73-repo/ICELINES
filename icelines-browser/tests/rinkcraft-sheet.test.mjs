@@ -23,6 +23,15 @@ test('context actions render without faceoffs or invented outcome rates',async()
  assert.equal(classed(pressureEntries({entries:[]}),'rk-pressure-action').length,0);
 });
 
+test('observed unit links preserve Rust values, ties and exact selected metadata',async()=>{
+ const {unitLinks,renderUnitLinks,renderUnitDeployment}=await import('../dist/src/rinkcraft-unit-links.js');
+ const g={team:'NYR',partners_display:'Player Two',time_display:'1:40',share_display:'66.7%'};
+ const r={schema:'rinkcraft.unit-links.v1',player_id:1,season:20262027,group:'Defense',games:20,game_ids:[2026020001],coverage:'1 matched appearance / 2026-10-01',contexts:[{key:'5v5',label:'5v5 pair',seconds:150,time_display:'2:30',total_groups:2,tied_leaders:1,groups:[g]},{key:'5v4',label:'PP / 5v4',seconds:0,time_display:'0:00',total_groups:0,tied_leaders:0,groups:[]},{key:'4v5',label:'PK / 4v5',seconds:0,time_display:'0:00',total_groups:0,tied_leaders:0,groups:[]}],partners:[],recent:{game_ids:[2026020001],first_date:'2026-10-01',last_date:'2026-10-01',leading:g,tied_leaders:1,different_from_full:false},remainder_display:'Other 0:00 / unresolved 0:00',note:'Observed shared time.'};
+ const p={player_id:1,season:20262027,group:'Defense',games:20,unit_links:r};assert.equal(unitLinks(p),r);for(const stale of [{...r,player_id:2},{...r,season:20252026},{...r,games:19},{...r,group:'Forwards'}])assert.equal(unitLinks({...p,unit_links:stale}),undefined);
+ const view=renderUnitLinks(r);assert.match(classed(view,'rk-unit-summary')[0].textContent,/Player Two.*1:40.*66.7%/);assert.match(view.textContent,/Last 1 matched appearances.*Same leading combination/);assert.match(renderUnitDeployment(r).textContent,/Matched shifts.*5v5.*2:30.*5v4.*0:00/);
+ const tied=renderUnitLinks({...r,contexts:[{...r.contexts[0],tied_leaders:2},...r.contexts.slice(1)]});assert.match(classed(tied,'rk-unit-summary')[0].textContent,/2 co-leading groups/);assert.doesNotMatch(classed(tied,'rk-unit-summary')[0].textContent,/Player Two/);assert.equal(unitLinks(undefined),undefined);
+});
+
 test('selected snapshot pace fills contact and blocks while rejecting another season',()=>{
  const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:20,minutes:400,scope:'all strengths',small_sample:false,
   scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'})),
@@ -146,7 +155,7 @@ test('workload requires matching actor, season, season type, GP and position gro
   const render=(u,request={player_id:1,season_type:'regular'})=>renderCharacterCard('Example',{...sheet,player_id:1},undefined,{season:20242025,position:'Center',games:2,metrics:[]},undefined,undefined,undefined,undefined,true,undefined,u,request);
   const p=render(usage),front=classed(p,'rk-front')[0];
   assert.match(classed(front,'rk-front-role-coverage')[0].textContent,/PP 3:00 \/ SH 0:00 per GP/);
-  assert.match(classed(front,'rk-front-deployment')[0].textContent,/Unit \/ station undocumented/);
+  assert.match(classed(front,'rk-front-deployment')[0].textContent,/Assigned unit \/ station undocumented/);
   assert.match(classed(front,'rk-front-deployment')[0].textContent,/0 seconds \/ 2 appearances/);
   assert.equal(classed(front,'rk-usage')[0].dataset.usageSeason,'20242025');
   for(const u of [{...usage,games:1},{...usage,season:20252026},{...usage,player_id:2},{...usage,season_type:'playoff'},{...usage,goalie:true}])assert.equal(classed(render(u),'rk-usage').length,0);

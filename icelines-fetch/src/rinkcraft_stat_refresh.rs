@@ -443,6 +443,7 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
     }
     observations.sort_by_key(|p| p.player_id);
     let mut skater_contexts = BTreeMap::new();
+    let mut unit_parent_fingerprint:Option<String>=None;
     let mut action_samples = BTreeMap::<u32,icelines_core::view_model::rinkcraft_under_pressure::ActionSample>::new();
     let mut faceoff_samples = BTreeMap::<u32,icelines_core::view_model::rinkcraft_under_pressure::Faceoffs>::new();
     if let Some((summary, realtime, toi)) = skater_sources {
@@ -468,6 +469,7 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
             event_captures.sort_by(|a,b|a.url.cmp(&b.url));
             let captured_at=event_captures.iter().map(|c|c.captured_at.as_str()).max().ok_or("Missing pressure captures")?.to_string();
             let source_sha256=format!("{:x}",Sha256::digest(serde_json::to_vec(&serde_json::to_value(&event_captures).map_err(|e|e.to_string())?).map_err(|e|e.to_string())?));
+            unit_parent_fingerprint=Some(source_sha256.clone());
             receipts.extend(captures);
             let mut totals =
                 BTreeMap::<u32, icelines_sources::rinkcraft_skater_context::Assists>::new();
@@ -575,6 +577,11 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
         if let Some(fresh)=p.under_pressure.take() {
             p.under_pressure=old;
             p.under_pressure=Some(icelines_core::view_model::rinkcraft_under_pressure::build_with_actions(p,fresh.faceoffs,fresh.action_sample));
+        }
+    }
+    for p in &mut profiles {
+        if let (Some(parent),Some(old))=(unit_parent_fingerprint.as_deref(),previous.iter().find(|o|o.player_id==p.player_id&&o.season==p.season&&o.group==p.group).and_then(|o|o.unit_links.as_ref())) {
+            p.unit_links=icelines_core::view_model::rinkcraft_unit_links::rebind(p,old,parent);
         }
     }
     previous.retain(|p| {

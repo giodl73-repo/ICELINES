@@ -536,4 +536,17 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 .rk-pressure-entry>summary{display:block;list-style:none}.rk-pressure-entry>summary::-webkit-details-marker{display:none}.rk-pressure-entry>summary>strong::before{content:"▸ ";font-weight:400}.rk-pressure-entry[open]>summary>strong::before{content:"▾ "}
 
 .rk-pressure-breakdown{margin:6px 0;border-top:1px solid var(--sheet-line,#ccd5de);font-size:8px}.rk-pressure-breakdown>div{padding:3px 0}.rk-pressure-breakdown dt{font-weight:700}.rk-pressure-breakdown dd{margin:0}
+.rk-unit-links{font-size:8px;line-height:1.35}.rk-unit-links>small,.rk-unit-summary>small{display:block;font-size:7px}.rk-unit-summary{padding:5px 0;border-bottom:1px solid var(--sheet-line,#ccd5de)}.rk-unit-summary>p{margin:2px 0}.rk-unit-summary>strong{font-size:9px}.rk-unit-details{margin-top:5px;font-size:8px}.rk-unit-details>summary{cursor:pointer}.rk-unit-details>strong{display:block;margin-top:7px}.rk-unit-details>p{margin:4px 0}.rk-unit-deployment{border-top:1px solid var(--sheet-line,#ccd5de);padding-top:6px;margin-top:6px;font-size:8px}.rk-unit-deployment>small{display:block;font-size:7px}.rk-unit-deployment>dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:5px 0}.rk-unit-deployment dt{font-size:7px}.rk-unit-deployment dd{margin:0;font-weight:700}
+@media print{
+ .rk-unit-details{display:none!important}
+ .rk-front:has(.rk-unit-links){padding-bottom:4px!important}
+ .rk-front:has(.rk-unit-links) .rk-front-footer,.rk-unit-summary:not([data-unit-state="5v5"]){display:none}
+ .rk-unit-links{font-size:7px}.rk-unit-summary{padding:0}.rk-unit-summary>strong{font-size:7px}
+ .rk-front .rk-unit-summary>p{font-size:7px!important;line-height:1.15!important;margin:1px 0!important}
+ .rk-unit-links>small,.rk-unit-summary>small{font-size:6px}
+ .rk-unit-deployment{display:flex;gap:4px;align-items:baseline;font-size:7px;line-height:1.1;padding-top:3px;margin-top:3px}
+ .rk-unit-deployment>small{display:none}.rk-unit-deployment>strong{font-size:6px}
+ .rk-unit-deployment>dl{flex:1;display:flex;justify-content:space-between;gap:4px;margin:0}
+ .rk-unit-deployment>dl>div{display:flex;align-items:baseline;gap:2px}.rk-unit-deployment dt{font-size:6px}
+}
 @media print{.rk-pressure-breakdown{display:none!important}}

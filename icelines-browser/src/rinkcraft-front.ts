@@ -1,3 +1,4 @@
+import {unitLinks,renderUnitLinks,renderUnitDeployment} from './rinkcraft-unit-links.js';
 import {pressureRecord,pressureEntries,pressureGaps} from './rinkcraft-under-pressure.js';
 import {renderGoaliePuck} from './rinkcraft-goalie-puck.js';
 import {renderShotContext} from './rinkcraft-goalie-shots.js';
@@ -226,6 +227,7 @@ export function renderCharacterFront(
   const deployment=box('Deployment','rk-front-deployment'),assignment=node('dl');assignment.className='rk-task-list';
   if(usage)deployment.append(renderDeploymentUsage(usage));
   else {assignment.append(field('Unit','Undocumented'),field('Station','Undocumented'));deployment.append(assignment);}
+  const observedUnits=unitLinks(statScores);if(observedUnits)deployment.append(renderUnitDeployment(observedUnits));
   center.append(responses,counters,methods,measured,deployment);
 
   const right=node('div');right.className='rk-front-right';
@@ -233,7 +235,7 @@ export function renderCharacterFront(
   for(const [title,className,text] of [
     ['Assigned Role','rk-front-role','Undocumented'],['Unit Links','rk-front-links','Undocumented'],
     ['Known Limitations','rk-front-limitations','Unassessed'],
-  ]){const section=box(title,className);section.append(node('p',text));if(statFeats&&className==='rk-front-limitations'){const observations=renderObservations(statFeats);if(observations){section.children[0].textContent='Cautions & Low Metrics';section.children[1].textContent='Measured context · not ability penalties';section.append(observations);}section.append(node('small','Stat flags · contextual, not diagnosed weaknesses.'),renderStatFeats(statFeats,'risk_flags',2));}right.append(section);}
+  ]){const section=box(title,className);if(className==='rk-front-links'&&observedUnits)section.append(renderUnitLinks(observedUnits));else section.append(node('p',text));if(statFeats&&className==='rk-front-limitations'){const observations=renderObservations(statFeats);if(observations){section.children[0].textContent='Cautions & Low Metrics';section.children[1].textContent='Measured context · not ability penalties';section.append(observations);}section.append(node('small','Stat flags · contextual, not diagnosed weaknesses.'),renderStatFeats(statFeats,'risk_flags',2));}right.append(section);}
   const distinctive=box('Distinctive Features','rk-front-distinctive');
   distinctive.append(node('strong',sheet?.specialty??'Undocumented'));
   if(sheet)distinctive.append(node('p',sheet.summary));

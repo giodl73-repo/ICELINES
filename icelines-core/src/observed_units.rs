@@ -228,7 +228,8 @@ fn reconstruct_inner(
             *totals.entry(state).or_default() += seconds;
             if emit_segments {
                 focused_segments.push(json!({"period":period,"start_seconds":edge[0],"end_seconds":edge[1],"state":state,
-                    "own_participants":own.iter().map(|id|json!({"id":id,"position":positions[id].1})).collect::<Vec<_>>()}));
+                    "own_participants":own.iter().map(|id|json!({"id":id,"position":positions[id].1})).collect::<Vec<_>>(),
+                    "opponent_participants":opp.iter().map(|id|json!({"id":id,"position":positions[id].1})).collect::<Vec<_>>()}));
             }
             if let Some(pid) = focus {
                 if !own.contains(&pid) {

@@ -13,8 +13,12 @@ pub struct PlayerExposure {
 }
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GameExposure {
+    pub game_id: u64,
     pub players: BTreeMap<u32, PlayerExposure>,
     pub excluded_players: BTreeMap<u32, String>,
+    pub verified_players: BTreeSet<u32>,
+    pub regulation_seconds: BTreeMap<u32, u32>,
+    pub segments: BTreeMap<u64, Vec<Value>>,
 }
 fn n(v: &Value, key: &str) -> Result<u64, String> {
     v[key]
@@ -123,14 +127,14 @@ pub fn analyze(
         }
     }
     let mut eligible = BTreeSet::new();
+    let mut verified_players = BTreeSet::new();
+    let mut regulation_seconds = BTreeMap::new();
     let mut excluded_players = BTreeMap::new();
     for (&id, &(_, goalie, toi)) in &roster {
-        if goalie {
-            continue;
-        }
         let mut seconds = 0u32;
+        let mut regulation = 0u32;
         let mut overlap = false;
-        for ((pid, _), spans) in &intervals {
+        for ((pid, period), spans) in &intervals {
             if *pid != id {
                 continue;
             }
@@ -139,17 +143,26 @@ pub fn analyze(
                 overlap |= start < prior_end;
                 prior_end = end;
                 seconds += end - start;
+                if *period <= 3 {
+                    regulation += end - start;
+                }
             }
         }
         if overlap || seconds.abs_diff(toi) > 1 {
-            excluded_players.insert(
-                id,
-                format!(
-                    "Shift/box TOI not reconciled: {seconds}s vs {toi}s; overlapping={overlap}"
-                ),
-            );
+            if !goalie {
+                excluded_players.insert(
+                    id,
+                    format!(
+                        "Shift/box TOI not reconciled: {seconds}s vs {toi}s; overlapping={overlap}"
+                    ),
+                );
+            }
         } else {
-            eligible.insert(id);
+            verified_players.insert(id);
+            regulation_seconds.insert(id, regulation);
+            if !goalie {
+                eligible.insert(id);
+            }
         }
     }
     let mut goals = Vec::new();
@@ -196,6 +209,7 @@ pub fn analyze(
         .into_iter()
         .collect::<Vec<_>>();
     let mut players = BTreeMap::new();
+    let mut segments = BTreeMap::new();
     for (own, team) in teams.into_iter().enumerate() {
         let mut windows = Vec::new();
         for w in edges.windows(2) {
@@ -211,6 +225,13 @@ pub fn analyze(
         }
         let report = icelines_core::observed_units::reconstruct_segments(&b, &s, team)
             .map_err(|e| e.to_string())?;
+        segments.insert(
+            team,
+            report["participation_segments"]
+                .as_array()
+                .ok_or("Missing participation segments")?
+                .clone(),
+        );
         let mut known = 0;
         let mut seconds = BTreeMap::<u32, u32>::new();
         for seg in report["participation_segments"]
@@ -252,7 +273,11 @@ pub fn analyze(
         }
     }
     Ok(GameExposure {
+        game_id: game,
         players,
         excluded_players,
+        verified_players,
+        regulation_seconds,
+        segments,
     })
 }

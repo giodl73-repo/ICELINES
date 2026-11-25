@@ -56,6 +56,25 @@ pub fn run(
     manifest: &Path,
     output: &Path,
 ) -> anyhow::Result<()> {
+    run_import(catalog, season, cache, manifest, output, false)
+}
+pub fn units(
+    catalog: &Path,
+    season: u32,
+    cache: &Path,
+    manifest: &Path,
+    output: &Path,
+) -> anyhow::Result<()> {
+    run_import(catalog, season, cache, manifest, output, true)
+}
+fn run_import(
+    catalog: &Path,
+    season: u32,
+    cache: &Path,
+    manifest: &Path,
+    output: &Path,
+    units: bool,
+) -> anyhow::Result<()> {
     ensure!(!output.exists(), "Choose a new exposure output directory");
     let input = read(catalog, 32 * 1024 * 1024)?;
     let mut data = Catalog::from_json(std::str::from_utf8(&input)?).map_err(anyhow::Error::msg)?;
@@ -79,6 +98,8 @@ pub fn run(
     let fingerprint = format!("{:x}", h.finalize());
     let mut seen = BTreeSet::new();
     let mut samples = BTreeMap::<u32, Exposure>::new();
+    let mut unit_samples =
+        BTreeMap::<u32, Vec<icelines_core::view_model::rinkcraft_unit_links::Game>>::new();
     let mut quality = Vec::new();
     for g in &m.games {
         ensure!(seen.insert(g.game_id), "Duplicate exposure game");
@@ -110,24 +131,54 @@ pub fn run(
                 .map_err(anyhow::Error::msg)
                 .with_context(|| format!("Exposure game {}", g.game_id))?;
         quality.push(json!({"game_id":g.game_id,"eligible_players":result.players.len(),"excluded_players":result.excluded_players,"pbp_sha256":sha}));
-        for (id, c) in result.players {
-            let e = samples.entry(id).or_insert_with(|| Exposure {
-                source_sha256: fingerprint.clone(),
-                ..Default::default()
-            });
-            e.game_ids.push(g.game_id);
-            e.late_lead_seconds += c.late_lead_seconds;
-            e.unresolved_team_seconds += c.unresolved_team_seconds;
-            e.late_lead_blocks += c.late_lead_blocks;
-            e.late_lead_takeaways += c.late_lead_takeaways;
+        if units {
+            for (id, g) in
+                icelines_sources::rinkcraft_unit_links::from_analyzed(&b, g.game_id, &result)
+                    .map_err(anyhow::Error::msg)?
+            {
+                unit_samples.entry(id).or_default().push(g);
+            }
+        } else {
+            for (id, c) in result.players {
+                let e = samples.entry(id).or_insert_with(|| Exposure {
+                    source_sha256: fingerprint.clone(),
+                    ..Default::default()
+                });
+                e.game_ids.push(g.game_id);
+                e.late_lead_seconds += c.late_lead_seconds;
+                e.unresolved_team_seconds += c.unresolved_team_seconds;
+                e.late_lead_blocks += c.late_lead_blocks;
+                e.late_lead_takeaways += c.late_lead_takeaways;
+            }
         }
     }
     let mut attached = 0;
     for p in data
         .profiles
         .iter_mut()
-        .filter(|p| p.season == season && p.group != "Goalies")
+        .filter(|p| p.season == season && (units || p.group != "Goalies"))
     {
+        if units {
+            let Some(mut games) = unit_samples.remove(&p.player_id) else {
+                continue;
+            };
+            games.retain(|g| g.group == p.group);
+            if games.is_empty() {
+                continue;
+            }
+            p.unit_links = Some(
+                icelines_core::view_model::rinkcraft_unit_links::build(
+                    p,
+                    games,
+                    fingerprint.clone(),
+                    parent.into(),
+                )
+                .map_err(anyhow::Error::msg)
+                .with_context(|| format!("Unit links player {}", p.player_id))?,
+            );
+            attached += 1;
+            continue;
+        }
         let Some(mut e) = samples.remove(&p.player_id) else {
             continue;
         };
@@ -152,15 +203,23 @@ pub fn run(
         bytes.len() <= 32 * 1024 * 1024,
         "Exposure catalog exceeds size bound"
     );
-    let report = json!({"schema":"rinkcraft.pressure-exposure-report.v1","season":season,"matched_games":seen.len(),"attached_profiles":attached,"source_sha256":fingerprint,"input_catalog_sha256":format!("{:x}",Sha256::digest(input)),"output_catalog_sha256":format!("{:x}",Sha256::digest(&bytes)),"production_grades_changed":false,"quality":quality});
+    let report = json!({"schema":if units {"rinkcraft.unit-links-import.v1"}else{"rinkcraft.pressure-exposure-report.v1"},"season":season,"matched_games":seen.len(),"attached_profiles":attached,"source_sha256":fingerprint,"input_catalog_sha256":format!("{:x}",Sha256::digest(input)),"output_catalog_sha256":format!("{:x}",Sha256::digest(&bytes)),"production_grades_changed":false,"quality":quality});
     fs::create_dir_all(output)?;
     fs::write(output.join("rinkcraft-stat-attributes.json"), bytes)?;
     fs::write(
-        output.join("exposure-report.json"),
+        output.join(if units {
+            "unit-links-report.json"
+        } else {
+            "exposure-report.json"
+        }),
         serde_json::to_vec_pretty(&report)?,
     )?;
     fs::write(
-        output.join("exposure-sources.json"),
+        output.join(if units {
+            "unit-links-sources.json"
+        } else {
+            "exposure-sources.json"
+        }),
         serde_json::to_vec_pretty(
             &json!({"manifest":serde_json::from_slice::<serde_json::Value>(&raw)?,"parent_event_sources":events.sources,"source_sha256":fingerprint}),
         )?,
