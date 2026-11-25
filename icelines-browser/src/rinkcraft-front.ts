@@ -213,6 +213,13 @@ export function renderCharacterFront(
   }
   else values.append(field('Coverage','Unavailable'));
   measured.append(values);
+  if(projection?.metrics.some(m=>m.calculation)){
+    const details=node('details');details.className='rk-pace-detail';details.append(node('summary','Observed record & pace'));
+    if(projection.observed_games!==undefined)details.append(node('p',`${projection.observed_games} observed GP / ${projection.target_games}-game pace`));
+    for(const m of projection.metrics.filter(m=>m.calculation)){const row=node('div');row.dataset.paceKey=m.key;row.append(node('strong',m.label));if(m.recorded_count!==undefined)row.append(node('span',`${m.recorded_count} recorded`));row.append(node('small',m.calculation));details.append(row);}
+    details.append(node('p','Projected totals round to whole counts. Ratios and TOI remain rates. Straight pace is not an availability forecast.'));measured.append(details);
+  }
+
   const deployment=box('Deployment','rk-front-deployment'),assignment=node('dl');assignment.className='rk-task-list';
   if(usage)deployment.append(renderDeploymentUsage(usage));
   else {assignment.append(field('Unit','Undocumented'),field('Station','Undocumented'));deployment.append(assignment);}

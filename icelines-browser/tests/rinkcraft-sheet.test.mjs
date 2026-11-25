@@ -7,9 +7,10 @@ import {renderStatFeats} from '../dist/src/rinkcraft-achievements.js';
 test('selected snapshot pace fills contact and blocks while rejecting another season',()=>{
  const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:20,minutes:400,scope:'all strengths',small_sample:false,
   scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'})),
-  estimated_record:{season:20262027,target_games:84,basis:'84-game pace / all strengths',metrics:[{key:'hits',label:'Hits',value:42,unit:'Count',per_game:0.5,projected_total:true},{key:'blocks',label:'Blocks',value:0,unit:'Count',per_game:0,projected_total:true}]}};
+  estimated_record:{observed_games:20,season:20262027,target_games:84,basis:'84-game pace / all strengths',metrics:[{recorded_count:10,calculation:'10 / 20 GP x 84 games = 42.00',key:'hits',label:'Hits',value:42,unit:'Count',per_game:0.5,projected_total:true},{recorded_count:0,calculation:'0 / 20 GP x 84 games = 0.00',key:'blocks',label:'Blocks',value:0,unit:'Count',per_game:0,projected_total:true}]}};
  const args=Array(18).fill(undefined);args[0]='Skater';args[3]={season:20262027,games:20,position:'Center',metrics:[]};args[11]={player_id:1,season_type:'regular'};args[17]=[stats];
  const block=classed(renderCharacterCard(...args),'rk-front-record')[0];assert.match(block.textContent,/84-game pace.*Hits 42 0.50 \/game.*Blocks 0 0.00 \/game/);assert.doesNotMatch(block.textContent,/Unknown|\bP\d|\bn=/);
+ assert.match(classed(block,'rk-pace-detail')[0].textContent,/20 observed GP.*10 recorded.*42.00.*0 recorded/);
  stats.estimated_record.season=20252026;assert.doesNotMatch(classed(renderCharacterCard(...args),'rk-front-record')[0].textContent,/84-game pace/);
 });
 

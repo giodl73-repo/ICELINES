@@ -230,7 +230,7 @@ impl Catalog {
         let mut seen = BTreeSet::new();
         for p in &self.profiles {
             if let Some(r) = &p.estimated_record {
-                if r.season != p.season || r.target_games < p.games || r.target_games == 0 || r.metrics.len() != 7
+                if r.season != p.season || r.observed_games.is_some_and(|g|g!=p.games) || r.target_games < p.games || r.target_games == 0 || r.metrics.len() != 7
                     || r.metrics.iter().any(|m| m.value.is_some_and(|v| !v.is_finite() || v < 0.) || m.per_game.is_some_and(|v| !v.is_finite() || v < 0.)) {
                     return Err("Estimated record does not match profile window".into());
                 }
@@ -300,6 +300,10 @@ pub struct RecordMetric {
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EstimatedMetric {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recorded_count: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub calculation: Option<String>,
     pub key: String,
     pub label: String,
     pub value: Option<f64>,
@@ -309,10 +313,15 @@ pub struct EstimatedMetric {
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EstimatedRecord {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub observed_games: Option<u32>,
     pub season: u32,
     pub target_games: u32,
     pub basis: String,
     pub metrics: Vec<EstimatedMetric>,
+}
+impl EstimatedRecord {
+    pub fn has_calculations(&self) -> bool { self.metrics.iter().any(|m| m.calculation.is_some()) }
 }
 /// Straight season pace, not an injury/selection forecast. Ratios remain ratios.
 pub fn estimate_record(
@@ -342,7 +351,14 @@ pub fn estimate_record(
                     _ => None,
                 }
             };
+            let recorded_count = rate.map(|r| r * games as f64).filter(|v| v.is_finite() && *v >= 0. && *v <= u32::MAX as f64 && (*v-v.round()).abs() <= 1e-6).map(|v|v.round() as u32);
+            let calculation = rate.filter(|r| r.is_finite()).map(|r| match recorded_count {
+                Some(n) => format!("{n} / {games} GP x {target} games = {:.2}", r*target as f64),
+                None => format!("Observed per-game rate x {target} games = {:.2}; full-precision rate used.",r*target as f64),
+            });
             EstimatedMetric {
+                recorded_count,
+                calculation,
                 key: m.key.clone(),
                 label: m.label.replace(" / GP", "").replace(" / 60", ""),
                 value: if projected {
@@ -361,6 +377,7 @@ pub fn estimate_record(
         })
         .collect();
     EstimatedRecord {
+        observed_games: Some(games),
         season,
         target_games: target,
         basis: format!("{target}-game pace"),

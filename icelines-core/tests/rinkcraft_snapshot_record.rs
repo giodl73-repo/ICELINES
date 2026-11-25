@@ -85,6 +85,17 @@ fn attachment_preserves_grades_other_seasons_and_validates_record_window() {
         profiles: ps,
     };
     c.validate().unwrap();
+    c.profiles[0]
+        .estimated_record
+        .as_mut()
+        .unwrap()
+        .observed_games = Some(19);
+    assert!(c.validate().is_err());
+    c.profiles[0]
+        .estimated_record
+        .as_mut()
+        .unwrap()
+        .observed_games = Some(20);
     c.profiles[0].estimated_record.as_mut().unwrap().season = 20252026;
     assert!(c.validate().is_err());
 }
