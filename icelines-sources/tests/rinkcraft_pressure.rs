@@ -23,6 +23,30 @@ fn late_context_uses_score_before_draw_and_retains_opponent_losses() {
     assert_eq!(r[&2].won, 0);
     assert_eq!(r[&2].late_taken, 1);
     assert_eq!(r[&3].taken, 0);
+    assert_eq!(r[&1].late_states["leading"].won, 1);
+    assert_eq!(r[&2].late_states["trailing"].taken, 1);
+}
+#[test]
+fn state_is_team_relative_and_tied_draws_are_separate() {
+    let mut v = game();
+    v["plays"] = json!([
+        goal(1, 2, 0, 1),
+        goal(2, 3, 1, 1),
+        draw(3, 3, "15:00"),
+        goal(4, 3, 2, 1),
+        draw(5, 3, "16:00"),
+        goal(6, 2, 2, 2),
+        draw(7, 3, "17:00"),
+        goal(8, 2, 2, 3)
+    ]);
+    v["awayTeam"]["score"] = json!(2);
+    v["homeTeam"]["score"] = json!(3);
+    let r = parse(&v).unwrap();
+    assert_eq!(r[&1].late_taken, 3);
+    assert_eq!(r[&1].late_states["tied"].taken, 2);
+    assert_eq!(r[&1].late_states["trailing"].won, 1);
+    assert_eq!(r[&2].late_states["leading"].won, 0);
+    assert_eq!(r[&2].late_states["leading"].taken, 1);
 }
 #[test]
 fn rejects_wrong_scope_actors_duplicate_events_and_missing_score_sequence() {

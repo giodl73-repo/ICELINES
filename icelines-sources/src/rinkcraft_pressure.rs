@@ -3,6 +3,7 @@ use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 #[derive(Debug, Default, Clone)]
 pub struct Counts {
+    pub late_states: BTreeMap<String, icelines_core::view_model::rinkcraft_under_pressure::Draws>,
     pub taken: u32,
     pub won: u32,
     pub late_taken: u32,
@@ -121,6 +122,15 @@ pub fn parse_game(bytes: &[u8], id: u64, season: u32) -> Result<BTreeMap<u32, Co
             if late {
                 c.late_taken += 1;
                 c.late_won += u32::from(win);
+                let own = usize::from(roster[&id] == home);
+                let state = match score[own].cmp(&score[1 - own]) {
+                    std::cmp::Ordering::Equal => "tied",
+                    std::cmp::Ordering::Greater => "leading",
+                    std::cmp::Ordering::Less => "trailing",
+                };
+                let b = c.late_states.entry(state.into()).or_default();
+                b.taken += 1;
+                b.won += u32::from(win);
             }
         }
     }

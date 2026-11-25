@@ -27,10 +27,54 @@ fn faceoffs() -> pressure::Faceoffs {
         won: 60,
         late_taken: 4,
         late_won: 1,
+        late_states: None,
         coverage_games: 200,
         captured_at: "2026-11-24T00:00:00Z".into(),
         source_sha256: "a".repeat(64),
     }
+}
+#[test]
+fn score_state_partitions_reconcile_and_do_not_invent_missing_splits() {
+    let p = player("Forwards");
+    let mut f = faceoffs();
+    f.late_states = Some(BTreeMap::from([
+        ("tied".into(), pressure::Draws { taken: 2, won: 1 }),
+        ("leading".into(), pressure::Draws { taken: 1, won: 0 }),
+        ("trailing".into(), pressure::Draws { taken: 1, won: 0 }),
+    ]));
+    let r = pressure::build(&p, Some(f.clone()));
+    pressure::validate(&p, &r).unwrap();
+    let b = &r.entries[1].breakdown;
+    assert_eq!(b.iter().map(|b| b.opportunities).sum::<u32>(), 4);
+    assert_eq!(b.iter().map(|b| b.successes).sum::<u32>(), 1);
+    assert_eq!(b[0].result, "1/2 won · 50.0%");
+    assert_eq!(b[1].name, "Leading by one");
+    f.late_states
+        .as_mut()
+        .unwrap()
+        .get_mut("tied")
+        .unwrap()
+        .taken = 5;
+    assert!(pressure::validate(&p, &pressure::build(&p, Some(f))).is_err());
+    let legacy = pressure::build(&p, Some(faceoffs()));
+    assert!(legacy.entries[1].breakdown.is_empty());
+    pressure::validate(&p, &legacy).unwrap();
+}
+#[test]
+fn observed_empty_state_is_not_a_zero_percent_result() {
+    let p = player("Forwards");
+    let mut f = faceoffs();
+    f.late_states = Some(BTreeMap::from([(
+        "tied".into(),
+        pressure::Draws { taken: 4, won: 1 },
+    )]));
+    let r = pressure::build(&p, Some(f));
+    pressure::validate(&p, &r).unwrap();
+    assert_eq!(r.entries[1].breakdown[1].opportunities, 0);
+    assert_eq!(
+        r.entries[1].breakdown[1].result,
+        "No observed opportunities"
+    );
 }
 #[test]
 fn skater_challenges_keep_opportunities_windows_and_qualifications_separate() {

@@ -16,6 +16,13 @@ The late-close boundary is an authored Rinkcraft definition, not an established
 psychological pressure measure. Contested draws supply a descriptive baseline.
 The goalie buckets overlap and must not be added as independent trials.
 
+Late-close draws can include an optional score-state breakdown: tied, leading by
+one and trailing by one. These refer to the player's team before the draw, not
+the winner's team by default. Taken and won counts must partition the combined
+late-close counts exactly. The breakdown stays inside the existing expander;
+it is not three additional feats or a context-adjusted skill rating. An older
+aggregate sample can lack the breakdown without implying zero opportunities.
+
 ## What each entry carries
 
 Short name; challenge; response; successes; opportunities; a Rust-formatted

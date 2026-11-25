@@ -1,7 +1,21 @@
 //! Named challenges and observed responses. No capability grades or inferred pressure traits.
 use super::rinkcraft_stat_scores::Profile;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct Draws {
+    pub taken: u32,
+    pub won: u32,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Breakdown {
+    pub key: String,
+    pub name: String,
+    pub opportunities: u32,
+    pub successes: u32,
+    pub result: String,
+}
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Faceoffs {
     #[serde(default)]
@@ -11,12 +25,16 @@ pub struct Faceoffs {
     pub won: u32,
     pub late_taken: u32,
     pub late_won: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub late_states: Option<BTreeMap<String, Draws>>,
     pub coverage_games: u32,
     pub captured_at: String,
     pub source_sha256: String,
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Entry {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub breakdown: Vec<Breakdown>,
     pub id: String,
     pub name: String,
     pub challenge: String,
@@ -82,7 +100,7 @@ pub fn build(p: &Profile, faceoffs: Option<Faceoffs>) -> Record {
             ] {
                 let b = c.data.buckets.get(id).cloned().unwrap_or_default();
                 let saved = b.on_goal.saturating_sub(b.goals);
-                entries.push(Entry {id:id.into(),name:name.into(),challenge:challenge.into(),response:"Save the on-goal attempt".into(),opportunities:b.on_goal,successes:saved,result:outcome(saved,b.on_goal,"saved"),
+                entries.push(Entry {breakdown:vec![],id:id.into(),name:name.into(),challenge:challenge.into(),response:"Save the on-goal attempt".into(),opportunities:b.on_goal,successes:saved,result:outcome(saved,b.on_goal,"saved"),
                     definition:if id=="fast" {"Provider-tagged rebounds with 0–1 second since the prior event; denominator is on-goal attempts only."}else if id=="cross" {"Provider royal-road rebound flag; denominator is on-goal attempts only."}else{"Provider rebound flag; denominator is on-goal attempts only."}.into(),
                     source:"MoneyPuck.com shot archive".into(),captured_at:c.captured_at.clone(),coverage:format!("{} unblocked attempts in archive sample",c.data.attempts),
                     note:"Buckets overlap. Misses are excluded from save opportunities. Outcomes do not measure travel, reset speed or isolated technique; a preceding miss need not be a goalie-created rebound.".into()});
@@ -95,7 +113,8 @@ pub fn build(p: &Profile, faceoffs: Option<Faceoffs>) -> Record {
         if let Some(f) = &faceoffs {
             if f.taken > 0 {
                 for (id,name,taken,won,definition) in [("draws","Contested draws",f.taken,f.won,"NHL credited faceoff wins divided by wins plus losses; all recorded manpower situations."),("late-draws","Late-close draws",f.late_taken,f.late_won,"Third-period faceoffs at 15:00 or later with a pre-draw score gap of at most one; regulation only. This is an authored context definition.")] {
-                    entries.push(Entry {id:id.into(),name:name.into(),challenge:if id=="draws" {"A recorded faceoff contest"}else{"A draw late in a close regulation game"}.into(),response:"Win the credited draw".into(),opportunities:taken,successes:won,result:outcome(won,taken,"won"),definition:definition.into(),source:"NHL public play-by-play".into(),captured_at:f.captured_at.clone(),coverage:format!("{} finalized games in cached event sample",f.coverage_games),note:"Credited wins do not establish retained possession, clean wins or downstream value. Event and season-summary capture windows can differ. These counts are not clutch ratings.".into()});
+                    let breakdown=if id=="late-draws" && f.late_taken>0 { f.late_states.as_ref().map(|states| [("tied","Tied"),("leading","Leading by one"),("trailing","Trailing by one")].into_iter().map(|(key,name)| {let c=states.get(key).cloned().unwrap_or_default();Breakdown {key:key.into(),name:name.into(),opportunities:c.taken,successes:c.won,result:outcome(c.won,c.taken,"won")}}).collect()).unwrap_or_default() } else {vec![]};
+                    entries.push(Entry {breakdown,id:id.into(),name:name.into(),challenge:if id=="draws" {"A recorded faceoff contest"}else{"A draw late in a close regulation game"}.into(),response:"Win the credited draw".into(),opportunities:taken,successes:won,result:outcome(won,taken,"won"),definition:definition.into(),source:"NHL public play-by-play".into(),captured_at:f.captured_at.clone(),coverage:format!("{} finalized games in cached event sample",f.coverage_games),note:"Credited wins do not establish retained possession, clean wins or downstream value. Event and season-summary capture windows can differ. These counts are not clutch ratings.".into()});
                 }
             } else {
                 gaps.push(
@@ -132,6 +151,17 @@ pub fn validate(p: &Profile, r: &Record) -> Result<(), String> {
             || chrono::DateTime::parse_from_rfc3339(&f.captured_at).is_err()
         {
             return Err("Invalid faceoff challenge sample".into());
+        }
+    }
+    if let Some(states) = r.faceoffs.as_ref().and_then(|f| f.late_states.as_ref()) {
+        let f = r.faceoffs.as_ref().unwrap();
+        if states
+            .iter()
+            .any(|(k, c)| !["tied", "leading", "trailing"].contains(&k.as_str()) || c.won > c.taken)
+            || states.values().map(|c| u64::from(c.taken)).sum::<u64>() != u64::from(f.late_taken)
+            || states.values().map(|c| u64::from(c.won)).sum::<u64>() != u64::from(f.late_won)
+        {
+            return Err("Late draw partitions do not match aggregate".into());
         }
     }
     if let Some(c) = &p.shot_context {

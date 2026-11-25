@@ -73,6 +73,11 @@ pub fn read(root: &Path, season: u32) -> anyhow::Result<Cache> {
             s.won += n.won;
             s.late_taken += n.late_taken;
             s.late_won += n.late_won;
+            for (key, c) in n.late_states {
+                let b = s.late_states.entry(key).or_default();
+                b.taken += c.taken;
+                b.won += c.won;
+            }
         }
         captures.push(c);
     }
@@ -101,6 +106,7 @@ pub fn read(root: &Path, season: u32) -> anyhow::Result<Cache> {
                     won: c.won,
                     late_taken: c.late_taken,
                     late_won: c.late_won,
+                    late_states: Some(c.late_states),
                     coverage_games: games,
                     captured_at: captured_at.clone(),
                     source_sha256: fingerprint.clone(),
