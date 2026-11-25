@@ -2380,3 +2380,5 @@ pub mod rinkcraft_task_measurements;
 pub mod rinkcraft_whistle;
 
 pub mod rinkcraft_unit_links;
+
+pub mod rinkcraft_skating_detail;

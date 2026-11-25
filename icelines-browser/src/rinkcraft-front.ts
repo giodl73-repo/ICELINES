@@ -1,3 +1,4 @@
+import {skatingDetail,renderSkatingDetail} from './rinkcraft-skating-detail.js';
 import {unitLinks,renderUnitLinks,renderUnitDeployment} from './rinkcraft-unit-links.js';
 import {pressureRecord,pressureEntries,pressureGaps} from './rinkcraft-under-pressure.js';
 import {renderGoaliePuck} from './rinkcraft-goalie-puck.js';
@@ -153,9 +154,11 @@ export function renderCharacterFront(
     if(movement){response.className+=' rk-front-movement';response.dataset.movementState='unassessed';}
     const speed=!goalie&&title==='Skating Detail'&&['Forwards','Defense'].includes(numerical?.group??'')&&numerical?.style_evidence?.season===numerical?.season
       ?numerical?.style_evidence?.measured.find(m=>m.key==='max-skating-speed'&&m.unit==='Mph'&&Number.isFinite(m.value)&&m.value>=0&&typeof m.scope==='string'&&m.scope.startsWith('All strengths')):undefined;
+    const observedSkating=title==='Skating Detail'?skatingDetail(statScores):undefined;
     const edgeSpeed=!goalie&&title==='Skating Detail'?edge?.measures.find(m=>m.key==='max-skating-speed'&&m.unit==='Mph'):undefined;
     const defense=title==='Threat Denial'&&!goalie?defendingRecord(statScores):undefined;
     if(defense){response.className+=' rk-front-defense';response.append(renderDefendingRecord(defense));}
+    else if(observedSkating){response.dataset.movementState='observed_record';response.append(renderSkatingDetail(observedSkating));}
     else if(edgeSpeed){response.dataset.movementState='observed_maximum';response.append(node('strong',`${edgeSpeed.value.toFixed(2)} mph`),node('small','EDGE season max · all strengths'));response.title=`Captured ${edge!.captured_at} · ${edgeSpeed.interpretation}`;}
     else if(speed){response.dataset.movementState='observed_maximum';response.append(node('strong',`${speed.value.toFixed(2)} mph`),node('small','Season max · all strengths'));response.title=`${speed.scope}. Observed maximum; not puck-carrying speed, acceleration or a capability grade.`;}
     else response.append(node('strong','—'),node('small','Unassessed'));

@@ -32,6 +32,14 @@ test('observed unit links preserve Rust values, ties and exact selected metadata
  const tied=renderUnitLinks({...r,contexts:[{...r.contexts[0],tied_leaders:2},...r.contexts.slice(1)]});assert.match(classed(tied,'rk-unit-summary')[0].textContent,/2 co-leading groups/);assert.doesNotMatch(classed(tied,'rk-unit-summary')[0].textContent,/Player Two/);assert.equal(unitLinks(undefined),undefined);
 });
 
+test('skating detail renders supplied measurements and withholds stale or goalie data',async()=>{
+ const {skatingDetail,renderSkatingDetail}=await import('../dist/src/rinkcraft-skating-detail.js');
+ const r={schema:'rinkcraft.skating-detail.v1',player_id:1,season:20262027,group:'Defense',games:4,minutes:80,headline:'22.12 mph',secondary:'20+ mph bursts 6.50 /60',rows:[{key:'peak-speed',label:'Reported peak speed',value:'22.12 mph',comparison:null},{key:'bursts',label:'20+ mph bursts',value:'6.50 /60',comparison:null}],note:'Recorded inputs, not acceleration.'};
+ const p={player_id:1,season:20262027,group:'Defense',games:4,minutes:80,skating_detail:r};assert.equal(skatingDetail(p),r);const body=renderSkatingDetail(r);assert.match(body.textContent,/22.12 mph.*6.50 \/60.*Measures & scope.*Recorded inputs/);
+ for(const stale of [{...r,player_id:2},{...r,season:20252026},{...r,games:3},{...r,minutes:81},{...r,group:'Goalies'}])assert.equal(skatingDetail({...p,skating_detail:stale}),undefined);
+ assert.equal(skatingDetail({...p,group:'Goalies',skating_detail:{...r,group:'Goalies'}}),undefined);assert.equal(skatingDetail(undefined),undefined);
+});
+
 test('selected snapshot pace fills contact and blocks while rejecting another season',()=>{
  const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:20,minutes:400,scope:'all strengths',small_sample:false,
   scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'})),

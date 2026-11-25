@@ -137,6 +137,8 @@ pub struct Score {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Profile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub skating_detail: Option<super::rinkcraft_skating_detail::Record>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit_links: Option<super::rinkcraft_unit_links::Record>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub under_pressure: Option<super::rinkcraft_under_pressure::Record>,
@@ -233,6 +235,7 @@ impl Catalog {
         }
         let mut seen = BTreeSet::new();
         for p in &self.profiles {
+            if let Some(r)=&p.skating_detail {super::rinkcraft_skating_detail::validate(p,r)?;}
             if let Some(r)=&p.unit_links {super::rinkcraft_unit_links::validate(p,r)?;}
             if let Some(r)=&p.under_pressure {super::rinkcraft_under_pressure::validate(p,r)?;}
             if let Some(r) = &p.estimated_record {
@@ -553,6 +556,7 @@ pub fn build(season: u32, scope: &str, players: &[Player]) -> Result<Vec<Profile
             })
             .collect();
         output.push(Profile {
+            skating_detail: None,
             unit_links: None,
             under_pressure: None,
             estimated_record: None,

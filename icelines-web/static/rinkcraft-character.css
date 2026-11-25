@@ -505,6 +505,8 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 .rk-defense-details{grid-column:1/-1}
 @media print{.rk-defense-record{font-size:6.5px;break-inside:avoid}.rk-defense-record>strong{font-size:9px}.rk-defense-details{display:none!important}}
 .rk-handling-summary{margin-top:4px;font-size:7px;line-height:1.4;font-variant-numeric:tabular-nums}.rk-handling-summary>span{display:block}
+.rk-front-movement[data-movement-state="observed_record"] strong{font-size:14px}.rk-skating-summary>small{display:block;font-size:7px;line-height:1.3}.rk-skating-measures{font-size:8px;margin-top:5px;text-align:left}.rk-skating-measures>summary{cursor:pointer}.rk-skating-measures>div{padding:5px 0;border-top:1px solid var(--sheet-line,#ccd5de)}.rk-skating-measures b,.rk-skating-measures span,.rk-skating-measures small{display:block}.rk-skating-measures span{font-weight:700}.rk-skating-measures p{font-size:8px!important;line-height:1.35!important}
+@media print{.rk-skating-measures{display:none!important}.rk-front-movement[data-movement-state="observed_record"] strong{font-size:12px}.rk-skating-summary>small{font-size:6px}}
 .rk-handling-axes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.rk-handling-axes>div{padding:10px;border:1px solid currentColor;border-radius:5px}.rk-handling-axes h4{margin:0 0 4px}.rk-handling-axes strong{font-size:1.3em}
 .rk-handling-record dl>div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #7893a1}.rk-handling-record dd{margin:0;text-align:right}
 @media print{.rk-handling-summary{font-size:6px;margin-top:2px}}
