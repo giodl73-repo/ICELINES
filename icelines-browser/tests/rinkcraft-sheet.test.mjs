@@ -4,6 +4,18 @@ import {renderCharacterCard} from '../dist/src/rinkcraft-character.js';
 import {renderStatScore} from '../dist/src/rinkcraft-stat-scores.js';
 import {renderStatFeats} from '../dist/src/rinkcraft-achievements.js';
 
+test('power-play context shows supplied strength-specific rates within Role Coverage',async()=>{
+ const {powerPlayContext,renderPowerPlayContext}=await import('../dist/src/rinkcraft-power-play-context.js');
+ const r={schema:'rinkcraft.power-play-context.v1',player_id:1,season:20262027,group:'Forwards',games:4,minutes:80,summary:'Power play · 60.0% of assists',time_share:'20.0% of own TOI',assist_share:'60.0% of assists',pp_assists:'6.00 /60',outside_assists:'1.00 /60',formula:'Use each strength denominator.',note:'Outside PP includes all remaining situations, not just five-on-five.'};
+ const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:4,minutes:80,scope:'all strengths',small_sample:true,power_play_context:r,scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'}))};
+ assert.equal(powerPlayContext(stats),r);
+ const args=Array(18).fill(undefined);args[0]='Test';args[3]={season:20262027,games:4,position:'Center',metrics:[]};args[11]={player_id:1,season_type:'regular'};args[17]=[stats];
+ assert.match(classed(renderCharacterCard(...args),'rk-front-role-coverage')[0].textContent,/Power play.*60.0% of assists.*20.0% of own TOI.*outside PP.*1.00/);
+ for(const stale of [{...r,player_id:2},{...r,season:20252026},{...r,games:3},{...r,minutes:81},{...r,group:'Goalies'}])assert.equal(powerPlayContext({...stats,power_play_context:stale}),undefined);
+ assert.equal(powerPlayContext({...stats,group:'Goalies',power_play_context:{...r,group:'Goalies'}}),undefined);assert.equal(powerPlayContext(undefined),undefined);
+ assert.match(renderPowerPlayContext({...r,pp_assists:'No PP time',assist_share:'Assist share unavailable'}).textContent,/No PP time/);
+});
+
 test('overall draw breakdown uses manpower labels while late draws retain score context',async()=>{
  const {pressureEntries}=await import('../dist/src/rinkcraft-under-pressure.js');
  const e={id:'draws',name:'Contested draws',result:'4/10 won',challenge:'A draw',response:'Win',definition:'Credited wins',source:'NHL',coverage:'A frozen sample',captured_at:'2026-11-24T00:00:00Z',note:'Not retained possession',breakdown:[{key:'advantage',name:'Skater advantage',result:'3/4 won',opportunities:4,successes:3}]};

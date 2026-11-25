@@ -2388,3 +2388,5 @@ pub mod rinkcraft_shot_methods;
 pub mod rinkcraft_penalty_balance;
 
 pub mod rinkcraft_production_mix;
+
+pub mod rinkcraft_power_play_context;

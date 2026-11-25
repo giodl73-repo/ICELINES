@@ -1,3 +1,4 @@
+import {powerPlayContext,renderPowerPlayContext} from './rinkcraft-power-play-context.js';
 import {productionMix,renderProductionMix} from './rinkcraft-production-mix.js';
 import {penaltyBalance,renderPenaltyBalance} from './rinkcraft-penalty-balance.js';
 import {shotMethods,renderShotMethods} from './rinkcraft-shot-methods.js';
@@ -147,7 +148,7 @@ export function renderCharacterFront(
   const coverage=box('Role Coverage','rk-front-role-coverage');
   const positions=node('dl');positions.className='rk-task-list';
   const pp=usage?.rows.find(r=>r.key==='pp'),sh=usage?.rows.find(r=>r.key==='sh');
-  positions.append(field('Position',position),field('Special Teams',usage?(goalie?'See goalie workload':`PP ${pp?.per_game_display??'—'} / SH ${sh?.per_game_display??'—'} per GP`):'Undocumented'));coverage.append(positions);if(statFeats)coverage.append(renderStatFeats(statFeats,'role_coverage',2));left.append(coverage);
+  positions.append(field('Position',position),field('Special Teams',usage?(goalie?'See goalie workload':`PP ${pp?.per_game_display??'—'} / SH ${sh?.per_game_display??'—'} per GP`):'Undocumented'));coverage.append(positions);if(statFeats)coverage.append(renderStatFeats(statFeats,'role_coverage',2));const powerPlay=powerPlayContext(statScores);if(powerPlay)coverage.append(renderPowerPlayContext(powerPlay));left.append(coverage);
 
   const center=node('div');center.className='rk-front-center';
   const responses=node('div');responses.className='rk-response-row';

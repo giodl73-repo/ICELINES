@@ -560,3 +560,6 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 
 .rk-production-mix dl{margin:4px 0}.rk-production-mix dl>div{display:grid;grid-template-columns:1fr auto;gap:0 6px}.rk-production-mix dd{margin:0;font-variant-numeric:tabular-nums}.rk-production-mix dl small{grid-column:1/-1}.rk-production-mix p{margin:4px 0}.rk-production-mix summary{font-variant-numeric:tabular-nums}
 @media print{.rk-production-mix{display:none!important}}
+
+.rk-power-play-context dl{margin:4px 0}.rk-power-play-context dl>div{display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 6px}.rk-power-play-context dd{margin:0;font-variant-numeric:tabular-nums}.rk-power-play-context p{margin:4px 0}
+@media print{.rk-power-play-context{display:none!important}}

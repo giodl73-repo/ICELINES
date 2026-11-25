@@ -137,6 +137,8 @@ pub struct Score {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Profile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub power_play_context: Option<super::rinkcraft_power_play_context::Record>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub production_mix: Option<super::rinkcraft_production_mix::Record>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub penalty_balance: Option<super::rinkcraft_penalty_balance::Record>,
@@ -243,6 +245,7 @@ impl Catalog {
         }
         let mut seen = BTreeSet::new();
         for p in &self.profiles {
+            if let Some(r)=&p.power_play_context {super::rinkcraft_power_play_context::validate(p,r)?;}
             if let Some(r)=&p.production_mix {super::rinkcraft_production_mix::validate(p,r)?;}
             if let Some(r)=&p.penalty_balance {super::rinkcraft_penalty_balance::validate(p,r)?;}
             if let Some(s)=&p.shot_method_sample {super::rinkcraft_shot_methods::validate_sample(p,s)?;}
@@ -568,6 +571,7 @@ pub fn build(season: u32, scope: &str, players: &[Player]) -> Result<Vec<Profile
             })
             .collect();
         output.push(Profile {
+            power_play_context: None,
             production_mix: None,
             penalty_balance: None,
             shot_method_sample: None,
