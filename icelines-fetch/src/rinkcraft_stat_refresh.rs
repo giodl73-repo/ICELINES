@@ -443,6 +443,7 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
     }
     observations.sort_by_key(|p| p.player_id);
     let mut skater_contexts = BTreeMap::new();
+    let mut faceoff_samples = BTreeMap::<u32,icelines_core::view_model::rinkcraft_under_pressure::Faceoffs>::new();
     if let Some((summary, realtime, toi)) = skater_sources {
         let mut assists = None;
         if let Some(root) = &request.game_cache_dir {
@@ -458,13 +459,22 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
                 games_store,
                 request.season,
                 teams,
-                icelines_sources::rinkcraft_skater_context::goal_assists,
+                |bytes,id,season| Ok((icelines_sources::rinkcraft_skater_context::goal_assists(bytes,id,season)?,icelines_sources::rinkcraft_pressure::parse_game(bytes,id,season)?)),
             )
             .await?;
+            let coverage_games=games.len() as u32;
+            let mut event_captures=captures.iter().filter(|c|c.url.ends_with("/play-by-play")).collect::<Vec<_>>();
+            event_captures.sort_by(|a,b|a.url.cmp(&b.url));
+            let captured_at=event_captures.iter().map(|c|c.captured_at.as_str()).max().ok_or("Missing pressure captures")?.to_string();
+            let source_sha256=format!("{:x}",Sha256::digest(serde_json::to_vec(&serde_json::to_value(&event_captures).map_err(|e|e.to_string())?).map_err(|e|e.to_string())?));
             receipts.extend(captures);
             let mut totals =
                 BTreeMap::<u32, icelines_sources::rinkcraft_skater_context::Assists>::new();
-            for game in games {
+            for (game,draws) in games {
+                for (id,c) in draws {
+                    let f=faceoff_samples.entry(id).or_insert_with(||icelines_core::view_model::rinkcraft_under_pressure::Faceoffs {season:request.season,player_id:id,taken:0,won:0,late_taken:0,late_won:0,coverage_games,captured_at:captured_at.clone(),source_sha256:source_sha256.clone()});
+                    f.taken+=c.taken;f.won+=c.won;f.late_taken+=c.late_taken;f.late_won+=c.late_won;
+                }
                 for (id, a) in game {
                     let sum = totals.entry(id).or_default();
                     sum.primary += a.primary;
@@ -521,6 +531,7 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
     let mut profiles = scores::build(request.season, "all strengths · rates per60", &observations)?;
     for p in &mut profiles {
         p.skater_context = skater_contexts.remove(&p.player_id);
+        if p.group != "Goalies" {p.under_pressure=Some(icelines_core::view_model::rinkcraft_under_pressure::build(p,faceoff_samples.remove(&p.player_id)));}
         if p.group == "Goalies" {
             p.shot_context = shot_contexts.remove(&p.player_id);
             p.scope = "all strengths · NHL and MoneyPuck observations".into();

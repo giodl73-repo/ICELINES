@@ -847,6 +847,7 @@ pub async fn get_json(
 #[derive(Template)]
 #[template(path = "rinkcraft.html")]
 struct ProfileTemplate {
+    pressure_record: Option<icelines_core::view_model::rinkcraft_under_pressure::Record>,
     record_projection: Option<icelines_core::view_model::rinkcraft_stat_scores::EstimatedRecord>,
     stat_attributes: Option<icelines_core::view_model::rinkcraft_stat_scores::Profile>,
     role_feats: Option<FeatSectionView>,
@@ -882,6 +883,8 @@ struct ProfileTemplate {
     absent_json: String,
 }
 impl ProfileTemplate {
+    fn has_pressure(&self) -> bool { self.pressure_record.as_ref().is_some_and(|r|!r.entries.is_empty()) }
+    fn has_scouted_pressure(&self) -> bool { self.profile.character_sheet.as_ref().is_some_and(|c|!c.under_pressure.is_empty()) }
     fn stat_change(
         &self,
         season: &u32,
@@ -1924,7 +1927,9 @@ pub async fn get_html(
         })
         .cloned();
     let record_projection = stat_attributes.as_ref().and_then(|s|s.estimated_record.clone()).or_else(|| view.numerical_evidence.as_ref().and_then(|n|n.estimated_record.clone()));
+    let pressure_record = stat_attributes.as_ref().and_then(|s|s.under_pressure.clone());
     let template = ProfileTemplate {
+        pressure_record,
         record_projection,
         stat_attributes,
         role_feats: feat_section(&view, "role_coverage", 2),

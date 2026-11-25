@@ -1,3 +1,4 @@
+import {pressureRecord,pressureEntries,pressureGaps} from './rinkcraft-under-pressure.js';
 import {renderGoaliePuck} from './rinkcraft-goalie-puck.js';
 import {renderShotContext} from './rinkcraft-goalie-shots.js';
 import {renderSkaterContext} from './rinkcraft-skater-context.js';
@@ -131,7 +132,9 @@ export function renderCharacterFront(
   }
   attributes.append(scores);
   const tasks=node('div');tasks.className='rk-front-task-column';
-  tasks.append(renderRepertoire('Under Pressure','rk-front-pressure',sheet?.under_pressure,3,sheet));
+  const pressure=pressureRecord(statScores);
+  if(pressure?.entries.length){const section=box('Under Pressure','rk-front-pressure');section.append(pressureEntries(pressure));if(sheet?.under_pressure?.length){const scouting=node('details');scouting.className='rk-scouted-pressure';scouting.append(node('summary','Scouted responses'),renderRepertoire('Accounts','rk-pressure-accounts',sheet.under_pressure,3,sheet));section.append(scouting);}section.append(pressureGaps(pressure));tasks.append(section);}
+  else {const section=renderRepertoire('Under Pressure','rk-front-pressure',sheet?.under_pressure,3,sheet);if(pressure)section.append(pressureGaps(pressure));tasks.append(section);}
   if(statFeats){const skills=box('Task Skills','rk-front-skills');skills.append(renderStatFeats(statFeats,'task_skills',5));const scouted=node('details');scouted.className='rk-scouted-tasks';scouted.append(node('summary','Scouted specialties'),renderRepertoire('Scouted tasks','rk-scouted-task-list',sheet?.task_skills,5,sheet));skills.append(scouted);tasks.append(skills);}
   else tasks.append(renderRepertoire('Task Skills','rk-front-skills',sheet?.task_skills,5,sheet));
   const reading=readingRecord(statScores);if(reading){const section=box('Read & React','rk-front-reading');section.append(readingSummary(reading));tasks.append(section);}else tasks.append(taskBox('Read & React','rk-front-reading',['Anticipation']));

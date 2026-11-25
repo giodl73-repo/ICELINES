@@ -8,7 +8,7 @@ import {passingRecord,renderPassingRecord} from './rinkcraft-passing-record.js';
 import {shootingRecord,renderShootingRecord} from './rinkcraft-shooting-record.js';
 export interface StatPart {key:string;label:string;unit:string;weight:number;lower_is_better:boolean;value:number|null;percentile:number|null;favorable_percentile:number|null;peers:number;}
 export interface StatScore {label:string;score:number|null;stat_points:number|null;parts:StatPart[];note:string;}
-export interface StatProfile {estimated_record?:EstimatedRecord;schema:string;player_id:number;season:number;group:string;scope:string;games?:number;minutes?:number;small_sample:boolean;scores:StatScore[];shot_context?:import('./rinkcraft-goalie-shots.js').GoalieShotContext;skater_context?:import('./rinkcraft-skater-context.js').SkaterContext;}
+export interface StatProfile {under_pressure?:import('./rinkcraft-under-pressure.js').PressureRecord;estimated_record?:EstimatedRecord;schema:string;player_id:number;season:number;group:string;scope:string;games?:number;minutes?:number;small_sample:boolean;scores:StatScore[];shot_context?:import('./rinkcraft-goalie-shots.js').GoalieShotContext;skater_context?:import('./rinkcraft-skater-context.js').SkaterContext;}
 export interface StatChange {player_id:number;season:number;previous_season:number;deltas:(number|null)[];}
 export interface EstimatedRecord {observed_games?:number;season:number;target_games:number;basis:string;metrics:{recorded_count?:number;calculation?:string;key:string;label:string;value:number|null;unit:string;per_game:number|null;projected_total:boolean}[];}
 const goalieLabels=['Tracking','Positioning','Movement','Rebounds','Recovery','Puck Play'];

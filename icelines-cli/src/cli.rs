@@ -189,6 +189,9 @@ pub enum Commands {
         catalog: PathBuf,
         #[arg(long)]
         output_dir: PathBuf,
+        /// Optional checksum-verified finalized NHL game cache, read offline.
+        #[arg(long)]
+        game_cache_dir: Option<PathBuf>,
     },
     /// Compare experimental skater attribute recipes.
     ProfileCalibrate {
@@ -219,7 +222,7 @@ pub enum Commands {
         /// Optional retained NHL EDGE source captures, grouped by season/id.json.
         #[arg(long)]
         edge_captures: Option<PathBuf>,
-        /// Optional complete NHL game-source cache for primary/secondary assist detail.
+        /// Optional complete NHL game-source cache for assist detail and contextual faceoffs.
         #[arg(long)]
         game_cache_dir: Option<PathBuf>,
         /// Replay checksum-verified local sources without network requests.

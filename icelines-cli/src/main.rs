@@ -214,7 +214,8 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
             season,
             catalog,
             output_dir,
-        } => commands::profile_records::run(&catalog, season, &output_dir)?,
+            game_cache_dir,
+        } => commands::profile_records::run(&catalog, season, &output_dir, game_cache_dir.as_deref())?,
         Commands::ProfileCalibrationInputs {
             season,
             cache_dir,

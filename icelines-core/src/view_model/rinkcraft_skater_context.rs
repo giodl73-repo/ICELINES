@@ -163,5 +163,6 @@ pub fn attach_records(profiles: &mut [super::rinkcraft_stat_scores::Profile], se
     super::rinkcraft_reading_record::attach(profiles, season);
     super::rinkcraft_passing_record::attach(profiles, season);
     super::rinkcraft_shooting_record::attach(profiles, season);
+    super::rinkcraft_under_pressure::attach(profiles,season);
     for p in profiles.iter_mut().filter(|p|p.season==season) { p.estimated_record=super::rinkcraft_snapshot_record::estimate(p,None); }
 }

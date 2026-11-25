@@ -530,3 +530,7 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 
 .rk-pace-detail{margin-top:6px;font-size:8px;line-height:1.35}.rk-pace-detail>summary{cursor:pointer}.rk-pace-detail>div{display:grid;grid-template-columns:1fr auto;gap:2px 6px;border-top:1px solid var(--sheet-line,#ccd5de);padding:5px 0}.rk-pace-detail>div>small{grid-column:1/-1}.rk-pace-detail>p{margin:6px 0}
 @media print{.rk-pace-detail{display:none!important}}
+
+.rk-pressure-list>small{display:block;font-size:7px;margin-bottom:4px}.rk-pressure-entry{border-bottom:1px solid var(--sheet-line,#ccd5de);padding:4px 0;font-size:8px;line-height:1.35}.rk-pressure-entry>summary{cursor:pointer}.rk-pressure-entry>summary>strong,.rk-pressure-entry>summary>span{display:block}.rk-pressure-entry>summary>strong{font-size:9px}.rk-pressure-entry>p{margin:5px 0}.rk-pressure-entry>small{display:block;overflow-wrap:anywhere}.rk-pressure-gaps,.rk-scouted-pressure{font-size:8px;margin-top:5px}.rk-pressure-gaps>summary,.rk-scouted-pressure>summary{cursor:pointer}
+@media print{.rk-pressure-entry>p,.rk-pressure-entry>small,.rk-pressure-gaps,.rk-scouted-pressure{display:none!important}.rk-pressure-entry{font-size:7px;padding:2px 0}.rk-pressure-entry>summary>strong{font-size:8px}}
+.rk-pressure-entry>summary{display:block;list-style:none}.rk-pressure-entry>summary::-webkit-details-marker{display:none}.rk-pressure-entry>summary>strong::before{content:"▸ ";font-weight:400}.rk-pressure-entry[open]>summary>strong::before{content:"▾ "}

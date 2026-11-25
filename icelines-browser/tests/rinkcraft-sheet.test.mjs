@@ -4,6 +4,15 @@ import {renderCharacterCard} from '../dist/src/rinkcraft-character.js';
 import {renderStatScore} from '../dist/src/rinkcraft-stat-scores.js';
 import {renderStatFeats} from '../dist/src/rinkcraft-achievements.js';
 
+test('Under Pressure shows Rust response samples and gaps without inventing ratings',()=>{
+ const pressure={schema:'rinkcraft.under-pressure.v1',player_id:1,season:20262027,group:'Forwards',games:20,entries:[{id:'late-draws',name:'Late-close draws',challenge:'A late draw',response:'Win draw',opportunities:4,successes:1,result:'1/4 won / 25.0%',definition:'Third period, last five minutes, one-goal gap.',source:'NHL',captured_at:'2026-11-24T00:00:00Z',coverage:'200 finalized games',note:'Not retained possession.'}],gaps:['Press resistance: no measured opportunities.'],note:'Observed outcomes, not abilities.'};
+ const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:20,minutes:400,scope:'all strengths',small_sample:false,under_pressure:pressure,scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'}))};
+ const args=Array(18).fill(undefined);args[0]='Skater';args[3]={season:20262027,games:20,position:'Center',metrics:[]};args[11]={player_id:1,season_type:'regular'};args[17]=[stats];
+ const front=renderCharacterCard(...args);assert.match(classed(front,'rk-front-pressure')[0].textContent,/Late-close draws.*1\/4 won.*200 finalized games.*Press resistance/);assert.equal(classed(front,'rk-pressure-entry').length,1);
+ for(const stale of [{...pressure,player_id:2},{...pressure,games:19},{...pressure,season:20252026},{...pressure,group:'Goalies'}]){stats.under_pressure=stale;assert.equal(classed(renderCharacterCard(...args),'rk-pressure-entry').length,0);}
+ stats.under_pressure={...pressure,entries:[]};const empty=classed(renderCharacterCard(...args),'rk-front-pressure')[0];assert.equal(classed(empty,'rk-pressure-entry').length,0);assert.match(empty.textContent,/Press resistance/);assert.doesNotMatch(empty.textContent,/0\/0|0%/);
+});
+
 test('selected snapshot pace fills contact and blocks while rejecting another season',()=>{
  const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:20,minutes:400,scope:'all strengths',small_sample:false,
   scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'})),

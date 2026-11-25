@@ -1,0 +1,129 @@
+use icelines_core::view_model::{
+    rinkcraft_goalie_shots::{Bucket, Context, Data},
+    rinkcraft_stat_scores::{self as scores, Player},
+    rinkcraft_under_pressure as pressure,
+};
+use std::collections::BTreeMap;
+fn player(group: &str) -> scores::Profile {
+    scores::build(
+        20262027,
+        "all strengths",
+        &[Player {
+            player_id: 1,
+            group: group.into(),
+            games: 20,
+            minutes: 400.,
+            metrics: BTreeMap::new(),
+        }],
+    )
+    .unwrap()
+    .remove(0)
+}
+fn faceoffs() -> pressure::Faceoffs {
+    pressure::Faceoffs {
+        season: 20262027,
+        player_id: 1,
+        taken: 100,
+        won: 60,
+        late_taken: 4,
+        late_won: 1,
+        coverage_games: 200,
+        captured_at: "2026-11-24T00:00:00Z".into(),
+        source_sha256: "a".repeat(64),
+    }
+}
+#[test]
+fn skater_challenges_keep_opportunities_windows_and_qualifications_separate() {
+    let p = player("Forwards");
+    let before = p.clone();
+    let r = pressure::build(&p, Some(faceoffs()));
+    pressure::validate(&p, &r).unwrap();
+    assert_eq!(p, before);
+    assert_eq!(r.entries[0].result, "60/100 won · 60.0%");
+    assert_eq!(r.entries[1].result, "1/4 won · 25.0%");
+    assert!(r.entries[1].definition.contains("Third-period"));
+    assert!(r.entries[0].coverage.contains("200 finalized games"));
+    assert_eq!(r.games, 20);
+    let mut bad = r.clone();
+    bad.faceoffs.as_mut().unwrap().season = 20252026;
+    assert!(pressure::validate(&p, &bad).is_err());
+    let mut bad = r.clone();
+    bad.faceoffs.as_mut().unwrap().player_id = 2;
+    assert!(pressure::validate(&p, &bad).is_err());
+    let mut bad = r.clone();
+    bad.entries[0].successes = 99;
+    assert!(pressure::validate(&p, &bad).is_err());
+    let mut bad = r.clone();
+    bad.games = 19;
+    assert!(pressure::validate(&p, &bad).is_err());
+}
+#[test]
+fn no_draws_and_missing_tracking_are_gaps_not_zero_ability() {
+    let p = player("Defense");
+    let mut f = faceoffs();
+    f.taken = 0;
+    f.won = 0;
+    f.late_taken = 0;
+    f.late_won = 0;
+    let r = pressure::build(&p, Some(f));
+    pressure::validate(&p, &r).unwrap();
+    assert!(r.entries.is_empty());
+    assert!(r.gaps.iter().any(|g| g.contains("no observed draw")));
+    assert!(r.gaps.iter().any(|g| g.contains("Entry denial")));
+    let r = pressure::build(&p, None);
+    assert!(r.gaps[0].contains("not supplied"));
+    let mut f = faceoffs();
+    f.won = 100;
+    assert!(pressure::validate(&p, &pressure::build(&p, Some(f))).is_err());
+}
+#[test]
+fn goalie_saves_exclude_misses_and_keep_empty_samples_unknown() {
+    let mut p = player("Goalies");
+    let before = p.scores.clone();
+    p.shot_context = Some(Context::new(
+        Data {
+            attempts: 100,
+            generated: 4,
+            expected: 5.,
+            buckets: BTreeMap::from([
+                (
+                    "fast".into(),
+                    Bucket {
+                        attempts: 3,
+                        on_goal: 2,
+                        goals: 1,
+                        xg: 0.6,
+                    },
+                ),
+                (
+                    "rebound".into(),
+                    Bucket {
+                        attempts: 6,
+                        on_goal: 4,
+                        goals: 1,
+                        xg: 1.2,
+                    },
+                ),
+            ]),
+        },
+        "https://peter-tanner.com/moneypuck/downloads/shots_2026.zip".into(),
+        "2026-11-24T00:00:00Z".into(),
+        "a".repeat(64),
+    ));
+    let mut ps = vec![p];
+    pressure::attach(&mut ps, 20262027);
+    let r = ps[0].under_pressure.as_ref().unwrap();
+    pressure::validate(&ps[0], r).unwrap();
+    assert_eq!(r.entries[0].result, "1/2 saved · 50.0%");
+    assert_eq!(r.entries[1].opportunities, 0);
+    assert_eq!(r.entries[1].result, "No observed opportunities");
+    assert_eq!(r.entries[2].result, "3/4 saved · 75.0%");
+    assert_eq!(ps[0].scores, before);
+    let mut wrong = ps[0].clone();
+    wrong.season = 20252026;
+    let withheld = pressure::build(&wrong, None);
+    assert!(withheld.entries.is_empty());
+    let old = ps[0].clone();
+    pressure::attach(&mut ps, 20252026);
+    assert_eq!(old, ps[0]);
+}
