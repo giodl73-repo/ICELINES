@@ -554,3 +554,6 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
  .rk-unit-deployment>dl>div{display:flex;align-items:baseline;gap:2px}.rk-unit-deployment dt{font-size:6px}
 }
 @media print{.rk-pressure-breakdown{display:none!important}}
+
+.rk-penalty-balance dl{margin:4px 0}.rk-penalty-balance dl>div{display:flex;justify-content:space-between;gap:6px}.rk-penalty-balance dd{margin:0;font-variant-numeric:tabular-nums}.rk-penalty-balance p{margin:4px 0}.rk-penalty-balance summary{font-variant-numeric:tabular-nums}
+@media print{.rk-penalty-balance{display:none!important}}

@@ -4,6 +4,18 @@ import {renderCharacterCard} from '../dist/src/rinkcraft-character.js';
 import {renderStatScore} from '../dist/src/rinkcraft-stat-scores.js';
 import {renderStatFeats} from '../dist/src/rinkcraft-achievements.js';
 
+test('penalty balance renders supplied rates within tendencies and withholds stale records',async()=>{
+ const {penaltyBalance}=await import('../dist/src/rinkcraft-penalty-balance.js');
+ const r={schema:'rinkcraft.penalty-balance.v1',player_id:1,season:20262027,group:'Forwards',games:20,minutes:400,drawn:'1.23 /60',taken:'0.79 /60',balance:'+0.45 /60',formula:'Drawn minus taken before rounding.',note:'Recorded calls, not power plays created.'};
+ const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:20,minutes:400,scope:'all strengths',small_sample:false,penalty_balance:r,scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'}))};
+ assert.equal(penaltyBalance(stats),r);
+ const args=Array(18).fill(undefined);args[0]='Test';args[1]=sheet;args[3]={season:20262027,games:20,position:'Center',metrics:[]};args[11]={player_id:1,season_type:'regular'};args[17]=[stats];
+ assert.match(classed(renderCharacterCard(...args),'rk-front-traits')[0].textContent,/Penalty balance \+0.45.*Drawn.*1.23.*Taken.*0.79.*not power plays/);
+ for(const stale of [{...r,player_id:2},{...r,season:20252026},{...r,games:19},{...r,minutes:401},{...r,group:'Goalies'}])assert.equal(penaltyBalance({...stats,penalty_balance:stale}),undefined);
+ assert.equal(penaltyBalance({...stats,group:'Goalies',penalty_balance:{...r,group:'Goalies'}}),undefined);
+ delete stats.penalty_balance;assert.equal(classed(renderCharacterCard(...args),'rk-penalty-balance').length,0);
+});
+
 test('Under Pressure shows Rust response samples and gaps without inventing ratings',()=>{
  const pressure={schema:'rinkcraft.under-pressure.v1',player_id:1,season:20262027,group:'Forwards',games:20,entries:[{id:'late-draws',name:'Late-close draws',challenge:'A late draw',response:'Win draw',opportunities:4,successes:1,result:'1/4 won / 25.0%',definition:'Third period, last five minutes, one-goal gap.',source:'NHL',captured_at:'2026-11-24T00:00:00Z',coverage:'200 finalized games',note:'Not retained possession.'}],gaps:['Press resistance: no measured opportunities.'],note:'Observed outcomes, not abilities.'};
  const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:20,minutes:400,scope:'all strengths',small_sample:false,under_pressure:pressure,scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'}))};
