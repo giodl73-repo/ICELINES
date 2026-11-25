@@ -2363,6 +2363,7 @@ pub mod rinkcraft_edge_exposure;
 pub mod rinkcraft_finishing_fit;
 pub mod rinkcraft_seasonal_records;
 pub mod rinkcraft_stat_scores;
+pub mod rinkcraft_snapshot_record;
 pub mod rinkcraft_goalie_puck;
 pub mod rinkcraft_goalie_shots;
 pub mod rinkcraft_skater_context;

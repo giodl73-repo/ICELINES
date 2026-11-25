@@ -389,7 +389,9 @@ pub fn attach_stat_attribute_catalog(
             .profile(profile.request.player_id.0, row.season.0, games)
             .filter(|p| p.group == group)
         {
-            profile.stat_attribute_seasons.push(scores.clone());
+            let mut admitted = scores.clone();
+            admitted.estimated_record = super::rinkcraft_snapshot_record::estimate(&admitted, None);
+            profile.stat_attribute_seasons.push(admitted);
         } else if catalog
             .profiles
             .iter()
@@ -422,7 +424,9 @@ pub fn attach_stat_attribute_catalog(
                 .profile(n.player_id, n.season, n.games)
                 .filter(|p| p.group == n.group)
             {
-                profile.stat_attribute_seasons.push(scores.clone());
+                let mut admitted = scores.clone();
+                admitted.estimated_record = super::rinkcraft_snapshot_record::estimate(&admitted, None);
+                profile.stat_attribute_seasons.push(admitted);
             }
         }
     }

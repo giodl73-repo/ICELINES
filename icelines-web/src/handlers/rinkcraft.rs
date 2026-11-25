@@ -847,6 +847,7 @@ pub async fn get_json(
 #[derive(Template)]
 #[template(path = "rinkcraft.html")]
 struct ProfileTemplate {
+    record_projection: Option<icelines_core::view_model::rinkcraft_stat_scores::EstimatedRecord>,
     stat_attributes: Option<icelines_core::view_model::rinkcraft_stat_scores::Profile>,
     role_feats: Option<FeatSectionView>,
     skills_feats: Option<FeatSectionView>,
@@ -904,7 +905,6 @@ impl ProfileTemplate {
     }
 }
 struct EvidenceView {
-    estimated_record: Option<icelines_core::view_model::rinkcraft_stat_scores::EstimatedRecord>,
     front_maximum_speed: Option<String>,
     context: Option<ContextView>,
     sources: Vec<icelines_core::view_model::rinkcraft_numbers::Source>,
@@ -1363,7 +1363,6 @@ fn measurement_value(m: &icelines_core::view_model::rinkcraft_numbers::Measureme
 }
 fn evidence_view(c: &icelines_core::view_model::rinkcraft_numbers::EvidenceCard) -> EvidenceView {
     EvidenceView {
-        estimated_record: c.estimated_record.clone(),
         front_maximum_speed: c
             .style_evidence
             .as_ref()
@@ -1924,7 +1923,9 @@ pub async fn get_html(
                 .find(|s| Some(s.season) == target_season)
         })
         .cloned();
+    let record_projection = stat_attributes.as_ref().and_then(|s|s.estimated_record.clone()).or_else(|| view.numerical_evidence.as_ref().and_then(|n|n.estimated_record.clone()));
     let template = ProfileTemplate {
+        record_projection,
         stat_attributes,
         role_feats: feat_section(&view, "role_coverage", 2),
         skills_feats: feat_section(&view, "task_skills", 5),

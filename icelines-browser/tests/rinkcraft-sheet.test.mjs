@@ -4,6 +4,15 @@ import {renderCharacterCard} from '../dist/src/rinkcraft-character.js';
 import {renderStatScore} from '../dist/src/rinkcraft-stat-scores.js';
 import {renderStatFeats} from '../dist/src/rinkcraft-achievements.js';
 
+test('selected snapshot pace fills contact and blocks while rejecting another season',()=>{
+ const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:20,minutes:400,scope:'all strengths',small_sample:false,
+  scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'})),
+  estimated_record:{season:20262027,target_games:84,basis:'84-game pace / all strengths',metrics:[{key:'hits',label:'Hits',value:42,unit:'Count',per_game:0.5,projected_total:true},{key:'blocks',label:'Blocks',value:0,unit:'Count',per_game:0,projected_total:true}]}};
+ const args=Array(18).fill(undefined);args[0]='Skater';args[3]={season:20262027,games:20,position:'Center',metrics:[]};args[11]={player_id:1,season_type:'regular'};args[17]=[stats];
+ const block=classed(renderCharacterCard(...args),'rk-front-record')[0];assert.match(block.textContent,/84-game pace.*Hits 42 0.50 \/game.*Blocks 0 0.00 \/game/);assert.doesNotMatch(block.textContent,/Unknown|\bP\d|\bn=/);
+ stats.estimated_record.season=20252026;assert.doesNotMatch(classed(renderCharacterCard(...args),'rk-front-record')[0].textContent,/84-game pace/);
+});
+
 test('task repertoire uses Rust order and names while preserving the complete feat library',()=>{
  const feat=(id,state='earned')=>({id,name:id,state,tier:'Silver',placements:['task_skills'],matched:1,required:1,conditions:[{key:id,label:'Shots / GP',value:2,unit:'PerGame',numerator:40,denominator:20,percentile:80,peers:100,reference_sha256:'ref',qualifies:true}]});
  const p={player_id:1,season:20262027,season_type:'regular',group:'Forwards',games:20,minimum_games:10,rules_sha256:'rules',source_sha256:'input',source_urls:[],earned:2,notes:[],feats:[feat('a'),feat('b'),feat('locked','not_earned')]};

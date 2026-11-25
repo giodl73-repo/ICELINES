@@ -195,7 +195,7 @@ export function renderCharacterFront(
     evidence.append(body);item.append(evidence);
   }
   const measured=box('Estimated Record','rk-front-record');
-  const projection=numerical?.estimated_record?.season===numerical?.season?numerical?.estimated_record:undefined;
+  const projection=(statScores?.estimated_record?.season===statScores?.season?statScores?.estimated_record:undefined)??(numerical?.estimated_record?.season===numerical?.season?numerical?.estimated_record:undefined);
   measured.append(node('small',projection?.basis??'Recorded rates'));
   const values=node('dl');values.className='rk-record-values';
   if(projection)for(const m of projection.metrics){
