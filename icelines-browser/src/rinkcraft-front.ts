@@ -83,9 +83,9 @@ export function renderCharacterFront(
   const position=record?.position??numerical?.group??assessment?.group??'Unknown';
   const goalie=['Goalie','Goalies','G'].includes(position);
   const targetSeason=numerical?.season??record?.season??assessment?.season;
-  const usage=deploymentEvidence&&deploymentEvidence.season===targetSeason&&deploymentEvidence.goalie===goalie&&deploymentEvidence.player_id===(usageRequest?.player_id??sheet?.player_id)&&deploymentEvidence.season_type===usageRequest?.season_type?deploymentEvidence:undefined;
   const featGroup=goalie?'Goalies':['D','Defense'].includes(position)?'Defense':'Forwards';
   const statActor=usageRequest?.player_id??sheet?.player_id,targetGames=(numerical?.group===featGroup?numerical?.games:undefined)??record?.games;
+  const usage=deploymentEvidence&&deploymentEvidence.season===targetSeason&&deploymentEvidence.goalie===goalie&&deploymentEvidence.player_id===(usageRequest?.player_id??sheet?.player_id)&&deploymentEvidence.season_type===usageRequest?.season_type&&(targetGames===undefined||deploymentEvidence.games===targetGames)?deploymentEvidence:undefined;
   const candidates=[...(statAttributeSeasons??[]).filter(p=>p.games!==undefined),numerical?.player_id===statActor?numerical?.stat_attributes:undefined];
   const statScores=usageRequest?.season_type==='regular'?candidates.find(p=>matchesStatScores(p,statActor,targetSeason,featGroup,targetGames)):undefined;
   const statFeats=achievements&&achievements.player_id===(usageRequest?.player_id??sheet?.player_id)&&achievements.season===targetSeason&&achievements.season_type===usageRequest?.season_type&&achievements.group===featGroup?achievements:undefined;

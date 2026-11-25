@@ -111,7 +111,7 @@ test('stat feats populate five slots, retain the long list and gate actor/window
  assert.doesNotMatch(classed(render(qualified),'rk-front-skills')[0].textContent,/Needs .*GP|No unlocked/);
 });
 
-test('workload requires matching actor, season, season type and position group',()=>{
+test('workload requires matching actor, season, season type, GP and position group',()=>{
   const usage={player_id:1,season:20242025,season_type:'regular',games:2,goalie:false,starts:null,
     rows:[{key:'total',label:'All strengths',per_game_display:'20:00',minutes_display:'40.0',seconds:2400,share_display:'100.0%'},{key:'pp',label:'Power play',per_game_display:'3:00',minutes_display:'6.0',seconds:360,share_display:'15.0%'},{key:'sh',label:'Shorthanded',per_game_display:'0:00',minutes_display:'0.0',seconds:0,share_display:'0.0%'}],source_label:'NHL source',source_url:'https://api.nhle.com/stats/rest/en/skater/timeonice',source_sha256:'a'.repeat(64),notes:['Even strength is not exclusively 5v5.']};
   const render=(u,request={player_id:1,season_type:'regular'})=>renderCharacterCard('Example',{...sheet,player_id:1},undefined,{season:20242025,position:'Center',games:2,metrics:[]},undefined,undefined,undefined,undefined,true,undefined,u,request);
@@ -120,7 +120,7 @@ test('workload requires matching actor, season, season type and position group',
   assert.match(classed(front,'rk-front-deployment')[0].textContent,/Unit \/ station undocumented/);
   assert.match(classed(front,'rk-front-deployment')[0].textContent,/0 seconds \/ 2 appearances/);
   assert.equal(classed(front,'rk-usage')[0].dataset.usageSeason,'20242025');
-  for(const u of [{...usage,season:20252026},{...usage,player_id:2},{...usage,season_type:'playoff'},{...usage,goalie:true}])assert.equal(classed(render(u),'rk-usage').length,0);
+  for(const u of [{...usage,games:1},{...usage,season:20252026},{...usage,player_id:2},{...usage,season_type:'playoff'},{...usage,goalie:true}])assert.equal(classed(render(u),'rk-usage').length,0);
   assert.equal(classed(render(usage,{season_type:'playoff'}),'rk-usage').length,0);
   assert.ok(all(front).filter(n=>n.dataset.capabilityIndex!==undefined).every(n=>n.dataset.ratingState==='unassessed'));
 });

@@ -1937,6 +1937,7 @@ pub async fn get_html(
             .filter(|d| {
                 d.player_id == view.request.player_id
                     && d.season_type == view.request.season_type
+                    && Some(d.games) == view.numerical_evidence.as_ref().map(|n| n.games).or_else(|| view.latest_available.as_ref().map(|s| s.games))
                     && Some(d.season.0)
                         == view
                             .numerical_evidence

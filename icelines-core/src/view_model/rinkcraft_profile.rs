@@ -428,6 +428,17 @@ pub fn attach_stat_attribute_catalog(
     }
     profile.stat_attribute_changes =
         super::rinkcraft_stat_scores::season_changes(&profile.stat_attribute_seasons);
+    let target = profile.numerical_evidence.as_ref().map(|n| n.season)
+        .or_else(|| profile.latest_available.as_ref().map(|s| s.season.0));
+    if let Some(scores) = profile.stat_attribute_seasons.iter().find(|p| Some(p.season)==target) {
+        let current = profile.deployment_evidence.as_ref().is_some_and(|d|
+            d.player_id.0==scores.player_id && d.season.0==scores.season && d.games==scores.games
+            && d.season_type==SeasonType::Regular && d.goalie==(scores.group=="Goalies"));
+        if !current {
+            profile.deployment_evidence = super::rinkcraft_deployment::from_stat_profile(scores);
+        }
+    }
+
     Ok(())
 }
 

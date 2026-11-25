@@ -374,6 +374,8 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 .rk-usage-evidence summary{cursor:pointer}
 .rk-usage-evidence p{margin:4px 0}
 @media print{.rk-usage-evidence{display:none}}
+@media print{.rk-usage>small{font-size:7px}.rk-usage-grid{gap:2px 6px;margin:3px 0}.rk-usage-grid dt{font-size:8px}.rk-usage-grid dd{font-size:11px}.rk-front-role-coverage .rk-task-list dd{font-size:8px;line-height:1.2}}
+@media print{.rk-front:has(.rk-usage) .rk-record-values dt{min-height:12px}.rk-front:has(.rk-usage) .rk-record-values .rk-field{padding-bottom:3px}}
 
 /* Deterministic stat-feat registry; one feat can have multiple placements. */
 .rk-stat-feats{margin-top:4px;font-size:10px;line-height:1.25;overflow-wrap:anywhere}

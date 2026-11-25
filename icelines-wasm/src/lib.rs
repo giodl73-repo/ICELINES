@@ -272,7 +272,7 @@ impl BrowserEngine {
             &catalog,
         )
         .map_err(|e| JsValue::from_str(&e))?;
-        serde_json::to_string(&serde_json::json!({"stat_attribute_seasons":profile.stat_attribute_seasons,"stat_attribute_changes":profile.stat_attribute_changes,"limitations":profile.limitations})).map_err(|e|JsValue::from_str(&e.to_string()))
+        serde_json::to_string(&serde_json::json!({"stat_attribute_seasons":profile.stat_attribute_seasons,"stat_attribute_changes":profile.stat_attribute_changes,"deployment_evidence":profile.deployment_evidence,"limitations":profile.limitations})).map_err(|e|JsValue::from_str(&e.to_string()))
     }
     /// Same goalie-event projection used by native profiles; never scores abilities.
     pub fn profile_goalie_puck(&self, source: &str, profile: &str) -> Result<String, JsValue> {
