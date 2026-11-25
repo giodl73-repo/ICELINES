@@ -47,6 +47,31 @@ Giveaways, hits, blocks, source quotes, raw skating maxima and goals-only geomet
 do not supply those denominators. A defenseman without a contextual sample keeps
 the gap; the system does not assign zero ability or substitute faceoffs for defense.
 
+### Context actions without success denominators
+
+The separate **Context actions · counts only** group can show **Protecting lead**:
+credited opponent-shot blocks and takeaways in regulation period three at 15:00
+or later, with the actor's team leading by exactly one before the event. These
+are named-player event counts, not opportunities/successes. They cannot yield a
+success percentage, entry-denial grade, possession-retention inference or clutch
+rating. The all-situations counts appear inside the disclosure as a baseline.
+
+The shooter owns a blocked-shot event, while the opposing blocker receives the
+defensive credit. Same-team blocks and provider `teammate-blocked` events are
+excluded. An `other-block` with no blocker has no player credit and is excluded;
+other missing/unknown actors or inconsistent owner teams fail admission. Goalies
+do not receive skater action observations. Overtime and shootout events do not
+enter the late-lead counts.
+
+Raw optional `action_sample` stores actor, season, counts, roster-game coverage,
+cached-game coverage, capture time and source fingerprint. Derived optional
+`actions` carries display text. Old records omit both. The same Rust builder and
+validator serve offline enrichment, routine refresh, native and WASM projection.
+Zero counts mean no credited actions in the supplied sample; they do not show
+whether the player was deployed while protecting a lead. Roster games are not
+exposure minutes. Missing samples produce no action row. Existing defensive
+measurement gaps remain, even when an action count is present.
+
 ## Evidence interpretation
 
 Faceoff credits are not retained possession or downstream value. The primary

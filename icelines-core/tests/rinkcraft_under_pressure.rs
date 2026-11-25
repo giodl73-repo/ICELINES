@@ -34,6 +34,47 @@ fn faceoffs() -> pressure::Faceoffs {
     }
 }
 #[test]
+fn contextual_actions_are_counts_not_opportunity_rates_and_survive_rebuild() {
+    let mut p = player("Defense");
+    let s = pressure::ActionSample {
+        season: p.season,
+        player_id: p.player_id,
+        counts: pressure::ActionCounts {
+            blocks: 25,
+            takeaways: 5,
+            late_lead_blocks: 3,
+            late_lead_takeaways: 0,
+        },
+        roster_games: 20,
+        coverage_games: 200,
+        captured_at: faceoffs().captured_at,
+        source_sha256: faceoffs().source_sha256,
+    };
+    let r = pressure::build_with_actions(&p, None, Some(s.clone()));
+    pressure::validate(&p, &r).unwrap();
+    assert!(r.entries.is_empty());
+    assert_eq!(r.actions[0].result, "3 blocks · 0 takeaways");
+    assert!(!r.actions[0].result.contains('%'));
+    p.under_pressure = Some(r.clone());
+    assert_eq!(pressure::rebuild(&p), r);
+    assert!(pressure::build(&p, None).actions.is_empty());
+    let mut bad = s.clone();
+    bad.counts.late_lead_blocks = 26;
+    assert!(pressure::validate(&p, &pressure::build_with_actions(&p, None, Some(bad))).is_err());
+    let mut bad = s.clone();
+    bad.roster_games = 201;
+    assert!(pressure::validate(&p, &pressure::build_with_actions(&p, None, Some(bad))).is_err());
+    assert!(pressure::validate(
+        &player("Goalies"),
+        &pressure::build_with_actions(&player("Goalies"), None, Some(s))
+    )
+    .is_err());
+    let old: pressure::Record =
+        serde_json::from_value(serde_json::to_value(pressure::build(&p, None)).unwrap()).unwrap();
+    assert!(old.actions.is_empty());
+    assert!(old.action_sample.is_none());
+}
+#[test]
 fn score_state_partitions_reconcile_and_do_not_invent_missing_splits() {
     let p = player("Forwards");
     let mut f = faceoffs();

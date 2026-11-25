@@ -443,6 +443,7 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
     }
     observations.sort_by_key(|p| p.player_id);
     let mut skater_contexts = BTreeMap::new();
+    let mut action_samples = BTreeMap::<u32,icelines_core::view_model::rinkcraft_under_pressure::ActionSample>::new();
     let mut faceoff_samples = BTreeMap::<u32,icelines_core::view_model::rinkcraft_under_pressure::Faceoffs>::new();
     if let Some((summary, realtime, toi)) = skater_sources {
         let mut assists = None;
@@ -472,6 +473,8 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
                 BTreeMap::<u32, icelines_sources::rinkcraft_skater_context::Assists>::new();
             for (game,draws) in games {
                 for (id,c) in draws {
+                    let a=action_samples.entry(id).or_insert_with(||icelines_core::view_model::rinkcraft_under_pressure::ActionSample {season:request.season,player_id:id,counts:Default::default(),roster_games:0,coverage_games,captured_at:captured_at.clone(),source_sha256:source_sha256.clone()});
+                    a.counts.add(&c.actions);a.roster_games+=c.roster_games;
                     let f=faceoff_samples.entry(id).or_insert_with(||icelines_core::view_model::rinkcraft_under_pressure::Faceoffs {season:request.season,player_id:id,taken:0,won:0,late_taken:0,late_won:0,late_states:Some(BTreeMap::new()),coverage_games,captured_at:captured_at.clone(),source_sha256:source_sha256.clone()});
                     f.taken+=c.taken;f.won+=c.won;f.late_taken+=c.late_taken;f.late_won+=c.late_won;
                     for (key,n) in c.late_states {let b=f.late_states.as_mut().unwrap().entry(key).or_default();b.taken+=n.taken;b.won+=n.won;}
@@ -532,7 +535,7 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
     let mut profiles = scores::build(request.season, "all strengths · rates per60", &observations)?;
     for p in &mut profiles {
         p.skater_context = skater_contexts.remove(&p.player_id);
-        if p.group != "Goalies" {p.under_pressure=Some(icelines_core::view_model::rinkcraft_under_pressure::build(p,faceoff_samples.remove(&p.player_id)));}
+        if p.group != "Goalies" {p.under_pressure=Some(icelines_core::view_model::rinkcraft_under_pressure::build_with_actions(p,faceoff_samples.remove(&p.player_id),action_samples.remove(&p.player_id)));}
         if p.group == "Goalies" {
             p.shot_context = shot_contexts.remove(&p.player_id);
             p.scope = "all strengths · NHL and MoneyPuck observations".into();

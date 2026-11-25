@@ -9,6 +9,7 @@ use std::{
     path::Path,
 };
 pub struct Cache {
+    pub actions: BTreeMap<u32, icelines_core::view_model::rinkcraft_under_pressure::ActionSample>,
     pub samples: BTreeMap<u32, Faceoffs>,
     pub sources: Value,
     pub games: u32,
@@ -69,6 +70,8 @@ pub fn read(root: &Path, season: u32) -> anyhow::Result<Cache> {
             .map_err(anyhow::Error::msg)?;
         for (id, n) in game {
             let s = totals.entry(id).or_default();
+            s.actions.add(&n.actions);
+            s.roster_games += n.roster_games;
             s.taken += n.taken;
             s.won += n.won;
             s.late_taken += n.late_taken;
@@ -94,6 +97,23 @@ pub fn read(root: &Path, season: u32) -> anyhow::Result<Cache> {
         .to_string();
     let fingerprint = format!("{:x}", Sha256::digest(serde_json::to_vec(&captures)?));
     let games = captures.len() as u32;
+    let actions = totals
+        .iter()
+        .map(|(&player_id, c)| {
+            (
+                player_id,
+                icelines_core::view_model::rinkcraft_under_pressure::ActionSample {
+                    season,
+                    player_id,
+                    counts: c.actions.clone(),
+                    roster_games: c.roster_games,
+                    coverage_games: games,
+                    captured_at: captured_at.clone(),
+                    source_sha256: fingerprint.clone(),
+                },
+            )
+        })
+        .collect();
     let samples = totals
         .into_iter()
         .map(|(player_id, c)| {
@@ -115,6 +135,7 @@ pub fn read(root: &Path, season: u32) -> anyhow::Result<Cache> {
         })
         .collect();
     Ok(Cache {
+        actions,
         samples,
         sources: json!({"schema":"rinkcraft.pressure-sources.v1","season":season,"coverage_games":games,"source_sha256":fingerprint,"captured_at":captured_at,"captures":captures,"note":"Cached finalized-game sample, not a claim of full-season or player-GP coverage."}),
         games,

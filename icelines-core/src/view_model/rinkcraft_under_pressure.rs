@@ -8,6 +8,42 @@ pub struct Draws {
     pub taken: u32,
     pub won: u32,
 }
+/// Credited actions, without a denominator of failed or available actions.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ActionCounts {
+    pub blocks: u32,
+    pub takeaways: u32,
+    pub late_lead_blocks: u32,
+    pub late_lead_takeaways: u32,
+}
+impl ActionCounts {
+    pub fn add(&mut self, other: &Self) {
+        self.blocks += other.blocks;
+        self.takeaways += other.takeaways;
+        self.late_lead_blocks += other.late_lead_blocks;
+        self.late_lead_takeaways += other.late_lead_takeaways;
+    }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ActionSample {
+    pub season: u32,
+    pub player_id: u32,
+    pub counts: ActionCounts,
+    pub roster_games: u32,
+    pub coverage_games: u32,
+    pub captured_at: String,
+    pub source_sha256: String,
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ActionObservation {
+    pub name: String,
+    pub result: String,
+    pub baseline: String,
+    pub definition: String,
+    pub coverage: String,
+    pub captured_at: String,
+    pub note: String,
+}
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Breakdown {
     pub key: String,
@@ -50,6 +86,10 @@ pub struct Entry {
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Record {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action_sample: Option<ActionSample>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub actions: Vec<ActionObservation>,
     pub schema: String,
     pub player_id: u32,
     pub season: u32,
@@ -71,8 +111,33 @@ fn outcome(success: u32, opportunities: u32, action: &str) -> String {
     }
 }
 pub fn build(p: &Profile, faceoffs: Option<Faceoffs>) -> Record {
+    build_with_actions(p, faceoffs, None)
+}
+pub fn rebuild(p: &Profile) -> Record {
+    build_with_actions(
+        p,
+        p.under_pressure.as_ref().and_then(|r| r.faceoffs.clone()),
+        p.under_pressure
+            .as_ref()
+            .and_then(|r| r.action_sample.clone()),
+    )
+}
+pub fn build_with_actions(
+    p: &Profile,
+    faceoffs: Option<Faceoffs>,
+    action_sample: Option<ActionSample>,
+) -> Record {
     let mut entries = vec![];
     let mut gaps = vec![];
+    let actions = action_sample.as_ref().map(|s| vec![ActionObservation {
+        name: "Protecting lead".into(),
+        result: format!("{} blocks · {} takeaways", s.counts.late_lead_blocks, s.counts.late_lead_takeaways),
+        baseline: format!("All situations: {} blocks · {} takeaways", s.counts.blocks, s.counts.takeaways),
+        definition: "Credited, named-player opponent-shot blocks and takeaways in the third regulation period at 15:00 or later, with the player's team leading by exactly one before the event. Teammate-blocked shots and unassigned other-block events are excluded.".into(),
+        coverage: format!("On roster in {} of {} cached finalized games; not time on ice", s.roster_games, s.coverage_games),
+        captured_at: s.captured_at.clone(),
+        note: "Action counts only. The feed does not enumerate failed or available blocks/takeaways, possession retention, or responsible defensive assignments. Zero counts do not establish no deployment or no defensive contribution; no success rate or clutch rating is inferred.".into(),
+    }]).unwrap_or_default();
     if p.group == "Goalies" {
         if let Some(c) = p.shot_context.as_ref().filter(|c| {
             c.source_url
@@ -133,9 +198,24 @@ pub fn build(p: &Profile, faceoffs: Option<Faceoffs>) -> Record {
             .map(str::to_owned),
         );
     }
-    Record {schema:"rinkcraft.under-pressure.v1".into(),player_id:p.player_id,season:p.season,group:p.group.clone(),games:p.games,faceoffs,entries,gaps,note:"Observed challenge/response samples, not new feats, isolated skills or 1–20 grades. Small samples remain visible; zero opportunities are not zero ability. Each sample retains its own capture window.".into()}
+    Record {action_sample,actions,schema:"rinkcraft.under-pressure.v1".into(),player_id:p.player_id,season:p.season,group:p.group.clone(),games:p.games,faceoffs,entries,gaps,note:"Observed challenge/response samples, not new feats, isolated skills or 1–20 grades. Small samples remain visible; zero opportunities are not zero ability. Each sample retains its own capture window.".into()}
 }
 pub fn validate(p: &Profile, r: &Record) -> Result<(), String> {
+    if let Some(s) = &r.action_sample {
+        if p.group == "Goalies"
+            || s.player_id != p.player_id
+            || s.season != p.season
+            || s.roster_games == 0
+            || s.roster_games > s.coverage_games
+            || s.counts.late_lead_blocks > s.counts.blocks
+            || s.counts.late_lead_takeaways > s.counts.takeaways
+            || s.source_sha256.len() != 64
+            || !s.source_sha256.bytes().all(|c| c.is_ascii_hexdigit())
+            || chrono::DateTime::parse_from_rfc3339(&s.captured_at).is_err()
+        {
+            return Err("Invalid contextual action sample".into());
+        }
+    }
     if let Some(f) = &r.faceoffs {
         if p.group == "Goalies"
             || f.player_id != p.player_id
@@ -167,14 +247,13 @@ pub fn validate(p: &Profile, r: &Record) -> Result<(), String> {
     if let Some(c) = &p.shot_context {
         c.validate()?;
     }
-    if *r != build(p, r.faceoffs.clone()) {
+    if *r != build_with_actions(p, r.faceoffs.clone(), r.action_sample.clone()) {
         return Err("Under Pressure record does not match its measurements/window".into());
     }
     Ok(())
 }
 pub fn attach(profiles: &mut [Profile], season: u32) {
     for p in profiles.iter_mut().filter(|p| p.season == season) {
-        let faceoffs = p.under_pressure.as_ref().and_then(|r| r.faceoffs.clone());
-        p.under_pressure = Some(build(p, faceoffs));
+        p.under_pressure = Some(rebuild(p));
     }
 }

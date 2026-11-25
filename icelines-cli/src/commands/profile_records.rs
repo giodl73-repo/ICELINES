@@ -32,10 +32,13 @@ pub fn run(
             .iter_mut()
             .filter(|p| p.season == season && p.group != "Goalies")
         {
-            p.under_pressure = Some(icelines_core::view_model::rinkcraft_under_pressure::build(
-                p,
-                cache.samples.get(&p.player_id).cloned(),
-            ));
+            p.under_pressure = Some(
+                icelines_core::view_model::rinkcraft_under_pressure::build_with_actions(
+                    p,
+                    cache.samples.get(&p.player_id).cloned(),
+                    cache.actions.get(&p.player_id).cloned(),
+                ),
+            );
         }
     }
     attach_records(&mut data.profiles, season);

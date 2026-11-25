@@ -883,7 +883,7 @@ struct ProfileTemplate {
     absent_json: String,
 }
 impl ProfileTemplate {
-    fn has_pressure(&self) -> bool { self.pressure_record.as_ref().is_some_and(|r|!r.entries.is_empty()) }
+    fn has_pressure(&self) -> bool { self.pressure_record.as_ref().is_some_and(|r|!r.entries.is_empty() || !r.actions.is_empty()) }
     fn has_scouted_pressure(&self) -> bool { self.profile.character_sheet.as_ref().is_some_and(|c|!c.under_pressure.is_empty()) }
     fn stat_change(
         &self,

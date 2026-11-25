@@ -1,8 +1,10 @@
-//! NHL credited draw outcomes with pre-event score context; not possession value.
+//! NHL credited draw outcomes and named defensive actions with pre-event score context.
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 #[derive(Debug, Default, Clone)]
 pub struct Counts {
+    pub actions: icelines_core::view_model::rinkcraft_under_pressure::ActionCounts,
+    pub roster_games: u32,
     pub late_states: BTreeMap<String, icelines_core::view_model::rinkcraft_under_pressure::Draws>,
     pub taken: u32,
     pub won: u32,
@@ -38,7 +40,13 @@ pub fn parse_game(bytes: &[u8], id: u64, season: u32) -> Result<BTreeMap<u32, Co
             return Err("Invalid or duplicate roster actor".into());
         }
         if r["positionCode"] != "G" {
-            out.insert(id, Counts::default());
+            out.insert(
+                id,
+                Counts {
+                    roster_games: 1,
+                    ..Counts::default()
+                },
+            );
         }
     }
     let mut ids = BTreeSet::new();
@@ -80,6 +88,56 @@ pub fn parse_game(bytes: &[u8], id: u64, season: u32) -> Result<BTreeMap<u32, Co
                 return Err("Incomplete/inconsistent pre-draw score sequence".into());
             }
             score = next;
+        }
+        if matches!(p["typeDescKey"].as_str(), Some("blocked-shot" | "takeaway")) {
+            let block = p["typeDescKey"] == "blocked-shot";
+            // Provider marks some object/unassigned blocks without a player credit.
+            if block && d["reason"] == "other-block" && d["blockingPlayerId"].is_null() {
+                continue;
+            }
+            let key = if block {
+                "blockingPlayerId"
+            } else {
+                "playerId"
+            };
+            let actor = u32::try_from(d[key].as_u64().ok_or("Missing contextual action actor")?)
+                .map_err(|e| e.to_string())?;
+            let team = *roster
+                .get(&actor)
+                .ok_or("Unknown contextual action actor")?;
+            let owner = d["eventOwnerTeamId"]
+                .as_u64()
+                .ok_or("Missing contextual action team")?;
+            if block {
+                let shooter = u32::try_from(
+                    d["shootingPlayerId"]
+                        .as_u64()
+                        .ok_or("Missing blocked-shot shooter")?,
+                )
+                .map_err(|e| e.to_string())?;
+                let shooting_team = *roster.get(&shooter).ok_or("Unknown blocked-shot shooter")?;
+                if owner != shooting_team {
+                    return Err("Blocked-shot owner is not shooting team".into());
+                }
+                // A shot striking a teammate is not a defensive block.
+                if team == shooting_team || d["reason"] == "teammate-blocked" {
+                    continue;
+                }
+            } else if team != owner {
+                return Err("Takeaway actor/team mismatch".into());
+            }
+            let late = late_clock(p)?;
+            let own = usize::from(team == home);
+            let protecting = late && score[own] == score[1 - own] + 1;
+            if let Some(c) = out.get_mut(&actor) {
+                if block {
+                    c.actions.blocks += 1;
+                    c.actions.late_lead_blocks += u32::from(protecting);
+                } else {
+                    c.actions.takeaways += 1;
+                    c.actions.late_lead_takeaways += u32::from(protecting);
+                }
+            }
         }
         if p["typeDescKey"] != "faceoff" {
             continue;
@@ -149,4 +207,20 @@ pub fn parse_game(bytes: &[u8], id: u64, season: u32) -> Result<BTreeMap<u32, Co
         return Err("Final score does not reconcile with event sequence".into());
     }
     Ok(out)
+}
+fn late_clock(p: &Value) -> Result<bool, String> {
+    let clock = p["timeInPeriod"].as_str().ok_or("Missing action clock")?;
+    let (m, s) = clock.split_once(':').ok_or("Invalid action clock")?;
+    let (m, s) = (
+        m.parse::<u32>().map_err(|e| e.to_string())?,
+        s.parse::<u32>().map_err(|e| e.to_string())?,
+    );
+    if s >= 60 || m > 20 || (m == 20 && s != 0) {
+        return Err("Invalid action clock".into());
+    }
+    let period = p["periodDescriptor"]["number"]
+        .as_u64()
+        .filter(|n| *n > 0)
+        .ok_or("Missing action period")?;
+    Ok(period == 3 && p["periodDescriptor"]["periodType"] == "REG" && m * 60 + s >= 900)
 }

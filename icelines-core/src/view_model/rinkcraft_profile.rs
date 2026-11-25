@@ -391,7 +391,7 @@ pub fn attach_stat_attribute_catalog(
         {
             let mut admitted = scores.clone();
             admitted.estimated_record = super::rinkcraft_snapshot_record::estimate(&admitted, None);
-            admitted.under_pressure = Some(super::rinkcraft_under_pressure::build(&admitted, admitted.under_pressure.as_ref().and_then(|r|r.faceoffs.clone())));
+            admitted.under_pressure = Some(super::rinkcraft_under_pressure::rebuild(&admitted));
             profile.stat_attribute_seasons.push(admitted);
         } else if catalog
             .profiles
@@ -427,7 +427,7 @@ pub fn attach_stat_attribute_catalog(
             {
                 let mut admitted = scores.clone();
                 admitted.estimated_record = super::rinkcraft_snapshot_record::estimate(&admitted, None);
-            admitted.under_pressure = Some(super::rinkcraft_under_pressure::build(&admitted, admitted.under_pressure.as_ref().and_then(|r|r.faceoffs.clone())));
+            admitted.under_pressure = Some(super::rinkcraft_under_pressure::rebuild(&admitted));
                 profile.stat_attribute_seasons.push(admitted);
             }
         }

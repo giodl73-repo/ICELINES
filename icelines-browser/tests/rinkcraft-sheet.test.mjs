@@ -14,6 +14,15 @@ test('Under Pressure shows Rust response samples and gaps without inventing rati
  stats.under_pressure={...pressure,entries:[]};const empty=classed(renderCharacterCard(...args),'rk-front-pressure')[0];assert.equal(classed(empty,'rk-pressure-entry').length,0);assert.match(empty.textContent,/Press resistance/);assert.doesNotMatch(empty.textContent,/0\/0|0%/);
 });
 
+test('context actions render without faceoffs or invented outcome rates',async()=>{
+ const {pressureEntries}=await import('../dist/src/rinkcraft-under-pressure.js');
+ const view=pressureEntries({entries:[],actions:[{name:'Protecting lead',result:'3 blocks · 0 takeaways',baseline:'All situations: 25 blocks · 5 takeaways',definition:'Late regulation, leading by one.',coverage:'20 roster games',captured_at:'2026-11-24T00:00:00Z',note:'Action counts only; no success rate.'}]});
+ assert.equal(classed(view,'rk-pressure-action').length,1);
+ assert.match(view.textContent,/Context actions.*counts only.*Protecting lead.*3 blocks.*0 takeaways.*All situations.*20 roster games/);
+ assert.doesNotMatch(view.textContent,/%|opportunities/);
+ assert.equal(classed(pressureEntries({entries:[]}),'rk-pressure-action').length,0);
+});
+
 test('selected snapshot pace fills contact and blocks while rejecting another season',()=>{
  const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:20,minutes:400,scope:'all strengths',small_sample:false,
   scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'})),

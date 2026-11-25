@@ -14,6 +14,58 @@ fn parse(
 ) -> Result<std::collections::BTreeMap<u32, icelines_sources::rinkcraft_pressure::Counts>, String> {
     parse_game(&serde_json::to_vec(v).unwrap(), 2026020001, 20262027)
 }
+fn action(id: u32, kind: &str, details: Value) -> Value {
+    json!({"eventId":id,"sortOrder":id,"typeDescKey":kind,"periodDescriptor":{"number":3,"periodType":"REG"},"timeInPeriod":"15:00","details":details})
+}
+#[test]
+fn defensive_actions_use_blocker_team_exclude_teammates_and_keep_baseline() {
+    let mut v = game();
+    let block = |id| {
+        action(
+            id,
+            "blocked-shot",
+            json!({"blockingPlayerId":3,"shootingPlayerId":2,"eventOwnerTeamId":3,"reason":"blocked"}),
+        )
+    };
+    v["plays"] = json!([
+        block(1),
+        goal(2, 2, 0, 1),
+        block(3),
+        action(4, "takeaway", json!({"playerId":3,"eventOwnerTeamId":2})),
+        action(
+            5,
+            "blocked-shot",
+            json!({"blockingPlayerId":3,"shootingPlayerId":1,"eventOwnerTeamId":2,"reason":"teammate-blocked"})
+        ),
+        goal(6, 2, 0, 2),
+        block(7),
+        action(8, "takeaway", json!({"playerId":2,"eventOwnerTeamId":3})),
+        action(
+            9,
+            "blocked-shot",
+            json!({"shootingPlayerId":2,"eventOwnerTeamId":3,"reason":"other-block"})
+        )
+    ]);
+    let r = parse(&v).unwrap();
+    assert_eq!(r[&3].actions.blocks, 3);
+    assert_eq!(r[&3].actions.late_lead_blocks, 1);
+    assert_eq!(r[&3].actions.late_lead_takeaways, 1);
+    assert_eq!(r[&2].actions.takeaways, 1);
+    assert_eq!(r[&2].actions.late_lead_takeaways, 0);
+    assert_eq!(r[&1].roster_games, 1);
+    for edit in 0..4 {
+        let mut bad = v.clone();
+        match edit {
+            0 => bad["plays"][0]["details"]["blockingPlayerId"] = json!(999),
+            1 => bad["plays"][0]["details"]["eventOwnerTeamId"] = json!(2),
+            2 => bad["plays"][3]["details"]["eventOwnerTeamId"] = json!(3),
+            _ => bad["plays"][0]["timeInPeriod"] = json!("20:01"),
+        };
+        assert!(parse(&bad).is_err());
+    }
+    v["plays"][2]["periodDescriptor"]["periodType"] = json!("OT");
+    assert_eq!(parse(&v).unwrap()[&3].actions.late_lead_blocks, 0);
+}
 #[test]
 fn late_context_uses_score_before_draw_and_retains_opponent_losses() {
     let r = parse(&game()).unwrap();
