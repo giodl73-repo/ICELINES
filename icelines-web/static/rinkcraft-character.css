@@ -563,3 +563,8 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 
 .rk-power-play-context dl{margin:4px 0}.rk-power-play-context dl>div{display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 6px}.rk-power-play-context dd{margin:0;font-variant-numeric:tabular-nums}.rk-power-play-context p{margin:4px 0}
 @media print{.rk-power-play-context{display:none!important}}
+
+.rk-stat-specialties{display:flex;align-items:center;flex-wrap:wrap;gap:3px 8px;margin:5px 0;font-size:10px}.rk-stat-specialties>small{font-size:9px}.rk-stat-specialties>span{border:1px solid var(--sheet-blue);border-radius:3px;padding:1px 5px;font-weight:700}
+@media print{.rk-stat-specialties{font-size:7px;margin:2px 0;gap:2px 5px}.rk-stat-specialties>small{font-size:6px}.rk-stat-specialties>span{padding:0 3px}}
+
+@media print{.rk-front:has(.rk-stat-specialties){row-gap:2px;padding-top:8px!important}.rk-front:has(.rk-stat-specialties) .rk-front-header{padding-bottom:5px}.rk-front:has(.rk-stat-specialties) .rk-front-identity .rk-field{padding-top:2px;padding-bottom:2px}.rk-front:has(.rk-stat-specialties) .rk-front-coverage{padding-top:4px}.rk-front:has(.rk-stat-specialties) .rk-front-header h1,.rk-front:has(.rk-stat-specialties) .rk-front-header h3{font-size:26px;margin-top:3px}}

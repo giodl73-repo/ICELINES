@@ -10,6 +10,7 @@
 {% match profile.character_sheet %}{% when Some with (c) %}{% match c.card_fact(key) %}{% when Some with (fact) %}<dd>{{ fact.feature.name }}</dd><small>{{ fact.context }}</small><details class="rk-fact-evidence"><summary>Record source</summary><p>{{ fact.feature.detail }}</p>{% for id in fact.feature.source_ids %}{% for source in c.sources %}{% if source.id.as_str() == id.as_str() %}<p><a href="{{ source.url }}">{{ source.id }} · {{ source.title }}</a><small>{{ source.published }} · {{ source.locator }}</small></p>{% endif %}{% endfor %}{% endfor %}</details>{% when None %}<dd>Undocumented</dd>{% endmatch %}{% when None %}<dd>Undocumented</dd>{% endmatch %}</div>
 {% endfor %}
 </dl>
+{% match stat_identity %}{% when Some with (identity) %}{% if !identity.highlights.is_empty() %}<div class="rk-stat-specialties"><small>Stat specialties · {{ stat_identity_scope }}</small>{% for h in identity.highlights %}<span data-specialty-feat="{{ h.feat_id }}">{{ h.name }} · {{ h.tier }}</span>{% endfor %}</div>{% endif %}{% when None %}{% endmatch %}
 <p class="rk-front-scope">{% match numerical %}{% when Some with (n) %}{{ n.scope }}{% when None %}{{ card_stats_context }}{% endmatch %}</p>
 {% match profile.numerical_snapshot %}{% when Some with (s) %}<p class="rk-front-snapshot" data-snapshot-state="{{ s.state }}">{{ s.note }}</p>{% when None %}{% endmatch %}
 <div class="rk-front-columns">

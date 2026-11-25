@@ -56,6 +56,62 @@ fn profile() -> AchievementProfile {
     }
 }
 #[test]
+fn a_gold_specialty_is_not_buried_by_a_weaker_compound_task() {
+    let mut p = profile();
+    p.feats = vec![
+        feat("disrupting-scorer", &["takeaways", "points"], "Bronze"),
+        feat("puck-thief", &["takeaways"], "Gold"),
+        feat("goal-output", &["goals"], "Silver"),
+    ];
+    let r = select(&p);
+    assert_eq!(r.schema, "rinkcraft.task-repertoire.v2");
+    assert_eq!(
+        r.skills
+            .iter()
+            .map(|s| s.feat_id.as_str())
+            .collect::<Vec<_>>(),
+        vec!["puck-thief", "goal-output"]
+    );
+    assert_eq!(r.highlights[0].name, "Takeaways");
+    assert_eq!(r.highlights[0].tier, "Gold");
+}
+#[test]
+fn identity_highlights_include_role_feats_without_creating_tasks_or_padding() {
+    let mut p = profile();
+    let mut pp = feat("pp-striker", &["pp-goals"], "Gold");
+    pp.placements = vec!["role_coverage".into()];
+    let mut flag = feat("penalty-load", &["taken"], "Gold");
+    flag.placements = vec!["risk_flags".into()];
+    p.feats = vec![pp, flag];
+    let mut sh = feat("sh-points", &["sh-points"], "Gold");
+    sh.placements = vec!["role_coverage".into()];
+    p.feats.push(sh);
+    let before = p.clone();
+    let r = select(&p);
+    assert!(r.skills.is_empty());
+    assert_eq!(r.highlights.len(), 1);
+    assert_eq!(r.highlights[0].name, "PP goals");
+    assert_eq!(p, before);
+    p.feats[0].state = "not_earned".into();
+    assert!(select(&p).highlights.is_empty());
+}
+#[test]
+fn identity_does_not_repeat_metric_keys_and_legacy_repertoires_remain_readable() {
+    let mut p = profile();
+    p.feats = vec![
+        feat("shot-shield", &["hits", "blocks"], "Silver"),
+        feat("shot-blocker", &["blocks"], "Silver"),
+    ];
+    let r = select(&p);
+    assert_eq!(r.highlights.len(), 1);
+    let mut old = serde_json::to_value(r).unwrap();
+    old.as_object_mut().unwrap().remove("highlights");
+    old["schema"] = "rinkcraft.task-repertoire.v1".into();
+    let old: icelines_core::view_model::rinkcraft_task_repertoire::Repertoire =
+        serde_json::from_value(old).unwrap();
+    assert!(old.highlights.is_empty());
+}
+#[test]
 fn selects_complementary_tasks_without_changing_qualifications() {
     let p = profile();
     let before = p.clone();

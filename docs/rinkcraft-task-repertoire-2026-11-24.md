@@ -1,5 +1,8 @@
 # Earned task repertoire — 2026-11-24
 
+Historical v1 selection. The active presentation policy is now
+[v2 task selection and stat specialties](../design/specs/rinkcraft-stat-specialties-v2.md).
+
 Task Skills now presents a selection of earned feats as a compact repertoire:
 short task name, existing tier, readable prerequisite and the player's measured
 result. This changes presentation selection, not qualification or ability scores.

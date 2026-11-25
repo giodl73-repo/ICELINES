@@ -20,7 +20,7 @@ import type {AttributeSeason} from './rinkcraft-attributes.js';
 import {attributeValue} from './rinkcraft-attributes.js';
 import type {NumericalEvidence, SnapshotSelection} from './rinkcraft-numbers.js';
 import {numericalValue} from './rinkcraft-numbers.js';
-import {renderStatFeats} from './rinkcraft-achievements.js';
+import {renderStatFeats,renderStatSpecialties} from './rinkcraft-achievements.js';
 import {renderObservations} from './rinkcraft-observations.js';
 import {openCapability} from './rinkcraft-capability.js';
 import {matchesStatScores,openStatScore} from './rinkcraft-stat-scores.js';
@@ -117,7 +117,7 @@ export function renderCharacterFront(
   const scope=node('p',numerical
     ?`${numerical.scope_label??`${Math.floor(numerical.season/10000)}–${String(numerical.season%100).padStart(2,'0')}`} · ${numerical.situation} · ${numerical.group}`
     :season?`${Math.floor(season/10000)}–${String(season%100).padStart(2,'0')} · all strengths`:'Statistical window unavailable');
-  scope.className='rk-front-scope';front.append(header,fields,scope);
+  scope.className='rk-front-scope';front.append(header,fields);if(statFeats){const specialties=renderStatSpecialties(statFeats);if(specialties)front.append(specialties);}front.append(scope);
   if(snapshot){const note=node('p',snapshot.note);note.className='rk-front-snapshot';note.dataset.snapshotState=snapshot.state;front.append(note);}
 
   const columns=node('div');columns.className='rk-front-columns';

@@ -4,6 +4,17 @@ import {renderCharacterCard} from '../dist/src/rinkcraft-character.js';
 import {renderStatScore} from '../dist/src/rinkcraft-stat-scores.js';
 import {renderStatFeats} from '../dist/src/rinkcraft-achievements.js';
 
+test('stat specialties preserve documentary identity and require earned matching highlights',async()=>{
+ const {renderStatSpecialties}=await import('../dist/src/rinkcraft-achievements.js');
+ const f={id:'puck-thief',name:'Puck thief',state:'earned',tier:'Gold',placements:['task_skills'],matched:1,required:1,conditions:[]};
+ const a={player_id:1,season:20262027,season_type:'regular',group:'Forwards',games:20,minimum_games:10,notes:[],source_urls:[],rules_sha256:'test',source_sha256:'test',feats:[f],task_repertoire:{schema:'rinkcraft.task-repertoire.v2',player_id:1,season:20262027,season_type:'regular',group:'Forwards',games:20,skills:[{feat_id:f.id,name:'Takeaways',family:'disruption'}],highlights:[{feat_id:f.id,name:'Takeaways',tier:'Gold'}],note:'Tier-first selection'}};
+ assert.match(renderStatSpecialties(a).textContent,/Stat specialties.*2026.*20 GP.*Takeaways.*Gold/);
+ const args=Array(18).fill(undefined);args[0]='Test';args[1]=sheet;args[3]={season:20262027,games:20,position:'Center',metrics:[]};args[11]={player_id:1,season_type:'regular'};args[12]=a;
+ const front=renderCharacterCard(...args);assert.equal(classed(front,'rk-stat-specialties').length,1);assert.ok(classed(front,'rk-front-identity')[0].textContent.includes(sheet.primary.name));assert.ok(classed(front,'rk-front-identity')[0].textContent.includes(sheet.specialty));
+ for(const bad of [{...a.task_repertoire,player_id:2},{...a.task_repertoire,games:19},{...a.task_repertoire,schema:'rinkcraft.task-repertoire.v1'}])assert.equal(renderStatSpecialties({...a,task_repertoire:bad}),undefined);
+ assert.equal(renderStatSpecialties({...a,feats:[{...f,state:'not_earned'}]}),undefined);assert.equal(renderStatSpecialties({...a,feats:[{...f,placements:['risk_flags']}]}),undefined);assert.equal(renderStatSpecialties({...a,task_repertoire:{...a.task_repertoire,highlights:[]}}),undefined);
+});
+
 test('power-play context shows supplied strength-specific rates within Role Coverage',async()=>{
  const {powerPlayContext,renderPowerPlayContext}=await import('../dist/src/rinkcraft-power-play-context.js');
  const r={schema:'rinkcraft.power-play-context.v1',player_id:1,season:20262027,group:'Forwards',games:4,minutes:80,summary:'Power play · 60.0% of assists',time_share:'20.0% of own TOI',assist_share:'60.0% of assists',pp_assists:'6.00 /60',outside_assists:'1.00 /60',formula:'Use each strength denominator.',note:'Outside PP includes all remaining situations, not just five-on-five.'};

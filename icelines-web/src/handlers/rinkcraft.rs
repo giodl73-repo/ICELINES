@@ -847,6 +847,8 @@ pub async fn get_json(
 #[derive(Template)]
 #[template(path = "rinkcraft.html")]
 struct ProfileTemplate {
+    stat_identity: Option<icelines_core::view_model::rinkcraft_task_repertoire::Repertoire>,
+    stat_identity_scope: String,
     power_play_context: Option<icelines_core::view_model::rinkcraft_power_play_context::Record>,
     production_mix: Option<icelines_core::view_model::rinkcraft_production_mix::Record>,
     penalty_balance: Option<icelines_core::view_model::rinkcraft_penalty_balance::Record>,
@@ -981,11 +983,7 @@ fn plain_feat_condition(
         )
     }
 }
-fn feat_section(
-    view: &RinkcraftStatProfile,
-    placement: &str,
-    limit: usize,
-) -> Option<FeatSectionView> {
+fn matched_achievements(view: &RinkcraftStatProfile) -> Option<&icelines_core::view_model::rinkcraft_achievements::AchievementProfile> {
     let a = view.achievements.as_ref()?;
     let target = view
         .numerical_evidence
@@ -1004,6 +1002,14 @@ fn feat_section(
     {
         return None;
     }
+    Some(a)
+}
+fn feat_section(
+    view: &RinkcraftStatProfile,
+    placement: &str,
+    limit: usize,
+) -> Option<FeatSectionView> {
+    let a = matched_achievements(view)?;
     let mut feats: Vec<_> = a
         .feats
         .iter()
@@ -1940,7 +1946,10 @@ pub async fn get_html(
     let penalty_balance=stat_attributes.as_ref().and_then(icelines_core::view_model::rinkcraft_penalty_balance::build);
     let production_mix=stat_attributes.as_ref().and_then(icelines_core::view_model::rinkcraft_production_mix::build);
     let power_play_context=stat_attributes.as_ref().and_then(icelines_core::view_model::rinkcraft_power_play_context::build);
+    let stat_identity=matched_achievements(&view).map(icelines_core::view_model::rinkcraft_task_repertoire::select);
+    let stat_identity_scope=stat_identity.as_ref().map(|r|format!("{}–{:02} · {} GP",r.season/10000,r.season%100,r.games)).unwrap_or_default();
     let template = ProfileTemplate {
+        stat_identity, stat_identity_scope,
         power_play_context,
         production_mix,
         penalty_balance,
