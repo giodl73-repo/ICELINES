@@ -3,6 +3,7 @@ use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 #[derive(Debug, Default, Clone)]
 pub struct Counts {
+    pub strengths: BTreeMap<String, icelines_core::view_model::rinkcraft_under_pressure::Draws>,
     pub actions: icelines_core::view_model::rinkcraft_under_pressure::ActionCounts,
     pub roster_games: u32,
     pub late_states: BTreeMap<String, icelines_core::view_model::rinkcraft_under_pressure::Draws>,
@@ -177,6 +178,10 @@ pub fn parse_game(bytes: &[u8], id: u64, season: u32) -> Result<BTreeMap<u32, Co
             let c = out.get_mut(&id).ok_or("Missing draw actor")?;
             c.taken += 1;
             c.won += u32::from(win);
+            let state = draw_strength(p["situationCode"].as_str(), roster[&id] == home);
+            let b = c.strengths.entry(state.into()).or_default();
+            b.taken += 1;
+            b.won += u32::from(win);
             if late {
                 c.late_taken += 1;
                 c.late_won += u32::from(win);
@@ -207,6 +212,32 @@ pub fn parse_game(bytes: &[u8], id: u64, season: u32) -> Result<BTreeMap<u32, Co
         return Err("Final score does not reconcile with event sequence".into());
     }
     Ok(out)
+}
+// NHL code order: away goalie, away skaters, home skaters, home goalie.
+// Keep empty-net/unusual situations outside the standard advantage split.
+fn draw_strength(code: Option<&str>, home: bool) -> &'static str {
+    let Some(code) = code else {
+        return "unknown";
+    };
+    let b = code.as_bytes();
+    if b.len() != 4
+        || !b.iter().all(u8::is_ascii_digit)
+        || ![b'0', b'1'].contains(&b[0])
+        || ![b'0', b'1'].contains(&b[3])
+        || !(b'3'..=b'6').contains(&b[1])
+        || !(b'3'..=b'6').contains(&b[2])
+    {
+        return "unknown";
+    }
+    if b[0] != b'1' || b[3] != b'1' || b[1] > b'5' || b[2] > b'5' {
+        return "other";
+    }
+    let (own, opponent) = if home { (b[2], b[1]) } else { (b[1], b[2]) };
+    match own.cmp(&opponent) {
+        std::cmp::Ordering::Equal => "even",
+        std::cmp::Ordering::Greater => "advantage",
+        std::cmp::Ordering::Less => "disadvantage",
+    }
 }
 fn late_clock(p: &Value) -> Result<bool, String> {
     let clock = p["timeInPeriod"].as_str().ok_or("Missing action clock")?;

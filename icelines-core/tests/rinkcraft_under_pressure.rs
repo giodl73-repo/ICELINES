@@ -21,6 +21,7 @@ fn player(group: &str) -> scores::Profile {
 }
 fn faceoffs() -> pressure::Faceoffs {
     pressure::Faceoffs {
+        strengths: None,
         season: 20262027,
         player_id: 1,
         taken: 100,
@@ -32,6 +33,16 @@ fn faceoffs() -> pressure::Faceoffs {
         captured_at: "2026-11-24T00:00:00Z".into(),
         source_sha256: "a".repeat(64),
     }
+}
+#[test]
+fn manpower_partitions_preserve_totals_and_legacy_samples_without_a_split() {
+    let p=player("Forwards");let mut f=faceoffs();
+    f.strengths=Some(BTreeMap::from([("even".into(),pressure::Draws{taken:70,won:40}),("advantage".into(),pressure::Draws{taken:20,won:15}),("disadvantage".into(),pressure::Draws{taken:10,won:5})]));
+    let r=pressure::build(&p,Some(f.clone()));pressure::validate(&p,&r).unwrap();
+    let split=&r.entries[0].breakdown;assert_eq!(split.len(),5);assert_eq!(split[1].result,"15/20 won · 75.0%");assert_eq!(split[4].result,"No observed opportunities");
+    assert_eq!(split.iter().map(|b|b.opportunities).sum::<u32>(),100);
+    for change in 0..3 {let mut bad=f.clone();let states=bad.strengths.as_mut().unwrap();match change {0=>states.get_mut("even").unwrap().taken+=1,1=>states.get_mut("even").unwrap().won+=1,_=>{states.insert("guess".into(),pressure::Draws::default());}};let r=pressure::build(&p,Some(bad));assert!(pressure::validate(&p,&r).is_err());}
+    f.strengths=None;let r=pressure::build(&p,Some(f));assert!(r.entries[0].breakdown.is_empty());pressure::validate(&p,&r).unwrap();
 }
 #[test]
 fn contextual_actions_are_counts_not_opportunity_rates_and_survive_rebuild() {

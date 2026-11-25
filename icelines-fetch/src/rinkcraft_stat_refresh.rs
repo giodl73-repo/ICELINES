@@ -482,9 +482,10 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
                 for (id,c) in draws {
                     let a=action_samples.entry(id).or_insert_with(||icelines_core::view_model::rinkcraft_under_pressure::ActionSample {exposure:None,season:request.season,player_id:id,counts:Default::default(),roster_games:0,coverage_games,captured_at:captured_at.clone(),source_sha256:source_sha256.clone()});
                     a.counts.add(&c.actions);a.roster_games+=c.roster_games;
-                    let f=faceoff_samples.entry(id).or_insert_with(||icelines_core::view_model::rinkcraft_under_pressure::Faceoffs {season:request.season,player_id:id,taken:0,won:0,late_taken:0,late_won:0,late_states:Some(BTreeMap::new()),coverage_games,captured_at:captured_at.clone(),source_sha256:source_sha256.clone()});
+                    let f=faceoff_samples.entry(id).or_insert_with(||icelines_core::view_model::rinkcraft_under_pressure::Faceoffs {strengths:Some(BTreeMap::new()),season:request.season,player_id:id,taken:0,won:0,late_taken:0,late_won:0,late_states:Some(BTreeMap::new()),coverage_games,captured_at:captured_at.clone(),source_sha256:source_sha256.clone()});
                     f.taken+=c.taken;f.won+=c.won;f.late_taken+=c.late_taken;f.late_won+=c.late_won;
                     for (key,n) in c.late_states {let b=f.late_states.as_mut().unwrap().entry(key).or_default();b.taken+=n.taken;b.won+=n.won;}
+                    for (key,n) in c.strengths {let b=f.strengths.as_mut().unwrap().entry(key).or_default();b.taken+=n.taken;b.won+=n.won;}
                 }
                 for (id, a) in game {
                     let sum = totals.entry(id).or_default();

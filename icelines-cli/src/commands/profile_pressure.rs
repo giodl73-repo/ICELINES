@@ -90,6 +90,11 @@ pub fn read(root: &Path, season: u32) -> anyhow::Result<Cache> {
                 b.taken += c.taken;
                 b.won += c.won;
             }
+            for (key, c) in n.strengths {
+                let b = s.strengths.entry(key).or_default();
+                b.taken += c.taken;
+                b.won += c.won;
+            }
         }
         captures.push(c);
     }
@@ -130,6 +135,7 @@ pub fn read(root: &Path, season: u32) -> anyhow::Result<Cache> {
             (
                 player_id,
                 Faceoffs {
+                    strengths: Some(c.strengths),
                     season,
                     player_id,
                     taken: c.taken,

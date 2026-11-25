@@ -14,6 +14,42 @@ fn parse(
 ) -> Result<std::collections::BTreeMap<u32, icelines_sources::rinkcraft_pressure::Counts>, String> {
     parse_game(&serde_json::to_vec(v).unwrap(), 2026020001, 20262027)
 }
+#[test]
+fn draw_strength_is_player_relative_and_empty_nets_are_not_standard_advantage() {
+    let mut v = game();
+    for (code, home, away) in [
+        ("1551", "even", "even"),
+        ("1331", "even", "even"),
+        ("1451", "advantage", "disadvantage"),
+        ("1541", "disadvantage", "advantage"),
+        ("1351", "advantage", "disadvantage"),
+        ("0651", "other", "other"),
+        ("1560", "other", "other"),
+        ("bad", "unknown", "unknown"),
+        ("2551", "unknown", "unknown"),
+        ("15511", "unknown", "unknown"),
+    ] {
+        v["plays"][0]["situationCode"] = json!(code);
+        let r = parse(&v).unwrap();
+        assert_eq!(r[&1].strengths[home].won, if home=="unknown" {3} else {1});
+        assert_eq!(r[&2].strengths[away].won, 0);
+        for id in [1, 2] {
+            assert_eq!(
+                r[&id].strengths.values().map(|c| c.taken).sum::<u32>(),
+                r[&id].taken
+            );
+            assert_eq!(
+                r[&id].strengths.values().map(|c| c.won).sum::<u32>(),
+                r[&id].won
+            );
+        }
+    }
+    v["plays"][0]
+        .as_object_mut()
+        .unwrap()
+        .remove("situationCode");
+    assert_eq!(parse(&v).unwrap()[&1].strengths["unknown"].taken, 3);
+}
 fn action(id: u32, kind: &str, details: Value) -> Value {
     json!({"eventId":id,"sortOrder":id,"typeDescKey":kind,"periodDescriptor":{"number":3,"periodType":"REG"},"timeInPeriod":"15:00","details":details})
 }

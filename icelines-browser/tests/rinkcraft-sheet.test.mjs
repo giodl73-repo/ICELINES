@@ -4,6 +4,13 @@ import {renderCharacterCard} from '../dist/src/rinkcraft-character.js';
 import {renderStatScore} from '../dist/src/rinkcraft-stat-scores.js';
 import {renderStatFeats} from '../dist/src/rinkcraft-achievements.js';
 
+test('overall draw breakdown uses manpower labels while late draws retain score context',async()=>{
+ const {pressureEntries}=await import('../dist/src/rinkcraft-under-pressure.js');
+ const e={id:'draws',name:'Contested draws',result:'4/10 won',challenge:'A draw',response:'Win',definition:'Credited wins',source:'NHL',coverage:'A frozen sample',captured_at:'2026-11-24T00:00:00Z',note:'Not retained possession',breakdown:[{key:'advantage',name:'Skater advantage',result:'3/4 won',opportunities:4,successes:3}]};
+ const view=pressureEntries({entries:[e]});assert.match(view.textContent,/skater balance.*both goalies present.*Skater advantage.*3\/4 won/);assert.doesNotMatch(view.textContent,/score before/);
+ assert.match(pressureEntries({entries:[{...e,id:'late-draws'}]}).textContent,/score before/);
+});
+
 test('point mix shows supplied composition without treating assist detail as extra points',async()=>{
  const {productionMix,renderProductionMix}=await import('../dist/src/rinkcraft-production-mix.js');
  const r={schema:'rinkcraft.production-mix.v1',player_id:1,season:20262027,group:'Forwards',games:4,minutes:80,headline:'25.0% goal share',rows:[{label:'Goals',rate:'1.00 /60',share:'25.0% of points'},{label:'Assists',rate:'3.00 /60',share:'75.0% of points'}],assist_detail:[{label:'Primary assists',rate:'2.00 /60',share:'50.0% of points'},{label:'Secondary assists',rate:'1.00 /60',share:'25.0% of points'}],note:'Recorded production, not a class.'};
