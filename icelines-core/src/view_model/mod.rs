@@ -2339,6 +2339,7 @@ mod tests {
 }
 
 pub mod rinkcraft_achievements;
+pub mod rinkcraft_task_repertoire;
 pub mod rinkcraft_contest;
 pub mod rinkcraft_deployment;
 pub mod rinkcraft_events;
@@ -2362,6 +2363,8 @@ pub mod rinkcraft_edge_exposure;
 pub mod rinkcraft_finishing_fit;
 pub mod rinkcraft_seasonal_records;
 pub mod rinkcraft_stat_scores;
+pub mod rinkcraft_under_pressure;
+pub mod rinkcraft_snapshot_record;
 pub mod rinkcraft_goalie_puck;
 pub mod rinkcraft_goalie_shots;
 pub mod rinkcraft_skater_context;
@@ -2375,3 +2378,17 @@ pub mod rinkcraft_passing_record;
 pub mod rinkcraft_shooting_record;
 pub mod rinkcraft_task_measurements;
 pub mod rinkcraft_whistle;
+
+pub mod rinkcraft_unit_links;
+
+pub mod rinkcraft_skating_detail;
+
+pub mod rinkcraft_shot_methods;
+
+pub mod rinkcraft_penalty_balance;
+
+pub mod rinkcraft_production_mix;
+
+pub mod rinkcraft_power_play_context;
+
+pub mod rinkcraft_goalie_feat_trial;

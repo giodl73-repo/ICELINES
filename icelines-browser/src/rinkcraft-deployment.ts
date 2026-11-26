@@ -11,7 +11,7 @@ export function renderDeploymentUsage(card:DeploymentEvidence):HTMLElement {
  const grid=node('dl');grid.className='rk-usage-grid';
  for(const row of card.rows){const field=node('div');field.dataset.usageKey=row.key;field.append(node('dt',row.label),node('dd',row.per_game_display));grid.append(field);}
  if(card.goalie){const f=node('div');f.append(node('dt','Starts / GP'),node('dd',`${card.starts??'—'} / ${card.games}`));grid.append(f);}
- section.append(grid,node('small','Unit / station undocumented'));
+ section.append(grid,node('small','Assigned unit / station undocumented'));
  const details=node('details');details.className='rk-usage-evidence';details.append(node('summary','Usage record & source'));
  for(const row of card.rows)details.append(node('p',`${row.label}: ${row.minutes_display} MIN · ${row.share_display} of own TOI · ${row.seconds} seconds / ${card.games} appearances`));
  for(const note of card.notes)details.append(node('p',note));

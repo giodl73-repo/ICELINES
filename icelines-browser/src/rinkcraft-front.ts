@@ -1,3 +1,10 @@
+import {powerPlayContext,renderPowerPlayContext} from './rinkcraft-power-play-context.js';
+import {productionMix,renderProductionMix} from './rinkcraft-production-mix.js';
+import {penaltyBalance,renderPenaltyBalance} from './rinkcraft-penalty-balance.js';
+import {shotMethods,renderShotMethods} from './rinkcraft-shot-methods.js';
+import {skatingDetail,renderSkatingDetail} from './rinkcraft-skating-detail.js';
+import {unitLinks,renderUnitLinks,renderUnitDeployment} from './rinkcraft-unit-links.js';
+import {pressureRecord,pressureEntries,pressureGaps} from './rinkcraft-under-pressure.js';
 import {renderGoaliePuck} from './rinkcraft-goalie-puck.js';
 import {renderShotContext} from './rinkcraft-goalie-shots.js';
 import {renderSkaterContext} from './rinkcraft-skater-context.js';
@@ -13,7 +20,7 @@ import type {AttributeSeason} from './rinkcraft-attributes.js';
 import {attributeValue} from './rinkcraft-attributes.js';
 import type {NumericalEvidence, SnapshotSelection} from './rinkcraft-numbers.js';
 import {numericalValue} from './rinkcraft-numbers.js';
-import {renderStatFeats} from './rinkcraft-achievements.js';
+import {renderStatFeats,renderStatSpecialties} from './rinkcraft-achievements.js';
 import {renderObservations} from './rinkcraft-observations.js';
 import {openCapability} from './rinkcraft-capability.js';
 import {matchesStatScores,openStatScore} from './rinkcraft-stat-scores.js';
@@ -83,9 +90,9 @@ export function renderCharacterFront(
   const position=record?.position??numerical?.group??assessment?.group??'Unknown';
   const goalie=['Goalie','Goalies','G'].includes(position);
   const targetSeason=numerical?.season??record?.season??assessment?.season;
-  const usage=deploymentEvidence&&deploymentEvidence.season===targetSeason&&deploymentEvidence.goalie===goalie&&deploymentEvidence.player_id===(usageRequest?.player_id??sheet?.player_id)&&deploymentEvidence.season_type===usageRequest?.season_type?deploymentEvidence:undefined;
   const featGroup=goalie?'Goalies':['D','Defense'].includes(position)?'Defense':'Forwards';
   const statActor=usageRequest?.player_id??sheet?.player_id,targetGames=(numerical?.group===featGroup?numerical?.games:undefined)??record?.games;
+  const usage=deploymentEvidence&&deploymentEvidence.season===targetSeason&&deploymentEvidence.goalie===goalie&&deploymentEvidence.player_id===(usageRequest?.player_id??sheet?.player_id)&&deploymentEvidence.season_type===usageRequest?.season_type&&(targetGames===undefined||deploymentEvidence.games===targetGames)?deploymentEvidence:undefined;
   const candidates=[...(statAttributeSeasons??[]).filter(p=>p.games!==undefined),numerical?.player_id===statActor?numerical?.stat_attributes:undefined];
   const statScores=usageRequest?.season_type==='regular'?candidates.find(p=>matchesStatScores(p,statActor,targetSeason,featGroup,targetGames)):undefined;
   const statFeats=achievements&&achievements.player_id===(usageRequest?.player_id??sheet?.player_id)&&achievements.season===targetSeason&&achievements.season_type===usageRequest?.season_type&&achievements.group===featGroup?achievements:undefined;
@@ -110,7 +117,7 @@ export function renderCharacterFront(
   const scope=node('p',numerical
     ?`${numerical.scope_label??`${Math.floor(numerical.season/10000)}–${String(numerical.season%100).padStart(2,'0')}`} · ${numerical.situation} · ${numerical.group}`
     :season?`${Math.floor(season/10000)}–${String(season%100).padStart(2,'0')} · all strengths`:'Statistical window unavailable');
-  scope.className='rk-front-scope';front.append(header,fields,scope);
+  scope.className='rk-front-scope';front.append(header,fields);if(statFeats){const specialties=renderStatSpecialties(statFeats);if(specialties)front.append(specialties);}front.append(scope);
   if(snapshot){const note=node('p',snapshot.note);note.className='rk-front-snapshot';note.dataset.snapshotState=snapshot.state;front.append(note);}
 
   const columns=node('div');columns.className='rk-front-columns';
@@ -131,15 +138,17 @@ export function renderCharacterFront(
   }
   attributes.append(scores);
   const tasks=node('div');tasks.className='rk-front-task-column';
-  tasks.append(renderRepertoire('Under Pressure','rk-front-pressure',sheet?.under_pressure,3,sheet));
-  if(statFeats){const skills=box('Task Skills','rk-front-skills');skills.append(renderStatFeats(statFeats,'task_skills',3));const scouted=node('details');scouted.className='rk-scouted-tasks';scouted.append(node('summary','Scouted specialties'),renderRepertoire('Scouted tasks','rk-scouted-task-list',sheet?.task_skills,5,sheet));skills.append(scouted);tasks.append(skills);}
+  const pressure=pressureRecord(statScores);
+  if(pressure&&(pressure.entries.length||pressure.actions?.length)){const section=box('Under Pressure','rk-front-pressure');section.append(pressureEntries(pressure));if(sheet?.under_pressure?.length){const scouting=node('details');scouting.className='rk-scouted-pressure';scouting.append(node('summary','Scouted responses'),renderRepertoire('Accounts','rk-pressure-accounts',sheet.under_pressure,3,sheet));section.append(scouting);}section.append(pressureGaps(pressure));tasks.append(section);}
+  else {const section=renderRepertoire('Under Pressure','rk-front-pressure',sheet?.under_pressure,3,sheet);if(pressure)section.append(pressureGaps(pressure));tasks.append(section);}
+  if(statFeats){const skills=box('Task Skills','rk-front-skills');skills.append(renderStatFeats(statFeats,'task_skills',5));const scouted=node('details');scouted.className='rk-scouted-tasks';scouted.append(node('summary','Scouted specialties'),renderRepertoire('Scouted tasks','rk-scouted-task-list',sheet?.task_skills,5,sheet));skills.append(scouted);tasks.append(skills);}
   else tasks.append(renderRepertoire('Task Skills','rk-front-skills',sheet?.task_skills,5,sheet));
   const reading=readingRecord(statScores);if(reading){const section=box('Read & React','rk-front-reading');section.append(readingSummary(reading));tasks.append(section);}else tasks.append(taskBox('Read & React','rk-front-reading',['Anticipation']));
   split.append(attributes,tasks);left.append(split);
   const coverage=box('Role Coverage','rk-front-role-coverage');
   const positions=node('dl');positions.className='rk-task-list';
   const pp=usage?.rows.find(r=>r.key==='pp'),sh=usage?.rows.find(r=>r.key==='sh');
-  positions.append(field('Position',position),field('Special Teams',usage?(goalie?'See goalie workload':`PP ${pp?.per_game_display??'—'} / SH ${sh?.per_game_display??'—'} per GP`):'Undocumented'));coverage.append(positions);if(statFeats)coverage.append(renderStatFeats(statFeats,'role_coverage',2));left.append(coverage);
+  positions.append(field('Position',position),field('Special Teams',usage?(goalie?'See goalie workload':`PP ${pp?.per_game_display??'—'} / SH ${sh?.per_game_display??'—'} per GP`):'Undocumented'));coverage.append(positions);if(statFeats)coverage.append(renderStatFeats(statFeats,'role_coverage',2));const powerPlay=powerPlayContext(statScores);if(powerPlay)coverage.append(renderPowerPlayContext(powerPlay));left.append(coverage);
 
   const center=node('div');center.className='rk-front-center';
   const responses=node('div');responses.className='rk-response-row';
@@ -149,9 +158,11 @@ export function renderCharacterFront(
     if(movement){response.className+=' rk-front-movement';response.dataset.movementState='unassessed';}
     const speed=!goalie&&title==='Skating Detail'&&['Forwards','Defense'].includes(numerical?.group??'')&&numerical?.style_evidence?.season===numerical?.season
       ?numerical?.style_evidence?.measured.find(m=>m.key==='max-skating-speed'&&m.unit==='Mph'&&Number.isFinite(m.value)&&m.value>=0&&typeof m.scope==='string'&&m.scope.startsWith('All strengths')):undefined;
+    const observedSkating=title==='Skating Detail'?skatingDetail(statScores):undefined;
     const edgeSpeed=!goalie&&title==='Skating Detail'?edge?.measures.find(m=>m.key==='max-skating-speed'&&m.unit==='Mph'):undefined;
     const defense=title==='Threat Denial'&&!goalie?defendingRecord(statScores):undefined;
     if(defense){response.className+=' rk-front-defense';response.append(renderDefendingRecord(defense));}
+    else if(observedSkating){response.dataset.movementState='observed_record';response.append(renderSkatingDetail(observedSkating));}
     else if(edgeSpeed){response.dataset.movementState='observed_maximum';response.append(node('strong',`${edgeSpeed.value.toFixed(2)} mph`),node('small','EDGE season max · all strengths'));response.title=`Captured ${edge!.captured_at} · ${edgeSpeed.interpretation}`;}
     else if(speed){response.dataset.movementState='observed_maximum';response.append(node('strong',`${speed.value.toFixed(2)} mph`),node('small','Season max · all strengths'));response.title=`${speed.scope}. Observed maximum; not puck-carrying speed, acceleration or a capability grade.`;}
     else response.append(node('strong','—'),node('small','Unassessed'));
@@ -195,7 +206,7 @@ export function renderCharacterFront(
     evidence.append(body);item.append(evidence);
   }
   const measured=box('Estimated Record','rk-front-record');
-  const projection=numerical?.estimated_record?.season===numerical?.season?numerical?.estimated_record:undefined;
+  const projection=(statScores?.estimated_record?.season===statScores?.season?statScores?.estimated_record:undefined)??(numerical?.estimated_record?.season===numerical?.season?numerical?.estimated_record:undefined);
   measured.append(node('small',projection?.basis??'Recorded rates'));
   const values=node('dl');values.className='rk-record-values';
   if(projection)for(const m of projection.metrics){
@@ -213,17 +224,26 @@ export function renderCharacterFront(
   }
   else values.append(field('Coverage','Unavailable'));
   measured.append(values);
+  if(projection?.metrics.some(m=>m.calculation)){
+    const details=node('details');details.className='rk-pace-detail';details.append(node('summary','Observed record & pace'));
+    if(projection.observed_games!==undefined)details.append(node('p',`${projection.observed_games} observed GP / ${projection.target_games}-game pace`));
+    for(const m of projection.metrics.filter(m=>m.calculation)){const row=node('div');row.dataset.paceKey=m.key;row.append(node('strong',m.label));if(m.recorded_count!==undefined)row.append(node('span',`${m.recorded_count} recorded`));row.append(node('small',m.calculation));details.append(row);}
+    details.append(node('p','Projected totals round to whole counts. Ratios and TOI remain rates. Straight pace is not an availability forecast.'));measured.append(details);
+  }
+
   const deployment=box('Deployment','rk-front-deployment'),assignment=node('dl');assignment.className='rk-task-list';
   if(usage)deployment.append(renderDeploymentUsage(usage));
   else {assignment.append(field('Unit','Undocumented'),field('Station','Undocumented'));deployment.append(assignment);}
-  center.append(responses,counters,methods,measured,deployment);
+  const observedUnits=unitLinks(statScores);if(observedUnits)deployment.append(renderUnitDeployment(observedUnits));
+  let displayedMethods=methods;const observedMethods=shotMethods(statScores);if(observedMethods){displayedMethods=box('Signature Methods','rk-front-methods');displayedMethods.append(renderShotMethods(observedMethods));if(sheet?.features.length){const scouted=node('details');scouted.className='rk-scouted-methods';scouted.append(node('summary','Scouted methods'),methods.children[1]);displayedMethods.append(scouted);}}
+  center.append(responses,counters,displayedMethods,measured,deployment);
 
   const right=node('div');right.className='rk-front-right';
-  const tendencies=statFeats?box('Playing Tendencies','rk-front-traits'):namesBox('Playing Tendencies','rk-front-traits',sheet?.traits.map(t=>t.name)??[]);if(statFeats){tendencies.append(renderStatFeats(statFeats,'playing_tendencies',2));if(sheet?.traits.length){const scouted=node('details');scouted.append(node('summary','Scouted tendencies'),namesBox('Accounts','rk-scouted-traits',sheet.traits.map(t=>t.name)));tendencies.append(scouted);}}right.append(tendencies);
+  const tendencies=statFeats?box('Playing Tendencies','rk-front-traits'):namesBox('Playing Tendencies','rk-front-traits',sheet?.traits.map(t=>t.name)??[]);if(statFeats){tendencies.append(renderStatFeats(statFeats,'playing_tendencies',2));if(sheet?.traits.length){const scouted=node('details');scouted.append(node('summary','Scouted tendencies'),namesBox('Accounts','rk-scouted-traits',sheet.traits.map(t=>t.name)));tendencies.append(scouted);}}const pointMix=productionMix(statScores);if(pointMix)tendencies.append(renderProductionMix(pointMix));const penalties=penaltyBalance(statScores);if(penalties)tendencies.append(renderPenaltyBalance(penalties));right.append(tendencies);
   for(const [title,className,text] of [
     ['Assigned Role','rk-front-role','Undocumented'],['Unit Links','rk-front-links','Undocumented'],
     ['Known Limitations','rk-front-limitations','Unassessed'],
-  ]){const section=box(title,className);section.append(node('p',text));if(statFeats&&className==='rk-front-limitations'){const observations=renderObservations(statFeats);if(observations){section.children[0].textContent='Cautions & Low Metrics';section.children[1].textContent='Measured context · not ability penalties';section.append(observations);}section.append(node('small','Stat flags · contextual, not diagnosed weaknesses.'),renderStatFeats(statFeats,'risk_flags',2));}right.append(section);}
+  ]){const section=box(title,className);if(className==='rk-front-links'&&observedUnits)section.append(renderUnitLinks(observedUnits));else section.append(node('p',text));if(statFeats&&className==='rk-front-limitations'){const observations=renderObservations(statFeats);if(observations){section.children[0].textContent='Cautions & Low Metrics';section.children[1].textContent='Measured context · not ability penalties';section.append(observations);}section.append(node('small','Stat flags · contextual, not diagnosed weaknesses.'),renderStatFeats(statFeats,'risk_flags',2));}right.append(section);}
   const distinctive=box('Distinctive Features','rk-front-distinctive');
   distinctive.append(node('strong',sheet?.specialty??'Undocumented'));
   if(sheet)distinctive.append(node('p',sheet.summary));

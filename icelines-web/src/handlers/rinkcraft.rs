@@ -847,6 +847,16 @@ pub async fn get_json(
 #[derive(Template)]
 #[template(path = "rinkcraft.html")]
 struct ProfileTemplate {
+    stat_identity: Option<icelines_core::view_model::rinkcraft_task_repertoire::Repertoire>,
+    stat_identity_scope: String,
+    power_play_context: Option<icelines_core::view_model::rinkcraft_power_play_context::Record>,
+    production_mix: Option<icelines_core::view_model::rinkcraft_production_mix::Record>,
+    penalty_balance: Option<icelines_core::view_model::rinkcraft_penalty_balance::Record>,
+    shot_methods: Option<icelines_core::view_model::rinkcraft_shot_methods::Record>,
+    skating_detail: Option<icelines_core::view_model::rinkcraft_skating_detail::Record>,
+    unit_links: Option<icelines_core::view_model::rinkcraft_unit_links::Record>,
+    pressure_record: Option<icelines_core::view_model::rinkcraft_under_pressure::Record>,
+    record_projection: Option<icelines_core::view_model::rinkcraft_stat_scores::EstimatedRecord>,
     stat_attributes: Option<icelines_core::view_model::rinkcraft_stat_scores::Profile>,
     role_feats: Option<FeatSectionView>,
     skills_feats: Option<FeatSectionView>,
@@ -881,6 +891,8 @@ struct ProfileTemplate {
     absent_json: String,
 }
 impl ProfileTemplate {
+    fn has_pressure(&self) -> bool { self.pressure_record.as_ref().is_some_and(|r|!r.entries.is_empty() || !r.actions.is_empty()) }
+    fn has_scouted_pressure(&self) -> bool { self.profile.character_sheet.as_ref().is_some_and(|c|!c.under_pressure.is_empty()) }
     fn stat_change(
         &self,
         season: &u32,
@@ -904,7 +916,6 @@ impl ProfileTemplate {
     }
 }
 struct EvidenceView {
-    estimated_record: Option<icelines_core::view_model::rinkcraft_stat_scores::EstimatedRecord>,
     front_maximum_speed: Option<String>,
     context: Option<ContextView>,
     sources: Vec<icelines_core::view_model::rinkcraft_numbers::Source>,
@@ -917,6 +928,7 @@ struct EvidenceView {
     credit: String,
 }
 struct FeatSectionView {
+    is_tasks: bool,
     earned: usize,
     total: usize,
     visible: Vec<FeatRowView>,
@@ -927,6 +939,8 @@ struct FeatSectionView {
     source: String,
 }
 struct FeatRowView {
+    is_task: bool,
+    measured: String,
     id: String,
     name: String,
     state: String,
@@ -969,11 +983,7 @@ fn plain_feat_condition(
         )
     }
 }
-fn feat_section(
-    view: &RinkcraftStatProfile,
-    placement: &str,
-    limit: usize,
-) -> Option<FeatSectionView> {
+fn matched_achievements(view: &RinkcraftStatProfile) -> Option<&icelines_core::view_model::rinkcraft_achievements::AchievementProfile> {
     let a = view.achievements.as_ref()?;
     let target = view
         .numerical_evidence
@@ -992,6 +1002,14 @@ fn feat_section(
     {
         return None;
     }
+    Some(a)
+}
+fn feat_section(
+    view: &RinkcraftStatProfile,
+    placement: &str,
+    limit: usize,
+) -> Option<FeatSectionView> {
+    let a = matched_achievements(view)?;
     let mut feats: Vec<_> = a
         .feats
         .iter()
@@ -1010,14 +1028,20 @@ fn feat_section(
             .then_with(|| score(b).total_cmp(&score(a)))
             .then_with(|| a.id.cmp(&b.id))
     });
+    let repertoire = icelines_core::view_model::rinkcraft_task_repertoire::select(a);
+    if placement == "task_skills" {
+        feats.sort_by_key(|f| repertoire.skills.iter().position(|s| s.feat_id == f.id).unwrap_or(usize::MAX));
+    }
     let earned = feats.iter().filter(|f| f.state == "earned").count();
     let total = feats.len();
     let mut visible = Vec::new();
     let mut other = Vec::new();
     for f in feats {
         let row = FeatRowView {
+            is_task: placement == "task_skills" && repertoire.skills.iter().any(|s| s.feat_id == f.id),
+            measured: f.conditions.iter().map(|c| format!("{} {}",c.label.replace(" / GP", ""),c.value.map(|v| if c.unit == "Pct" {format!("{:.1}%",v*100.)} else if c.unit == "Count" {format!("{v:.0}")} else {format!("{v:.2}/game")} ).unwrap_or_else(||"Unavailable".into()))).collect::<Vec<_>>().join(" / "),
             id: f.id.clone(),
-            name: f.name.clone(),
+            name: if placement == "task_skills" { repertoire.skills.iter().find(|s| s.feat_id == f.id).map(|s| s.name.clone()).unwrap_or_else(|| f.name.clone()) } else { f.name.clone() },
             state: f.state.clone(),
             tier: f.tier.clone().unwrap_or_else(|| {
                 if f.state == "unavailable" {
@@ -1056,13 +1080,14 @@ fn feat_section(
                 })
                 .collect(),
         };
-        if f.state == "earned" && visible.len() < limit {
+        if f.state == "earned" && visible.len() < limit && (placement != "task_skills" || repertoire.skills.iter().any(|s| s.feat_id == f.id)) {
             visible.push(row)
         } else {
             other.push(row)
         }
     }
     Some(FeatSectionView {
+        is_tasks: placement == "task_skills",
         earned,
         total,
         visible,
@@ -1353,7 +1378,6 @@ fn measurement_value(m: &icelines_core::view_model::rinkcraft_numbers::Measureme
 }
 fn evidence_view(c: &icelines_core::view_model::rinkcraft_numbers::EvidenceCard) -> EvidenceView {
     EvidenceView {
-        estimated_record: c.estimated_record.clone(),
         front_maximum_speed: c
             .style_evidence
             .as_ref()
@@ -1914,10 +1938,29 @@ pub async fn get_html(
                 .find(|s| Some(s.season) == target_season)
         })
         .cloned();
+    let record_projection = stat_attributes.as_ref().and_then(|s|s.estimated_record.clone()).or_else(|| view.numerical_evidence.as_ref().and_then(|n|n.estimated_record.clone()));
+    let pressure_record = stat_attributes.as_ref().and_then(|s|s.under_pressure.clone());
+    let unit_links=stat_attributes.as_ref().and_then(|s|s.unit_links.clone());
+    let skating_detail=stat_attributes.as_ref().and_then(icelines_core::view_model::rinkcraft_skating_detail::build);
+    let shot_methods=stat_attributes.as_ref().and_then(icelines_core::view_model::rinkcraft_shot_methods::build);
+    let penalty_balance=stat_attributes.as_ref().and_then(icelines_core::view_model::rinkcraft_penalty_balance::build);
+    let production_mix=stat_attributes.as_ref().and_then(icelines_core::view_model::rinkcraft_production_mix::build);
+    let power_play_context=stat_attributes.as_ref().and_then(icelines_core::view_model::rinkcraft_power_play_context::build);
+    let stat_identity=matched_achievements(&view).map(icelines_core::view_model::rinkcraft_task_repertoire::select);
+    let stat_identity_scope=stat_identity.as_ref().map(|r|format!("{}–{:02} · {} GP",r.season/10000,r.season%100,r.games)).unwrap_or_default();
     let template = ProfileTemplate {
+        stat_identity, stat_identity_scope,
+        power_play_context,
+        production_mix,
+        penalty_balance,
+        shot_methods,
+        skating_detail,
+        unit_links,
+        pressure_record,
+        record_projection,
         stat_attributes,
         role_feats: feat_section(&view, "role_coverage", 2),
-        skills_feats: feat_section(&view, "task_skills", 3),
+        skills_feats: feat_section(&view, "task_skills", 5),
         tendency_feats: feat_section(&view, "playing_tendencies", 2),
         distinctive_feats: feat_section(&view, "distinctive_features", 2),
         risk_feats: feat_section(&view, "risk_flags", 2),
@@ -1927,6 +1970,7 @@ pub async fn get_html(
             .filter(|d| {
                 d.player_id == view.request.player_id
                     && d.season_type == view.request.season_type
+                    && Some(d.games) == view.numerical_evidence.as_ref().map(|n| n.games).or_else(|| view.latest_available.as_ref().map(|s| s.games))
                     && Some(d.season.0)
                         == view
                             .numerical_evidence

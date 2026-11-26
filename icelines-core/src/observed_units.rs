@@ -47,16 +47,20 @@ fn display(
 
 /// Constant-participant half-open segments; no event-time goals or blame assigned.
 pub fn reconstruct(boxscore: &Value, raw: &Value, team: u64) -> Result<Value> {
-    reconstruct_inner(boxscore, raw, team, None, false)
+    reconstruct_inner(boxscore, raw, team, None, false, false)
 }
 
 /// Complete, untruncated personnel combinations while the selected player is on ice.
 pub fn reconstruct_player(boxscore: &Value, raw: &Value, team: u64, player: u64) -> Result<Value> {
-    reconstruct_inner(boxscore, raw, team, Some(player), false)
+    reconstruct_inner(boxscore, raw, team, Some(player), false, false)
 }
 
 /// All regulation team combinations, with no display truncation.
 pub fn reconstruct_complete(boxscore: &Value, raw: &Value, team: u64) -> Result<Value> {
+    validate_complete(raw)?;
+    reconstruct_inner(boxscore, raw, team, None, true, false)
+}
+fn validate_complete(raw: &Value) -> Result<()> {
     let rows = raw["data"].as_array().ok_or("Missing shifts")?;
     if !rows.iter().any(|r| r["typeCode"].as_u64() == Some(517)) {
         return Err("No shift exposure rows".into());
@@ -66,7 +70,14 @@ pub fn reconstruct_complete(boxscore: &Value, raw: &Value, team: u64) -> Result<
             return Err("Incomplete shift capture".into());
         }
     }
-    reconstruct_inner(boxscore, raw, team, None, true)
+    Ok(())
+}
+
+/// Untruncated team participation segments, including explicitly invalid occupancy.
+/// Conflicting intervals remain censored; no event-time responsibility is assigned.
+pub fn reconstruct_segments(boxscore: &Value, raw: &Value, team: u64) -> Result<Value> {
+    validate_complete(raw)?;
+    reconstruct_inner(boxscore, raw, team, None, true, true)
 }
 
 fn reconstruct_inner(
@@ -75,6 +86,7 @@ fn reconstruct_inner(
     team: u64,
     focus: Option<u64>,
     complete: bool,
+    emit_segments: bool,
 ) -> Result<Value> {
     let game = id(boxscore, "id")?;
     let home = id(&boxscore["homeTeam"], "id")?;
@@ -214,6 +226,11 @@ fn reconstruct_inner(
                 "other"
             };
             *totals.entry(state).or_default() += seconds;
+            if emit_segments {
+                focused_segments.push(json!({"period":period,"start_seconds":edge[0],"end_seconds":edge[1],"state":state,
+                    "own_participants":own.iter().map(|id|json!({"id":id,"position":positions[id].1})).collect::<Vec<_>>(),
+                    "opponent_participants":opp.iter().map(|id|json!({"id":id,"position":positions[id].1})).collect::<Vec<_>>()}));
+            }
             if let Some(pid) = focus {
                 if !own.contains(&pid) {
                     continue;
@@ -281,6 +298,9 @@ fn reconstruct_inner(
     if complete {
         report["schema"] = json!("icelines.complete-team-units.0.1-experimental");
         report["scope"]=json!("complete regulation team combinations, no display truncation; no coach-assigned line numbers");
+    }
+    if emit_segments {
+        report["participation_segments"] = json!(focused_segments);
     }
     Ok(report)
 }

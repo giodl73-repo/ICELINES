@@ -43,3 +43,9 @@ pub mod raw_inventory;
 pub mod rinkcraft_stat_inputs;
 pub mod rinkcraft_skater_context;
 pub mod rinkcraft_defending_context;
+
+pub mod rinkcraft_pressure;
+pub mod rinkcraft_pressure_exposure;
+pub mod rinkcraft_unit_links;
+
+pub mod rinkcraft_shot_methods;

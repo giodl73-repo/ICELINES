@@ -389,7 +389,15 @@ pub fn attach_stat_attribute_catalog(
             .profile(profile.request.player_id.0, row.season.0, games)
             .filter(|p| p.group == group)
         {
-            profile.stat_attribute_seasons.push(scores.clone());
+            let mut admitted = scores.clone();
+            admitted.estimated_record = super::rinkcraft_snapshot_record::estimate(&admitted, None);
+            admitted.skating_detail = super::rinkcraft_skating_detail::build(&admitted);
+            admitted.shot_methods = super::rinkcraft_shot_methods::build(&admitted);
+            admitted.penalty_balance = super::rinkcraft_penalty_balance::build(&admitted);
+            admitted.production_mix = super::rinkcraft_production_mix::build(&admitted);
+            admitted.power_play_context = super::rinkcraft_power_play_context::build(&admitted);
+            admitted.under_pressure = Some(super::rinkcraft_under_pressure::rebuild(&admitted));
+            profile.stat_attribute_seasons.push(admitted);
         } else if catalog
             .profiles
             .iter()
@@ -422,12 +430,31 @@ pub fn attach_stat_attribute_catalog(
                 .profile(n.player_id, n.season, n.games)
                 .filter(|p| p.group == n.group)
             {
-                profile.stat_attribute_seasons.push(scores.clone());
+                let mut admitted = scores.clone();
+                admitted.estimated_record = super::rinkcraft_snapshot_record::estimate(&admitted, None);
+            admitted.skating_detail = super::rinkcraft_skating_detail::build(&admitted);
+            admitted.shot_methods = super::rinkcraft_shot_methods::build(&admitted);
+            admitted.penalty_balance = super::rinkcraft_penalty_balance::build(&admitted);
+            admitted.production_mix = super::rinkcraft_production_mix::build(&admitted);
+            admitted.power_play_context = super::rinkcraft_power_play_context::build(&admitted);
+            admitted.under_pressure = Some(super::rinkcraft_under_pressure::rebuild(&admitted));
+                profile.stat_attribute_seasons.push(admitted);
             }
         }
     }
     profile.stat_attribute_changes =
         super::rinkcraft_stat_scores::season_changes(&profile.stat_attribute_seasons);
+    let target = profile.numerical_evidence.as_ref().map(|n| n.season)
+        .or_else(|| profile.latest_available.as_ref().map(|s| s.season.0));
+    if let Some(scores) = profile.stat_attribute_seasons.iter().find(|p| Some(p.season)==target) {
+        let current = profile.deployment_evidence.as_ref().is_some_and(|d|
+            d.player_id.0==scores.player_id && d.season.0==scores.season && d.games==scores.games
+            && d.season_type==SeasonType::Regular && d.goalie==(scores.group=="Goalies"));
+        if !current {
+            profile.deployment_evidence = super::rinkcraft_deployment::from_stat_profile(scores);
+        }
+    }
+
     Ok(())
 }
 

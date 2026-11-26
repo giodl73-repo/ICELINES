@@ -1,0 +1,160 @@
+//! Offline, checksum-verified faceoff samples from the existing public game cache.
+use anyhow::{ensure, Context};
+use icelines_core::view_model::rinkcraft_under_pressure::Faceoffs;
+use serde_json::{json, Value};
+use sha2::{Digest, Sha256};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fs,
+    path::{Path, PathBuf},
+};
+pub struct Cache {
+    pub bodies: BTreeMap<u64, (PathBuf, String)>,
+    pub actions: BTreeMap<u32, icelines_core::view_model::rinkcraft_under_pressure::ActionSample>,
+    pub samples: BTreeMap<u32, Faceoffs>,
+    pub sources: Value,
+    pub games: u32,
+}
+pub fn read(root: &Path, season: u32) -> anyhow::Result<Cache> {
+    let root = root.join(season.to_string());
+    let mut captures = vec![];
+    let mut bodies = BTreeMap::new();
+    let mut seen = BTreeSet::new();
+    let mut totals = BTreeMap::<u32, icelines_sources::rinkcraft_pressure::Counts>::new();
+    for entry in fs::read_dir(&root).with_context(|| format!("Read {}", root.display()))? {
+        let path = entry?.path();
+        if path.extension().and_then(|s| s.to_str()) != Some("json") {
+            continue;
+        }
+        ensure!(
+            fs::metadata(&path)?.len() <= 256 * 1024,
+            "Cache metadata exceeds bound"
+        );
+        let c: Value = serde_json::from_slice(&fs::read(&path)?)?;
+        let Some(url) = c["url"].as_str() else {
+            continue;
+        };
+        let Some(id) = url
+            .strip_prefix("https://api-web.nhle.com/v1/gamecenter/")
+            .and_then(|s| s.strip_suffix("/play-by-play"))
+            .and_then(|s| s.parse::<u64>().ok())
+        else {
+            continue;
+        };
+        ensure!(
+            id / 1_000_000 == (season / 10000) as u64,
+            "Wrong cached game season"
+        );
+        ensure!(
+            seen.insert(id) && seen.len() <= 2000,
+            "Duplicate or excessive cached games"
+        );
+        ensure!(c["status"] == 200, "Cached game was not successful");
+        chrono::DateTime::parse_from_rfc3339(
+            c["captured_at"].as_str().context("Missing capture time")?,
+        )?;
+        let key = format!("{:x}", Sha256::digest(url.as_bytes()));
+        ensure!(
+            path.file_stem().and_then(|s| s.to_str()) == Some(key.as_str()),
+            "Cached URL key differs"
+        );
+        let raw = path.with_extension("bin");
+        ensure!(
+            fs::metadata(&raw)?.len() <= 16 * 1024 * 1024,
+            "Game exceeds bound"
+        );
+        let bytes = fs::read(&raw)?;
+        ensure!(
+            c["sha256"].as_str() == Some(format!("{:x}", Sha256::digest(&bytes)).as_str()),
+            "Cached game checksum differs"
+        );
+        let game = icelines_sources::rinkcraft_pressure::parse_game(&bytes, id, season)
+            .map_err(anyhow::Error::msg)?;
+        bodies.insert(
+            id,
+            (
+                raw,
+                c["sha256"].as_str().context("Missing game hash")?.into(),
+            ),
+        );
+        for (id, n) in game {
+            let s = totals.entry(id).or_default();
+            s.actions.add(&n.actions);
+            s.roster_games += n.roster_games;
+            s.taken += n.taken;
+            s.won += n.won;
+            s.late_taken += n.late_taken;
+            s.late_won += n.late_won;
+            for (key, c) in n.late_states {
+                let b = s.late_states.entry(key).or_default();
+                b.taken += c.taken;
+                b.won += c.won;
+            }
+            for (key, c) in n.strengths {
+                let b = s.strengths.entry(key).or_default();
+                b.taken += c.taken;
+                b.won += c.won;
+            }
+        }
+        captures.push(c);
+    }
+    ensure!(
+        !captures.is_empty(),
+        "No finalized public game cache supplied"
+    );
+    captures.sort_by(|a, b| a["url"].as_str().cmp(&b["url"].as_str()));
+    let captured_at = captures
+        .iter()
+        .filter_map(|c| c["captured_at"].as_str())
+        .max()
+        .context("Missing capture time")?
+        .to_string();
+    let fingerprint = format!("{:x}", Sha256::digest(serde_json::to_vec(&captures)?));
+    let games = captures.len() as u32;
+    let actions = totals
+        .iter()
+        .map(|(&player_id, c)| {
+            (
+                player_id,
+                icelines_core::view_model::rinkcraft_under_pressure::ActionSample {
+                    exposure: None,
+                    season,
+                    player_id,
+                    counts: c.actions.clone(),
+                    roster_games: c.roster_games,
+                    coverage_games: games,
+                    captured_at: captured_at.clone(),
+                    source_sha256: fingerprint.clone(),
+                },
+            )
+        })
+        .collect();
+    let samples = totals
+        .into_iter()
+        .map(|(player_id, c)| {
+            (
+                player_id,
+                Faceoffs {
+                    strengths: Some(c.strengths),
+                    season,
+                    player_id,
+                    taken: c.taken,
+                    won: c.won,
+                    late_taken: c.late_taken,
+                    late_won: c.late_won,
+                    late_states: Some(c.late_states),
+                    coverage_games: games,
+                    captured_at: captured_at.clone(),
+                    source_sha256: fingerprint.clone(),
+                },
+            )
+        })
+        .collect();
+    Ok(Cache {
+        bodies,
+        actions,
+        samples,
+        sources: json!({"schema":"rinkcraft.pressure-sources.v1","season":season,"coverage_games":games,"source_sha256":fingerprint,"captured_at":captured_at,"captures":captures,"note":"Cached finalized-game sample, not a claim of full-season or player-GP coverage."}),
+        games,
+    })
+}

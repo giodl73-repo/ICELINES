@@ -210,11 +210,15 @@ async fn dispatch(cli: Cli, cfg: Config) -> anyhow::Result<()> {
                 &output_dir,
             )?;
         }
+        Commands::ProfileShotMethods {season,catalog,game_cache_dir,output_dir} => commands::profile_shot_methods::run(&catalog,season,&game_cache_dir,&output_dir)?,
+        Commands::ProfileUnitLinks {season,catalog,game_cache_dir,shift_manifest,output_dir} => commands::profile_pressure_exposure::units(&catalog,season,&game_cache_dir,&shift_manifest,&output_dir)?,
+        Commands::ProfilePressureExposure {season,catalog,game_cache_dir,shift_manifest,output_dir} => commands::profile_pressure_exposure::run(&catalog,season,&game_cache_dir,&shift_manifest,&output_dir)?,
         Commands::ProfileRecords {
             season,
             catalog,
             output_dir,
-        } => commands::profile_records::run(&catalog, season, &output_dir)?,
+            game_cache_dir,
+        } => commands::profile_records::run(&catalog, season, &output_dir, game_cache_dir.as_deref())?,
         Commands::ProfileCalibrationInputs {
             season,
             cache_dir,

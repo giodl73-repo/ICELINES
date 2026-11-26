@@ -443,6 +443,10 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
     }
     observations.sort_by_key(|p| p.player_id);
     let mut skater_contexts = BTreeMap::new();
+    let mut unit_parent_fingerprint:Option<String>=None;
+    let mut shot_method_samples=BTreeMap::<u32,icelines_core::view_model::rinkcraft_shot_methods::Sample>::new();
+    let mut action_samples = BTreeMap::<u32,icelines_core::view_model::rinkcraft_under_pressure::ActionSample>::new();
+    let mut faceoff_samples = BTreeMap::<u32,icelines_core::view_model::rinkcraft_under_pressure::Faceoffs>::new();
     if let Some((summary, realtime, toi)) = skater_sources {
         let mut assists = None;
         if let Some(root) = &request.game_cache_dir {
@@ -458,13 +462,31 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
                 games_store,
                 request.season,
                 teams,
-                icelines_sources::rinkcraft_skater_context::goal_assists,
+                |bytes,id,season| Ok((icelines_sources::rinkcraft_skater_context::goal_assists(bytes,id,season)?,icelines_sources::rinkcraft_pressure::parse_game(bytes,id,season)?,icelines_sources::rinkcraft_shot_methods::parse_game(bytes,id,season)?)),
             )
             .await?;
+            let coverage_games=games.len() as u32;
+            let mut event_captures=captures.iter().filter(|c|c.url.ends_with("/play-by-play")).collect::<Vec<_>>();
+            event_captures.sort_by(|a,b|a.url.cmp(&b.url));
+            let captured_at=event_captures.iter().map(|c|c.captured_at.as_str()).max().ok_or("Missing pressure captures")?.to_string();
+            let source_sha256=format!("{:x}",Sha256::digest(serde_json::to_vec(&serde_json::to_value(&event_captures).map_err(|e|e.to_string())?).map_err(|e|e.to_string())?));
+            unit_parent_fingerprint=Some(source_sha256.clone());
             receipts.extend(captures);
             let mut totals =
                 BTreeMap::<u32, icelines_sources::rinkcraft_skater_context::Assists>::new();
-            for game in games {
+            for (game,draws,methods) in games {
+                for (id,types) in methods {
+                    let s=shot_method_samples.entry(id).or_insert_with(||icelines_core::view_model::rinkcraft_shot_methods::Sample {player_id:id,season:request.season,roster_games:0,coverage_games,by_type:BTreeMap::new(),captured_at:captured_at.clone(),source_sha256:source_sha256.clone()});
+                    s.roster_games+=1;for (key,c) in types {s.by_type.entry(key).or_default().add(&c);}
+                }
+                for (id,c) in draws {
+                    let a=action_samples.entry(id).or_insert_with(||icelines_core::view_model::rinkcraft_under_pressure::ActionSample {exposure:None,season:request.season,player_id:id,counts:Default::default(),roster_games:0,coverage_games,captured_at:captured_at.clone(),source_sha256:source_sha256.clone()});
+                    a.counts.add(&c.actions);a.roster_games+=c.roster_games;
+                    let f=faceoff_samples.entry(id).or_insert_with(||icelines_core::view_model::rinkcraft_under_pressure::Faceoffs {strengths:Some(BTreeMap::new()),season:request.season,player_id:id,taken:0,won:0,late_taken:0,late_won:0,late_states:Some(BTreeMap::new()),coverage_games,captured_at:captured_at.clone(),source_sha256:source_sha256.clone()});
+                    f.taken+=c.taken;f.won+=c.won;f.late_taken+=c.late_taken;f.late_won+=c.late_won;
+                    for (key,n) in c.late_states {let b=f.late_states.as_mut().unwrap().entry(key).or_default();b.taken+=n.taken;b.won+=n.won;}
+                    for (key,n) in c.strengths {let b=f.strengths.as_mut().unwrap().entry(key).or_default();b.taken+=n.taken;b.won+=n.won;}
+                }
                 for (id, a) in game {
                     let sum = totals.entry(id).or_default();
                     sum.primary += a.primary;
@@ -520,7 +542,9 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
     }
     let mut profiles = scores::build(request.season, "all strengths · rates per60", &observations)?;
     for p in &mut profiles {
+        p.shot_method_sample=shot_method_samples.remove(&p.player_id);
         p.skater_context = skater_contexts.remove(&p.player_id);
+        if p.group != "Goalies" {p.under_pressure=Some(icelines_core::view_model::rinkcraft_under_pressure::build_with_actions(p,faceoff_samples.remove(&p.player_id),action_samples.remove(&p.player_id)));}
         if p.group == "Goalies" {
             p.shot_context = shot_contexts.remove(&p.player_id);
             p.scope = "all strengths · NHL and MoneyPuck observations".into();
@@ -553,6 +577,20 @@ pub async fn refresh(request: Request) -> Result<Value, String> {
     } else {
         vec![]
     };
+    // Retain a paired shift study only when the newly captured parent action
+    // sample is identical. The shared builder drops it for changed captures.
+    for p in profiles.iter_mut().filter(|p|p.group!="Goalies") {
+        let old=previous.iter().find(|o|o.player_id==p.player_id&&o.season==p.season&&o.group==p.group).and_then(|o|o.under_pressure.clone());
+        if let Some(fresh)=p.under_pressure.take() {
+            p.under_pressure=old;
+            p.under_pressure=Some(icelines_core::view_model::rinkcraft_under_pressure::build_with_actions(p,fresh.faceoffs,fresh.action_sample));
+        }
+    }
+    for p in &mut profiles {
+        if let (Some(parent),Some(old))=(unit_parent_fingerprint.as_deref(),previous.iter().find(|o|o.player_id==p.player_id&&o.season==p.season&&o.group==p.group).and_then(|o|o.unit_links.as_ref())) {
+            p.unit_links=icelines_core::view_model::rinkcraft_unit_links::rebind(p,old,parent);
+        }
+    }
     previous.retain(|p| {
         p.season != request.season
             || match request.kind.as_str() {

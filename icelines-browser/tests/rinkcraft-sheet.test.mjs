@@ -2,6 +2,126 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {renderCharacterCard} from '../dist/src/rinkcraft-character.js';
 import {renderStatScore} from '../dist/src/rinkcraft-stat-scores.js';
+import {renderStatFeats} from '../dist/src/rinkcraft-achievements.js';
+
+test('stat specialties preserve documentary identity and require earned matching highlights',async()=>{
+ const {renderStatSpecialties}=await import('../dist/src/rinkcraft-achievements.js');
+ const f={id:'puck-thief',name:'Puck thief',state:'earned',tier:'Gold',placements:['task_skills'],matched:1,required:1,conditions:[]};
+ const a={player_id:1,season:20262027,season_type:'regular',group:'Forwards',games:20,minimum_games:10,notes:[],source_urls:[],rules_sha256:'test',source_sha256:'test',feats:[f],task_repertoire:{schema:'rinkcraft.task-repertoire.v2',player_id:1,season:20262027,season_type:'regular',group:'Forwards',games:20,skills:[{feat_id:f.id,name:'Takeaways',family:'disruption'}],highlights:[{feat_id:f.id,name:'Takeaways',tier:'Gold'}],note:'Tier-first selection'}};
+ assert.match(renderStatSpecialties(a).textContent,/Stat specialties.*2026.*20 GP.*Takeaways.*Gold/);
+ const args=Array(18).fill(undefined);args[0]='Test';args[1]=sheet;args[3]={season:20262027,games:20,position:'Center',metrics:[]};args[11]={player_id:1,season_type:'regular'};args[12]=a;
+ const front=renderCharacterCard(...args);assert.equal(classed(front,'rk-stat-specialties').length,1);assert.ok(classed(front,'rk-front-identity')[0].textContent.includes(sheet.primary.name));assert.ok(classed(front,'rk-front-identity')[0].textContent.includes(sheet.specialty));
+ for(const bad of [{...a.task_repertoire,player_id:2},{...a.task_repertoire,games:19},{...a.task_repertoire,schema:'rinkcraft.task-repertoire.v1'}])assert.equal(renderStatSpecialties({...a,task_repertoire:bad}),undefined);
+ assert.equal(renderStatSpecialties({...a,feats:[{...f,state:'not_earned'}]}),undefined);assert.equal(renderStatSpecialties({...a,feats:[{...f,placements:['risk_flags']}]}),undefined);assert.equal(renderStatSpecialties({...a,task_repertoire:{...a.task_repertoire,highlights:[]}}),undefined);
+});
+
+test('power-play context shows supplied strength-specific rates within Role Coverage',async()=>{
+ const {powerPlayContext,renderPowerPlayContext}=await import('../dist/src/rinkcraft-power-play-context.js');
+ const r={schema:'rinkcraft.power-play-context.v1',player_id:1,season:20262027,group:'Forwards',games:4,minutes:80,summary:'Power play · 60.0% of assists',time_share:'20.0% of own TOI',assist_share:'60.0% of assists',pp_assists:'6.00 /60',outside_assists:'1.00 /60',formula:'Use each strength denominator.',note:'Outside PP includes all remaining situations, not just five-on-five.'};
+ const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:4,minutes:80,scope:'all strengths',small_sample:true,power_play_context:r,scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'}))};
+ assert.equal(powerPlayContext(stats),r);
+ const args=Array(18).fill(undefined);args[0]='Test';args[3]={season:20262027,games:4,position:'Center',metrics:[]};args[11]={player_id:1,season_type:'regular'};args[17]=[stats];
+ assert.match(classed(renderCharacterCard(...args),'rk-front-role-coverage')[0].textContent,/Power play.*60.0% of assists.*20.0% of own TOI.*outside PP.*1.00/);
+ for(const stale of [{...r,player_id:2},{...r,season:20252026},{...r,games:3},{...r,minutes:81},{...r,group:'Goalies'}])assert.equal(powerPlayContext({...stats,power_play_context:stale}),undefined);
+ assert.equal(powerPlayContext({...stats,group:'Goalies',power_play_context:{...r,group:'Goalies'}}),undefined);assert.equal(powerPlayContext(undefined),undefined);
+ assert.match(renderPowerPlayContext({...r,pp_assists:'No PP time',assist_share:'Assist share unavailable'}).textContent,/No PP time/);
+});
+
+test('overall draw breakdown uses manpower labels while late draws retain score context',async()=>{
+ const {pressureEntries}=await import('../dist/src/rinkcraft-under-pressure.js');
+ const e={id:'draws',name:'Contested draws',result:'4/10 won',challenge:'A draw',response:'Win',definition:'Credited wins',source:'NHL',coverage:'A frozen sample',captured_at:'2026-11-24T00:00:00Z',note:'Not retained possession',breakdown:[{key:'advantage',name:'Skater advantage',result:'3/4 won',opportunities:4,successes:3}]};
+ const view=pressureEntries({entries:[e]});assert.match(view.textContent,/skater balance.*both goalies present.*Skater advantage.*3\/4 won/);assert.doesNotMatch(view.textContent,/score before/);
+ assert.match(pressureEntries({entries:[{...e,id:'late-draws'}]}).textContent,/score before/);
+});
+
+test('point mix shows supplied composition without treating assist detail as extra points',async()=>{
+ const {productionMix,renderProductionMix}=await import('../dist/src/rinkcraft-production-mix.js');
+ const r={schema:'rinkcraft.production-mix.v1',player_id:1,season:20262027,group:'Forwards',games:4,minutes:80,headline:'25.0% goal share',rows:[{label:'Goals',rate:'1.00 /60',share:'25.0% of points'},{label:'Assists',rate:'3.00 /60',share:'75.0% of points'}],assist_detail:[{label:'Primary assists',rate:'2.00 /60',share:'50.0% of points'},{label:'Secondary assists',rate:'1.00 /60',share:'25.0% of points'}],note:'Recorded production, not a class.'};
+ const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:4,minutes:80,scope:'all strengths',small_sample:true,production_mix:r,scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'}))};
+ assert.equal(productionMix(stats),r);
+ const args=Array(18).fill(undefined);args[0]='Test';args[1]=sheet;args[3]={season:20262027,games:4,position:'Center',metrics:[]};args[11]={player_id:1,season_type:'regular'};args[17]=[stats];
+ assert.match(classed(renderCharacterCard(...args),'rk-front-traits')[0].textContent,/Point mix.*25.0% goal share.*Assist detail.*included above.*Primary assists/);
+ for(const stale of [{...r,player_id:2},{...r,season:20252026},{...r,games:3},{...r,minutes:81},{...r,group:'Goalies'}])assert.equal(productionMix({...stats,production_mix:stale}),undefined);
+ assert.match(renderProductionMix({...r,assist_detail:[]}).textContent,/Matched primary\/secondary assist detail unavailable/);
+ assert.equal(productionMix({...stats,group:'Goalies',production_mix:{...r,group:'Goalies'}}),undefined);assert.equal(productionMix(undefined),undefined);
+});
+
+test('penalty balance renders supplied rates within tendencies and withholds stale records',async()=>{
+ const {penaltyBalance}=await import('../dist/src/rinkcraft-penalty-balance.js');
+ const r={schema:'rinkcraft.penalty-balance.v1',player_id:1,season:20262027,group:'Forwards',games:20,minutes:400,drawn:'1.23 /60',taken:'0.79 /60',balance:'+0.45 /60',formula:'Drawn minus taken before rounding.',note:'Recorded calls, not power plays created.'};
+ const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:20,minutes:400,scope:'all strengths',small_sample:false,penalty_balance:r,scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'}))};
+ assert.equal(penaltyBalance(stats),r);
+ const args=Array(18).fill(undefined);args[0]='Test';args[1]=sheet;args[3]={season:20262027,games:20,position:'Center',metrics:[]};args[11]={player_id:1,season_type:'regular'};args[17]=[stats];
+ assert.match(classed(renderCharacterCard(...args),'rk-front-traits')[0].textContent,/Penalty balance \+0.45.*Drawn.*1.23.*Taken.*0.79.*not power plays/);
+ for(const stale of [{...r,player_id:2},{...r,season:20252026},{...r,games:19},{...r,minutes:401},{...r,group:'Goalies'}])assert.equal(penaltyBalance({...stats,penalty_balance:stale}),undefined);
+ assert.equal(penaltyBalance({...stats,group:'Goalies',penalty_balance:{...r,group:'Goalies'}}),undefined);
+ delete stats.penalty_balance;assert.equal(classed(renderCharacterCard(...args),'rk-penalty-balance').length,0);
+});
+
+test('Under Pressure shows Rust response samples and gaps without inventing ratings',()=>{
+ const pressure={schema:'rinkcraft.under-pressure.v1',player_id:1,season:20262027,group:'Forwards',games:20,entries:[{id:'late-draws',name:'Late-close draws',challenge:'A late draw',response:'Win draw',opportunities:4,successes:1,result:'1/4 won / 25.0%',definition:'Third period, last five minutes, one-goal gap.',source:'NHL',captured_at:'2026-11-24T00:00:00Z',coverage:'200 finalized games',note:'Not retained possession.'}],gaps:['Press resistance: no measured opportunities.'],note:'Observed outcomes, not abilities.'};
+ const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:20,minutes:400,scope:'all strengths',small_sample:false,under_pressure:pressure,scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'}))};
+ const args=Array(18).fill(undefined);args[0]='Skater';args[3]={season:20262027,games:20,position:'Center',metrics:[]};args[11]={player_id:1,season_type:'regular'};args[17]=[stats];
+ pressure.entries[0].breakdown=[{key:'tied',name:'Tied',opportunities:4,successes:1,result:'1/4 won / 25.0%'},{key:'leading',name:'Leading by one',opportunities:0,successes:0,result:'No observed opportunities'},{key:'trailing',name:'Trailing by one',opportunities:0,successes:0,result:'No observed opportunities'}];
+ const front=renderCharacterCard(...args);assert.match(classed(front,'rk-front-pressure')[0].textContent,/Late-close draws.*1\/4 won.*200 finalized games.*Press resistance/);assert.equal(classed(front,'rk-pressure-entry').length,1);assert.match(classed(front,'rk-pressure-breakdown')[0].textContent,/Tied.*1\/4 won.*Leading by one.*No observed opportunities/);
+ for(const stale of [{...pressure,player_id:2},{...pressure,games:19},{...pressure,season:20252026},{...pressure,group:'Goalies'}]){stats.under_pressure=stale;assert.equal(classed(renderCharacterCard(...args),'rk-pressure-entry').length,0);}
+ stats.under_pressure={...pressure,entries:[]};const empty=classed(renderCharacterCard(...args),'rk-front-pressure')[0];assert.equal(classed(empty,'rk-pressure-entry').length,0);assert.match(empty.textContent,/Press resistance/);assert.doesNotMatch(empty.textContent,/0\/0|0%/);
+});
+
+test('context actions render without faceoffs or invented outcome rates',async()=>{
+ const {pressureEntries}=await import('../dist/src/rinkcraft-under-pressure.js');
+ const view=pressureEntries({entries:[],actions:[{name:'Protecting lead',result:'3 blocks · 0 takeaways',baseline:'All situations: 25 blocks · 5 takeaways',definition:'Late regulation, leading by one.',coverage:'20 roster games',exposure:'Matched shift subset: 1:30 on ice; same-game counts.',captured_at:'2026-11-24T00:00:00Z',note:'Action counts only; no success rate.'}]});
+ assert.equal(classed(view,'rk-pressure-action').length,1);
+ assert.match(view.textContent,/Context actions.*counts only.*Protecting lead.*3 blocks.*0 takeaways.*All situations.*20 roster games/);
+ assert.match(view.textContent,/Matched shift subset.*1:30 on ice/);assert.doesNotMatch(view.textContent,/%|opportunities/);
+ assert.equal(classed(pressureEntries({entries:[]}),'rk-pressure-action').length,0);
+});
+
+test('observed unit links preserve Rust values, ties and exact selected metadata',async()=>{
+ const {unitLinks,renderUnitLinks,renderUnitDeployment}=await import('../dist/src/rinkcraft-unit-links.js');
+ const g={team:'NYR',partners_display:'Player Two',time_display:'1:40',share_display:'66.7%'};
+ const r={schema:'rinkcraft.unit-links.v1',player_id:1,season:20262027,group:'Defense',games:20,game_ids:[2026020001],coverage:'1 matched appearance / 2026-10-01',contexts:[{key:'5v5',label:'5v5 pair',seconds:150,time_display:'2:30',total_groups:2,tied_leaders:1,groups:[g]},{key:'5v4',label:'PP / 5v4',seconds:0,time_display:'0:00',total_groups:0,tied_leaders:0,groups:[]},{key:'4v5',label:'PK / 4v5',seconds:0,time_display:'0:00',total_groups:0,tied_leaders:0,groups:[]}],partners:[],recent:{game_ids:[2026020001],first_date:'2026-10-01',last_date:'2026-10-01',leading:g,tied_leaders:1,different_from_full:false},remainder_display:'Other 0:00 / unresolved 0:00',note:'Observed shared time.'};
+ const p={player_id:1,season:20262027,group:'Defense',games:20,unit_links:r};assert.equal(unitLinks(p),r);for(const stale of [{...r,player_id:2},{...r,season:20252026},{...r,games:19},{...r,group:'Forwards'}])assert.equal(unitLinks({...p,unit_links:stale}),undefined);
+ const view=renderUnitLinks(r);assert.match(classed(view,'rk-unit-summary')[0].textContent,/Player Two.*1:40.*66.7%/);assert.match(view.textContent,/Last 1 matched appearances.*Same leading combination/);assert.match(renderUnitDeployment(r).textContent,/Matched shifts.*5v5.*2:30.*5v4.*0:00/);
+ const tied=renderUnitLinks({...r,contexts:[{...r.contexts[0],tied_leaders:2},...r.contexts.slice(1)]});assert.match(classed(tied,'rk-unit-summary')[0].textContent,/2 co-leading groups/);assert.doesNotMatch(classed(tied,'rk-unit-summary')[0].textContent,/Player Two/);assert.equal(unitLinks(undefined),undefined);
+});
+
+test('skating detail renders supplied measurements and withholds stale or goalie data',async()=>{
+ const {skatingDetail,renderSkatingDetail}=await import('../dist/src/rinkcraft-skating-detail.js');
+ const r={schema:'rinkcraft.skating-detail.v1',player_id:1,season:20262027,group:'Defense',games:4,minutes:80,headline:'22.12 mph',secondary:'20+ mph bursts 6.50 /60',rows:[{key:'peak-speed',label:'Reported peak speed',value:'22.12 mph',comparison:null},{key:'bursts',label:'20+ mph bursts',value:'6.50 /60',comparison:null}],note:'Recorded inputs, not acceleration.'};
+ const p={player_id:1,season:20262027,group:'Defense',games:4,minutes:80,skating_detail:r};assert.equal(skatingDetail(p),r);const body=renderSkatingDetail(r);assert.match(body.textContent,/22.12 mph.*6.50 \/60.*Measures & scope.*Recorded inputs/);
+ for(const stale of [{...r,player_id:2},{...r,season:20252026},{...r,games:3},{...r,minutes:81},{...r,group:'Goalies'}])assert.equal(skatingDetail({...p,skating_detail:stale}),undefined);
+ assert.equal(skatingDetail({...p,group:'Goalies',skating_detail:{...r,group:'Goalies'}}),undefined);assert.equal(skatingDetail(undefined),undefined);
+});
+
+test('recorded shot methods retain scouted techniques and reject stale metadata',async()=>{
+ const {shotMethods,renderShotMethods}=await import('../dist/src/rinkcraft-shot-methods.js');
+ const m={id:'wrist',name:'Wrist shot',result:'Attempts 5 · Goals 1',share:'71.4% of typed attempts',outcomes:'On goal 4 · Misses 1'};
+ const r={schema:'rinkcraft.shot-methods.v1',player_id:1,season:20262027,group:'Forwards',games:20,typed_attempts:7,total_attempts:10,coverage:'7/10 attempts typed · 7 cached roster games',primary:[m],additional:[],unknown_display:'3 attempts without a supported type',captured_at:'2026-11-24T00:00:00Z',note:'Observed types, not mastery.'};
+ const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:20,minutes:400,scope:'all strengths',small_sample:false,shot_methods:r,scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'}))};
+ assert.equal(shotMethods(stats),r);for(const stale of [{...r,player_id:2},{...r,season:20252026},{...r,games:19},{...r,group:'Goalies'}])assert.equal(shotMethods({...stats,shot_methods:stale}),undefined);
+ const args=Array(18).fill(undefined);args[0]='Test';args[1]=sheet;args[3]={season:20262027,games:20,position:'Center',metrics:[]};args[11]={player_id:1,season_type:'regular'};args[17]=[stats];const front=renderCharacterCard(...args);assert.match(classed(front,'rk-front-methods')[0].textContent,/Recorded shot repertoire.*Wrist shot.*Attempts 5/);assert.match(classed(front,'rk-scouted-methods')[0].textContent,/Scouted methods.*Recover/);
+ assert.match(renderShotMethods({...r,primary:[]}).textContent,/No supported shot types recorded/);assert.equal(shotMethods(undefined),undefined);
+});
+
+test('selected snapshot pace fills contact and blocks while rejecting another season',()=>{
+ const stats={schema:'rinkcraft.simple-stat-attributes.v1',player_id:1,season:20262027,group:'Forwards',games:20,minutes:400,scope:'all strengths',small_sample:false,
+  scores:['Skating','Handling','Passing','Shooting','Reading','Defending'].map(label=>({label,score:10,stat_points:50,parts:[],note:'Proxy'})),
+  estimated_record:{observed_games:20,season:20262027,target_games:84,basis:'84-game pace / all strengths',metrics:[{recorded_count:10,calculation:'10 / 20 GP x 84 games = 42.00',key:'hits',label:'Hits',value:42,unit:'Count',per_game:0.5,projected_total:true},{recorded_count:0,calculation:'0 / 20 GP x 84 games = 0.00',key:'blocks',label:'Blocks',value:0,unit:'Count',per_game:0,projected_total:true}]}};
+ const args=Array(18).fill(undefined);args[0]='Skater';args[3]={season:20262027,games:20,position:'Center',metrics:[]};args[11]={player_id:1,season_type:'regular'};args[17]=[stats];
+ const block=classed(renderCharacterCard(...args),'rk-front-record')[0];assert.match(block.textContent,/84-game pace.*Hits 42 0.50 \/game.*Blocks 0 0.00 \/game/);assert.doesNotMatch(block.textContent,/Unknown|\bP\d|\bn=/);
+ assert.match(classed(block,'rk-pace-detail')[0].textContent,/20 observed GP.*10 recorded.*42.00.*0 recorded/);
+ stats.estimated_record.season=20252026;assert.doesNotMatch(classed(renderCharacterCard(...args),'rk-front-record')[0].textContent,/84-game pace/);
+});
+
+test('task repertoire uses Rust order and names while preserving the complete feat library',()=>{
+ const feat=(id,state='earned')=>({id,name:id,state,tier:'Silver',placements:['task_skills'],matched:1,required:1,conditions:[{key:id,label:'Shots / GP',value:2,unit:'PerGame',numerator:40,denominator:20,percentile:80,peers:100,reference_sha256:'ref',qualifies:true}]});
+ const p={player_id:1,season:20262027,season_type:'regular',group:'Forwards',games:20,minimum_games:10,rules_sha256:'rules',source_sha256:'input',source_urls:[],earned:2,notes:[],feats:[feat('a'),feat('b'),feat('locked','not_earned')]};
+ p.task_repertoire={schema:'rinkcraft.task-repertoire.v1',player_id:1,season:20262027,season_type:'regular',group:'Forwards',games:20,skills:[{feat_id:'b',name:'Draw penalties',family:'drawing'}],note:'Selection only'};
+ const r=renderStatFeats(p,'task_skills',5);assert.equal(classed(r,'rk-task-feat').length,1);assert.match(classed(r,'rk-task-feat')[0].textContent,/Draw penalties.*Silver.*Shots 2.00\/game/);assert.equal(classed(r,'rk-stat-feat').length,3);assert.match(r.textContent,/1 selected \/ 2 earned.*2026-27.*20 GP/);
+ for(const stale of [{...p.task_repertoire,season:20252026},{...p.task_repertoire,games:19},{...p.task_repertoire,skills:[{feat_id:'locked',name:'Invalid',family:'drawing'}]}])assert.equal(classed(renderStatFeats({...p,task_repertoire:stale},'task_skills',5),'rk-task-repertoire').length,0);
+ assert.equal(classed(renderStatFeats(p,'playing_tendencies',2),'rk-task-repertoire').length,0);
+});
 
 class Element {
   children = []; attributes = {}; dataset = {}; style = {};
@@ -101,16 +221,16 @@ test('stat feats populate five slots, retain the long list and gate actor/window
  assert.doesNotMatch(classed(render(qualified),'rk-front-skills')[0].textContent,/Needs .*GP|No unlocked/);
 });
 
-test('workload requires matching actor, season, season type and position group',()=>{
+test('workload requires matching actor, season, season type, GP and position group',()=>{
   const usage={player_id:1,season:20242025,season_type:'regular',games:2,goalie:false,starts:null,
     rows:[{key:'total',label:'All strengths',per_game_display:'20:00',minutes_display:'40.0',seconds:2400,share_display:'100.0%'},{key:'pp',label:'Power play',per_game_display:'3:00',minutes_display:'6.0',seconds:360,share_display:'15.0%'},{key:'sh',label:'Shorthanded',per_game_display:'0:00',minutes_display:'0.0',seconds:0,share_display:'0.0%'}],source_label:'NHL source',source_url:'https://api.nhle.com/stats/rest/en/skater/timeonice',source_sha256:'a'.repeat(64),notes:['Even strength is not exclusively 5v5.']};
   const render=(u,request={player_id:1,season_type:'regular'})=>renderCharacterCard('Example',{...sheet,player_id:1},undefined,{season:20242025,position:'Center',games:2,metrics:[]},undefined,undefined,undefined,undefined,true,undefined,u,request);
   const p=render(usage),front=classed(p,'rk-front')[0];
   assert.match(classed(front,'rk-front-role-coverage')[0].textContent,/PP 3:00 \/ SH 0:00 per GP/);
-  assert.match(classed(front,'rk-front-deployment')[0].textContent,/Unit \/ station undocumented/);
+  assert.match(classed(front,'rk-front-deployment')[0].textContent,/Assigned unit \/ station undocumented/);
   assert.match(classed(front,'rk-front-deployment')[0].textContent,/0 seconds \/ 2 appearances/);
   assert.equal(classed(front,'rk-usage')[0].dataset.usageSeason,'20242025');
-  for(const u of [{...usage,season:20252026},{...usage,player_id:2},{...usage,season_type:'playoff'},{...usage,goalie:true}])assert.equal(classed(render(u),'rk-usage').length,0);
+  for(const u of [{...usage,games:1},{...usage,season:20252026},{...usage,player_id:2},{...usage,season_type:'playoff'},{...usage,goalie:true}])assert.equal(classed(render(u),'rk-usage').length,0);
   assert.equal(classed(render(usage,{season_type:'playoff'}),'rk-usage').length,0);
   assert.ok(all(front).filter(n=>n.dataset.capabilityIndex!==undefined).every(n=>n.dataset.ratingState==='unassessed'));
 });

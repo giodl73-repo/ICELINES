@@ -374,6 +374,8 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 .rk-usage-evidence summary{cursor:pointer}
 .rk-usage-evidence p{margin:4px 0}
 @media print{.rk-usage-evidence{display:none}}
+@media print{.rk-usage>small{font-size:7px}.rk-usage-grid{gap:2px 6px;margin:3px 0}.rk-usage-grid dt{font-size:8px}.rk-usage-grid dd{font-size:11px}.rk-front-role-coverage .rk-task-list dd{font-size:8px;line-height:1.2}}
+@media print{.rk-front:has(.rk-usage) .rk-record-values dt{min-height:12px}.rk-front:has(.rk-usage) .rk-record-values .rk-field{padding-bottom:3px}}
 
 /* Deterministic stat-feat registry; one feat can have multiple placements. */
 .rk-stat-feats{margin-top:4px;font-size:10px;line-height:1.25;overflow-wrap:anywhere}
@@ -452,6 +454,8 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 .rk-shot-context small{display:block}.rk-shot-context dl>div{margin:.25rem 0}.rk-shot-context dd{margin:0;font-size:9px}
 .rk-shot-context summary,.rk-shot-context a{color:var(--sheet-blue,#315a8b)}
 .rk-front .rk-feat-trigger,.rk-front .rk-stat-feat p,.rk-front .rk-stat-feat small{color:var(--sheet-ink,#183247)}
+.rk-shot-methods{font-size:8px;line-height:1.3}.rk-shot-methods>small{display:block;font-size:7px}.rk-shot-method{padding:5px 0;border-bottom:1px solid var(--sheet-line,#ccd5de)}.rk-shot-method>strong,.rk-shot-method>span,.rk-shot-method>small{display:block}.rk-shot-method>strong{font-size:9px}.rk-shot-method>small{font-size:7px}.rk-shot-method-scope,.rk-scouted-methods{font-size:8px;margin-top:5px}.rk-shot-method-scope>summary,.rk-scouted-methods>summary{cursor:pointer}.rk-shot-method-scope>strong{display:block;margin-top:6px}.rk-shot-method-scope>p{font-size:8px!important;line-height:1.3!important;margin:3px 0!important}
+@media print{.rk-shot-method-scope,.rk-scouted-methods,.rk-shot-method:nth-of-type(n+3){display:none!important}.rk-shot-methods{font-size:7px}.rk-shot-method{padding:2px 0}.rk-shot-method>strong{font-size:8px}.rk-shot-methods>small,.rk-shot-method>small{font-size:6px}.rk-shot-method>span,.rk-shot-method>small{display:inline}.rk-shot-method>small{margin-left:4px}}
 .rk-front summary{color:var(--sheet-blue,#315a8b)}
 @media print{.rk-front .rk-feat-trigger{min-height:0;height:auto;padding:0;line-height:1.1}}
 @media print{
@@ -503,6 +507,8 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 .rk-defense-details{grid-column:1/-1}
 @media print{.rk-defense-record{font-size:6.5px;break-inside:avoid}.rk-defense-record>strong{font-size:9px}.rk-defense-details{display:none!important}}
 .rk-handling-summary{margin-top:4px;font-size:7px;line-height:1.4;font-variant-numeric:tabular-nums}.rk-handling-summary>span{display:block}
+.rk-front-movement[data-movement-state="observed_record"] strong{font-size:14px}.rk-skating-summary>small{display:block;font-size:7px;line-height:1.3}.rk-skating-measures{font-size:8px;margin-top:5px;text-align:left}.rk-skating-measures>summary{cursor:pointer}.rk-skating-measures>div{padding:5px 0;border-top:1px solid var(--sheet-line,#ccd5de)}.rk-skating-measures b,.rk-skating-measures span,.rk-skating-measures small{display:block}.rk-skating-measures span{font-weight:700}.rk-skating-measures p{font-size:8px!important;line-height:1.35!important}
+@media print{.rk-skating-measures{display:none!important}.rk-front-movement[data-movement-state="observed_record"] strong{font-size:12px}.rk-skating-summary>small{font-size:6px}}
 .rk-handling-axes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.rk-handling-axes>div{padding:10px;border:1px solid currentColor;border-radius:5px}.rk-handling-axes h4{margin:0 0 4px}.rk-handling-axes strong{font-size:1.3em}
 .rk-handling-record dl>div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #7893a1}.rk-handling-record dd{margin:0;text-align:right}
 @media print{.rk-handling-summary{font-size:6px;margin-top:2px}}
@@ -521,3 +527,44 @@ button.rk-atlas-card{cursor:pointer;font:inherit}.rk-atlas-card:hover{border-col
 .rk-shooting-summary{margin-top:4px;font-size:7px;line-height:1.4;font-variant-numeric:tabular-nums}.rk-shooting-summary>span,.rk-shooting-record>small{display:block}
 .rk-shooting-record dl>div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #7893a1}.rk-shooting-record dd{margin:0;text-align:right}
 @media print{.rk-shooting-summary{font-size:6px;margin-top:2px}}
+
+/* Earned tasks are a repertoire, separate from numeric attribute ratings. */
+.rk-task-repertoire>.rk-task-feat{border-left:2px solid var(--sheet-blue,#315a8b);padding-left:6px;margin:5px 0}.rk-task-measured{display:block;font-size:7px;color:var(--sheet-ink,#183247);line-height:1.3;margin-top:2px;font-variant-numeric:tabular-nums}.rk-task-repertoire>.rk-task-feat>summary>strong{font-size:10px}.rk-task-repertoire>.rk-task-feat .rk-feat-trigger{color:var(--sheet-blue,#315a8b)}
+@media print{.rk-task-repertoire>.rk-task-feat{margin:3px 0;padding:3px 0 3px 4px}.rk-task-repertoire>.rk-task-feat>summary>strong{font-size:8px}.rk-task-measured{font-size:6px}}
+
+.rk-pace-detail{margin-top:6px;font-size:8px;line-height:1.35}.rk-pace-detail>summary{cursor:pointer}.rk-pace-detail>div{display:grid;grid-template-columns:1fr auto;gap:2px 6px;border-top:1px solid var(--sheet-line,#ccd5de);padding:5px 0}.rk-pace-detail>div>small{grid-column:1/-1}.rk-pace-detail>p{margin:6px 0}
+@media print{.rk-pace-detail{display:none!important}}
+
+.rk-pressure-list>small{display:block;font-size:7px;margin-bottom:4px}.rk-pressure-entry{border-bottom:1px solid var(--sheet-line,#ccd5de);padding:4px 0;font-size:8px;line-height:1.35}.rk-pressure-entry>summary{cursor:pointer}.rk-pressure-entry>summary>strong,.rk-pressure-entry>summary>span{display:block}.rk-pressure-entry>summary>strong{font-size:9px}.rk-pressure-entry>p{margin:5px 0}.rk-pressure-entry>small{display:block;overflow-wrap:anywhere}.rk-pressure-gaps,.rk-scouted-pressure{font-size:8px;margin-top:5px}.rk-pressure-gaps>summary,.rk-scouted-pressure>summary{cursor:pointer}
+@media print{.rk-pressure-entry>p,.rk-pressure-entry>small,.rk-pressure-gaps,.rk-scouted-pressure{display:none!important}.rk-pressure-entry{font-size:7px;padding:2px 0}.rk-pressure-entry>summary>strong{font-size:8px}}
+.rk-pressure-entry>summary{display:block;list-style:none}.rk-pressure-entry>summary::-webkit-details-marker{display:none}.rk-pressure-entry>summary>strong::before{content:"▸ ";font-weight:400}.rk-pressure-entry[open]>summary>strong::before{content:"▾ "}
+
+.rk-pressure-breakdown{margin:6px 0;border-top:1px solid var(--sheet-line,#ccd5de);font-size:8px}.rk-pressure-breakdown>div{padding:3px 0}.rk-pressure-breakdown dt{font-weight:700}.rk-pressure-breakdown dd{margin:0}
+.rk-unit-links{font-size:8px;line-height:1.35}.rk-unit-links>small,.rk-unit-summary>small{display:block;font-size:7px}.rk-unit-summary{padding:5px 0;border-bottom:1px solid var(--sheet-line,#ccd5de)}.rk-unit-summary>p{margin:2px 0}.rk-unit-summary>strong{font-size:9px}.rk-unit-details{margin-top:5px;font-size:8px}.rk-unit-details>summary{cursor:pointer}.rk-unit-details>strong{display:block;margin-top:7px}.rk-unit-details>p{margin:4px 0}.rk-unit-deployment{border-top:1px solid var(--sheet-line,#ccd5de);padding-top:6px;margin-top:6px;font-size:8px}.rk-unit-deployment>small{display:block;font-size:7px}.rk-unit-deployment>dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:5px 0}.rk-unit-deployment dt{font-size:7px}.rk-unit-deployment dd{margin:0;font-weight:700}
+@media print{
+ .rk-unit-details{display:none!important}
+ .rk-front:has(.rk-unit-links){padding-bottom:4px!important}
+ .rk-front:has(.rk-unit-links) .rk-front-footer,.rk-unit-summary:not([data-unit-state="5v5"]){display:none}
+ .rk-unit-links{font-size:7px}.rk-unit-summary{padding:0}.rk-unit-summary>strong{font-size:7px}
+ .rk-front .rk-unit-summary>p{font-size:7px!important;line-height:1.15!important;margin:1px 0!important}
+ .rk-unit-links>small,.rk-unit-summary>small{font-size:6px}
+ .rk-unit-deployment{display:flex;gap:4px;align-items:baseline;font-size:7px;line-height:1.1;padding-top:3px;margin-top:3px}
+ .rk-unit-deployment>small{display:none}.rk-unit-deployment>strong{font-size:6px}
+ .rk-unit-deployment>dl{flex:1;display:flex;justify-content:space-between;gap:4px;margin:0}
+ .rk-unit-deployment>dl>div{display:flex;align-items:baseline;gap:2px}.rk-unit-deployment dt{font-size:6px}
+}
+@media print{.rk-pressure-breakdown{display:none!important}}
+
+.rk-penalty-balance dl{margin:4px 0}.rk-penalty-balance dl>div{display:flex;justify-content:space-between;gap:6px}.rk-penalty-balance dd{margin:0;font-variant-numeric:tabular-nums}.rk-penalty-balance p{margin:4px 0}.rk-penalty-balance summary{font-variant-numeric:tabular-nums}
+@media print{.rk-penalty-balance{display:none!important}}
+
+.rk-production-mix dl{margin:4px 0}.rk-production-mix dl>div{display:grid;grid-template-columns:1fr auto;gap:0 6px}.rk-production-mix dd{margin:0;font-variant-numeric:tabular-nums}.rk-production-mix dl small{grid-column:1/-1}.rk-production-mix p{margin:4px 0}.rk-production-mix summary{font-variant-numeric:tabular-nums}
+@media print{.rk-production-mix{display:none!important}}
+
+.rk-power-play-context dl{margin:4px 0}.rk-power-play-context dl>div{display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 6px}.rk-power-play-context dd{margin:0;font-variant-numeric:tabular-nums}.rk-power-play-context p{margin:4px 0}
+@media print{.rk-power-play-context{display:none!important}}
+
+.rk-stat-specialties{display:flex;align-items:center;flex-wrap:wrap;gap:3px 8px;margin:5px 0;font-size:10px}.rk-stat-specialties>small{font-size:9px}.rk-stat-specialties>span{border:1px solid var(--sheet-blue);border-radius:3px;padding:1px 5px;font-weight:700}
+@media print{.rk-stat-specialties{font-size:7px;margin:2px 0;gap:2px 5px}.rk-stat-specialties>small{font-size:6px}.rk-stat-specialties>span{padding:0 3px}}
+
+@media print{.rk-front:has(.rk-stat-specialties){row-gap:2px;padding-top:8px!important}.rk-front:has(.rk-stat-specialties) .rk-front-header{padding-bottom:5px}.rk-front:has(.rk-stat-specialties) .rk-front-identity .rk-field{padding-top:2px;padding-bottom:2px}.rk-front:has(.rk-stat-specialties) .rk-front-coverage{padding-top:4px}.rk-front:has(.rk-stat-specialties) .rk-front-header h1,.rk-front:has(.rk-stat-specialties) .rk-front-header h3{font-size:26px;margin-top:3px}}

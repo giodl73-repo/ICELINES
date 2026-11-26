@@ -114,6 +114,40 @@ pub fn from_read<R: SeasonStatsRead>(r: &R) -> Option<DeploymentEvidence> {
     })
     .ok()
 }
+
+/// Recover exact NHL seconds from an admitted all-strength attribute snapshot.
+/// Reject rounded/incomplete ratios rather than inventing missing strength time.
+pub fn from_stat_profile(p: &super::rinkcraft_stat_scores::Profile) -> Option<DeploymentEvidence> {
+    if !matches!(p.group.as_str(), "Forwards" | "Defense") || p.games == 0 || p.minutes <= 0. {
+        return None;
+    }
+    let values = &p.skater_context.as_ref()?.values;
+    let seconds = |v: f64| -> Option<u32> {
+        (v.is_finite() && v >= 0. && v <= u32::MAX as f64 && (v - v.round()).abs() <= 1e-6)
+            .then(|| v.round() as u32)
+    };
+    let total = seconds(p.minutes * 60.)?;
+    let share = *values.get("pp-share")?;
+    if !(0. ..=1.).contains(&share) {
+        return None;
+    }
+    let pp = seconds(total as f64 * share)?;
+    let sh = seconds(*values.get("sh-seconds")? * p.games as f64)?;
+    let ev = total.checked_sub(pp.checked_add(sh)?)?;
+    let mut usage = build(UsageInput {
+        player_id: PlayerId(p.player_id),
+        season: Season(p.season),
+        season_type: SeasonType::Regular,
+        games: p.games,
+        total,
+        skater_strengths: Some([ev, pp, sh]),
+        goalie_starts: None,
+    })
+    .ok()?;
+    usage.source_label = "NHL time-on-ice from admitted attribute snapshot".into();
+    usage.notes.push("Recovered whole seconds from full-precision all-strength minutes, PP share and SH seconds per appearance; all three inputs are required and EV + PP + SH must equal total time. No rounded display values or team opportunities are used.".into());
+    Some(usage)
+}
 #[cfg(test)]
 mod tests {
     use super::*;

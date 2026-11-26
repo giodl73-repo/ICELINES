@@ -92,6 +92,8 @@ pub struct Feat {
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AchievementProfile {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub task_repertoire: Option<super::rinkcraft_task_repertoire::Repertoire>,
     pub player_id: u32,
     pub season: u32,
     pub season_type: String,
@@ -330,6 +332,7 @@ pub fn refresh_profiles(profiles: &mut [AchievementProfile]) {
         }
         p.earned = p.feats.iter().filter(|f| f.state == "earned").count();
         p.minimum_games = min_gp(&p.group);
+        p.task_repertoire = Some(super::rinkcraft_task_repertoire::select(p));
         for note in &mut p.notes {
             *note = note
                 .replace(
@@ -500,10 +503,11 @@ pub fn evaluate(input: &Input, rules: &[Rule]) -> Result<Catalog, String> {
             assess_feat(feats.last_mut().expect("new feat"), p.games, &p.group);
         }
         let earned = feats.iter().filter(|f| f.state == "earned").count();
-        profiles.push(AchievementProfile{player_id:p.player_id,season:input.season,season_type:"regular".into(),group:p.group.clone(),games:p.games,minimum_games:min_gp(&p.group),rules_sha256:rules_sha256.clone(),source_sha256:input.source_sha256.clone(),source_urls:input.source_urls.clone(),earned,feats,notes:vec!["Experimental stat feats, not measured task mastery, class assignments or 1–20 abilities.".into(),"All conditions must pass: Bronze P60, Silver P75, Gold P90; caution flags use Notable/Elevated/Marked instead. Compare same-season F/D/G separately; minimum 10 GP for skaters and goalies and 20 measured peers per stat.".into(),"Counts per appearance describe production/activity, not per-minute efficiency or pressure-tested success. Related stats are correlated; conjunctions are not independent evidence.".into()]});
+        profiles.push(AchievementProfile{task_repertoire:None,player_id:p.player_id,season:input.season,season_type:"regular".into(),group:p.group.clone(),games:p.games,minimum_games:min_gp(&p.group),rules_sha256:rules_sha256.clone(),source_sha256:input.source_sha256.clone(),source_urls:input.source_urls.clone(),earned,feats,notes:vec!["Experimental stat feats, not measured task mastery, class assignments or 1–20 abilities.".into(),"All conditions must pass: Bronze P60, Silver P75, Gold P90; caution flags use Notable/Elevated/Marked instead. Compare same-season F/D/G separately; minimum 10 GP for skaters and goalies and 20 measured peers per stat.".into(),"Counts per appearance describe production/activity, not per-minute efficiency or pressure-tested success. Related stats are correlated; conjunctions are not independent evidence.".into()]});
     }
     for p in &mut profiles {
         p.notes.push(SAMPLE_NOTE.into());
+        p.task_repertoire = Some(super::rinkcraft_task_repertoire::select(p));
     }
     Ok(Catalog {
         protocol: "rinkcraft.stat-feats.0.1-experimental".into(),
