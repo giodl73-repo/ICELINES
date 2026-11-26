@@ -45,6 +45,7 @@ fn highlight(id: &str) -> Option<(&'static str, &'static str)> {
             "pp-striker" => ("PP goals", "power_play"),
             "pp-producer" => ("PP points", "power_play"),
             "pp-dual-threat" => ("PP goals & assists", "power_play"),
+            "goalie-shot-workload" => ("Shot workload", "workload"),
             _ => return None,
         })
     })
@@ -125,6 +126,7 @@ fn task(id: &str) -> Option<(&'static str, &'static str)> {
         "penalty-magnet" => ("Draw penalties", "drawing"),
         "pp-helper" => ("PP assists", "power_play"),
         "high-save-workload" => ("Busy saves", "saving"),
+        "goalie-save-percentage" => ("Save percentage", "saving"),
         _ => return None,
     })
 }

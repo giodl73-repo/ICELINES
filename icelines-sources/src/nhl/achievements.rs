@@ -14,6 +14,31 @@ struct Reports {
     #[serde(default)]
     penalties: Option<Value>,
 }
+/// Complete official goalie-only assembly for opt-in studies, without invented skater reports.
+pub fn goalie_input(bytes:&[u8],season:u32,source_urls:Vec<String>)->Result<Input,String>{
+    if bytes.len()>4*1024*1024 || source_urls.is_empty(){return Err("Missing/bounded goalie report".into());}
+    for source in &source_urls {
+        let u=url::Url::parse(source).map_err(|e|e.to_string())?;
+        let q=u.query_pairs().collect::<BTreeMap<_,_>>();
+        let filter=q.get("cayenneExp").ok_or("Missing goalie source window")?;
+        let tokens=filter.split(" and ").collect::<Vec<_>>();
+        if u.scheme()!="https"||u.host_str()!=Some("api.nhle.com")||u.path()!="/stats/rest/en/goalie/summary"
+            || !tokens.contains(&format!("seasonId={season}").as_str())||!tokens.contains(&"gameTypeId=2")
+            || q.get("isAggregate").map(|s|s.as_ref())!=Some("false")||q.get("isGame").map(|s|s.as_ref())!=Some("false") {
+            return Err("Wrong goalie report source/window".into());
+        }
+    }
+    let v:Value=serde_json::from_slice(bytes).map_err(|e|e.to_string())?;
+    let mut players=vec![];
+    for (id,row) in rows(&v,season)? {
+        let n=|key|count(row,key)?.ok_or_else(||format!("Missing goalie {key}"));
+        let (games,starts,shots,saves,ga)=(n("gamesPlayed")?,n("gamesStarted")?,n("shotsAgainst")?,n("saves")?,n("goalsAgainst")?);
+        if id==0||starts>games||saves>shots{return Err("Incoherent goalie summary counts".into());}
+        players.push(PlayerInput{player_id:id,name:row["goalieFullName"].as_str().filter(|s|!s.trim().is_empty()).ok_or("Missing goalie name")?.into(),group:"Goalies".into(),games,
+            counts:BTreeMap::from([("starts".into(),starts as f64),("shutouts".into(),n("shutouts")? as f64),("shots_against".into(),shots as f64),("saves".into(),saves as f64),("goals_against".into(),ga as f64)])});
+    }
+    Ok(Input{season,players,source_urls,source_sha256:format!("{:x}",Sha256::digest(bytes))})
+}
 fn rows(report: &Value, season: u32) -> Result<BTreeMap<u32, &Value>, String> {
     let data = report["data"].as_array().ok_or("missing report data")?;
     if report["total"].as_u64() != Some(data.len() as u64) {

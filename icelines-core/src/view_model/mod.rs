@@ -2390,3 +2390,5 @@ pub mod rinkcraft_penalty_balance;
 pub mod rinkcraft_production_mix;
 
 pub mod rinkcraft_power_play_context;
+
+pub mod rinkcraft_goalie_feat_trial;
