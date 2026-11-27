@@ -55,7 +55,10 @@ sorting/CSV and rejection of unsupported date-window combinations. Ten static
 asset tests and three JavaScript preference/clipboard tests also pass.
 
 The first broader parallel compile exceeded the Windows paging-file limit
-(`os error 1455`); the retry uses one Cargo build job. Strict dependency-inclusive
+(`os error 1455`). The one-job retry of
+`cargo test -p icelines-web -p icelines-query --locked -j 1` passes **1,292 tests**,
+with two existing documentation examples ignored. The three JavaScript tests
+also pass. Strict dependency-inclusive
 Clippy reports 30 findings in unchanged `icelines-core` files, including argument
 counts, type complexity and unnecessary unwraps. Those source files have no diff
 in this integration; that existing lint debt is not silently suppressed or
