@@ -821,6 +821,9 @@ fn leader_row_from_depth_slot(slot: &DepthPlayerSlot, season: Season) -> LeaderR
     };
 
     LeaderRow {
+        ev_goals: None,
+
+        ev_assists: None,
         nhl_id: slot.player_id.0,
         name: slot.display_name.clone(),
         position: slot.position.abbreviation().to_owned(),

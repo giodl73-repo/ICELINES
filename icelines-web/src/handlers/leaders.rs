@@ -80,6 +80,20 @@ pub struct LeadersQuery {
     /// Top-N rows to render. Default 20, clamped 1..=500.
     #[serde(default)]
     pub top: Option<usize>,
+    #[serde(
+        default,
+        rename = "rank-from",
+        deserialize_with = "deserialize_optional_number"
+    )]
+    pub rank_from: Option<usize>,
+    #[serde(
+        default,
+        rename = "rank-to",
+        deserialize_with = "deserialize_optional_number"
+    )]
+    pub rank_to: Option<usize>,
+    #[serde(default, rename = "points-mode")]
+    pub points_mode: icelines_query::PointsMode,
 
     // Sasq.9 — bio filters. All optional. Empty = no constraint.
     // The dashes-vs-underscores split on `?age-min=` happens
@@ -97,6 +111,18 @@ pub struct LeadersQuery {
         deserialize_with = "deserialize_optional_number"
     )]
     pub age_max: Option<u32>,
+    #[serde(
+        default,
+        rename = "birth-year-min",
+        deserialize_with = "deserialize_optional_number"
+    )]
+    pub birth_year_min: Option<u16>,
+    #[serde(
+        default,
+        rename = "birth-year-max",
+        deserialize_with = "deserialize_optional_number"
+    )]
+    pub birth_year_max: Option<u16>,
     #[serde(
         default,
         rename = "draft-min",
@@ -141,6 +167,19 @@ pub struct LeadersQuery {
     /// bio.shoots_catches.
     #[serde(default)]
     pub shoots: Option<String>,
+}
+
+/// Inclusive ranks within the filtered, sorted cohort. The top parameter remains
+/// the default page size; explicit rank bounds take precedence over it.
+fn rank_window(q: &LeadersQuery) -> Result<(usize, usize), Response> {
+    let start = q.rank_from.unwrap_or(1);
+    let end = q
+        .rank_to
+        .unwrap_or_else(|| start.saturating_add(q.top.unwrap_or(20).clamp(1, 500) - 1));
+    if start == 0 || end < start || end - start >= 500 || end > u32::MAX as usize {
+        return Err((StatusCode::BAD_REQUEST, "Choose a start rank of at least 1 and an end rank at or above it, with at most 500 rows per range.").into_response());
+    }
+    Ok((start, end))
 }
 
 /// Sort key parsed from the `?sort=` param. Stable PascalCase
@@ -298,6 +337,8 @@ pub struct LeaderJsonRow {
     pub games: u32,
     pub goals: u32,
     pub assists: u32,
+    pub ev_goals: Option<u32>,
+    pub ev_assists: Option<u32>,
     pub points: u32,
     pub points_per_game: Option<f64>,
 }
@@ -307,6 +348,7 @@ pub struct LeadersMeta {
     pub season: String,
     pub season_type: String,
     pub sort: String,
+    pub points_mode: icelines_query::PointsMode,
     pub position_filter: Option<String>,
     pub active_filters: Vec<String>,
     pub completeness: Completeness,
@@ -348,6 +390,7 @@ fn leaders_json_error(
         .filter(|s| !s.is_empty());
     let top = q.top.unwrap_or(20).clamp(1, 500);
     let meta = LeadersMeta {
+        points_mode: q.points_mode,
         season,
         season_type: season_type.label().to_owned(),
         sort: SortKey::from_query(q.sort.as_deref())
@@ -421,6 +464,7 @@ struct LeaderResult {
     sort_key: SortKey,
     pos_active_upper: String,
     top_n: usize,
+    rank_offset: usize,
     raw_filters: Vec<String>,
     active_label: String,
     active_season_id: Season,
@@ -453,12 +497,31 @@ fn leaders_view_from_template_rows(
             team: TeamAbbr(row.team.clone()),
             position: position_from_template_row(row.position.as_str()),
             primary: leader_primary_metric(row, sort_key),
-            secondary: vec![
-                web_metric_int("gp", "GP", row.gp as i64, MetricUnit::Games),
-                web_metric_int("goals", "G", row.goals as i64, MetricUnit::Goals),
-                web_metric_int("assists", "A", row.assists as i64, MetricUnit::Assists),
-                web_metric_int("points", "P", row.points as i64, MetricUnit::Points),
-            ],
+            secondary: {
+                let mut cells = vec![
+                    web_metric_int("gp", "GP", row.gp as i64, MetricUnit::Games),
+                    web_metric_int("goals", "G", row.goals as i64, MetricUnit::Goals),
+                    web_metric_int("assists", "A", row.assists as i64, MetricUnit::Assists),
+                    web_metric_int("points", "P", row.points as i64, MetricUnit::Points),
+                ];
+                if let Some(n) = row.ev_goals {
+                    cells.push(web_metric_int(
+                        "ev_goals",
+                        "EV G",
+                        n as i64,
+                        MetricUnit::Goals,
+                    ));
+                }
+                if let Some(n) = row.ev_assists {
+                    cells.push(web_metric_int(
+                        "ev_assists",
+                        "EV A",
+                        n as i64,
+                        MetricUnit::Assists,
+                    ));
+                }
+                cells
+            },
             catalog_metrics: Vec::new(),
             tokens: vec![SemanticToken::SupportingEvidence],
         })
@@ -624,6 +687,8 @@ fn leader_json_rows_from_view(view: &LeadersView) -> Vec<LeaderJsonRow> {
                 games,
                 goals: leader_secondary_i64(row, "goals").unwrap_or_default() as u32,
                 assists: leader_secondary_i64(row, "assists").unwrap_or_default() as u32,
+                ev_goals: leader_secondary_i64(row, "ev_goals").map(|n| n as u32),
+                ev_assists: leader_secondary_i64(row, "ev_assists").map(|n| n as u32),
                 points,
                 points_per_game: if games > 0 {
                     Some(points as f64 / games as f64)
@@ -915,7 +980,8 @@ async fn build_leader_result(
 
     let sort_key = SortKey::from_query(q.sort.as_deref());
     let pos_filter = q.pos.as_deref().and_then(parse_position_filter);
-    let top_n = q.top.unwrap_or(20).clamp(1, 500);
+    let (rank_start, rank_end) = rank_window(q)?;
+    let top_n = rank_end - rank_start + 1;
     let pos_active_upper = q
         .pos
         .as_deref()
@@ -924,6 +990,8 @@ async fn build_leader_result(
     let bio = super::BioConstraints {
         age_min: q.age_min,
         age_max: q.age_max,
+        birth_year_min: q.birth_year_min,
+        birth_year_max: q.birth_year_max,
         draft_min: q.draft_year_min,
         draft_max: q.draft_year_max,
         height_min: q.height_min,
@@ -957,7 +1025,7 @@ async fn build_leader_result(
         );
         let prior_points: std::collections::HashMap<u32, u32> = repo
             .skaters(prior_season, season_type)
-            .map(|v| (v.id().0, v.points()))
+            .map(|v| (v.id().0, q.points_mode.points(&v)))
             .collect();
 
         // Wave 22 — hoist provider/clock construction out of
@@ -1029,7 +1097,7 @@ async fn build_leader_result(
             .filter(|v| bio.matches(v, season.0))
             .map(|v| {
                 let prev = prior_points.get(&v.id().0).copied();
-                super::shared::project_leader_row_with_prior(&v, prev)
+                super::shared::project_leader_row_with_points_mode(&v, prev, q.points_mode)
             })
             .collect();
         let total = all.len();
@@ -1121,6 +1189,7 @@ async fn build_leader_result(
             .map_err(|e| (StatusCode::BAD_REQUEST, e).into_response())?;
             crate::query_report::sort_regular(&mut all, &chain);
         }
+        all.drain(..(rank_start - 1).min(all.len()));
         all.truncate(top_n);
         (all, total)
     };
@@ -1131,6 +1200,7 @@ async fn build_leader_result(
         sort_key,
         pos_active_upper,
         top_n,
+        rank_offset: rank_start - 1,
         raw_filters,
         active_label,
         active_season_id: season,
@@ -1180,8 +1250,16 @@ pub async fn get_leaders_json(
 ) -> Response {
     let raw_query = uri.query().unwrap_or("");
     if q.date_from.is_some() || q.date_to.is_some() {
+        if q.points_mode != icelines_query::PointsMode::All
+            || q.rank_from.is_some()
+            || q.rank_to.is_some()
+        {
+            return (StatusCode::BAD_REQUEST,"Season points modes and rank ranges require season totals; clear them before applying date bounds.").into_response();
+        }
         if q.age_min.is_some()
             || q.age_max.is_some()
+            || q.birth_year_min.is_some()
+            || q.birth_year_max.is_some()
             || q.draft_year_min.is_some()
             || q.draft_year_max.is_some()
             || q.height_min.is_some()
@@ -1220,11 +1298,15 @@ pub async fn get_leaders_json(
         result.active_season_id,
         result.active_season_type,
     );
+    for row in &mut leaders_view.rows {
+        row.rank += result.rank_offset as u32;
+    }
     apply_leaders_warning_state(&mut leaders_view, &result.pos_active_upper);
     let returned = leaders_view.rows.len();
     let data = leader_json_rows_from_view(&leaders_view);
 
     let meta = LeadersMeta {
+        points_mode: q.points_mode,
         season: result.active_season,
         season_type: result.active_season_type.label().to_owned(),
         sort: result.sort_key.url_token().to_owned(),
@@ -1282,8 +1364,16 @@ pub async fn get_leaders(
     uri: axum::http::Uri,
 ) -> Response {
     if q.date_from.is_some() || q.date_to.is_some() {
+        if q.points_mode != icelines_query::PointsMode::All
+            || q.rank_from.is_some()
+            || q.rank_to.is_some()
+        {
+            return (StatusCode::BAD_REQUEST,"Season points modes and rank ranges require season totals; clear them before applying date bounds.").into_response();
+        }
         if q.age_min.is_some()
             || q.age_max.is_some()
+            || q.birth_year_min.is_some()
+            || q.birth_year_max.is_some()
             || q.draft_year_min.is_some()
             || q.draft_year_max.is_some()
             || q.height_min.is_some()
@@ -1375,7 +1465,8 @@ pub async fn build_leaders_template(
     // falls through to the default (Points).
     let sort_key = SortKey::from_query(q.sort.as_deref());
     let pos_filter = q.pos.as_deref().and_then(parse_position_filter);
-    let top_n = q.top.unwrap_or(20).clamp(1, 500);
+    let (rank_start, rank_end) = rank_window(&q)?;
+    let top_n = rank_end - rank_start + 1;
 
     // If filter parsing failed, render a 400 page with the
     // hint surfaced from the parser. (Per spec: BadFilter is
@@ -1409,6 +1500,8 @@ pub async fn build_leaders_template(
     let mut bio = super::BioConstraints {
         age_min: q.age_min,
         age_max: q.age_max,
+        birth_year_min: q.birth_year_min,
+        birth_year_max: q.birth_year_max,
         draft_min: q.draft_year_min,
         draft_max: q.draft_year_max,
         height_min: q.height_min,
@@ -1433,6 +1526,8 @@ pub async fn build_leaders_template(
     // primitives so the form re-render below reads them back.
     let bio_age_min = bio.age_min;
     let bio_age_max = bio.age_max;
+    let bio_birth_year_min = bio.birth_year_min;
+    let bio_birth_year_max = bio.birth_year_max;
     let bio_draft_min = bio.draft_min;
     let bio_draft_max = bio.draft_max;
     let bio_height_min = bio.height_min;
@@ -1524,7 +1619,7 @@ pub async fn build_leaders_template(
             // field (e.g. no birth_date for an age filter) are
             // excluded.
             .filter(|v| bio.matches(v, season.0))
-            .map(|v| super::shared::project_leader_row(&v))
+            .map(|v| super::shared::project_leader_row_with_points_mode(&v, None, q.points_mode))
             .collect();
         let total = all.len();
 
@@ -1619,6 +1714,7 @@ pub async fn build_leaders_template(
             .map_err(|e| (StatusCode::BAD_REQUEST, e).into_response())?;
             crate::query_report::sort_regular(&mut all, &chain);
         }
+        all.drain(..(rank_start - 1).min(all.len()));
         all.truncate(top_n);
         (all, total)
     };
@@ -1679,10 +1775,32 @@ pub async fn build_leaders_template(
             url_token: k.url_token().to_owned(),
             label: match k {
                 SortKey::Games => "GP".to_owned(),
-                SortKey::Goals => "G".to_owned(),
-                SortKey::Assists => "A".to_owned(),
-                SortKey::Points => "P".to_owned(),
-                SortKey::PointsPerGame => "P/G".to_owned(),
+                SortKey::Goals => if q.points_mode == icelines_query::PointsMode::EvenStrength {
+                    "All G"
+                } else {
+                    "G"
+                }
+                .to_owned(),
+                SortKey::Assists => if q.points_mode == icelines_query::PointsMode::EvenStrength {
+                    "All A"
+                } else {
+                    "A"
+                }
+                .to_owned(),
+                SortKey::Points => if q.points_mode == icelines_query::PointsMode::EvenStrength {
+                    "EV P"
+                } else {
+                    "P"
+                }
+                .to_owned(),
+                SortKey::PointsPerGame => {
+                    if q.points_mode == icelines_query::PointsMode::EvenStrength {
+                        "EV P/GP"
+                    } else {
+                        "P/G"
+                    }
+                    .to_owned()
+                }
                 _ => k.label().to_owned(),
             },
             is_active: k.url_token() == active_sort_token.as_str(),
@@ -1696,6 +1814,12 @@ pub async fn build_leaders_template(
     };
     let bio_age_min_str = bio_age_min.as_ref().map(u32::to_string).unwrap_or_default();
     let bio_age_max_str = bio_age_max.as_ref().map(u32::to_string).unwrap_or_default();
+    let bio_birth_year_min_str = bio_birth_year_min
+        .map(|v| v.to_string())
+        .unwrap_or_default();
+    let bio_birth_year_max_str = bio_birth_year_max
+        .map(|v| v.to_string())
+        .unwrap_or_default();
     let bio_draft_min_str = bio_draft_min
         .as_ref()
         .map(u16::to_string)
@@ -1724,6 +1848,8 @@ pub async fn build_leaders_template(
     let bio_shoots_str = bio_shoots.clone().unwrap_or_default();
     let bio_active = bio_age_min.is_some()
         || bio_age_max.is_some()
+        || bio_birth_year_min.is_some()
+        || bio_birth_year_max.is_some()
         || bio_draft_min.is_some()
         || bio_draft_max.is_some()
         || bio_height_min.is_some()
@@ -1737,12 +1863,19 @@ pub async fn build_leaders_template(
     // Build &-prefixed URL suffix so chip/column-header links
     // preserve bio narrowing across nav. urlencoding-light:
     // values are numeric or short ASCII so we just push raw.
-    let mut bio_query_suffix = String::new();
+    let mut bio_query_suffix = format!("&points-mode={}", q.points_mode.token());
+    bio_query_suffix.push_str(&format!("&rank-from={rank_start}&rank-to={rank_end}"));
     if let Some(v) = bio_age_min {
         bio_query_suffix.push_str(&format!("&age-min={v}"));
     }
     if let Some(v) = bio_age_max {
         bio_query_suffix.push_str(&format!("&age-max={v}"));
+    }
+    if let Some(v) = bio_birth_year_min {
+        bio_query_suffix.push_str(&format!("&birth-year-min={v}"));
+    }
+    if let Some(v) = bio_birth_year_max {
+        bio_query_suffix.push_str(&format!("&birth-year-max={v}"));
     }
     if let Some(v) = bio_draft_min {
         bio_query_suffix.push_str(&format!("&draft-min={v}"));
@@ -1773,6 +1906,56 @@ pub async fn build_leaders_template(
     } else {
         raw_filters.join(";")
     };
+    let mut context = Vec::new();
+    let mut range = |label: &str, min: &str, max: &str| {
+        let value = match (min.is_empty(), max.is_empty()) {
+            (true, true) => return,
+            (false, false) if min == max => format!("{label} = {min}"),
+            (false, false) => format!("{label} {min}–{max}"),
+            (false, true) => format!("{label} ≥ {min}"),
+            (true, false) => format!("{label} ≤ {max}"),
+        };
+        context.push(value);
+    };
+    range("Age", &bio_age_min_str, &bio_age_max_str);
+    range(
+        "Birth year",
+        &bio_birth_year_min_str,
+        &bio_birth_year_max_str,
+    );
+    range("Draft year", &bio_draft_min_str, &bio_draft_max_str);
+    range("Height (in)", &bio_height_min_str, &bio_height_max_str);
+    range("Weight (lb)", &bio_weight_min_str, &bio_weight_max_str);
+    if pos_filter.is_some() {
+        context.push(format!("Position: {active_pos}"));
+    }
+    if !bio_country_str.is_empty() {
+        context.push(format!("Country: {bio_country_str}"));
+    }
+    if !bio_shoots_str.is_empty() {
+        context.push(format!("Shoots: {bio_shoots_str}"));
+    }
+    context.extend(
+        raw_filters
+            .iter()
+            .filter(|s| !s.trim().is_empty())
+            .map(|s| format!("Filter: {s}")),
+    );
+    context.push(format!(
+        "{}–{:02} {}",
+        season.0 / 10000,
+        season.end_year() % 100,
+        season_type.label()
+    ));
+    if bio_age_min.is_some() || bio_age_max.is_some() {
+        context.push(format!("Age as of Jan 31, {}", season.end_year()));
+    }
+    context.push(format!("Points: {}", q.points_mode.label()));
+    context.push(format!(
+        "{total} matching players · sorted by {}",
+        sort_key.label()
+    ));
+    let table_context = context.join(" · ");
     let leaders_svg = render_leaders_pts82_svg(&rows);
 
     let bio_display = crate::query_bio::BioDisplay::load(
@@ -1821,11 +2004,20 @@ pub async fn build_leaders_template(
         active_sort: active_sort_token,
         active_pos,
         active_top: top_n,
+        rank_start,
+        rank_end,
+        rank_offset: rank_start - 1,
         pos_chips,
         col_headers,
         active_filters: raw_filters,
+        points_mode: q.points_mode.token().to_owned(),
+        points_mode_label: q.points_mode.label().to_owned(),
+        table_context,
         bio_age_min_str,
         bio_age_max_str,
+        bio_birth_year_min_str,
+        bio_birth_year_max_str,
+        bio_age_reference_date: format!("January 31, {}", season.end_year()),
         bio_draft_min_str,
         bio_draft_max_str,
         bio_height_min_str,
@@ -1921,8 +2113,15 @@ fn error_page(msg: String) -> Response {
 
 fn count_leader_order(sort: SortKey, a: &LeaderRow, b: &LeaderRow) -> Option<std::cmp::Ordering> {
     use icelines_core::stats_catalog::StatId;
+    if matches!(sort, SortKey::Points) {
+        return Some(
+            b.points
+                .cmp(&a.points)
+                .then_with(|| b.goals.cmp(&a.goals))
+                .then_with(|| a.nhl_id.cmp(&b.nhl_id)),
+        );
+    }
     let (metric, av, bv) = match sort {
-        SortKey::Points => (StatId::Points, a.points, b.points),
         SortKey::Goals => (StatId::Goals, a.goals, b.goals),
         SortKey::Assists => (StatId::Assists, a.assists, b.assists),
         SortKey::Games => (StatId::Games, a.gp, b.gp),
@@ -1955,8 +2154,37 @@ fn leaders_position_chips(active_pos: &str) -> Vec<crate::templates::PosChip> {
 mod tests {
     use super::*;
 
+    #[test]
+    fn points_ties_use_goals_before_identity_only_for_points_sort() {
+        let mut a = leader_fixture();
+        let mut b = leader_fixture();
+        a.nhl_id = 1;
+        b.nhl_id = 2;
+        a.goals = 20;
+        b.goals = 30;
+        assert_eq!(
+            count_leader_order(SortKey::Points, &a, &b),
+            Some(std::cmp::Ordering::Greater)
+        );
+        assert_eq!(
+            count_leader_order(SortKey::Assists, &a, &b),
+            Some(std::cmp::Ordering::Less)
+        );
+        assert_eq!(
+            count_leader_order(SortKey::Games, &a, &b),
+            Some(std::cmp::Ordering::Less)
+        );
+        a.points += 1;
+        assert_eq!(
+            count_leader_order(SortKey::Points, &a, &b),
+            Some(std::cmp::Ordering::Less)
+        );
+    }
+
     fn leader_fixture() -> LeaderRow {
         LeaderRow {
+            ev_goals: None,
+            ev_assists: None,
             nhl_id: 8478402,
             name: "Connor McDavid".to_string(),
             position: "C".to_string(),
@@ -2093,11 +2321,20 @@ mod tests {
             active_sort: "points".to_string(),
             active_pos: String::new(),
             active_top: 1,
+            rank_start: 1,
+            rank_end: 1,
+            rank_offset: 0,
             pos_chips: Vec::new(),
             col_headers: Vec::new(),
             active_filters: Vec::new(),
+            points_mode: "all".to_owned(),
+            points_mode_label: "All situations".to_owned(),
+            table_context: String::new(),
             bio_age_min_str: String::new(),
             bio_age_max_str: String::new(),
+            bio_birth_year_min_str: String::new(),
+            bio_birth_year_max_str: String::new(),
+            bio_age_reference_date: "January 31, 2027".to_owned(),
             bio_draft_min_str: String::new(),
             bio_draft_max_str: String::new(),
             bio_height_min_str: String::new(),
@@ -2176,11 +2413,20 @@ mod tests {
             active_sort: "points".to_string(),
             active_pos: "G".to_string(),
             active_top: 5,
+            rank_start: 1,
+            rank_end: 5,
+            rank_offset: 0,
             pos_chips: Vec::new(),
             col_headers: Vec::new(),
             active_filters: Vec::new(),
+            points_mode: "all".to_owned(),
+            points_mode_label: "All situations".to_owned(),
+            table_context: String::new(),
             bio_age_min_str: String::new(),
             bio_age_max_str: String::new(),
+            bio_birth_year_min_str: String::new(),
+            bio_birth_year_max_str: String::new(),
+            bio_age_reference_date: "January 31, 2027".to_owned(),
             bio_draft_min_str: String::new(),
             bio_draft_max_str: String::new(),
             bio_height_min_str: String::new(),
@@ -2279,11 +2525,20 @@ mod tests {
             active_sort: "points".to_string(),
             active_pos: "G".to_string(),
             active_top: 5,
+            rank_start: 1,
+            rank_end: 5,
+            rank_offset: 0,
             pos_chips: leaders_position_chips("G"),
             col_headers: Vec::new(),
             active_filters: Vec::new(),
+            points_mode: "all".to_owned(),
+            points_mode_label: "All situations".to_owned(),
+            table_context: String::new(),
             bio_age_min_str: String::new(),
             bio_age_max_str: String::new(),
+            bio_birth_year_min_str: String::new(),
+            bio_birth_year_max_str: String::new(),
+            bio_age_reference_date: "January 31, 2027".to_owned(),
             bio_draft_min_str: String::new(),
             bio_draft_max_str: String::new(),
             bio_height_min_str: String::new(),

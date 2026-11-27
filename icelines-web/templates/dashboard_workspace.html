@@ -38,7 +38,7 @@
     {% if show_full_leaders %}
     <div class="jaw-full-workspace" aria-label="Full Leaders workspace">
         <p class="meta-line">
-            Top {{ leaders_surface.rows.len() }} skaters by {{ leaders_surface.active_sort_label }} · {{ leaders_surface.active_label }}
+            Top {{ leaders_surface.rows.len() }} skaters by {{ leaders_surface.active_sort_label }} · {{ leaders_surface.active_label }} · Points: {{ leaders_surface.points_mode_label }}
             {% if leaders_surface.total > leaders_surface.rows.len() %}
                 · {{ leaders_surface.total }} total
             {% endif %}
@@ -58,6 +58,27 @@
             <input type="hidden" name="sort" value="{{ leaders_surface.active_sort }}">
             <input type="hidden" name="pos" value="{{ leaders_surface.active_pos }}">
             <input type="hidden" name="top" value="{{ leaders_surface.active_top }}">
+    <input type="hidden" name="age-min" value="{{ leaders_surface.bio_age_min_str }}">
+    <input type="hidden" name="age-max" value="{{ leaders_surface.bio_age_max_str }}">
+    <input type="hidden" name="birth-year-min" value="{{ leaders_surface.bio_birth_year_min_str }}">
+    <input type="hidden" name="birth-year-max" value="{{ leaders_surface.bio_birth_year_max_str }}">
+    <input type="hidden" name="draft-min" value="{{ leaders_surface.bio_draft_min_str }}">
+    <input type="hidden" name="draft-max" value="{{ leaders_surface.bio_draft_max_str }}">
+    <input type="hidden" name="height-min" value="{{ leaders_surface.bio_height_min_str }}">
+    <input type="hidden" name="height-max" value="{{ leaders_surface.bio_height_max_str }}">
+    <input type="hidden" name="weight-min" value="{{ leaders_surface.bio_weight_min_str }}">
+    <input type="hidden" name="weight-max" value="{{ leaders_surface.bio_weight_max_str }}">
+    <input type="hidden" name="country" value="{{ leaders_surface.bio_country }}">
+    <input type="hidden" name="shoots" value="{{ leaders_surface.bio_shoots }}">
+    <label class="compact-label">Points counted
+        <select name="points-mode" aria-label="Points counted">
+            <option value="all" {% if leaders_surface.points_mode == "all" %}selected{% endif %}>All situations</option>
+            <option value="even-strength" {% if leaders_surface.points_mode == "even-strength" %}selected{% endif %}>Even strength</option>
+        </select>
+    </label>
+    <p class="filter-help">Points counted: {{ leaders_surface.points_mode_label }}. This changes P, P/GP, Pts/82 and points rankings.
+        EV G and EV A are shown alongside All G and All A in even-strength mode. Other metrics retain their named definitions. For an even-strength threshold, use <code>ev-points&gt;=5</code>.
+        Even strength includes more than 5-on-5. EV P/60 is unavailable without even-strength ice time.</p>
             <div class="inline-form-row">
                 <label for="dashboard-filter-1" class="filter-label">Filter:</label>
                 <input id="dashboard-filter-1" type="text" name="filter"
@@ -85,82 +106,93 @@
         </form>
 
         <details class="bio-filter" {% if leaders_surface.bio_active %}open{% endif %}>
-            <summary class="accordion-summary">
-                Bio filters
-                {% if leaders_surface.bio_active %}<span class="active-dot">●</span>{% endif %}
-            </summary>
-            <form method="get" action="/leaders" class="filter-panel">
-                <input type="hidden" name="sort" value="{{ leaders_surface.active_sort }}">
-                <input type="hidden" name="pos" value="{{ leaders_surface.active_pos }}">
-                <input type="hidden" name="top" value="{{ leaders_surface.active_top }}">
-                {% for f in leaders_surface.active_filters %}<input type="hidden" name="filter" value="{{ f }}">{% endfor %}
-                <div class="bio-filter-grid">
-                    <label class="compact-label">Age
-                        <span class="range-inputs">
-                            <input type="number" name="age-min" min="16" max="50" placeholder="min" value="{{ leaders_surface.bio_age_min_str }}" class="range-input">
-                            <input type="number" name="age-max" min="16" max="50" placeholder="max" value="{{ leaders_surface.bio_age_max_str }}" class="range-input">
-                        </span>
-                    </label>
-                    <label class="compact-label">Draft year
-                        <span class="range-inputs">
-                            <input type="number" name="draft-min" min="1960" max="2030" placeholder="min" value="{{ leaders_surface.bio_draft_min_str }}" class="range-input-wide">
-                            <input type="number" name="draft-max" min="1960" max="2030" placeholder="max" value="{{ leaders_surface.bio_draft_max_str }}" class="range-input-wide">
-                        </span>
-                    </label>
-                    <label class="compact-label">Height (in)
-                        <span class="range-inputs">
-                            <input type="number" name="height-min" min="60" max="84" placeholder="min" value="{{ leaders_surface.bio_height_min_str }}" class="range-input">
-                            <input type="number" name="height-max" min="60" max="84" placeholder="max" value="{{ leaders_surface.bio_height_max_str }}" class="range-input">
-                        </span>
-                    </label>
-                    <label class="compact-label">Weight (lb)
-                        <span class="range-inputs">
-                            <input type="number" name="weight-min" min="120" max="290" placeholder="min" value="{{ leaders_surface.bio_weight_min_str }}" class="range-input">
-                            <input type="number" name="weight-max" min="120" max="290" placeholder="max" value="{{ leaders_surface.bio_weight_max_str }}" class="range-input">
-                        </span>
-                    </label>
-                    <label class="compact-label">Country
-                        <select name="country" class="compact-select" aria-label="Country filter">
-                            <option value="" {% if leaders_surface.bio_country == "" %}selected{% endif %}>Any country</option>
-                            <option value="CAN" {% if leaders_surface.bio_country == "CAN" %}selected{% endif %}>Canada</option>
-                            <option value="USA" {% if leaders_surface.bio_country == "USA" %}selected{% endif %}>United States</option>
-                            <option value="RUS" {% if leaders_surface.bio_country == "RUS" %}selected{% endif %}>Russia</option>
-                            <option value="SWE" {% if leaders_surface.bio_country == "SWE" %}selected{% endif %}>Sweden</option>
-                            <option value="FIN" {% if leaders_surface.bio_country == "FIN" %}selected{% endif %}>Finland</option>
-                            <option value="CZE" {% if leaders_surface.bio_country == "CZE" %}selected{% endif %}>Czechia</option>
-                            <option value="SVK" {% if leaders_surface.bio_country == "SVK" %}selected{% endif %}>Slovakia</option>
-                            <option value="CHE" {% if leaders_surface.bio_country == "CHE" %}selected{% endif %}>Switzerland</option>
-                            <option value="DEU" {% if leaders_surface.bio_country == "DEU" %}selected{% endif %}>Germany</option>
-                            <option value="DNK" {% if leaders_surface.bio_country == "DNK" %}selected{% endif %}>Denmark</option>
-                            <option value="LVA" {% if leaders_surface.bio_country == "LVA" %}selected{% endif %}>Latvia</option>
-                            <option value="NOR" {% if leaders_surface.bio_country == "NOR" %}selected{% endif %}>Norway</option>
-                            <option value="AUT" {% if leaders_surface.bio_country == "AUT" %}selected{% endif %}>Austria</option>
-                        </select>
-                    </label>
-                    <label class="compact-label">Shoots
-                        <select name="shoots" class="compact-select">
-                            <option value="" {% if leaders_surface.bio_shoots == "" %}selected{% endif %}>-</option>
-                            <option value="L" {% if leaders_surface.bio_shoots == "L" %}selected{% endif %}>Left</option>
-                            <option value="R" {% if leaders_surface.bio_shoots == "R" %}selected{% endif %}>Right</option>
-                        </select>
-                    </label>
-                </div>
-                <div class="form-actions">
-                    <button type="submit">Apply bio filters</button>
-                    {% if leaders_surface.bio_active %}
-                        <a href="/leaders?sort={{ leaders_surface.active_sort }}&pos={{ leaders_surface.active_pos }}&top={{ leaders_surface.active_top }}{% for f in leaders_surface.active_filters %}&filter={{ f }}{% endfor %}"
-                           class="link-button-secondary">Clear bio filters</a>
-                    {% endif %}
-                </div>
-                <p class="filter-help">
-                    Age cutoff is hockey-standard Sept 15. Country accepts ISO 3-letter codes (CAN, USA, SWE, FIN, RUS, ...).
-                    Players missing the relevant bio field are excluded from filtered results.
-                </p>
-            </form>
-        </details>
+    <summary class="accordion-summary">
+        Bio filters
+        {% if leaders_surface.bio_active %}<span class="active-dot">●</span>{% endif %}
+    </summary>
+    <form method="get" action="/leaders" class="filter-panel">
+        <input type="hidden" name="sort" value="{{ leaders_surface.active_sort }}">
+        <input type="hidden" name="pos" value="{{ leaders_surface.active_pos }}">
+        <input type="hidden" name="top" value="{{ leaders_surface.active_top }}">
+        <input type="hidden" name="points-mode" value="{{ leaders_surface.points_mode }}">
+        {% for f in leaders_surface.active_filters %}<input type="hidden" name="filter" value="{{ f }}">{% endfor %}
+        <div class="bio-filter-grid">
+            <label class="compact-label">Season age · Jan 31
+                <span class="range-inputs">
+                    <input type="number" name="age-min" min="16" max="50" placeholder="min" value="{{ leaders_surface.bio_age_min_str }}" class="range-input">
+                    <input type="number" name="age-max" min="16" max="50" placeholder="max" value="{{ leaders_surface.bio_age_max_str }}" class="range-input">
+                </span>
+            </label>
+            <label class="compact-label">Birth year
+                <span class="range-inputs">
+                    <input type="number" name="birth-year-min" min="1900" max="2100" placeholder="min" value="{{ leaders_surface.bio_birth_year_min_str }}" class="range-input-wide" aria-label="Minimum birth year">
+                    <input type="number" name="birth-year-max" min="1900" max="2100" placeholder="max" value="{{ leaders_surface.bio_birth_year_max_str }}" class="range-input-wide" aria-label="Maximum birth year">
+                </span>
+            </label>
+            <label class="compact-label">Draft year
+                <span class="range-inputs">
+                    <input type="number" name="draft-min" min="1960" max="2030" placeholder="min" value="{{ leaders_surface.bio_draft_min_str }}" class="range-input-wide">
+                    <input type="number" name="draft-max" min="1960" max="2030" placeholder="max" value="{{ leaders_surface.bio_draft_max_str }}" class="range-input-wide">
+                </span>
+            </label>
+            <label class="compact-label">Height (in)
+                <span class="range-inputs">
+                    <input type="number" name="height-min" min="60" max="84" placeholder="min" value="{{ leaders_surface.bio_height_min_str }}" class="range-input">
+                    <input type="number" name="height-max" min="60" max="84" placeholder="max" value="{{ leaders_surface.bio_height_max_str }}" class="range-input">
+                </span>
+            </label>
+            <label class="compact-label">Weight (lb)
+                <span class="range-inputs">
+                    <input type="number" name="weight-min" min="120" max="290" placeholder="min" value="{{ leaders_surface.bio_weight_min_str }}" class="range-input">
+                    <input type="number" name="weight-max" min="120" max="290" placeholder="max" value="{{ leaders_surface.bio_weight_max_str }}" class="range-input">
+                </span>
+            </label>
+            <label class="compact-label">Country
+                <select name="country" class="compact-select" aria-label="Country filter">
+                    <option value="" {% if leaders_surface.bio_country == "" %}selected{% endif %}>Any country</option>
+                    <option value="CAN" {% if leaders_surface.bio_country == "CAN" %}selected{% endif %}>Canada</option>
+                    <option value="USA" {% if leaders_surface.bio_country == "USA" %}selected{% endif %}>United States</option>
+                    <option value="RUS" {% if leaders_surface.bio_country == "RUS" %}selected{% endif %}>Russia</option>
+                    <option value="SWE" {% if leaders_surface.bio_country == "SWE" %}selected{% endif %}>Sweden</option>
+                    <option value="FIN" {% if leaders_surface.bio_country == "FIN" %}selected{% endif %}>Finland</option>
+                    <option value="CZE" {% if leaders_surface.bio_country == "CZE" %}selected{% endif %}>Czechia</option>
+                    <option value="SVK" {% if leaders_surface.bio_country == "SVK" %}selected{% endif %}>Slovakia</option>
+                    <option value="CHE" {% if leaders_surface.bio_country == "CHE" %}selected{% endif %}>Switzerland</option>
+                    <option value="DEU" {% if leaders_surface.bio_country == "DEU" %}selected{% endif %}>Germany</option>
+                    <option value="DNK" {% if leaders_surface.bio_country == "DNK" %}selected{% endif %}>Denmark</option>
+                    <option value="LVA" {% if leaders_surface.bio_country == "LVA" %}selected{% endif %}>Latvia</option>
+                    <option value="NOR" {% if leaders_surface.bio_country == "NOR" %}selected{% endif %}>Norway</option>
+                    <option value="AUT" {% if leaders_surface.bio_country == "AUT" %}selected{% endif %}>Austria</option>
+                </select>
+            </label>
+            <label class="compact-label">Shoots
+                <select name="shoots" class="compact-select">
+                    <option value="" {% if leaders_surface.bio_shoots == "" %}selected{% endif %}>—</option>
+                    <option value="L" {% if leaders_surface.bio_shoots == "L" %}selected{% endif %}>Left</option>
+                    <option value="R" {% if leaders_surface.bio_shoots == "R" %}selected{% endif %}>Right</option>
+                </select>
+            </label>
+        </div>
+        <div class="form-actions">
+            <button type="submit">Apply bio filters</button>
+            {% if leaders_surface.bio_active %}
+                <a href="/leaders?sort={{ leaders_surface.active_sort }}&pos={{ leaders_surface.active_pos }}&top={{ leaders_surface.active_top }}&points-mode={{ leaders_surface.points_mode }}{% for f in leaders_surface.active_filters %}&filter={{ f }}{% endfor %}"
+                   class="link-button-secondary">Clear bio filters</a>
+            {% endif %}
+        </div>
+        <p class="filter-help">
+            Season age is age on {{ leaders_surface.bio_age_reference_date }} (Hockey-Reference convention), fixed for this season.
+            NHL draft and rookie eligibility use separate rules. Birth year uses the calendar year; enter the same minimum and maximum for one year.
+            Compare the DOB column in <a href="https://www.nhl.com/stats/skaters?report=bios&amp;seasonFrom={{ leaders_surface.active_season }}&amp;seasonTo={{ leaders_surface.active_season }}&amp;gameType=2" target="_blank" rel="noopener noreferrer">NHL Stats: Bios</a>.
+            Country accepts ISO 3-letter codes (CAN, USA, SWE, FIN, RUS, …).
+            Players missing the relevant bio field are excluded from filtered results.
+        </p>
+    </form>
+</details>
 
         <div class="table-scroll">
         <table>
+    <caption class="table-context">{{ leaders_surface.table_context }}</caption>
             <thead>
                 <tr>
                     <th class="numeric">#</th>
@@ -176,7 +208,10 @@
                                 {{ col.label }}{% if col.is_active %} ↓{% endif %}
                             </a>
                         </th>
-                    {% endfor %}
+                    {% if leaders_surface.points_mode == "even-strength" && col.url_token == "assists" %}
+                    <th class="numeric">EV G</th><th class="numeric">EV A</th>
+                {% endif %}
+            {% endfor %}
                 </tr>
             </thead>
             <tbody>
@@ -196,6 +231,10 @@
                     <td class="numeric">{{ row.gp }}</td>
                     <td class="numeric">{{ row.goals }}</td>
                     <td class="numeric">{{ row.assists }}</td>
+            {% if leaders_surface.points_mode == "even-strength" %}
+                <td class="numeric">{% match row.ev_goals %}{% when Some with (n) %}{{ n }}{% when None %}—{% endmatch %}</td>
+                <td class="numeric">{% match row.ev_assists %}{% when Some with (n) %}{{ n }}{% when None %}—{% endmatch %}</td>
+            {% endif %}
                     <td class="numeric"><strong>{{ row.points }}</strong></td>
                     <td class="numeric">{% if row.ppg_str.is_empty() %}-{% else %}{{ row.ppg_str }}{% endif %}</td>
                     <td class="numeric">{{ row.plus_minus_str }}</td>

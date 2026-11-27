@@ -21,18 +21,21 @@ pub(crate) fn build_headshot_url_for_display(
     build_headshot_url(season, primary, nhl_id)
 }
 
-/// Project a `PlayerView` into the `LeaderRow` shape shared by multiple routes.
-pub(crate) fn project_leader_row(v: &icelines_core::stats_repository::PlayerView) -> LeaderRow {
-    project_leader_row_with_prior(v, None)
-}
-
-/// Like `project_leader_row`, but carries an optional prior-season points total.
-pub(crate) fn project_leader_row_with_prior(
+/// Project counted points without changing the canonical all-situation statistics.
+pub(crate) fn project_leader_row_with_points_mode(
     v: &icelines_core::stats_repository::PlayerView,
     prior_points: Option<u32>,
+    mode: icelines_query::PointsMode,
 ) -> LeaderRow {
     let gp = v.gp();
-    let points = v.points();
+    let points = mode.points(v);
+    let ev_goals = v
+        .goals()
+        .saturating_sub(v.stats.totals.pp_goals)
+        .saturating_sub(v.stats.totals.sh_goals);
+    let ev_assists = icelines_query::PointsMode::EvenStrength
+        .points(v)
+        .saturating_sub(ev_goals);
     let ppg_str = if gp > 0 {
         format!("{:.2}", points as f64 / gp as f64)
     } else {
@@ -87,11 +90,15 @@ pub(crate) fn project_leader_row_with_prior(
     };
     let goals_per_60 = per_60(v.goals() as f64);
     let assists_per_60 = per_60(v.assists() as f64);
-    let points_per_60 = per_60(v.points() as f64);
+    let points_per_60 = if mode == icelines_query::PointsMode::All {
+        per_60(points as f64)
+    } else {
+        None
+    };
     let hits_per_60 = hits.and_then(|h| per_60(h as f64));
     let blocks_per_60 = blocks.and_then(|b| per_60(b as f64));
 
-    let points_delta = prior_points.map(|prev| v.points() as i32 - prev as i32);
+    let points_delta = prior_points.map(|prev| points as i32 - prev as i32);
     let (points_delta_str, points_delta_class) = match points_delta {
         Some(d) if d > 0 => (format!("{:+}", d), "delta-up".to_owned()),
         Some(d) if d < 0 => (format!("{:+}", d), "delta-down".to_owned()),
@@ -100,6 +107,8 @@ pub(crate) fn project_leader_row_with_prior(
     };
 
     LeaderRow {
+        ev_goals: Some(ev_goals),
+        ev_assists: Some(ev_assists),
         nhl_id: v.id().0,
         name: v.full_name().to_owned(),
         position: v.position().abbreviation().to_owned(),

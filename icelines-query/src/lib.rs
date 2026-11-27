@@ -74,6 +74,40 @@ pub use url::{combine_filter_exprs, parse_filters_from_query};
 
 use icelines_core::stats_repository::PlayerView;
 
+/// Which season points a leaderboard counts. Other explicitly named metrics
+/// retain their own definitions; the source repository is never rewritten.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum PointsMode {
+    #[default]
+    All,
+    EvenStrength,
+}
+
+impl PointsMode {
+    pub fn points(self, view: &PlayerView<'_>) -> u32 {
+        match self {
+            Self::All => view.points(),
+            Self::EvenStrength => view
+                .points()
+                .saturating_sub(view.stats.totals.pp_points)
+                .saturating_sub(view.stats.totals.sh_points),
+        }
+    }
+    pub fn token(self) -> &'static str {
+        match self {
+            Self::All => "all",
+            Self::EvenStrength => "even-strength",
+        }
+    }
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::All => "All situations",
+            Self::EvenStrength => "Even strength",
+        }
+    }
+}
+
 /// Bio atom — a single typed bio constraint extracted from a filter
 /// expression. Returned by [`try_parse_bio_atom`].
 #[derive(Debug, Clone, PartialEq)]
@@ -266,6 +300,9 @@ pub fn compute_age(birth_date: &str, season: u32) -> Option<u32> {
 pub struct BioConstraints {
     pub age_min: Option<u32>,
     pub age_max: Option<u32>,
+    /// Inclusive calendar birth-year bounds, independent of season age.
+    pub birth_year_min: Option<u16>,
+    pub birth_year_max: Option<u16>,
     pub draft_min: Option<u16>,
     pub draft_max: Option<u16>,
     pub height_min: Option<u32>,
@@ -281,6 +318,8 @@ impl BioConstraints {
     pub fn is_active(&self) -> bool {
         self.age_min.is_some()
             || self.age_max.is_some()
+            || self.birth_year_min.is_some()
+            || self.birth_year_max.is_some()
             || self.draft_min.is_some()
             || self.draft_max.is_some()
             || self.height_min.is_some()
@@ -289,6 +328,22 @@ impl BioConstraints {
             || self.weight_max.is_some()
             || self.country.is_some()
             || self.shoots.is_some()
+    }
+
+    fn matches_birth_year(&self, birth_date: Option<&str>) -> bool {
+        if self.birth_year_min.is_none() && self.birth_year_max.is_none() {
+            return true;
+        }
+        let year = birth_date
+            .and_then(|date| date.split('-').next())
+            .and_then(|year| year.parse::<u16>().ok());
+        match year {
+            Some(year) => {
+                self.birth_year_min.is_none_or(|min| year >= min)
+                    && self.birth_year_max.is_none_or(|max| year <= max)
+            }
+            None => false,
+        }
     }
 
     /// Merge a single atom into self. Numeric bounds tighten; string
@@ -347,6 +402,9 @@ impl BioConstraints {
                 }
                 None => return false,
             }
+        }
+        if !self.matches_birth_year(bio.birth_date.as_deref()) {
+            return false;
         }
         if let Some(mn) = self.draft_min {
             match bio.draft_year {
@@ -763,6 +821,33 @@ mod tests {
         assert_eq!(peel_outer_parens("g>=10"), None);
         assert_eq!(peel_outer_parens("(g>=10"), None);
         assert_eq!(peel_outer_parens("g>=10)"), None);
+    }
+
+    #[test]
+    fn birth_year_bounds_are_calendar_years_and_inclusive() {
+        let c = BioConstraints {
+            birth_year_min: Some(2001),
+            birth_year_max: Some(2001),
+            ..Default::default()
+        };
+        assert!(c.is_active());
+        assert!(c.matches_birth_year(Some("2001-01-01")));
+        assert!(c.matches_birth_year(Some("2001-12-31")));
+        assert!(!c.matches_birth_year(Some("2000-12-31")));
+        assert!(!c.matches_birth_year(Some("2002-01-01")));
+        assert!(!c.matches_birth_year(None));
+        assert!(!c.matches_birth_year(Some("unknown")));
+        assert!(BioConstraints::default().matches_birth_year(None));
+        let min = BioConstraints {
+            birth_year_min: Some(2001),
+            ..Default::default()
+        };
+        assert!(min.matches_birth_year(Some("2002-06-01")));
+        let max = BioConstraints {
+            birth_year_max: Some(2001),
+            ..Default::default()
+        };
+        assert!(max.matches_birth_year(Some("2000-06-01")));
     }
 
     // ── BioConstraints ──────────────────────────────────────────

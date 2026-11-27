@@ -13,7 +13,7 @@
    data-result-top="{{ active_top }}"
    data-result-sort="{{ active_sort }}"
    data-result-active-filters="{{ result_active_filters }}">
-    Top {{ rows.len() }} skaters by {{ active_sort_label }} · {{ active_label }}
+    {{ rows.len() }} skaters · ranks {{ rank_start }}–{{ rank_end }} by {{ active_sort_label }} · {{ active_label }} · Points: {{ points_mode_label }}
     {% if total > rows.len() %}
         · {{ total }} total
     {% endif %}
@@ -47,6 +47,29 @@
     <input type="hidden" name="sort" value="{{ active_sort }}">
     <input type="hidden" name="pos" value="{{ active_pos }}">
     <input type="hidden" name="top" value="{{ active_top }}">
+    <input type="hidden" name="rank-from" value="{{ rank_start }}">
+    <input type="hidden" name="rank-to" value="{{ rank_end }}">
+    <input type="hidden" name="age-min" value="{{ bio_age_min_str }}">
+    <input type="hidden" name="age-max" value="{{ bio_age_max_str }}">
+    <input type="hidden" name="birth-year-min" value="{{ bio_birth_year_min_str }}">
+    <input type="hidden" name="birth-year-max" value="{{ bio_birth_year_max_str }}">
+    <input type="hidden" name="draft-min" value="{{ bio_draft_min_str }}">
+    <input type="hidden" name="draft-max" value="{{ bio_draft_max_str }}">
+    <input type="hidden" name="height-min" value="{{ bio_height_min_str }}">
+    <input type="hidden" name="height-max" value="{{ bio_height_max_str }}">
+    <input type="hidden" name="weight-min" value="{{ bio_weight_min_str }}">
+    <input type="hidden" name="weight-max" value="{{ bio_weight_max_str }}">
+    <input type="hidden" name="country" value="{{ bio_country }}">
+    <input type="hidden" name="shoots" value="{{ bio_shoots }}">
+    <label class="compact-label">Points counted
+        <select name="points-mode" aria-label="Points counted">
+            <option value="all" {% if points_mode == "all" %}selected{% endif %}>All situations</option>
+            <option value="even-strength" {% if points_mode == "even-strength" %}selected{% endif %}>Even strength</option>
+        </select>
+    </label>
+    <p class="filter-help">Points counted: {{ points_mode_label }}. This changes P, P/GP, Pts/82 and points rankings.
+        EV G and EV A are shown alongside All G and All A in even-strength mode. Other metrics retain their named definitions. For an even-strength threshold, use <code>ev-points&gt;=5</code>.
+        Even strength includes more than 5-on-5. EV P/60 is unavailable without even-strength ice time.</p>
     <div class="inline-form-row">
         <label for="filter-1" class="filter-label">Filter:</label>
         <input id="filter-1" type="text" name="filter"
@@ -96,12 +119,22 @@
         <input type="hidden" name="sort" value="{{ active_sort }}">
         <input type="hidden" name="pos" value="{{ active_pos }}">
         <input type="hidden" name="top" value="{{ active_top }}">
+    <input type="hidden" name="rank-from" value="{{ rank_start }}">
+    <input type="hidden" name="rank-to" value="{{ rank_end }}">
+        <input type="hidden" name="points-mode" value="{{ points_mode }}">
+    <input type="hidden" name="bio-column" value="{{ bio_display.column.token() }}">
         {% for f in active_filters %}<input type="hidden" name="filter" value="{{ f }}">{% endfor %}
         <div class="bio-filter-grid">
-            <label class="compact-label">Age
+            <label class="compact-label">Season age · Jan 31
                 <span class="range-inputs">
                     <input type="number" name="age-min" min="16" max="50" placeholder="min" value="{{ bio_age_min_str }}" class="range-input">
                     <input type="number" name="age-max" min="16" max="50" placeholder="max" value="{{ bio_age_max_str }}" class="range-input">
+                </span>
+            </label>
+            <label class="compact-label">Birth year
+                <span class="range-inputs">
+                    <input type="number" name="birth-year-min" min="1900" max="2100" placeholder="min" value="{{ bio_birth_year_min_str }}" class="range-input-wide" aria-label="Minimum birth year">
+                    <input type="number" name="birth-year-max" min="1900" max="2100" placeholder="max" value="{{ bio_birth_year_max_str }}" class="range-input-wide" aria-label="Maximum birth year">
                 </span>
             </label>
             <label class="compact-label">Draft year
@@ -151,12 +184,15 @@
         <div class="form-actions">
             <button type="submit">Apply bio filters</button>
             {% if bio_active %}
-                <a href="?sort={{ active_sort }}&pos={{ active_pos }}&top={{ active_top }}{% for f in active_filters %}&filter={{ f }}{% endfor %}"
+                <a href="?sort={{ active_sort }}&pos={{ active_pos }}&top={{ active_top }}&points-mode={{ points_mode }}{% for f in active_filters %}&filter={{ f }}{% endfor %}"
                    class="link-button-secondary">Clear bio filters</a>
             {% endif %}
         </div>
         <p class="filter-help">
-            Age cutoff is hockey-standard Sept 15. Country accepts ISO 3-letter codes (CAN, USA, SWE, FIN, RUS, …).
+            Season age is age on {{ bio_age_reference_date }} (Hockey-Reference convention), fixed for this season.
+            NHL draft and rookie eligibility use separate rules. Birth year uses the calendar year; enter the same minimum and maximum for one year.
+            Compare the DOB column in <a href="https://www.nhl.com/stats/skaters?report=bios&amp;seasonFrom={{ active_season }}&amp;seasonTo={{ active_season }}&amp;gameType=2" target="_blank" rel="noopener noreferrer">NHL Stats: Bios</a>.
+            Country accepts ISO 3-letter codes (CAN, USA, SWE, FIN, RUS, …).
             Players missing the relevant bio field are excluded from filtered results.
         </p>
     </form>
@@ -164,6 +200,35 @@
 
 
 </details>
+<form method="get" class="rank-range-tools" aria-label="Displayed rank range" data-rank-range>
+    <input type="hidden" name="roster" value="{{ roster_scope }}"><input type="hidden" name="team" value="{{ franchise }}"><input type="hidden" name="order" value="{{ query_order }}"><input type="hidden" name="then" value="{{ query_then }}">
+    <input type="hidden" name="sort" value="{{ active_sort }}">
+    <input type="hidden" name="pos" value="{{ active_pos }}">
+    <input type="hidden" name="top" value="{{ active_top }}">
+    <input type="hidden" name="points-mode" value="{{ points_mode }}">
+    <input type="hidden" name="bio-column" value="{{ bio_display.column.token() }}">
+    <input type="hidden" name="age-min" value="{{ bio_age_min_str }}">
+    <input type="hidden" name="age-max" value="{{ bio_age_max_str }}">
+    <input type="hidden" name="birth-year-min" value="{{ bio_birth_year_min_str }}">
+    <input type="hidden" name="birth-year-max" value="{{ bio_birth_year_max_str }}">
+    <input type="hidden" name="draft-min" value="{{ bio_draft_min_str }}">
+    <input type="hidden" name="draft-max" value="{{ bio_draft_max_str }}">
+    <input type="hidden" name="height-min" value="{{ bio_height_min_str }}">
+    <input type="hidden" name="height-max" value="{{ bio_height_max_str }}">
+    <input type="hidden" name="weight-min" value="{{ bio_weight_min_str }}">
+    <input type="hidden" name="weight-max" value="{{ bio_weight_max_str }}">
+    <input type="hidden" name="country" value="{{ bio_country }}">
+    <input type="hidden" name="shoots" value="{{ bio_shoots }}">
+    {% for f in active_filters %}<input type="hidden" name="filter" value="{{ f }}">{% endfor %}
+    <span>Show ranks</span>
+    <label>From <input type="number" min="1" name="rank-from" value="{{ rank_start }}" required aria-label="First rank"></label>
+    <label>to <input type="number" min="1" name="rank-to" value="{{ rank_end }}" required aria-label="Last rank"></label>
+    <button type="submit">Show range</button>
+    <button type="button" data-rank-step="-1" {% if rank_start == 1 %}disabled{% endif %}>Previous range</button>
+    <button type="button" data-rank-step="1" {% if rank_end >= total %}disabled{% endif %}>Next range</button>
+    <span class="rank-range-note">{{ total }} matching players · same heading for every range</span>
+</form>
+
 {% endblock %}
 
 {% block query_after_table %}
