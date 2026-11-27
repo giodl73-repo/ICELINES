@@ -29,7 +29,7 @@ pub struct Rule {
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Condition {
-    #[serde(default, skip_serializing_if="BTreeMap::is_empty")]
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub raw_thresholds: BTreeMap<String, RawThreshold>,
     pub key: String,
     pub label: String,
@@ -50,7 +50,9 @@ pub struct RawThreshold {
 /// Exact raw boundaries for the existing midrank tier rules, including ties.
 pub fn raw_thresholds(values: &[f64]) -> BTreeMap<String, RawThreshold> {
     let mut sorted = values.to_vec();
-    if sorted.len() < 20 || sorted.iter().any(|v| !v.is_finite()) { return BTreeMap::new(); }
+    if sorted.len() < 20 || sorted.iter().any(|v| !v.is_finite()) {
+        return BTreeMap::new();
+    }
     sorted.sort_by(f64::total_cmp);
     let mut result = BTreeMap::new();
     for target in [60., 75., 90.] {
@@ -61,7 +63,13 @@ pub fn raw_thresholds(values: &[f64]) -> BTreeMap<String, RawThreshold> {
             let at = 100. * (below as f64 + 0.5 * tied as f64) / sorted.len() as f64;
             let above = 100. * (below + tied) as f64 / sorted.len() as f64;
             if at >= target || above >= target {
-                result.insert(format!("{target:.0}"), RawThreshold { value, inclusive: at >= target });
+                result.insert(
+                    format!("{target:.0}"),
+                    RawThreshold {
+                        value,
+                        inclusive: at >= target,
+                    },
+                );
                 break;
             }
             below += tied;
@@ -215,11 +223,127 @@ fn metric(key: &str) -> Option<(&'static str, &'static str, &'static str, &'stat
         _ => return None,
     })
 }
-fn min_gp(group: &str) -> u32 {
-    if group == "Goalies" {
-        15
+fn min_gp(_group: &str) -> u32 {
+    10
+}
+const SAMPLE_NOTE: &str = "Stat feats use a common 10 GP minimum for skaters and goalies, including reference cohorts. At least 20 measured peers are required per stat. GP stays visible as sample context.";
+
+fn assess_feat(feat: &mut Feat, games: u32, group: &str) {
+    let complete =
+        !feat.conditions.is_empty() && feat.conditions.iter().all(|c| c.percentile.is_some());
+    let bottleneck = feat
+        .conditions
+        .iter()
+        .filter_map(|c| c.percentile)
+        .fold(100., f64::min);
+    let caution = feat.placements.iter().any(|p| p == "risk_flags");
+    feat.tier = if complete && games >= min_gp(group) {
+        [(90., "Gold"), (75., "Silver"), (60., "Bronze")]
+            .into_iter()
+            .find(|(threshold, _)| bottleneck >= *threshold)
+            .map(|(_, tier)| {
+                if caution {
+                    match tier {
+                        "Gold" => "Marked",
+                        "Silver" => "Elevated",
+                        _ => "Notable",
+                    }
+                } else {
+                    tier
+                }
+                .to_string()
+            })
     } else {
-        20
+        None
+    };
+    feat.matched = feat
+        .conditions
+        .iter()
+        .filter(|c| c.qualifies == Some(true))
+        .count();
+    feat.state = if games < min_gp(group) {
+        "ineligible"
+    } else if !complete {
+        "unavailable"
+    } else if feat.tier.is_none() {
+        "not_earned"
+    } else {
+        "earned"
+    }
+    .into();
+}
+
+/// Reassess saved observations with the common ten-game eligibility rule.
+/// This also upgrades older profiles whose ranks were withheld below the GP gate.
+pub fn refresh_profiles(profiles: &mut [AchievementProfile]) {
+    let mut references = BTreeMap::<(u32, String, String), BTreeMap<u32, f64>>::new();
+    for p in profiles.iter().filter(|p| p.games >= min_gp(&p.group)) {
+        for c in p.feats.iter().flat_map(|f| &f.conditions) {
+            if let Some(value) = c.value.filter(|v| v.is_finite()) {
+                references
+                    .entry((p.season, p.group.clone(), c.key.clone()))
+                    .or_default()
+                    .insert(p.player_id, value);
+            }
+        }
+    }
+    let references = references
+        .into_iter()
+        .map(|(key, peers)| {
+            let rows: Vec<_> = peers.into_iter().collect();
+            let hash = format!(
+                "{:x}",
+                Sha256::digest(
+                    serde_json::to_vec(&(key.0, &key.1, &key.2, &rows)).expect("finite reference")
+                )
+            );
+            let values = rows.into_iter().map(|(_, value)| value).collect::<Vec<_>>();
+            let cuts = raw_thresholds(&values);
+            (key, (values, hash, cuts))
+        })
+        .collect::<BTreeMap<_, _>>();
+    for p in profiles {
+        for f in &mut p.feats {
+            for c in &mut f.conditions {
+                let reference = references.get(&(p.season, p.group.clone(), c.key.clone()));
+                let peers = reference.map(|(values, _, _)| values);
+                c.peers = peers.map_or(0, Vec::len);
+                c.percentile = c
+                    .value
+                    .filter(|_| p.games >= min_gp(&p.group) && c.peers >= 20)
+                    .and_then(|v| {
+                        peers.map(|peers| {
+                            100. * (peers.iter().filter(|x| **x < v).count() as f64
+                                + 0.5 * peers.iter().filter(|x| **x == v).count() as f64)
+                                / peers.len() as f64
+                        })
+                    });
+                c.qualifies = c.percentile.map(|v| v >= 60.);
+                if let Some((_, hash, cuts)) = reference {
+                    c.reference_sha256 = hash.clone();
+                    c.raw_thresholds = cuts.clone();
+                } else {
+                    c.raw_thresholds.clear();
+                }
+            }
+            assess_feat(f, p.games, &p.group);
+        }
+        p.earned = p.feats.iter().filter(|f| f.state == "earned").count();
+        p.minimum_games = min_gp(&p.group);
+        for note in &mut p.notes {
+            *note = note
+                .replace(
+                    "reference cohort minimum 20 skater GP, 15 goalie GP",
+                    "minimum 10 GP for skaters and goalies",
+                )
+                .replace(
+                    "minimum 20 skater GP, 15 goalie GP",
+                    "minimum 10 GP for skaters and goalies",
+                );
+        }
+        if !p.notes.iter().any(|n| n == SAMPLE_NOTE) {
+            p.notes.push(SAMPLE_NOTE.into());
+        }
     }
 }
 fn components(p: &PlayerInput, key: &str) -> (Option<f64>, Option<f64>) {
@@ -359,47 +483,13 @@ pub fn evaluate(input: &Input, rules: &[Rule]) -> Result<Catalog, String> {
                     qualifies: percentile.map(|p| p >= 60.),
                 });
             }
-            let complete = conditions.iter().all(|c| c.percentile.is_some());
-            let bottleneck = conditions
-                .iter()
-                .filter_map(|c| c.percentile)
-                .fold(100., f64::min);
-            let caution = rule.placements.iter().any(|p| p == "risk_flags");
-            let tier = if complete {
-                [(90., "Gold"), (75., "Silver"), (60., "Bronze")]
-                    .iter()
-                    .find(|(t, _)| bottleneck >= *t)
-                    .map(|(_, n)| {
-                        if caution {
-                            match *n {
-                                "Gold" => "Marked",
-                                "Silver" => "Elevated",
-                                _ => "Notable",
-                            }
-                            .to_string()
-                        } else {
-                            n.to_string()
-                        }
-                    })
-            } else {
-                None
-            };
-            let state = if !eligible {
-                "ineligible"
-            } else if !complete {
-                "unavailable"
-            } else if tier.is_some() {
-                "earned"
-            } else {
-                "not_earned"
-            };
             feats.push(Feat {
                 id: rule.id.clone(),
                 name: rule.name.clone(),
-                state: state.into(),
+                state: String::new(),
                 placements: rule.placements.clone(),
                 note: rule.note.clone(),
-                tier,
+                tier: None,
                 matched: conditions
                     .iter()
                     .filter(|c| c.qualifies == Some(true))
@@ -407,9 +497,13 @@ pub fn evaluate(input: &Input, rules: &[Rule]) -> Result<Catalog, String> {
                 required: conditions.len(),
                 conditions,
             });
+            assess_feat(feats.last_mut().expect("new feat"), p.games, &p.group);
         }
         let earned = feats.iter().filter(|f| f.state == "earned").count();
-        profiles.push(AchievementProfile{player_id:p.player_id,season:input.season,season_type:"regular".into(),group:p.group.clone(),games:p.games,minimum_games:min_gp(&p.group),rules_sha256:rules_sha256.clone(),source_sha256:input.source_sha256.clone(),source_urls:input.source_urls.clone(),earned,feats,notes:vec!["Experimental stat feats, not measured task mastery, class assignments or 1–20 abilities.".into(),"All conditions must pass: Bronze P60, Silver P75, Gold P90; caution flags use Notable/Elevated/Marked instead. Compare same-season F/D/G separately; minimum 20 skater GP, 15 goalie GP and 20 measured peers per stat.".into(),"Counts per appearance describe production/activity, not per-minute efficiency or pressure-tested success. Related stats are correlated; conjunctions are not independent evidence.".into()]});
+        profiles.push(AchievementProfile{player_id:p.player_id,season:input.season,season_type:"regular".into(),group:p.group.clone(),games:p.games,minimum_games:min_gp(&p.group),rules_sha256:rules_sha256.clone(),source_sha256:input.source_sha256.clone(),source_urls:input.source_urls.clone(),earned,feats,notes:vec!["Experimental stat feats, not measured task mastery, class assignments or 1–20 abilities.".into(),"All conditions must pass: Bronze P60, Silver P75, Gold P90; caution flags use Notable/Elevated/Marked instead. Compare same-season F/D/G separately; minimum 10 GP for skaters and goalies and 20 measured peers per stat.".into(),"Counts per appearance describe production/activity, not per-minute efficiency or pressure-tested success. Related stats are correlated; conjunctions are not independent evidence.".into()]});
+    }
+    for p in &mut profiles {
+        p.notes.push(SAMPLE_NOTE.into());
     }
     Ok(Catalog {
         protocol: "rinkcraft.stat-feats.0.1-experimental".into(),

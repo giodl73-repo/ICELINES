@@ -81,3 +81,119 @@ fn per_sixty_record_uses_observed_ice_time_per_game() {
     assert_eq!(record.metrics[0].per_game, Some(0.5));
     assert_eq!(record.metrics[0].value, Some(42.));
 }
+
+#[test]
+fn ten_game_feats_unlock_and_saved_profiles_match_fresh_evaluation() {
+    use icelines_core::view_model::rinkcraft_achievements::{
+        default_rules, evaluate, refresh_profiles, Input, PlayerInput,
+    };
+    use std::collections::BTreeMap;
+    let mut input = Input {
+        season: 20262027,
+        source_urls: vec![],
+        source_sha256: "fixture".into(),
+        players: (1..=41)
+            .map(|id| PlayerInput {
+                player_id: id,
+                name: format!("Player {id}"),
+                group: "Forwards".into(),
+                games: if id == 41 { 18 } else { 20 },
+                counts: BTreeMap::from([
+                    ("hits".into(), id as f64),
+                    ("blocks".into(), id as f64),
+                    ("points".into(), id as f64),
+                ]),
+            })
+            .collect(),
+    };
+    let result = evaluate(&input, &default_rules()).unwrap();
+    let feat = |p: &icelines_core::view_model::rinkcraft_achievements::AchievementProfile| {
+        p.feats
+            .iter()
+            .find(|f| f.id == "shot-shield")
+            .unwrap()
+            .clone()
+    };
+    assert_eq!(feat(&result.profiles[40]).state, "earned");
+    assert_eq!(feat(&result.profiles[40]).tier.as_deref(), Some("Gold"));
+    assert_eq!(feat(&result.profiles[40]).conditions[0].peers, 41);
+    assert!(result.profiles[40].earned > 0);
+    assert_eq!(result.profiles[40].minimum_games, 10);
+    let mut saved = result.profiles.clone();
+    for f in &mut saved[40].feats {
+        f.state = "ineligible".into();
+        f.tier = None;
+        for c in &mut f.conditions {
+            c.percentile = None;
+            c.qualifies = None;
+        }
+    }
+    refresh_profiles(&mut saved);
+    assert_eq!(saved, result.profiles);
+    input.players[40].games = 9;
+    assert_eq!(
+        feat(&evaluate(&input, &default_rules()).unwrap().profiles[40]).state,
+        "ineligible"
+    );
+    input.players[40].games = 10;
+    assert_eq!(
+        feat(&evaluate(&input, &default_rules()).unwrap().profiles[40]).state,
+        "earned"
+    );
+    input.players[40].counts.remove("blocks");
+    assert_eq!(
+        feat(&evaluate(&input, &default_rules()).unwrap().profiles[40]).state,
+        "unavailable"
+    );
+    input.players[40].counts.insert("blocks".into(), 0.);
+    assert_eq!(
+        feat(&evaluate(&input, &default_rules()).unwrap().profiles[40]).state,
+        "not_earned"
+    );
+    input.players[40].counts.insert("blocks".into(), 41.);
+    input.players[40].games = 20;
+    assert_eq!(
+        feat(&evaluate(&input, &default_rules()).unwrap().profiles[40]).state,
+        "earned"
+    );
+}
+
+#[test]
+fn goalies_use_the_same_ten_game_minimum() {
+    use icelines_core::view_model::rinkcraft_achievements::{evaluate, Input, PlayerInput, Rule};
+    use std::collections::BTreeMap;
+    let mut input = Input {
+        season: 20262027,
+        source_urls: vec![],
+        source_sha256: "fixture".into(),
+        players: (1..=21)
+            .map(|id| PlayerInput {
+                player_id: id,
+                name: format!("Goalie {id}"),
+                group: "Goalies".into(),
+                games: if id == 21 { 5 } else { 15 },
+                counts: BTreeMap::from([("shutouts".into(), if id == 21 { 1. } else { 0. })]),
+            })
+            .collect(),
+    };
+    let rules = vec![Rule {
+        id: "clean-sheet".into(),
+        name: "Clean sheet".into(),
+        branch: "goalie".into(),
+        metrics: vec!["shutouts".into()],
+        placements: vec!["task_skills".into()],
+        note: None,
+    }];
+    for (gp, state) in [
+        (9, "ineligible"),
+        (10, "earned"),
+        (14, "earned"),
+        (15, "earned"),
+    ] {
+        input.players[20].games = gp;
+        assert_eq!(
+            evaluate(&input, &rules).unwrap().profiles[20].feats[0].state,
+            state
+        );
+    }
+}
