@@ -74,6 +74,8 @@ pub async fn get_home(State(state): State<WebState>) -> Response {
 fn skater_preview_from_view(row: &HomeSkaterRow, season: u32) -> LeaderRow {
     let team = row.team.0.clone();
     LeaderRow {
+        ev_goals: None,
+        ev_assists: None,
         nhl_id: row.player_id.0,
         name: row.display_name.clone(),
         position: row.position.abbreviation().to_string(),

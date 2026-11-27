@@ -24,6 +24,7 @@ use axum::http::{header, HeaderMap, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 
 const HTMX_MIN_JS: &[u8] = include_bytes!("../static/htmx.min.js");
+const APPEARANCE_JS: &[u8] = include_bytes!("../static/appearance.js");
 const DASHBOARD_JS: &[u8] = include_bytes!("../static/dashboard.js");
 const STYLE_CSS: &[u8] = include_bytes!("../static/style.css");
 const ICELINES_SVG: &[u8] = include_bytes!("../static/icelines.svg");
@@ -49,6 +50,7 @@ fn etag() -> String {
 pub async fn serve_static(Path(asset): Path<String>) -> Response {
     let (bytes, mime) = match asset.as_str() {
         "htmx.min.js" => (HTMX_MIN_JS, "application/javascript; charset=utf-8"),
+        "appearance.js" => (APPEARANCE_JS, "application/javascript; charset=utf-8"),
         "dashboard.js" => (DASHBOARD_JS, "application/javascript; charset=utf-8"),
         "style.css" => (STYLE_CSS, "text/css; charset=utf-8"),
         "icelines.svg" => (ICELINES_SVG, "image/svg+xml; charset=utf-8"),

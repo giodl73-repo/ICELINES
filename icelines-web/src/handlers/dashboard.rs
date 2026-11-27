@@ -1158,11 +1158,20 @@ fn leaders_query_from_workspace(path: &str) -> (super::leaders::LeadersQuery, St
         let (key, value) = pair.split_once('=').unwrap_or((pair, ""));
         let value = decode_query_component(value);
         match key {
+            "points-mode" => {
+                q.points_mode = if value == "even-strength" {
+                    icelines_query::PointsMode::EvenStrength
+                } else {
+                    icelines_query::PointsMode::All
+                }
+            }
             "sort" => q.sort = Some(value),
             "pos" => q.pos = Some(value),
             "top" => q.top = value.parse().ok(),
             "age-min" => q.age_min = value.parse().ok(),
             "age-max" => q.age_max = value.parse().ok(),
+            "birth-year-min" => q.birth_year_min = value.parse().ok(),
+            "birth-year-max" => q.birth_year_max = value.parse().ok(),
             "draft-min" => q.draft_year_min = value.parse().ok(),
             "draft-max" => q.draft_year_max = value.parse().ok(),
             "height-min" => q.height_min = value.parse().ok(),

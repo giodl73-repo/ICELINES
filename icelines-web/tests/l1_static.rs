@@ -314,3 +314,20 @@ async fn l1_static_etag_consistent_across_assets_within_release() {
         "dashboard.js must share release ETag"
     );
 }
+
+#[tokio::test]
+async fn l1_display_style_script_is_served() {
+    let response = fire("/static/appearance.js?v=3").await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert!(response
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .starts_with("application/javascript"));
+    let html = body_text("/leaders").await;
+    assert!(html.contains("aria-label=\"Display style\""));
+    assert!(html.contains("NHL-style (clean)"));
+    assert!(html.contains("/static/appearance.js?v=3"));
+}

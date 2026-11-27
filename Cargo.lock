@@ -1807,6 +1807,7 @@ dependencies = [
  "chrono",
  "icelines-core",
  "proptest",
+ "serde",
  "serde_json",
  "slice-core 0.1.0 (git+https://github.com/giodl73-repo/SLICE?rev=353564781f6cad53fc5a934178a7927824824e3e)",
  "thiserror 2.0.21",
