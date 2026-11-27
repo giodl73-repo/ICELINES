@@ -1755,3 +1755,59 @@ a.team-link:hover {
   .team-card-player-tile { grid-template-columns: 50px 1fr auto; }
   .team-card-player-tile img, .team-card-fallback { width: 46px; height: 46px; }
 }
+
+/* Display preference: retain IceLines by default; neutral NHL-like tables are opt-in. */
+.appearance-control { display: inline-flex; align-items: center; gap: .4rem; margin-left: auto; white-space: nowrap; }
+.appearance-control select { width: auto; margin: 0; padding: .25rem .45rem; font-size: .85rem; }
+.table-copy-tools { display: none; }
+html[data-display-style="nhl"] {
+    --nhl-navy: #151515; --nhl-navy-2: #333333;
+    --nhl-red: #444444; --nhl-red-2: #222222;
+    --ice-bg: #ffffff; --ice-surface: #ffffff; --ice-divider: #dddddd;
+    --ice-fg: #111111; --ice-muted: #555555;
+    --link: #222222; --link-hover: #000000; --link-bg-soft: #eeeeee;
+    --accent-good: #333333; --accent-warn: #dddddd; --accent-bad: #333333;
+}
+html[data-display-style="nhl"] .season-header { background: #ffffff; color: #111111; border-bottom: 2px solid #222222; box-shadow: none; }
+html[data-display-style="nhl"] .global-nav { box-shadow: none; }
+/* Team classes define their own tokens, so override them on the team element
+   itself as well as removing the link's colored accent/hover treatment. */
+html[data-display-style="nhl"] [class*="team-"] {
+    --team-primary: #111111;
+    --team-secondary: #cccccc;
+    --team-primary-soft: #f2f2f2;
+}
+html[data-display-style="nhl"] a.team-link,
+html[data-display-style="nhl"] a.team-link:visited,
+html[data-display-style="nhl"] a.team-link:hover,
+html[data-display-style="nhl"] a.team-link:focus-visible {
+    color: #111111 !important;
+    border: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+    padding-left: .3rem;
+}
+html[data-display-style="nhl"] .team-banner,
+html[data-display-style="nhl"] .team-banner h1,
+html[data-display-style="nhl"] .team-banner a {
+    background: #f2f2f2;
+    color: #111111;
+    text-shadow: none;
+}
+html[data-display-style="nhl"] .table-copy-tools { display: flex; align-items: center; gap: .75rem; margin: .6rem 0; font-size: .85rem; }
+html[data-display-style="nhl"] table { border: 1px solid #cccccc; border-radius: 0; color: #111111; background: #ffffff; }
+html[data-display-style="nhl"] table th { background: #f2f2f2 !important; color: #111111 !important; border-bottom: 2px solid #555555; letter-spacing: 0; }
+html[data-display-style="nhl"] table td { background: #ffffff !important; color: #111111 !important; border-bottom: 1px solid #dddddd; }
+html[data-display-style="nhl"] table td *, html[data-display-style="nhl"] table th * { color: #111111 !important; background: transparent !important; box-shadow: none !important; }
+html[data-display-style="nhl"] table tr:nth-child(even) td { background: #fafafa !important; }
+html[data-display-style="nhl"] .filter-chip.fit-solid { background: #eeeeee; color: #111111; outline: 1px solid #333333; }
+html[data-display-style="nhl"] .team-card-hero { color: #111111; background: #f2f2f2; border-color: #555555; }
+@media print {
+    html[data-display-style="nhl"] .table-copy-tools, .appearance-control { display: none; }
+}
+
+/* Keep the submitted filters inside the table frame for screenshots. */
+.table-context { caption-side: top; text-align: left; padding: .3rem .65rem; color: var(--ice-muted); background: var(--ice-surface); border: 1px solid var(--ice-divider); border-bottom: 0; font-size: .78rem; line-height: 1.35; font-weight: 400; white-space: normal; overflow-wrap: anywhere; }
+html[data-display-style="nhl"] .table-context { color: #666666; background: #fafafa; border-color: #dddddd; }
+
+.rank-range-tools{display:flex;flex-wrap:wrap;gap:.55rem;align-items:center;margin:.8rem 0;font-size:.8rem;color:var(--ice-muted)}.rank-range-tools label{display:flex;align-items:center;gap:.35rem}.rank-range-tools input[type=number]{width:5rem;padding:.3rem .4rem}.rank-range-tools button{font-size:.78rem;padding:.3rem .55rem}.rank-range-note{font-size:.75rem}.rank-range-tools button:disabled{opacity:.45;cursor:default}

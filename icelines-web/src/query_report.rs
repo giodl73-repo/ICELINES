@@ -332,6 +332,18 @@ impl LeadersTemplate {
             &chain,
         ));
         columns.extend(headers(&metrics, &base, &chain));
+        if self.points_mode == "even-strength" {
+            columns.extend([
+                ReportColumn {
+                    label: "EV G".into(),
+                    ..Default::default()
+                },
+                ReportColumn {
+                    label: "EV A".into(),
+                    ..Default::default()
+                },
+            ]);
+        }
         let rows = self
             .rows
             .iter()
@@ -341,7 +353,7 @@ impl LeadersTemplate {
                 player.image = r.headshot_url.clone();
                 player.fallback = r.headshot_fallback_url.clone();
                 let mut cells = vec![
-                    ReportCell::text(i + 1),
+                    ReportCell::text(i + 1 + self.rank_offset),
                     player,
                     ReportCell::text(&r.position),
                     ReportCell {
@@ -376,6 +388,14 @@ impl LeadersTemplate {
                     .into_iter()
                     .map(ReportCell::text),
                 );
+                if self.points_mode == "even-strength" {
+                    cells.push(ReportCell::text(
+                        r.ev_goals.map(|v| v.to_string()).unwrap_or_default(),
+                    ));
+                    cells.push(ReportCell::text(
+                        r.ev_assists.map(|v| v.to_string()).unwrap_or_default(),
+                    ));
+                }
                 ReportRow {
                     id: r.nhl_id,
                     name: r.name.clone(),
@@ -389,6 +409,7 @@ impl LeadersTemplate {
             .collect();
         let mut context = vec![
             ("Window".into(), self.active_label.clone()),
+            ("Points".into(), self.points_mode_label.clone()),
             (
                 "Franchise".into(),
                 if self.franchise.is_empty() {
@@ -416,6 +437,11 @@ impl LeadersTemplate {
         ];
         for (label, low, high) in [
             ("Age", &self.bio_age_min_str, &self.bio_age_max_str),
+            (
+                "Birth year",
+                &self.bio_birth_year_min_str,
+                &self.bio_birth_year_max_str,
+            ),
             (
                 "Draft year",
                 &self.bio_draft_min_str,
@@ -460,6 +486,15 @@ impl LeadersTemplate {
             selected: self.active_pos == "G",
         });
         let mut fields = vec![
+            select(
+                "points-mode",
+                "Points counted",
+                &self.points_mode,
+                [
+                    ("all".into(), "All situations".into()),
+                    ("even-strength".into(), "Even strength".into()),
+                ],
+            ),
             input("team", "Franchise", &self.franchise, "text"),
             input("date-from", "From (inclusive)", "", "date"),
             input("date-to", "Through (inclusive)", "", "date"),
@@ -504,6 +539,8 @@ impl LeadersTemplate {
         for (key, value) in [
             ("age-min", &self.bio_age_min_str),
             ("age-max", &self.bio_age_max_str),
+            ("birth-year-min", &self.bio_birth_year_min_str),
+            ("birth-year-max", &self.bio_birth_year_max_str),
             ("draft-min", &self.bio_draft_min_str),
             ("draft-max", &self.bio_draft_max_str),
             ("height-min", &self.bio_height_min_str),

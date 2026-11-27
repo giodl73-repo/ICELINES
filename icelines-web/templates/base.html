@@ -4,7 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>{% block title %}IceLines{% endblock %} — IceLines</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/appearance.js?v=3"></script>
+    <link rel="stylesheet" href="/static/style.css?v=appearance-5">
     <link rel="icon" type="image/svg+xml" href="/static/icelines.svg">
     <link rel="manifest" href="/static/site.webmanifest">
     <link rel="apple-touch-icon" href="/static/icelines.svg">
@@ -65,6 +66,12 @@
         {# Season-type toggle (UX.E). Active type derived from
            `active_label` so we don't have to thread a new field
            through every template struct. #}
+        <label class="appearance-control" for="display-style">Style
+            <select id="display-style" aria-label="Display style">
+                <option value="icelines">IceLines</option>
+                <option value="nhl">NHL-style (clean)</option>
+            </select>
+        </label>
         <span class="season-type-toggle" aria-label="Season type">
             {% if active_label.contains("Regular") %}
                 <strong>Regular</strong>

@@ -925,6 +925,76 @@ The route-inventory gate keeps every evidence-map handoff backed by a mounted
 route entry and by `design/specs/surface-parity.md` before the links become
 operator-facing shortcuts.
 
+### Local dashboard display styles
+
+The navigation bar's **Style** selector offers **IceLines** (the default) and
+**NHL-style (clean)**, a neutral black/white/gray table treatment. The latter
+is an IceLines presentation option, not an official NHL interface. The selected
+style is saved in this browser when local storage is available and can be
+changed without changing the query or statistics.
+
+Clean mode adds **Copy clean table** above each table. It copies the current
+rendered rows/order as neutral HTML and tab-separated plain text, without team
+or performance colors. Supported rich-text destinations receive the neutral
+table; spreadsheets/plain-text destinations can use the tab-separated version.
+HTML includes season/points-mode context. Copy occurs only when clicked and
+clipboard failures are reported without changing the table.
+
+### Leaderboard bio filters (local web dashboard)
+
+Use **Show ranks** above the leaders table to display any inclusive rank range,
+such as 1–10, then 11–20. Both bounds are editable; Previous/Next moves by the
+current range size. Ranks are assigned after filtering and sorting, and retain
+their original numbers. The applied-filter caption and column headings stay
+the same across ranges for copying or screenshots. Range controls sit outside
+the copied table. Each range may contain up to 500 rows, with no 500-rank offset
+limit. URLs preserve the range, for example
+`/leaders?age-min=25&age-max=25&rank-from=11&rank-to=20`.
+The JSON leaders endpoint accepts the same rank bounds; `top` supplies the
+default range size when explicit bounds are absent.
+
+Expand **Bio filters** on `/leaders` to filter season age or calendar birth year.
+The table caption repeats the submitted filters, season, points mode and result
+limit above the column headings so screenshots and clean HTML copies retain context.
+Min/max bounds are inclusive; blank bounds impose no constraint. Use the same
+birth year in both boxes for one calendar-year cohort. Age and birth-year bounds
+combine with each other and with the statistical filters.
+
+Season age uses the Hockey-Reference convention: age on January 31 of the
+season's ending year (January 31, 2027 for 2026–27), fixed throughout that
+season. It is separate from NHL draft, contract and rookie eligibility rules.
+Source convention: https://www.sports-reference.com/stathead/tiny/DVJsd
+
+When sorting leaderboard points, ties use goals descending, then player ID
+for stable ordering. Other sorts retain their existing tiebreakers.
+
+The **Points counted** selector switches between all-situation and even-strength
+points. It changes the points column, points per game, points per 82 games and
+points-based rankings. In even-strength mode, additional EV G and EV A columns
+show even-strength goals/assists alongside the All G and All A totals. Named
+advanced filters keep their own definitions. Use `ev-points>=5` for an even-strength points threshold.
+Even strength includes other even-strength situations in addition to 5-on-5.
+EV P/60 stays unavailable without a matching even-strength TOI denominator.
+The mode is preserved through bio/stat forms, sorting and position changes;
+JSON metadata records `points_mode`. Example:
+`/leaders?points-mode=even-strength&birth-year-min=2001&birth-year-max=2001`.
+
+For NHL comparisons, the official Bios report labels `birthDate` as **DOB**
+(Player Birth Date). Its report configuration does not expose a separate age
+or birth-year result filter. A calendar-2001 cohort is `birthDate >=
+"2001-01-01" and birthDate <= "2001-12-31"` in the official Bios API.
+For season age 25 on January 31, 2027, use February 1, 2001 through January 31,
+2002 instead. Match season, game type, skaters/goalies, situation and GP limits;
+age today and January-31 season age can differ. In the NHL Summary report,
+`points` is all-situation points and `evPoints` is even-strength points
+(`ppPoints` and `shPoints` cover power play and short-handed). Verify against:
+https://www.nhl.com/stats/skaters?report=bios&seasonFrom=20262027&seasonTo=20262027&gameType=2
+and https://api.nhle.com/stats/rest/en/config .
+
+Examples: `/leaders?age-min=25&age-max=25` and
+`/leaders?birth-year-min=2001&birth-year-max=2001`. The JSON twin accepts the
+same bounds at `/api/v1/leaders`.
+
 ## `x` — quick CSV/JSON export
 
 One-shot export of any report shape to stdout (default CSV) or a file. Excel-friendly.

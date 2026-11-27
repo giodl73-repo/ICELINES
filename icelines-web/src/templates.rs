@@ -349,6 +349,9 @@ pub struct LeadersTemplate {
     pub active_pos: String,
     /// Top-N rows requested (default 20).
     pub active_top: usize,
+    pub rank_start: usize,
+    pub rank_end: usize,
+    pub rank_offset: usize,
     /// Position-filter strip — pre-computed (label, url-value, is_active)
     /// triples so the template doesn't need to compare String against
     /// &str (askama doesn't auto-coerce).
@@ -363,8 +366,15 @@ pub struct LeadersTemplate {
     /// can put them in `value="…"` attributes without conditionals.
     /// `_str` because integers may be 0 legitimately so we can't
     /// use 0-as-sentinel.
+    pub points_mode: String,
+    pub points_mode_label: String,
+    /// Applied query context, kept inside the table frame for screenshots/copy.
+    pub table_context: String,
     pub bio_age_min_str: String,
     pub bio_age_max_str: String,
+    pub bio_birth_year_min_str: String,
+    pub bio_birth_year_max_str: String,
+    pub bio_age_reference_date: String,
     pub bio_draft_min_str: String,
     pub bio_draft_max_str: String,
     pub bio_height_min_str: String,
@@ -439,6 +449,8 @@ pub struct LeaderRow {
     pub gp: u32,
     pub goals: u32,
     pub assists: u32,
+    pub ev_goals: Option<u32>,
+    pub ev_assists: Option<u32>,
     pub points: u32,
     /// Points per game, formatted to 2 decimals. Empty string if gp=0.
     pub ppg_str: String,
@@ -1601,6 +1613,8 @@ mod tests {
         let tmpl = HomeTemplate {
             active_label: "25-26 · Regular".to_owned(),
             top_skaters: vec![LeaderRow {
+                ev_goals: None,
+                ev_assists: None,
                 nhl_id: 8478402,
                 name: "Connor McDavid".to_owned(),
                 position: "C".to_owned(),
