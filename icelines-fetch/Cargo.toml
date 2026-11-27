@@ -24,7 +24,7 @@ uuid.workspace       = true
 fletch-core.workspace = true
 toml.workspace       = true
 
-zip = { version = "=9.8.1", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+zip = { version = "=9.8.2", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 
 [dev-dependencies]
 icelines-wasm = { path = "../icelines-wasm" }
